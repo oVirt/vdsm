@@ -362,8 +362,7 @@ class _ResourceManager(object):
             resources = namespaceObj.resources
             with namespaceObj.lock:
                 if not namespaceObj.factory.resourceExists(name):
-                    raise KeyError("No such resource '%s.%s'" % (namespace,
-                                                                 name))
+                    raise KeyError(f"No such resource '{namespace}.{name}'")
 
                 if name not in resources:
                     return STATUS_FREE
@@ -469,7 +468,7 @@ class _ResourceManager(object):
                     resource = resources[name]
                 except KeyError:
                     if not namespaceObj.factory.resourceExists(name):
-                        raise KeyError("No such resource '%s'" % (full_name))
+                        raise KeyError(f"No such resource '{full_name}'")
                 else:
                     if len(resource.queue) == 0 and \
                             resource.currentLock == SHARED and \
