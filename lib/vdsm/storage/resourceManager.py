@@ -333,7 +333,7 @@ class _ResourceManager(object):
 
     def registerNamespace(self, namespace, factory):
         if not self._namespaceValidator.match(namespace):
-            raise InvalidNamespace("Invalid namespace name %r" % namespace)
+            raise InvalidNamespace(f"Invalid namespace name {namespace!r}")
 
         if namespace in self._namespaces:
             raise NamespaceRegistered(
