@@ -336,13 +336,13 @@ class _ResourceManager(object):
             raise InvalidNamespace("Invalid namespace name %r" % namespace)
 
         if namespace in self._namespaces:
-            raise NamespaceRegistered("Namespace '%s' already registered"
-                                      % namespace)
+            raise NamespaceRegistered(
+                f"Namespace '{namespace}' already registered")
 
         with self._syncRoot.exclusive:
             if namespace in self._namespaces:
-                raise NamespaceRegistered("Namespace '%s' already registered"
-                                          % namespace)
+                raise NamespaceRegistered(
+                    f"Namespace '{namespace}' already registered")
 
             log.debug("Registering namespace '%s'", namespace)
 
