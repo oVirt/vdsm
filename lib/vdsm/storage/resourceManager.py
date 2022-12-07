@@ -676,8 +676,8 @@ class Owner(object):
             try:
                 if full_name in self.resources:
                     raise ResourceAlreadyAcquired(
-                        "%s is already acquired by %s",
-                        full_name, self.ownerobject.getID())
+                        f"{full_name} is already acquired "
+                        f"by {self.ownerobject.getID()}")
                 try:
                     resource = acquireResource(namespace, name, locktype,
                                                timeout)
