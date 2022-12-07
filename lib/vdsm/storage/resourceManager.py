@@ -700,8 +700,8 @@ class Owner(object):
                     log.debug(
                         "%s: resource '%s' does not exist",
                         self, full_name)
-                    raise ResourceDoesNotExist("Resource %s does not exist"
-                                               % full_name)
+                    raise ResourceDoesNotExist(
+                        f"Resource {full_name} does not exist")
                 except Exception:
                     log.warning(
                         "Unexpected exception caught while owner '%s' tried "
