@@ -74,7 +74,7 @@ def _statusFromType(locktype):
         return STATUS_SHARED
     if str(locktype) == EXCLUSIVE:
         return STATUS_LOCKED
-    raise InvalidLockType("Invalid locktype %r was used" % locktype)
+    raise InvalidLockType(f"Invalid locktype {locktype!r} was used")
 
 
 # TODO : Integrate all factory functionality to manager
@@ -449,7 +449,7 @@ class _ResourceManager(object):
             raise se.InvalidResourceName(name)
 
         if lockType not in (SHARED, EXCLUSIVE):
-            raise InvalidLockType("Invalid locktype %r was used" % lockType)
+            raise InvalidLockType(f"Invalid locktype {lockType!r} was used")
 
         request = Request(namespace, name, lockType, callback)
         log.debug("Trying to register resource '%s' for lock type '%s'",
