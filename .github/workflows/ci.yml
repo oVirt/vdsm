@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: [centos-8, centos-9]
+        distro: [centos-8, centos-9, alma-9]
     container: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
     steps:
     - uses: ovirt/checkout-action@main
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: [centos-8, centos-9]
+        distro: [centos-8, centos-9, alma-9]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Required to create loop devices.
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: [centos-8, centos-9]
+        distro: [centos-8, centos-9, alma-9]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Required to create loop devices.
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: [centos-8, centos-9]
+        distro: [centos-8, centos-9, alma-9]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Needed for many operations, i.e. creating bridges
