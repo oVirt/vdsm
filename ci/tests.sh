@@ -9,6 +9,9 @@ echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6
 SUFFIX=$RANDOM
 ip link add mod_bond$SUFFIX type bond && ip link del mod_bond$SUFFIX
 
+# Activate the tests venv (for containers only)
+[ -d /venv ] && source /venv/bin/activate
+
 ./autogen.sh --system
 make
 make tests
