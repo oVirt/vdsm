@@ -59,7 +59,7 @@ jobs:
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
         with:
-          image: ovirt/vdsm-test
+          image: vdsm-test
           tags: ${{ matrix.distro }}
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ secrets.QUAY_USERNAME  }}
