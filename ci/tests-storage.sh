@@ -56,6 +56,9 @@ if [ -z "$user" ]; then
     exit 1
 fi
 
+# Activate the tests venv (for containers only)
+[ -d /venv ] && source /venv/bin/activate
+
 echo "Running tests as user $user"
 
 setup_storage
