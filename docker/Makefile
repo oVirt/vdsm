@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 targets := alma-9 centos-8 centos-9
-prefix := vdsm-test
+prefix := ovirt/vdsm-test
 
 .PHONY: $(targets) push
 
@@ -13,5 +13,5 @@ $(targets):
 
 push:
 	for name in $(targets); do \
-		podman push $(prefix):$$name quay.io/ovirt/$(prefix):$$name; \
+		podman push $(prefix):$$name quay.io/$(prefix):$$name; \
 	done
