@@ -73,7 +73,7 @@ RUN debuginfo-install -y python3 \
 # Add development packages
 COPY requirements.txt requirements.txt
 RUN python3 -m pip install --upgrade pip \
-    && python3 -m venv /venv \
+    && python3 -m venv --system-site-packages /venv \
     && /venv/bin/python3 -m pip install --requirement requirements.txt
 
 # Add lvm configuration.
