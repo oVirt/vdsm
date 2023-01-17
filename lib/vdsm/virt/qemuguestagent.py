@@ -460,7 +460,8 @@ class QemuGuestAgentPoller(object):
                 if _QEMU_COMMANDS[command] not in caps['commands']:
                     continue
                 after_hotplug = \
-                    command == VIR_DOMAIN_GUEST_INFO_FILESYSTEM and \
+                    (command == VIR_DOMAIN_GUEST_INFO_FILESYSTEM or
+                     command == VIR_DOMAIN_GUEST_INFO_DISKS) and \
                     vm_obj.last_disk_hotplug() is not None and \
                     (now - vm_obj.last_disk_hotplug() >=
                         _HOTPLUG_CHECK_PERIOD) and \
@@ -521,14 +522,14 @@ class QemuGuestAgentPoller(object):
                 'Not querying QEMU-GA because domain is not running ' +
                 'for vm-id=%s', vm.id)
             return {}
-        # Disks Info, we prefer this information over the one from filesystem
-        # info so let's process it first
-        store_disk_mapping = True
+        # Disks Info
         if 'disk.count' in info:
             guest_info.update(self._libvirt_disks(info))
-            store_disk_mapping = False
         # Filesystem Info
+        # We only set disk mapping here if we do not have _QEMU_DISKS_COMMAND
         if 'fs.count' in info:
+            caps = self.get_caps(vm.id)
+            store_disk_mapping = _QEMU_DISKS_COMMAND not in caps['commands']
             guest_info.update(self._libvirt_fsinfo(info, store_disk_mapping))
         # Hostname
         if 'hostname' in info:
