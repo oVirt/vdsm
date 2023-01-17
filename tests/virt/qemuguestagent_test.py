@@ -194,6 +194,7 @@ class QemuGuestAgentTests(TestCaseBase):
                     qemuguestagent._QEMU_DEVICES_COMMAND,
                     qemuguestagent._QEMU_GUEST_INFO_COMMAND,
                     qemuguestagent._QEMU_FSINFO_COMMAND,
+                    qemuguestagent._QEMU_DISKS_COMMAND,
                     qemuguestagent._QEMU_HOST_NAME_COMMAND,
                     qemuguestagent._QEMU_NETWORK_INTERFACES_COMMAND,
                     qemuguestagent._QEMU_OSINFO_COMMAND,
