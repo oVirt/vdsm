@@ -370,9 +370,15 @@ Requires:       NetworkManager-ovs
 Requires:       ethtool
 Requires:       iproute
 Requires:       iproute-tc
+%if 0%{?rhel} >= 9
+Requires:       ovirt-openvswitch >= 2.17
+# Workaround for BZ#1966143
+Requires:       ovirt-python-openvswitch >= 2.17
+%else
 Requires:       ovirt-openvswitch >= 2.15
 # Workaround for BZ#1966143
 Requires:       ovirt-python-openvswitch >= 2.15
+%endif
 Requires:       nmstate >= 1.2.1-3
 %if 0%{?rhel} < 9
 Requires:       nmstate-plugin-ovsdb
