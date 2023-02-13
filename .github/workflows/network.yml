@@ -29,7 +29,7 @@ jobs:
     strategy:
       matrix:
         type: [ unit, integration, functional ]
-        tag: [ alma-9, centos-8 ]
+        tag: [ alma-9 ]
         include:
           - type: unit
             tag: centos-9

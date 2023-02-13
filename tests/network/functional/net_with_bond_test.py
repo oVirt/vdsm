@@ -399,6 +399,33 @@ class TestReuseBondOnLegacySwitch(object):
             assert err.value.status == ne.ERR_USED_NIC
             assert 'Nics with multiple usages' in err.value.msg
 
+    def test_bond_vlan_slave_with_other_slave(self, adapter, nic0, nic1):
+        """
+        create network with non-default vlan tag over nic0
+        bond this network over another iface
+        """
+        # with vlan_device(nic0):
+        NETBASE = {
+            NETWORK1_NAME: {
+                'nic': nic0,
+                'bridged': True,
+                'switch': 'legacy',
+                'vlan': 17,
+            }
+        }
+
+        with adapter.setupNetworks(NETBASE, {}, NOCHK):
+            with bond_device([nic0, nic1]) as bond:
+                NETBASE_BOND = {
+                    NETWORK1_NAME: {
+                        'bonding': bond,
+                        'bridged': True,
+                        'switch': 'legacy',
+                    }
+                }
+                with adapter.setupNetworks(NETBASE_BOND, {}, NOCHK):
+                    pass
+
     def _set_ip_address(self, iface, addr, prefixlen):
         Interface.from_existing_dev_name(iface).add_ip(
             addr, prefixlen, IpFamily.IPv4
