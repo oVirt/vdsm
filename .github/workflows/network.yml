@@ -37,7 +37,7 @@ jobs:
           - type: integration
             tag: centos-9
     steps:
-      - uses: actions/checkout@v3
+      - uses: ovirt/checkout-action@main
       - name: Install dependencies
         run: |
           sudo apt update
