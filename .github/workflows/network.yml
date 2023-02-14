@@ -27,6 +27,7 @@ jobs:
       IMAGE_TAG: ${{ matrix.tag }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         type: [ unit, integration, functional ]
         tag: [ alma-9, centos-8 ]
@@ -36,7 +37,7 @@ jobs:
           - type: integration
             tag: centos-9
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install dependencies
         run: |
           sudo apt update
