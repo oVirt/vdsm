@@ -130,6 +130,13 @@ def cpu(stats, first_sample, last_sample, interval):
                 ((last_sample['cpu.time'] - first_sample['cpu.time']) -
                  cpu_sys),
                 interval)
+            # To avoid negative values of stats['cpuUser']. It was coming
+            # negative due to less accuracy of user_time and system_time
+            # values (upto 2 decimal) as compared to cpu_time values
+            # (upto 9 decimal) returned by libvirt
+            if stats['cpuUser'] < 0:
+                stats['cpuUser'] = 0.0
+
             stats['cpuActual'] = True
             return stats
 
