@@ -72,7 +72,7 @@ gitignore:
 
 .PHONY: pylint
 pylint: tox
-	tox -e pylint \
+	tox -e pylint -- \
 		$(PYLINT_TARGETS)
 
 execcmd:
