@@ -718,7 +718,7 @@ class BlockVolume(volume.Volume):
     def getMetaSlot(self):
         return self._manifest.getMetaSlot()
 
-    def _extendSizeRaw(self, new_capacity):
+    def _extendSize(self, new_capacity):
         # Since this method relies on lvm.extendLV (lvextend) when the
         # requested size is equal or smaller than the current size, the
         # request is siliently ignored.
