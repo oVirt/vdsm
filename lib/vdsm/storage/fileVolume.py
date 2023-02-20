@@ -734,7 +734,7 @@ class FileVolume(volume.Volume):
         # pylint: disable=no-member
         return self._manifest.getLeaseVolumePath(vol_path)
 
-    def _extendSizeRaw(self, new_capacity):
+    def _extendSize(self, new_capacity):
         volPath = self.getVolumePath()
         cur_capacity = self.oop.os.stat(volPath).st_size
 
