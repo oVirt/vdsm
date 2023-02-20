@@ -43,13 +43,14 @@ def has_py_gdb_support():
     pkg_name = "python{}".format(sys.version_info.major)
     pkg_ver = package_version(pkg_name)
 
-    # On CentOS we we don't have "python2" package and we must query "python"
-    # and "python-debuginfo".
-    if pkg_name == "python2" and not pkg_ver:
-        pkg_name = "python"
-        pkg_ver = package_version(pkg_name)
-
     pkg_dbg_ver = package_version("{}-debuginfo".format(pkg_name))
+
+    # On CentOS Stream 9 debuginfo packages now include the minor version in
+    # the name, i.e. python3.9-debuginfo-...
+    if pkg_dbg_ver == "":
+        pkg_name2 = "python{}.{}".format(sys.version_info.major,
+                                         sys.version_info.minor)
+        pkg_dbg_ver = package_version("{}-debuginfo".format(pkg_name2))
 
     return pkg_dbg_ver != "" and pkg_dbg_ver == pkg_ver
 
