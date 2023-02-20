@@ -1857,6 +1857,53 @@ def test_reduce_volume_skipped(domain_factory, fake_task, fake_sanlock):
     assert dom.getVolumeSize(img_uuid, vol_id).apparentsize == vol_capacity
 
 
+@requires_root
+@pytest.mark.root
+@pytest.mark.xfail(reason='Cow volumes are not extended.')
+def test_extend_volume(domain_factory, fake_task, fake_sanlock):
+    """
+    Test added to verify fix for https://bugzilla.redhat.com/2170689.
+    COW preallocated volumes should be extended when demanded. Otherwise,
+    VMs on preallocated disks will pause when reaching the volume truesize.
+
+    To avoid slowness of creating loop devices and storage domains for every
+    test, avoid parametrized test, just create as many volumes as needed
+    to test, and check them in one execution.
+    """
+    vol_formats = [
+        sc.COW_FORMAT,
+        sc.RAW_FORMAT
+    ]
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=5)
+
+    img_uuid = str(uuid.uuid4())
+    vol_info = [(str(uuid.uuid4()), fmt) for fmt in vol_formats]
+    vol_capacity = 3 * GiB
+    new_capacity = 5 * GiB
+
+    for vol_uuid, vol_format in vol_info:
+        dom.createVolume(
+            imgUUID=img_uuid,
+            capacity=vol_capacity,
+            volFormat=vol_format,
+            preallocate=sc.PREALLOCATED_VOL,
+            diskType=sc.DATA_DISKTYPE,
+            volUUID=vol_uuid,
+            desc="Base volume",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
+
+        # Produce and extend volume to the new capacity.
+        vol = dom.produceVolume(img_uuid, vol_uuid)
+        vol.extendSize(new_capacity)
+
+        # Check that volume size has changed.
+        vol_size = dom.getVolumeSize(img_uuid, vol_uuid)
+        assert vol_size.truesize == new_capacity
+        assert vol_size.apparentsize == new_capacity
+
+
 LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"
 
 LVM_TAGS = [
