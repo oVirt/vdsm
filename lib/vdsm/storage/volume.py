@@ -1416,7 +1416,7 @@ class Volume(object):
                 "Extend size for volume: " + self.volUUID, "volume",
                 "Volume", "extendSizeFinalize",
                 [self.sdUUID, self.imgUUID, self.volUUID]))
-            self._extendSizeRaw(new_capacity)
+            self._extendSize(new_capacity)
 
         self.syncMetadata()  # update the metadata
 
@@ -1594,7 +1594,7 @@ class Volume(object):
     def getImageVolumes(cls, sdUUID, imgUUID):
         return cls.manifestClass.getImageVolumes(sdUUID, imgUUID)
 
-    def _extendSizeRaw(self, newSize):
+    def _extendSize(self, newSize):
         raise NotImplementedError
 
     # Used only for block volume
