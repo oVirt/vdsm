@@ -1859,7 +1859,6 @@ def test_reduce_volume_skipped(domain_factory, fake_task, fake_sanlock):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason='Cow volumes are not extended.')
 def test_extend_volume(domain_factory, fake_task, fake_sanlock):
     """
     Test added to verify fix for https://bugzilla.redhat.com/2170689.
