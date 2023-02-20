@@ -1903,6 +1903,38 @@ def test_extend_volume(domain_factory, fake_task, fake_sanlock):
         assert vol_size.apparentsize == new_capacity
 
 
+@requires_root
+@pytest.mark.root
+def test_extend_volume_skipped(domain_factory, fake_task, fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=5)
+
+    img_uuid = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+    vol_capacity = 10 * GiB
+    new_capacity = 15 * GiB
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        capacity=vol_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=vol_id,
+        desc="Base volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    # Produce and extend volume to the new capacity, but we skip extends for
+    # cow sparse volumes.
+    vol = dom.produceVolume(img_uuid, vol_id)
+    vol.extendSize(new_capacity)
+
+    # Check that volume size has not changed.
+    assert dom.getVolumeSize(img_uuid, vol_id).truesize <= vol_capacity
+    assert dom.getVolumeSize(img_uuid, vol_id).apparentsize <= vol_capacity
+
+
 LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"
 
 LVM_TAGS = [
