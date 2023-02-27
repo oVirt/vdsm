@@ -1925,14 +1925,17 @@ def test_extend_volume_skipped(domain_factory, fake_task, fake_sanlock):
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID)
 
+    # Obtain the volume size before the extend call.
+    initial_vol_size = dom.getVolumeSize(img_uuid, vol_id)
+
     # Produce and extend volume to the new capacity, but we skip extends for
     # cow sparse volumes.
     vol = dom.produceVolume(img_uuid, vol_id)
     vol.extendSize(new_capacity)
 
     # Check that volume size has not changed.
-    assert dom.getVolumeSize(img_uuid, vol_id).truesize <= vol_capacity
-    assert dom.getVolumeSize(img_uuid, vol_id).apparentsize <= vol_capacity
+    vol_size = dom.getVolumeSize(img_uuid, vol_id)
+    assert vol_size == initial_vol_size
 
 
 LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"
