@@ -1385,8 +1385,6 @@ class Volume(object):
             self.log.debug("skipping cow size extension for volume %s to "
                            "capacity %s", self.volUUID, new_capacity)
             return
-        if volFormat not in [sc.RAW_FORMAT, sc.COW_FORMAT]:
-            raise se.IncorrectFormat(self.volUUID)
 
         # Note: This function previously prohibited extending non-leaf volumes.
         # If a disk is enlarged a volume may become larger than its parent.  In
