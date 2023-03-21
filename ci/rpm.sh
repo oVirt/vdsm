@@ -3,6 +3,8 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+git config --global --add safe.directory "$PWD"
+
 export EXPORT_DIR="${EXPORT_DIR:-exported-artifacts}"
 
 if [ "$GITHUB_EVENT_NAME" = "push" ]; then
