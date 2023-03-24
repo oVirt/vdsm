@@ -49,6 +49,9 @@ SUPPORTED_DRIVERS = (
 
     # Tested by Muli Ben-Yehuda <info (at) lightbitslabs.com>
     "lightos",
+
+    # Tested by Moritz Wanzenböck <technik+ovirt (at) linbit.com>
+    "local",
 )
 
 log = logging.getLogger("storage.managedvolume")
