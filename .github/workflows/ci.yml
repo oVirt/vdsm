@@ -86,6 +86,6 @@ jobs:
     - name: Build RPMs
       run: ./ci/rpm.sh
     - name: Upload artifacts
-      uses: ovirt/upload-rpms-action@v2
+      uses: ovirt/upload-rpms-action@main
       with:
         directory: ${{ env.EXPORT_DIR }}
