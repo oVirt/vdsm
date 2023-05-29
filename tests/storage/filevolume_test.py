@@ -157,6 +157,42 @@ def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
     assert vol.getCapacity() == expected_vol_capacity
 
 
+@pytest.mark.xfail(reason='Raw sparse volumes are not extended.')
+def test_extend_volume(tmp_repo, fake_access, fake_task):
+    """
+    Test added to verify fix for https://bugzilla.redhat.com/2210036.
+    RAW sparse volumes should be extended on command (apparentsize
+    metadata value shall be updated).
+    """
+    dom = tmp_repo.create_localfs_domain(name="domain", version=5)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+    vol_capacity = 3 * GiB
+    new_capacity = 5 * GiB
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        capacity=vol_capacity,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    # Produce and extend volume to the new capacity.
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+    pre_vol_size = dom.getVolumeSize(img_uuid, vol_uuid)
+    vol.extendSize(new_capacity)
+
+    # Check that volume apparent size has changed.
+    vol_size = dom.getVolumeSize(img_uuid, vol_uuid)
+    assert vol_size.truesize == pre_vol_size.truesize
+    assert vol_size.apparentsize == new_capacity
+
+
 MD_WITH_PARENT = b"""\
 CAP=46137344
 CTIME=1557522135
