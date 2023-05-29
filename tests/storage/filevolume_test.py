@@ -157,7 +157,6 @@ def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
     assert vol.getCapacity() == expected_vol_capacity
 
 
-@pytest.mark.xfail(reason='Raw sparse volumes are not extended.')
 def test_extend_volume(tmp_repo, fake_access, fake_task):
     """
     Test added to verify fix for https://bugzilla.redhat.com/2210036.
