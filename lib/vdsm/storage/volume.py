@@ -1380,9 +1380,10 @@ class Volume(object):
         if self.isShared():
             raise se.VolumeNonWritable(self.volUUID)
 
-        if self.getType() == sc.SPARSE_VOL:
-            self.log.debug("skipping sparse size extension for volume %s to "
-                           "capacity %s", self.volUUID, new_capacity)
+        if (self.getFormat() == sc.COW_FORMAT and
+                self.getType() == sc.SPARSE_VOL):
+            self.log.debug("skipping cow sparse size extension for volume %s "
+                           "to capacity %s", self.volUUID, new_capacity)
             return
 
         # Note: This function previously prohibited extending non-leaf volumes.
