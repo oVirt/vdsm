@@ -32,6 +32,7 @@ from vdsm.storage import sp
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.sdm.api import merge as api_merge
 from vdsm.storage.spbackends import StoragePoolDiskBackend
+from vdsm.storage.volume import Qcow2BitmapInfo
 
 from . import qemuio
 from . marks import requires_root
@@ -1092,6 +1093,7 @@ def test_create_snapshot_cloning_bitmaps(
     top_vol.prepare()
 
     info = qemuimg.info(top_vol_path)
+    qemuInfo = top_vol.getQemuImageInfo()
 
     # Teardown top volume
     base_vol.teardown(sd_uuid, top_vol_uuid)
@@ -1107,6 +1109,11 @@ def test_create_snapshot_cloning_bitmaps(
             "name": bitmap_names[1],
             "granularity": 65536
         },
+    ]
+
+    assert qemuInfo["bitmaps"] == [
+        Qcow2BitmapInfo(bitmap_names[0], 65536, ["auto"]),
+        Qcow2BitmapInfo(bitmap_names[1], 65536, ["auto"]),
     ]
 
 
@@ -1178,6 +1185,7 @@ def test_create_snapshot_with_new_bitmap(
 
     top.prepare()
     info = qemuimg.info(top.getVolumePath())
+    qemuInfo = top.getQemuImageInfo()
     top.teardown(sd_id, top_id)
 
     assert info['format-specific']['data']['bitmaps'] == [
@@ -1191,6 +1199,11 @@ def test_create_snapshot_with_new_bitmap(
             "name": "new-bitmap",
             "granularity": 65536
         },
+    ]
+
+    assert qemuInfo["bitmaps"] == [
+        Qcow2BitmapInfo("old-bitmap", 65536, ["auto"]),
+        Qcow2BitmapInfo("new-bitmap", 65536, ["auto"]),
     ]
 
 
@@ -1240,6 +1253,7 @@ def test_create_volume_with_new_bitmap(
 
     vol.prepare()
     info = qemuimg.info(vol.getVolumePath())
+    qemuInfo = vol.getQemuImageInfo()
     vol.teardown(sd_id, vol_id)
 
     assert info['format-specific']['data']['bitmaps'] == [
@@ -1248,6 +1262,10 @@ def test_create_volume_with_new_bitmap(
             "name": "new-bitmap",
             "granularity": 65536
         },
+    ]
+
+    assert qemuInfo["bitmaps"] == [
+        Qcow2BitmapInfo("new-bitmap", 65536, ["auto"]),
     ]
 
 

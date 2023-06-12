@@ -87,6 +87,10 @@ def test_add_remove_bitmap(fake_scheduler, env_type):
         assert bitmap1 not in bitmaps and bitmap2 in bitmaps
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
 
+        qemuInfo = top_vol.getQemuImageInfo()
+        assert not any(bitmap[0] == bitmap1 for bitmap in qemuInfo["bitmaps"])
+        assert any(bitmap[0] == bitmap2 for bitmap in qemuInfo["bitmaps"])
+
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_vol_type_not_qcow(fake_scheduler, env_type):
@@ -143,6 +147,10 @@ def test_remove_bitmap_non_leaf_vol(fake_scheduler, env_type):
         assert bitmap1 not in bitmaps and bitmap2 in bitmaps
         assert base_vol.getMetaParam(sc.GENERATION) == generation + 1
 
+        qemuInfo = base_vol.getQemuImageInfo()
+        assert not any(bitmap[0] == bitmap1 for bitmap in qemuInfo["bitmaps"])
+        assert any(bitmap[0] == bitmap2 for bitmap in qemuInfo["bitmaps"])
+
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_remove_missing_bitmap(fake_scheduler, env_type):
@@ -164,6 +172,9 @@ def test_remove_missing_bitmap(fake_scheduler, env_type):
         bitmaps = vol_info["format-specific"]["data"].get("bitmaps", [])
         assert not bitmaps
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
+
+        qemuInfo = top_vol.getQemuImageInfo()
+        assert 'bitmaps' not in qemuInfo
 
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
@@ -197,6 +208,9 @@ def test_remove_inactive_bitmap(fake_scheduler, env_type):
         bitmaps = vol_info["format-specific"]["data"].get("bitmaps", [])
         assert not bitmaps
         assert base_vol.getMetaParam(sc.GENERATION) == generation + 1
+
+        qemuInfo = base_vol.getQemuImageInfo()
+        assert 'bitmaps' not in qemuInfo
 
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
@@ -233,3 +247,6 @@ def test_remove_invalid_bitmap(fake_scheduler, env_type):
         bitmaps = vol_info["format-specific"]["data"].get("bitmaps", [])
         assert not bitmaps
         assert base_vol.getMetaParam(sc.GENERATION) == generation + 1
+
+        qemuInfo = base_vol.getQemuImageInfo()
+        assert 'bitmaps' not in qemuInfo

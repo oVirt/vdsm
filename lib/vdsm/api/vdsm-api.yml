@@ -557,6 +557,46 @@ types:
             1.1: qemu versions starting with 1.1 which are supported by
                  QCOW2 version 3.
 
+    Qcow2BitmapInfoFlags: &Qcow2BitmapInfoFlags
+        added: '4.5.5'
+        description: An enumeration of qcow compat version.
+        name: Qcow2BitmapInfoFlags
+        type: enum
+        values:
+            'in-use': This flag is set by any process actively modifying the
+                    qcow2 file, and cleared when the updated bitmap is flushed
+                    to the qcow2 image. The presence of this flag in an
+                    offline image means that the bitmap was not saved correctly
+                    after its last usage, and may contain inconsistent data.
+            'auto': The bitmap must reflect all changes of the virtual disk by
+                    any application that would write to this qcow2 file.
+
+    Qcow2BitmapInfo: &Qcow2BitmapInfo
+        added: '4.5.5'
+        description: Information about a Bitmap
+        name: Qcow2BitmapInfo
+        properties:
+        -   description: The UUID of bitmap
+            name: name
+            type: *UUID
+
+        -   description: Granularity of the bitmap
+            name: granularity
+            type: uint
+
+        -   description: Bitmap flags
+            name: flags
+            defaultvalue: '[]'
+            type: *Qcow2BitmapInfoFlags
+        type: object
+
+    Qcow2Bitmaps: &Qcow2Bitmaps
+        added: '4.5.5'
+        description: A list of qcow2 bitmaps
+        name: Qcow2Bitmaps
+        defaultvalue: '[]'
+        type: *Qcow2BitmapInfo
+
     Qcow2Attributes: &Qcow2Attributes
         added: '4.1'
         description: Possible QCOW2 attributes which are allowed
@@ -8131,6 +8171,9 @@ types:
         -   description: The compat version.
             name: compat
             type: *Qcow2Compat
+        -   description: Volume bitmaps
+            name: bitmaps
+            type: *Qcow2Bitmaps
         type: object
 
     VolumeSizeInfo: &VolumeSizeInfo

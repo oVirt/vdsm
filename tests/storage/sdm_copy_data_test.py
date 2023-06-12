@@ -48,6 +48,7 @@ from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 from vdsm.storage import workarounds
 from vdsm.storage.sdm.api import copy_data
+from vdsm.storage.volume import Qcow2BitmapInfo
 
 BACKENDS = userstorage.load_config("storage.py").BACKENDS
 DEFAULT_SIZE = MiB
@@ -300,6 +301,12 @@ def test_volume_chain_copy_with_bitmaps(
                     "name": bitmaps[1],
                     "granularity": 65536
                 },
+            ]
+
+            qemuInfo = dst_vol.getQemuImageInfo()
+            assert qemuInfo["bitmaps"] == [
+                Qcow2BitmapInfo(bitmaps[0], 65536, ["auto"]),
+                Qcow2BitmapInfo(bitmaps[1], 65536, ["auto"]),
             ]
 
 

@@ -30,6 +30,7 @@ from vdsm.storage import guarded
 from vdsm.storage import qemuimg
 from vdsm.storage.sdm import volume_info
 from vdsm.storage.sdm.api import add_bitmap
+from vdsm.storage.volume import Qcow2BitmapInfo
 
 
 def failure(*args, **kwargs):
@@ -75,6 +76,11 @@ def test_add_bitmap(fake_scheduler, env_type):
         assert len(qcow2_data["bitmaps"]) == 1
         assert qcow2_data["bitmaps"][0]["name"] == bitmap
         assert env_vol.getMetaParam(sc.GENERATION) == generation + 1
+
+        qemuInfo = env_vol.getQemuImageInfo()
+        assert qemuInfo["bitmaps"] == [
+            Qcow2BitmapInfo(bitmap, 65536, ["auto"]),
+        ]
 
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
