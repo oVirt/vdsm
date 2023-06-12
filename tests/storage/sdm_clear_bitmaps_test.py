@@ -28,7 +28,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage import qemuimg
 from vdsm.storage.sdm import volume_info
-from vdsm.storage.sdm.api import clear_bitmaps
+from vdsm.storage.sdm.api import clear_bitmaps, list_bitmaps
 
 
 def failure(*args, **kwargs):

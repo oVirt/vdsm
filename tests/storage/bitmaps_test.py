@@ -333,3 +333,26 @@ def test_clear_bitmaps_failed(monkeypatch, tmp_mount, vol_chain):
     monkeypatch.setattr(qemuimg, "bitmap_remove", qemuimg_failure)
     with pytest.raises(exception.RemoveBitmapError):
         bitmaps.clear_bitmaps(vol_chain.top_vol)
+
+
+def test_list_bitmaps(tmp_mount, vol_chain):
+    # Add new bitmaps to top volume
+    for bitmap in ['bitmap_1', 'bitmap_2']:
+        op = qemuimg.bitmap_add(vol_chain.top_vol, bitmap)
+        op.run()
+
+    uuids = bitmaps.list_bitmaps(vol_chain.top_vol)
+    assert uuids == ['bitmap_1', 'bitmap_2']
+
+
+def test_list_bitmaps_empty(tmp_mount, vol_chain):
+    # Add new bitmaps to top volume
+    for bitmap in ['bitmap_1', 'bitmap_2']:
+        op = qemuimg.bitmap_add(vol_chain.top_vol, bitmap)
+        op.run()
+
+    # Clear top volume bitmaps
+    bitmaps.clear_bitmaps(vol_chain.top_vol)
+
+    uuids = bitmaps.list_bitmaps(vol_chain.top_vol)
+    assert uuids == []

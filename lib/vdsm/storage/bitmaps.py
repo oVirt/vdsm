@@ -168,6 +168,17 @@ def clear_bitmaps(vol_path):
                 vol_path=vol_path)
 
 
+def list_bitmaps(vol_path):
+    """
+    List bitmaps to the given volume path
+
+    Arguments:
+        vol_path (str): Path to the volume
+    """
+    bitmaps = _query_bitmaps(vol_path)
+    return bitmaps
+
+
 def _add_bitmap(vol_path, bitmap, granularity=None, enable=True):
     log.info("Add bitmap %s to %r", bitmap, vol_path)
 

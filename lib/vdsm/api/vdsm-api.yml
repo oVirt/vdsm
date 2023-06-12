@@ -7478,6 +7478,13 @@ types:
             type: boolean
             added: '4.5'
 
+        -   defaultvalue: false
+            description: Indicates whether listing volume bitmaps
+              is implemented in VDSM
+            name: list_bitmaps
+            type: boolean
+            added: '4.5.5'
+
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities
@@ -12603,6 +12610,19 @@ SDM.clear_bitmaps:
         type: *UUID
 
     -   description: The volume to remove the bitmap from.
+        name: vol_info
+        type: *CopyDataDIVEndpoint
+
+SDM.list_bitmaps:
+    added: '4.5.5'
+    description: List all the bitmaps from the volume.
+        Allowed only for a volume with qcow2 format.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: The volume to list the bitmap from.
         name: vol_info
         type: *CopyDataDIVEndpoint
 

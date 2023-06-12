@@ -1757,6 +1757,9 @@ class SDM(APIBase):
     def clear_bitmaps(self, job_id, vol_info):
         return self._irs.sdm_clear_bitmaps(job_id, vol_info)
 
+    def list_bitmaps(self, job_id, vol_info):
+        return self._irs.sdm_list_bitmaps(job_id, vol_info)
+
 
 class Lease(APIBase):
     ctorArgs = []

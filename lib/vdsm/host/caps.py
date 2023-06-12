@@ -175,6 +175,7 @@ def get():
     caps['measure_active'] = True
     caps['mailbox_events'] = config.getboolean("mailbox", "events_enable")
     caps['zerocopy_migrations'] = hasattr(libvirt, 'VIR_MIGRATE_ZEROCOPY')
+    caps['list_bitmaps'] = True
 
     return caps
 

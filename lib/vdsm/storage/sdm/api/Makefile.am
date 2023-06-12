@@ -12,6 +12,7 @@ dist_vdsmsdmapi_PYTHON = \
 	base.py \
 	copy_data.py \
 	clear_bitmaps.py \
+	list_bitmaps.py \
 	merge.py \
 	move_device.py \
 	reduce_domain.py \

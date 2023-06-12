@@ -78,6 +78,7 @@ from vdsm.storage.sdm.api import (
     add_bitmap,
     copy_data,
     clear_bitmaps,
+    list_bitmaps,
     merge as api_merge,
     move_device,
     reduce_domain,
@@ -3491,6 +3492,20 @@ class HSM(object):
         """
         job = clear_bitmaps.Job(job_id, self._pool.id, vol_info)
         self.sdm_schedule(job)
+
+    @public
+    def sdm_list_bitmaps(self, job_id, vol_info):
+        """
+        List all the bitmaps from the given volume.
+
+        Arguments:
+            job_id (str):  The UUID of the job.
+            vol_info (dict): Dictionary that contains all the needed info
+                on the volume.
+        """
+        job = list_bitmaps.Job(job_id, self._pool.id, vol_info)
+        self.sdm_schedule(job)
+        return dict(uuidlist=bitmaps)
 
     # Lease operations
 
