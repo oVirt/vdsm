@@ -20,6 +20,7 @@ from vdsm.storage import fileSD
 from vdsm.storage import localFsSD
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
+from vdsm.storage.volume import Qcow2BitmapInfo
 
 from . import qemuio
 from . marks import requires_unprivileged_user
@@ -1316,6 +1317,12 @@ def test_create_snapshot_cloning_bitmaps(user_domain, local_fallocate):
         },
     ]
 
+    qemuInfo = vol.getQemuImageInfo()
+    assert qemuInfo["bitmaps"] == [
+        Qcow2BitmapInfo(bitmap_names[0], 65536, ["auto"]),
+        Qcow2BitmapInfo(bitmap_names[1], 65536, ["auto"]),
+    ]
+
 
 def test_create_snapshot_with_new_bitmap(user_domain, local_fallocate):
     if user_domain.getVersion() == 3:
@@ -1374,6 +1381,12 @@ def test_create_snapshot_with_new_bitmap(user_domain, local_fallocate):
         },
     ]
 
+    qemuInfo = top.getQemuImageInfo()
+    assert qemuInfo["bitmaps"] == [
+        Qcow2BitmapInfo("old-bitmap", 65536, ["auto"]),
+        Qcow2BitmapInfo("new-bitmap", 65536, ["auto"]),
+    ]
+
 
 def test_create_volume_with_new_bitmap(user_domain, local_fallocate):
     if user_domain.getVersion() == 3:
@@ -1406,6 +1419,11 @@ def test_create_volume_with_new_bitmap(user_domain, local_fallocate):
             "name": "new-bitmap",
             "granularity": 65536
         },
+    ]
+
+    qemuInfo = vol.getQemuImageInfo()
+    assert qemuInfo["bitmaps"] == [
+        Qcow2BitmapInfo("new-bitmap", 65536, ["auto"]),
     ]
 
 

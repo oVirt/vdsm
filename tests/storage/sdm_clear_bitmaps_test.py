@@ -79,6 +79,9 @@ def test_clear_bitmaps(fake_scheduler, env_type):
         assert "bitmaps" not in vol_info["format-specific"]["data"]
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
 
+        qemuInfo = top_vol.getQemuImageInfo()
+        assert 'bitmaps' not in qemuInfo
+
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_clear_invalid_bitmaps(fake_scheduler, env_type):
@@ -109,6 +112,9 @@ def test_clear_invalid_bitmaps(fake_scheduler, env_type):
         vol_info = qemuimg.info(top_vol.getVolumePath())
         assert "bitmaps" not in vol_info["format-specific"]["data"]
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
+
+        qemuInfo = top_vol.getQemuImageInfo()
+        assert 'bitmaps' not in qemuInfo
 
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
@@ -179,6 +185,9 @@ def test_clear_missing_bitmaps(fake_scheduler, env_type):
         assert not bitmaps
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
 
+        qemuInfo = top_vol.getQemuImageInfo()
+        assert 'bitmaps' not in qemuInfo
+
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_clear_bitmaps_from_vol_chain(fake_scheduler, env_type):
@@ -214,6 +223,9 @@ def test_clear_bitmaps_from_vol_chain(fake_scheduler, env_type):
         assert not bitmaps
         assert leaf_vol.getMetaParam(sc.GENERATION) == generation + 1
 
+        qemuInfo = leaf_vol.getQemuImageInfo()
+        assert 'bitmaps' not in qemuInfo
+
         # Clear all the bitmaps from an internal volume
         internal_vol = env.chain[1]
         generation = internal_vol.getMetaParam(sc.GENERATION)
@@ -234,3 +246,6 @@ def test_clear_bitmaps_from_vol_chain(fake_scheduler, env_type):
         bitmaps = vol_info["format-specific"]["data"].get("bitmaps", [])
         assert not bitmaps
         assert internal_vol.getMetaParam(sc.GENERATION) == generation + 1
+
+        qemuInfo = internal_vol.getQemuImageInfo()
+        assert 'bitmaps' not in qemuInfo

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 import os.path
 import logging
+from collections import namedtuple
 from contextlib import contextmanager
 
 from vdsm import utils
@@ -26,6 +27,8 @@ from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 
 log = logging.getLogger('storage.volume')
+
+Qcow2BitmapInfo = namedtuple("Qcow2BitmapInfo", "name, granularity, flags")
 
 
 def getBackingVolumePath(imgUUID, volUUID):
@@ -289,6 +292,13 @@ class VolumeManifest(object):
             result["backingfile"] = info["backing-filename"]
         if "format-specific" in info:
             result["compat"] = info["format-specific"]["data"]["compat"]
+            if "bitmaps" in info["format-specific"]["data"]:
+                result["bitmaps"] = [
+                    Qcow2BitmapInfo(bitmap["name"],
+                                    bitmap["granularity"],
+                                    bitmap["flags"])
+                    for bitmap in info["format-specific"]["data"]["bitmaps"]
+                ]
 
         return result
 

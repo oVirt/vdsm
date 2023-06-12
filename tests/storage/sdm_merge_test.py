@@ -38,6 +38,7 @@ from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 from vdsm.storage.sdm.api import merge as api_merge
+from vdsm.storage.volume import Qcow2BitmapInfo
 
 
 class FakeImage(object):
@@ -274,4 +275,10 @@ class TestMergeSubchain(VdsmTestCase):
                     "name": bitmap2_name,
                     "granularity": 65536
                 },
+            ]
+
+            qemuInfo = base_vol.getQemuImageInfo()
+            assert qemuInfo["bitmaps"] == [
+                Qcow2BitmapInfo(bitmap1_name, 65536, ["auto"]),
+                Qcow2BitmapInfo(bitmap2_name, 65536, ["auto"]),
             ]
