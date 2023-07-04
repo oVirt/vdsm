@@ -4443,6 +4443,13 @@ class Vm(object):
                            "srcDisk: %r, job: %r)",
                            drive.name, srcDisk, blkJobInfo)
 
+            # best-effort attempt to tear down the replica
+            try:
+                self.cif.teardownVolumePath(drive.diskReplicate)
+            except Exception as e:
+                self.log.exception("Failed to teardown replica of %s: %s",
+                                   drive, e)
+
             # Making sure that we don't have any stale information
             self._delDiskReplica(drive)
             return response.error('replicaErr')
