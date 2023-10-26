@@ -933,7 +933,7 @@ class ImportVm(object):
 
 class OutputParser(object):
     COPY_DISK_RE = re.compile(br'.*(Copying disk (\d+)/(\d+)).*')
-    DISK_PROGRESS_RE = re.compile(br'\s+\((\d+).*')
+    DISK_PROGRESS_RE = re.compile(br'\s+\((\d+).*|.+ (\d+)% \[[*-]+\]')
 
     def parse(self, stream):
         for line in stream:
@@ -970,8 +970,9 @@ class OutputParser(object):
         m = self.DISK_PROGRESS_RE.match(chunk)
         if m is None:
             return None
+        value = [x for x in m.groups() if x is not None][0]
         try:
-            return int(m.group(1))
+            return int(value)
         except ValueError:
             raise OutputParserError('error parsing progress regex: %r'
                                     % m.groups)

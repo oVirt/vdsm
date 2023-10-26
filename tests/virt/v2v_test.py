@@ -322,6 +322,38 @@ class v2vTests(TestCaseBase):
             (v2v.DiskProgress(50)),
             (v2v.DiskProgress(100))]
 
+    def testOutputParser2(self):
+        output = bytes('[   0.0] Opening the source -i libvirt ://roo...\n'
+                       '[   1.0] Creating an overlay to protect the f...\n'
+                       '[  88.0] Copying disk 1/2\n'
+                       '▝   0% [----------------------------------------]\r'
+                       'some messages\r'
+                       '▍  25% [***********-----------------------------]\r'
+                       'more messages\n'
+                       '▐  50% [********************--------------------]\r'
+                       'much much more messages\r\n'
+                       '█ 100% [****************************************]\r'
+                       '[ 180.0] Copying disk 2/2\n'
+                       '▝   0% [----------------------------------------]\r'
+                       '▃  50% [*********************-------------------]\r'
+                       '█ 100% [****************************************]\r'
+                       '[ 256.0] Creating output metadata\n'
+                       '[ 256.0] Finishing off',
+                       encoding='utf-8')
+
+        parser = v2v.OutputParser()
+        events = list(parser.parse(io.BytesIO(output)))
+        assert events == [
+            (v2v.ImportProgress(1, 2, 'Copying disk 1/2')),
+            (v2v.DiskProgress(0)),
+            (v2v.DiskProgress(25)),
+            (v2v.DiskProgress(50)),
+            (v2v.DiskProgress(100)),
+            (v2v.ImportProgress(2, 2, 'Copying disk 2/2')),
+            (v2v.DiskProgress(0)),
+            (v2v.DiskProgress(50)),
+            (v2v.DiskProgress(100))]
+
     def testGetExternalVMsWithoutDisksInfo(self):
         def internal_error(name):
             raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
