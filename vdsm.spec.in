@@ -59,12 +59,12 @@
 %{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
 
 Name:           %{vdsm_name}
-Version:        4.50.5
+Version:        4.50.5.1
 Release:        %{vdsm_release}%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
 
 Group:          Applications/System
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Url:            http://www.ovirt.org/develop/developer-guide/vdsm/vdsm/
 Source0:        https://github.com/oVirt/vdsm/releases/download/v%{version}/%{vdsm_name}-%{version}.tar.gz
 
@@ -1222,5 +1222,5 @@ exit 0
 %endif
 
 %changelog
-* Mon Dec 5 2022 Milan Zamazal <mzamazal@redhat.com> - 4.50.4.1
+* Tue Nov 28 2023 Sandro Bonazzola <sandro.bonazzola@gmail.com> - 4.50.5.1
 - See %{_docdir}/%{vdsm_name}/ChangeLog for the complete list of Vdsm changes.
