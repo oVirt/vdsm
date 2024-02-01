@@ -53,7 +53,7 @@ def is_default_route(gateway, routes):
             and route['family'] == 'inet'
             and route['scope'] == 'global'
             and route['gateway'] == gateway
-            and route['destination'] == 'none'
+            and route['destination'] in ('none', '0.0.0.0/0', '::/0')
         ):
             return True
     return False
@@ -83,7 +83,7 @@ def get_gateway(
     gateways = [
         r
         for r in routes
-        if r['destination'] == 'none'
+        if r['destination'] in ('none', '0.0.0.0/0', '::/0')
         and (r.get('table') == table or table == RtKnownTables.RT_TABLE_UNSPEC)
         and r['scope'] == 'global'
         and r['family'] == ('inet6' if family == 6 else 'inet')
