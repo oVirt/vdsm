@@ -250,6 +250,40 @@ class TestGlusterFSConnection:
         gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music")
         assert gluster.options == ""
 
+    @pytest.mark.parametrize("userMountOptions", [
+        '',
+        'backup-volfile-servers=192.168.122.1:192.168.122.2',
+    ])
+    def test_glusterfs_retry_withotut_volfile_server(self, monkeypatch,
+                                                     userMountOptions):
+        """
+        The test will fail if called with volfileserver, simulating the case
+        when a remote server is down. If the caller try again without
+        volfileserver the call will succeed, simulating the case when running
+        on a hyperconverged system when the local glsuter glsuter client can
+        use one of the connected servers.
+        """
+        monkeypatch.setattr(storageServer, 'supervdsm', FakeSupervdsm())
+        monkeypatch.setattr(gluster_cli, 'exists', lambda: True)
+
+        def glusterVolumeInfo(volname=None, volfileServer=None):
+            assert volname == "music"
+            if volfileServer is not None:
+                raise ge.GlusterException()
+            return {'music': {'brickCount': '2',
+                              'bricks': ['192.168.122.1:/tmp/music',
+                                         '192.168.122.2:/tmp/music']
+                              }
+                    }
+        storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.3:/music",
+                                      options=userMountOptions)
+        expected_volinfo = {'brickCount': '2',
+                            'bricks': ['192.168.122.1:/tmp/music',
+                                       '192.168.122.2:/tmp/music']
+                            }
+        assert gluster.volinfo == expected_volinfo
+
 
 class TestGlusterFSNotAccessibleConnection:
 
