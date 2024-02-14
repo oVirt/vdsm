@@ -387,9 +387,21 @@ class GlusterFSConnection(MountConnection):
             volinfo = superVdsmProxy.glusterVolumeInfo(self._volname,
                                                        self._volfileserver)
             return volinfo[self._volname]
-        except ge.GlusterCmdExecFailedException as e:
-            log.warning("Failed to get volume info: %s", e)
-            return {}
+        except ge.GlusterException as e:
+            # The remote host may be down.
+            # If we are running on a hyperconverged system the gluster client
+            # can use one of the other gluster servers.
+            log.info("Failed to get volume info from remote server %s: %s",
+                     self._volfileserver, e)
+            log.debug("Trying to get volume info from backup servers: %s",
+                      self._options)
+            try:
+                volinfo = superVdsmProxy.glusterVolumeInfo(self._volname)
+                return volinfo[self._volname]
+            except ge.GlusterException as e:
+                log.warning(
+                    "Failed to get volume info from backup servers: %s", e)
+        return {}
 
 
 class NFSConnection(Connection):
