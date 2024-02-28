@@ -112,6 +112,7 @@ PINNED_CPUS = """
     <cputune>
         <vcpupin vcpu="0" cpuset="1,2,5-7" />
         <vcpupin vcpu="1" cpuset="1,6,10" />
+        <vcpupin vcpu="2" cpuset="1-4,^3,6" />
     </cputune>
 </domain>
 """
@@ -261,9 +262,10 @@ class DomainDescriptorTests(XMLTestCase):
     def test_pinned_cpus(self):
         desc = DomainDescriptor(PINNED_CPUS)
         pinning = desc.pinned_cpus
-        assert len(pinning) == 2
+        assert len(pinning) == 3
         assert pinning[0] == frozenset([1, 2, 5, 6, 7])
         assert pinning[1] == frozenset([1, 6, 10])
+        assert pinning[2] == frozenset([1, 2, 4, 6])
 
     def test_no_pinned_cpus(self):
         desc = DomainDescriptor(NO_PINNED_CPUS)

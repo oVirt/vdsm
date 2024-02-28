@@ -91,10 +91,13 @@ def cpulist_parse(cpu_range):
     or the output of the 'taskset' and 'lscpu' tools.
     """
     cpus = []
+    excluded_cpus = []
     for item in cpu_range.split(','):
         if '-' in item:
             begin, end = item.split('-', 1)
             cpus.extend(range(int(begin), int(end) + 1))
+        elif item.startswith("^"):
+            excluded_cpus.append(int(item[1:]))
         else:
             cpus.append(int(item))
-    return frozenset(cpus)
+    return frozenset(cpus) - frozenset(excluded_cpus)
