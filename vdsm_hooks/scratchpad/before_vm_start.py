@@ -84,7 +84,7 @@ def add_disk(domxml, path):
         disks.append(d.getElementsByTagName('target')[0].getAttribute('dev'))
 
     for i in range(0, 27):
-        if not indexToDiskName(i) in disks:
+        if indexToDiskName(i) not in disks:
             target.setAttribute('dev', indexToDiskName(i))
             break
     disk.appendChild(target)

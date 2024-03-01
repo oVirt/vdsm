@@ -96,7 +96,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         vol._setrw(True)
 
     def v3ReallocateMetadataSlot(domain, allVolumes):
-        if not domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES:
+        if domain.getStorageType() not in sd.BLOCK_DOMAIN_TYPES:
             log.debug("The metadata reallocation check is not needed for "
                       "domain %s", domain.sdUUID)
             return

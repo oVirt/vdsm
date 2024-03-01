@@ -127,12 +127,12 @@ class SchemaValidation(TestCaseBase):
                     for marg in method_args:
                         # verify optional arg
                         if 'defaultvalue' in marg:
-                            if not marg.get('name') in default_args:
+                            if marg.get('name') not in default_args:
                                 raise AssertionError(
                                     self._prep_msg(rep, method_args, args))
                             continue
                         # verify args from schema in apiobj args
-                        if not marg.get('name') in args:
+                        if marg.get('name') not in args:
                             raise AssertionError(
                                 self._prep_msg(rep, method_args, args))
                     try:
