@@ -77,7 +77,7 @@ class TestVmOperations(XMLTestCase):
     def testTimeOffsetNotPresentByDefault(self, exitCode):
         with fake.VM() as testvm:
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            assert not ('timeOffset' in testvm.getStats())
+            assert 'timeOffset' not in testvm.getStats()
 
     @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])

@@ -97,7 +97,7 @@ def isconfigured():
     if not _is_hugetlbfs_1g_mounted():
         ret = NO
 
-    if not _socket_unit() in _unit_requirements(_LIBVIRT_SERVICE_UNIT):
+    if _socket_unit() not in _unit_requirements(_LIBVIRT_SERVICE_UNIT):
         ret = NO
 
     if ret == MAYBE:

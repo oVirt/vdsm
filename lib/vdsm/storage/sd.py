@@ -214,13 +214,13 @@ def packLeaseParams(lockRenewalIntervalSec, leaseTimeSec,
 
 
 def validateSDDeprecatedStatus(status):
-    if not status.capitalize() in DEPRECATED_STATUSES:
+    if status.capitalize() not in DEPRECATED_STATUSES:
         raise se.StorageDomainStatusError(status)
     return DEPRECATED_STATUSES[status.capitalize()]
 
 
 def validateSDStatus(status):
-    if not status.capitalize() in DOMAIN_STATUSES:
+    if status.capitalize() not in DOMAIN_STATUSES:
         raise se.StorageDomainStatusError(status)
 
 

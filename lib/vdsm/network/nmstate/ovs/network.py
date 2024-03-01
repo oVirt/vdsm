@@ -205,7 +205,7 @@ class OvsBridge(object):
             persisted_ports_by_bridge[bridge] = [
                 port
                 for port in ports
-                if not port[OvsBridgeSchema.Port.NAME] in net_names
+                if port[OvsBridgeSchema.Port.NAME] not in net_names
             ]
         return persisted_ports_by_bridge
 
