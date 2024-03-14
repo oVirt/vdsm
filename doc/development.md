@@ -333,3 +333,12 @@ vertically aligned.
     # accessing it in Vdsm commands may hang Vdsm.
 
 ```
+
+### Git commits
+
+We cultivate a discipline of clean, linear git history that dates back to
+[gerrit](https://gerrit.ovirt.org/q/project:vdsm+is:merged) days. Commit messages
+matter - we have a
+[template](https://github.com/oVirt/vdsm/blob/master/commit-template.txt) for
+them. Every commit should be atomic and releasable. We don't use merge commits -
+we use rebasing.
