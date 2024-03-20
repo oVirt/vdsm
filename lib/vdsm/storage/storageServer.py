@@ -384,8 +384,7 @@ class GlusterFSConnection(MountConnection):
     def _get_gluster_volinfo(self):
         try:
             superVdsmProxy = supervdsm.getProxy()
-            volinfo = superVdsmProxy.glusterVolumeInfo(self._volname,
-                                                       self._volfileserver)
+            volinfo = superVdsmProxy.glusterVolumeInfo(self._volname)
             return volinfo[self._volname]
         except ge.GlusterCmdExecFailedException as e:
             log.warning("Failed to get volume info: %s", e)
