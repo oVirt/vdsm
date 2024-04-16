@@ -27,13 +27,25 @@ def _get_libvirt_version():
     return libvirt_version[:2]
 
 
+def _get_qemukvm_version():
+    packages = osinfo.package_versions()
+    qemukvm_version = tuple(
+        int(v)
+        for v in packages['qemu-kvm']['version'].split('.')
+    )
+    return qemukvm_version[:2]
+
+
 @cache.memoized
 def version_info():
     cluster_levels = ['4.2', '4.3', '4.4', '4.5', '4.6']
     libvirt_version = _get_libvirt_version()
+    qemukvm_version = _get_qemukvm_version()
 
     if libvirt_version >= (8, 0):
         cluster_levels.append('4.7')
+    if libvirt_version >= (9, 5) and qemukvm_version >= (8, 1):
+        cluster_levels.append('4.8')
 
     return {
         'version_name': version_name,
