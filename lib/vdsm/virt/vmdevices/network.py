@@ -482,12 +482,12 @@ def update_port_xml(vnicXML, port_isolated):
 
 
 def update_bandwidth_xml(iface, vnicXML, specParams=None):
+    oldBandwidth = vmxml.find_first(vnicXML, 'bandwidth', None)
+    if oldBandwidth is not None:
+        vmxml.remove_child(vnicXML, oldBandwidth)
     if (specParams and
             ('inbound' in specParams or 'outbound' in specParams)):
-        oldBandwidth = vmxml.find_first(vnicXML, 'bandwidth', None)
         newBandwidth = iface.get_bandwidth_xml(specParams, oldBandwidth)
-        if oldBandwidth is not None:
-            vmxml.remove_child(vnicXML, oldBandwidth)
         vmxml.append_child(vnicXML, newBandwidth)
 
 
