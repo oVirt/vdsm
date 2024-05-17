@@ -162,6 +162,17 @@ class DeviceToXMLTests(XMLTestCase):
         vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
         self.assertXMLEqual(xmlutils.tostring(vnic_xml), XML)
 
+        specParams = {}
+        XML = u"""
+        <interface type='network'>
+          <mac address="fake" />
+          <source bridge='default'/>
+          <link state="up"/>
+        </interface>
+        """
+        vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
+        self.assertXMLEqual(xmlutils.tostring(vnic_xml), XML)
+
 
 @expandPermutations
 class ParsingHelperTests(XMLTestCase):
