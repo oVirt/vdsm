@@ -36,6 +36,7 @@ def test_kernel_args(test_input, expected_result):
 def test_package_versions():
     pkgs = osinfo.package_versions()
     assert 'kernel' in pkgs
+    assert 'lvm2' in pkgs
 
 
 def test_get_boot_uuid(fake_findmnt):
