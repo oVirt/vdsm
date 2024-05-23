@@ -22,6 +22,7 @@ import threading
 from itertools import chain
 
 from vdsm import constants
+from vdsm import osinfo
 from vdsm import utils
 from vdsm.common import commands
 from vdsm.common import errors
@@ -238,6 +239,15 @@ USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
                  if d is not None]
 
 USE_DEVICES = config.get("lvm", "config_method").lower() == "devices"
+
+
+def _get_lvm_version():
+    packages = osinfo.package_versions()
+    lvm_version = tuple(
+        int(v)
+        for v in packages['lvm2']['version'].split('.')
+    )
+    return lvm_version
 
 
 def _prepare_device_set(devs):
@@ -1781,11 +1791,14 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
 
 
 def reduceLV(vgName, lvName, size_mb, force=False):
+    lvm_version = _get_lvm_version()
     log.info("Reducing LV %s/%s to %s megabytes (force=%s)",
              vgName, lvName, size_mb, force)
     cmd = ("lvreduce",) + LVM_NOBACKUP
     if force:
         cmd += ("--force",)
+    if lvm_version >= (2, 3, 17):
+        cmd += ("--fs", "ignore")
     cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
 
     try:

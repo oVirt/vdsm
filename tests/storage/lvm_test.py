@@ -9,6 +9,7 @@ import time
 import uuid
 
 import pytest
+from unittest import mock
 
 from vdsm.common import commands
 from vdsm.common import concurrent
@@ -1774,6 +1775,27 @@ def test_lv_extend_reduce(tmp_storage):
     lvm.reduceLV(vg_name, lv_name, 1024, force=True)
     lv = lvm.getLV(vg_name, lv_name)
     assert int(lv.size) == 1 * GiB
+
+
+@pytest.mark.parametrize("lvm_version, expected_cmd", [
+    ((2, 3, 16), ("lvreduce", "--autobackup", "n", "--size",
+                  "100m", "vg/lv")),
+    ((2, 3, 17), ("lvreduce", "--autobackup", "n", "--fs", "ignore", "--size",
+                  "100m", "vg/lv"))
+])
+def test_reducelv_with_different_lvm_versions(lvm_version, expected_cmd):
+    with mock.patch.object(lvm, "_get_lvm_version",
+                           return_value=lvm_version), \
+            mock.patch.object(lvm._lvminfo,
+                              "run_command") as mock_run_command, \
+            mock.patch.object(lvm._lvminfo, "_invalidatevgs"), \
+            mock.patch.object(lvm._lvminfo, "_invalidatelvs"):
+
+        lvm.reduceLV("vg", "lv", 100)
+
+        mock_run_command.assert_called_once_with(
+            expected_cmd, devices=mock.ANY
+        )
 
 
 @requires_root

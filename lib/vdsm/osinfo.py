@@ -248,6 +248,7 @@ def package_versions():
             'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev', 'qemu-kvm-ev'),
             'spice-server': ('spice-server',),
             'vdsm': ('vdsm',),
+            'lvm2': ('lvm2', 'lvm2-libs'),
         }
 
         if glusterEnabled:
@@ -281,6 +282,7 @@ def package_versions():
             'qemu-kvm': 'qemu-kvm',
             'spice-server': 'libspice-server1',
             'vdsm': 'vdsmd',
+            'lvm2': 'lvm2',
         }
 
         if glusterEnabled:
