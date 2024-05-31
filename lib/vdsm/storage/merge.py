@@ -198,8 +198,17 @@ def _extend_base_allocation(base_vol, top_vol):
     if not (base_vol.is_block() and base_vol.getFormat() == sc.COW_FORMAT):
         return
 
+    # Get the latest offset
+    log.debug("Checking top=%r", top_vol.volUUID)
+    top_check = qemuimg.check(top_vol.getVolumePath(), qemuimg.FORMAT.QCOW2)
+    log.debug("Checking base=%r", base_vol.volUUID)
+    base_check = qemuimg.check(base_vol.getVolumePath(), qemuimg.FORMAT.QCOW2)
+
+    log.debug("Offset result: top: %s - base %s",
+              top_check["offset"], base_check["offset"])
+
     # Measure the subchain from top to base. This gives us the required
-    # allocation for merging top into base.
+    # bitmap space
     log.debug("Measuring sub chain top=%r base=%r",
               top_vol.volUUID, base_vol.volUUID)
     measure = qemuimg.measure(
@@ -213,7 +222,10 @@ def _extend_base_allocation(base_vol, top_vol):
     # When merging we always copy the bitmaps from the top to base. Measure
     # gives us the size of the bitmaps in top *and* base, so this may allocate
     # more than needed, but bitmaps are small so it should be good enough.
-    required_size = measure["required"] + measure.get("bitmaps", 0)
+    # But but the data itself we sum the offset of both images to make sure we
+    # allocate enough space. This as measure does not give us a reliable size.
+    required_size = top_check["offset"] + base_check["offset"] + \
+        measure.get("bitmaps", 0)
 
     # If the top volume is leaf, the base volume will become leaf after the
     # merge, so it needs more space.
