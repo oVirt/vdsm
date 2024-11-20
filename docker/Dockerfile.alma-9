@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-FROM quay.io/almalinux/almalinux:9.0
+FROM quay.io/almalinuxorg/almalinux:9
 
 # Add runtime dependencies.
 RUN dnf install -y 'dnf-command(copr)' \
