@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [centos-8, centos-9, alma-9]
+        distro: [centos-9, alma-9]
     container: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
     steps:
     - uses: ovirt/checkout-action@main
@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [centos-8, centos-9, alma-9]
+        distro: [centos-9, alma-9]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Required to create loop devices.
@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [centos-8, centos-9, alma-9]
+        distro: [centos-9, alma-9]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Required to create loop devices.
@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [centos-8, centos-9, alma-9]
+        distro: [centos-9, alma-9]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Needed for many operations, i.e. creating bridges
@@ -71,8 +71,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: el8
-            container-name: el8stream
           - name: el9
             container-name: el9stream
     name: ${{ matrix.name }}
