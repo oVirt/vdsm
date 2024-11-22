@@ -5,7 +5,7 @@
 
 source tests/network/common.sh
 
-IMAGE_TAG="${IMAGE_TAG:=centos-8}"
+IMAGE_TAG="${IMAGE_TAG:=centos-9}"
 CONTAINER_IMAGE="${CONTAINER_IMAGE:=$IMAGE_PREFIX-unit}"
 
 function patch_dist_commons {

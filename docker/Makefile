@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-targets := alma-9 centos-8 centos-9
+targets := alma-9 centos-9
 prefix := ovirt/vdsm-test
 
 .PHONY: $(targets) push

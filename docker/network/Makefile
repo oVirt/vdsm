@@ -4,7 +4,7 @@
 CONTAINER_CMD := podman
 PREFIX := ovirt/vdsm-network-tests
 
-targets := alma-9 centos-8 centos-9
+targets := alma-9 centos-9
 types := functional integration unit
 
 .PHONY: $(targets) $(types)

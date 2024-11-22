@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-image: quay.io/ovirt/vdsm-test-centos-8
+image: quay.io/ovirt/vdsm-test-centos-9
 
 variables:
   TRAVIS_CI: 1
@@ -19,7 +19,7 @@ rpm:
   script:
     - ./ci/rpm.sh
   artifacts:
-    name: "rpm-centos-8"
+    name: "rpm-centos-9"
     paths:
       - "$EXPORT_DIR/"
     expire_in: 1 week

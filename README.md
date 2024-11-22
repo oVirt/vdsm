@@ -44,9 +44,9 @@ date, please check the [Gerrit vdsm project](https://gerrit.ovirt.org/q/project:
 
 Add ovirt repositories to your repositories list.
 
-For CentOS Stream 8 use:
+For CentOS Stream 9 use:
 
-    sudo dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-8
+    sudo dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-9
     sudo dnf install -y ovirt-release-master
 
 For more info see
