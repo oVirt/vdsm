@@ -35,6 +35,10 @@ function replace_resolvconf {
 }
 
 function install_nmstate_from_source {
+    BUILD_NMSTATE = "make rpm"
+    if grep -q "8" <<< $IMAGE_TAG ; then
+      BUILD_NMSTATE = "pip3 install --no-deps -U ."
+    fi
     container_exec "
         mkdir $NMSTATE_TMP \
         && \
@@ -42,7 +46,7 @@ function install_nmstate_from_source {
         && \
         cd $NMSTATE_TMP/nmstate \
         && \
-        pip3 install --no-deps -U . \
+        $BUILD_NMSTATE \
         && \
         cd -
     "
