@@ -350,6 +350,8 @@ class Drive(core.Base):
         libvirt.virDomain.blockInfo() or qemuimg.info().
         """
         nextSize = utils.round(curSize + self.volExtensionChunk, MiB)
+        if capacity == 0:
+            return nextSize
         return min(nextSize, self.getMaxVolumeSize(capacity))
 
     def getMaxVolumeSize(self, capacity):
