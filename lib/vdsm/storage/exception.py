@@ -351,6 +351,11 @@ class InvalidVolumeUpdate(StorageException):
         self.value = "vol_id=%s, reason=%s" % (vol_id, reason)
 
 
+class CannotDeleteLinks(StorageException):
+    code = 236      # change code
+    msg = "Links deletion error"
+
+
 #################################################
 #  Images Exceptions
 #################################################

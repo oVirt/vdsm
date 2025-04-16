@@ -903,11 +903,19 @@ class Image(APIBase):
         APIBase.__init__(self)
         self._UUID = UUID
         self._spUUID = spUUID
+        self._log = logging.getLogger("{}.Image".format(__name__))
         self._sdUUID = sdUUID
 
     def delete(self, postZero, force, discard=False):
         return self._irs.deleteImage(self._sdUUID, self._spUUID, self._UUID,
                                      postZero, force, discard)
+
+    def deleteUnusedLinks(self, postZero=False, force=False, discard=False):
+        """
+        Delete unused links for volumes after delete image from SP
+        """
+        return self._irs.deleteUnusedLinks(self._sdUUID, self._spUUID, self._UUID,
+                                    postZero, force, discard)
 
     def deleteVolumes(self, volumeList, postZero=False, force=False,
                       discard=False):
