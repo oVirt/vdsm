@@ -33,7 +33,7 @@ jobs:
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ovirt/vdsm-network-tests-${{ matrix.container }}
-          tags: alma-9 centos-9
+          tags: alma-9 centos-9 centos-10
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ secrets.QUAY_USERNAME  }}
           password: ${{ secrets.QUAY_TOKEN }}
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: [ centos-9, alma-9 ]
+        distro: [ centos-9, centos-10, alma-9 ]
     steps:
       - uses: ovirt/checkout-action@main
       - name: Install dependencies

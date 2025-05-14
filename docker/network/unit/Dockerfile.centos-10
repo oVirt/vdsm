@@ -1,34 +1,29 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-FROM quay.io/centos/centos:stream9
+FROM quay.io/centos/centos:stream10
 
 # Add runtime dependencies.
 RUN dnf -y install dnf-plugins-core \
     && \
-    dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-9 \
+    dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-10 \
     && \
     dnf install -y ovirt-release-master \
     && \
     dnf update -y \
     && \
-    # Without it the ovirt-openvswitch fails to install
-    # It seems that the el8s container has systemd installed by default
-    dnf install -y systemd \
+    # el10s does not have modprobe installed by default
+    dnf install -y kmod \
     && \
     dnf install -y \
-        autoconf \
-        automake \
-        dnsmasq \
-        git \
-        make \
+        iproute-tc \
+        libnl3 \
+        nmstate \
         python3-devel \
+        python3-libnmstate \
+        python3-six \
         python3-pip \
         systemd \
-        # Install vdsm-network for its dependencies
-        vdsm-network \
-    && \
-    dnf remove -y --noautoremove vdsm-network \
     && \
     dnf clean all
 
