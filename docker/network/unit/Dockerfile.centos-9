@@ -3,12 +3,6 @@
 
 FROM quay.io/centos/centos:stream9
 
-# Use legacy cryptopolicy as workaround for https://bugzilla.redhat.com/show_bug.cgi?id=2059101
-# until https://pagure.io/copr/copr/issue/2106 is fixed
-RUN dnf install -y crypto-policies-scripts crypto-policies \
-    && \
-    update-crypto-policies --set LEGACY
-
 # Add runtime dependencies.
 RUN dnf -y install dnf-plugins-core \
     && \
