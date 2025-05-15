@@ -26,7 +26,7 @@ from . import qemuio
 from . marks import requires_unprivileged_user
 from . storagetestlib import chmod
 
-BACKENDS = userstorage.load_config("storage.py").BACKENDS
+BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 PREALLOCATED_VOL_SIZE = 10 * MiB
 SPARSE_VOL_SIZE = GiB
 INITIAL_VOL_SIZE = MiB

@@ -50,7 +50,7 @@ from vdsm.storage import workarounds
 from vdsm.storage.sdm.api import copy_data
 from vdsm.storage.volume import Qcow2BitmapInfo
 
-BACKENDS = userstorage.load_config("storage.py").BACKENDS
+BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 DEFAULT_SIZE = MiB
 
 

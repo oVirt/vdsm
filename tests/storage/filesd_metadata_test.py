@@ -71,7 +71,7 @@ VERSION=5
 _SHA_CKSUM=769baef6c65aeef08cf6d177c2c44046b2aac877
 """,
 }
-BACKENDS = userstorage.load_config("storage.py").BACKENDS
+BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 
 Storage = collections.namedtuple("Storage", "path, block_size, alignment")
 
