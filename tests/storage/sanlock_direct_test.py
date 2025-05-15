@@ -15,7 +15,7 @@ from .marks import requires_root
 
 # Wait 1 second for lockspace initialization for quick tests.
 INIT_LOCKSPACE_TIMEOUT = 1
-BACKENDS = userstorage.load_config("storage.py").BACKENDS
+BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 
 Storage = namedtuple("Storage", "path, block_size, alignment")
 

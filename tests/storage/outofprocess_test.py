@@ -26,7 +26,7 @@ from vdsm.storage.exception import MiscDirCleanupFailure
 from . marks import requires_root, requires_unprivileged_user
 from . storagetestlib import chmod
 
-BACKENDS = userstorage.load_config("storage.py").BACKENDS
+BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 
 
 @pytest.fixture

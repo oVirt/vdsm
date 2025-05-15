@@ -25,7 +25,7 @@ from testlib import make_uuid
 
 from . fakesanlock import FakeSanlock
 
-BACKENDS = userstorage.load_config("storage.py").BACKENDS
+BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 
 
 class ReadError(Exception):
