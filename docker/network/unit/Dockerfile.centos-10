@@ -21,7 +21,6 @@ RUN dnf -y install dnf-plugins-core \
         nmstate \
         python3-devel \
         python3-libnmstate \
-        python3-six \
         python3-pip \
         systemd \
     && \

@@ -11,7 +11,6 @@ import sys
 from contextlib import contextmanager
 
 import argparse
-import six
 
 from vdsm.api import vdsmapi
 
@@ -141,7 +140,7 @@ def write_symbol(f, s):
                 for value in values:
                     value = filter_types(value)
                     if (value in vdsmapi.TYPE_KEYS or
-                            isinstance(value, six.string_types)):
+                            isinstance(value, str)):
                         name = value
                     else:
                         name = value.get('name')

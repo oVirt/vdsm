@@ -266,8 +266,6 @@ fi
 
 AC_SUBST([CONFIGURE_FLAGS], ["$configure_flags"])
 
-AX_PYTHON_MODULE([six], [fatal], python3)
-
 AC_PATH_PROG([PYTHON_CONFIG], ["python3-config"])
 if test "x$PYTHON_CONFIG" = "x"; then
   AC_MSG_ERROR([python3-devel not found, please install it.])

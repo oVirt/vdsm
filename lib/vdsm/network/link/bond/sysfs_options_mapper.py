@@ -13,8 +13,6 @@ import json
 import os
 import time
 
-import six
-
 from vdsm.common.cache import memoized
 from vdsm.common import constants
 
@@ -126,7 +124,7 @@ def _bond_opts_name2numeric_filtered(bond):
     return dict(
         (
             (opt, val)
-            for (opt, val) in six.iteritems(_bond_opts_name2numeric(bond))
+            for (opt, val) in _bond_opts_name2numeric(bond).items()
             if opt not in sysfs_options.EXCLUDED_BONDING_ENTRIES
         )
     )

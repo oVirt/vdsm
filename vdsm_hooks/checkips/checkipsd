@@ -5,8 +5,8 @@
 
 from __future__ import absolute_import
 
+import checkips_utils
 import os
-import six
 import subprocess
 import sys
 import syslog
@@ -17,7 +17,6 @@ from vdsm import constants
 import vdsm.network.netconfpersistence as persist_net
 
 sys.path.append(os.path.join(constants.P_VDSM_HOOKS, 'after_get_stats'))
-import checkips_utils
 
 PING_TIMEOUT = 15
 PING_SAMPLE_TIME = 20
@@ -51,7 +50,7 @@ def _ping_address(address, address_type, network):
 def _ping_addresses():
     threads = []
     networks = persist_net.PersistentConfig().networks
-    for net, net_attrs in six.iteritems(networks):
+    for net, net_attrs in networks.items():
         ping_addresses = checkips_utils.get_ping_addresses(net_attrs)
         if ping_addresses:
             for address_type, address in ping_addresses:

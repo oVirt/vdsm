@@ -9,7 +9,6 @@ import json
 import logging
 import os
 import pickle
-import six
 
 from enum import Enum
 
@@ -21,12 +20,12 @@ from yajsonrpc.exception import JsonRpcInvalidParamsError
 PRIMITIVE_TYPES = {'boolean': lambda value: isinstance(value, bool),
                    'float': lambda value: isinstance(value, float),
                    'int': lambda value: isinstance(value, int),
-                   'long': lambda value: isinstance(value, (six.integer_types,
+                   'long': lambda value: isinstance(value, (int,
                                                             float)),
                    'ulong': lambda value: isinstance(value,
-                                                     (six.integer_types,
+                                                     (int,
                                                       float)) and value >= 0,
-                   'string': lambda value: isinstance(value, six.string_types),
+                   'string': lambda value: isinstance(value, str),
                    'uint': lambda value: isinstance(value, int) and value >= 0}
 TYPE_KEYS = list(PRIMITIVE_TYPES.keys())
 
@@ -256,7 +255,7 @@ class Schema(object):
 
         else:
             # if type is a string call type verification method
-            if isinstance(t, six.string_types):
+            if isinstance(t, str):
                 self._verify_complex_type(t, param, value, name, identifier)
 
             # if type is in a list we need to get the type and call
@@ -282,7 +281,7 @@ class Schema(object):
             self._check_primitive_type(t.get('sourcetype'), arg, name)
         elif t_type == 'map':
             # if map we need to check key and value types
-            for key, value in six.iteritems(arg):
+            for key, value in arg.items():
                 self._verify_type(t.get('key-type'), key, identifier)
                 self._verify_type(t.get('value-type'), value, identifier)
         elif t_type == 'union':
@@ -370,7 +369,7 @@ class Schema(object):
             for param in self.get_args(rep):
                 name = param.get('name')
                 if name == 'no_name':
-                    for key, value in six.iteritems(args):
+                    for key, value in args.items():
                         if key == "notify_time":
                             continue
                         self._verify_type(param, {key: value}, rep.id)

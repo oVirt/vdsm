@@ -17,8 +17,6 @@ import subprocess
 import sys
 import tempfile
 
-import six
-
 from vdsm.common import commands
 from vdsm.common import exception
 from vdsm.common.constants import P_VDSM_HOOKS, P_VDSM_RUN
@@ -70,18 +68,15 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
         scriptenv = os.environ.copy()
 
         # Update the environment using params and custom configuration
-        env_update = [six.iteritems(params),
-                      six.iteritems(vmconf.get('custom', {}))]
+        env_update = [params.items(),
+                      vmconf.get('custom', {}).items()]
 
         # On py2 encode custom properties with default system encoding
         # and save them to scriptenv. Pass str objects (byte-strings)
         # without any conversion
         for k, v in itertools.chain(*env_update):
             try:
-                if six.PY2 and isinstance(v, six.text_type):
-                    scriptenv[k] = v.encode(sys.getfilesystemencoding())
-                else:
-                    scriptenv[k] = v
+                scriptenv[k] = v
             except UnicodeEncodeError:
                 pass
 

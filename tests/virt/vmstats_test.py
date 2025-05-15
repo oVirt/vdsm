@@ -8,8 +8,6 @@ import copy
 import logging
 import uuid
 
-import six
-
 from vdsm.common.units import KiB, MiB, GiB
 from vdsm.virt import vmstats
 
@@ -222,7 +220,7 @@ class VmStatsTestCase(TestCaseBase):
 
     def setUp(self):
         # just pick one sampling
-        self.samples = next(six.itervalues(_FAKE_BULK_STATS))
+        self.samples = next(iter(_FAKE_BULK_STATS.values()))
         self.bulk_stats = self.samples[0]
         self.interval = 10  # seconds
 
@@ -276,7 +274,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
     def test_network_missing(self):
         # seen using SR-IOV
 
-        bulk_stats = next(six.itervalues(_FAKE_BULK_STATS_SRIOV))
+        bulk_stats = next(iter(_FAKE_BULK_STATS_SRIOV.values()))
         indexes = vmstats._find_bulk_stats_reverse_map(
             bulk_stats[0], 'net')
         assert indexes

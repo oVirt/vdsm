@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 
+import http.client
 import functools
 import json
 import logging
@@ -11,9 +12,6 @@ import socket
 
 from contextlib import closing
 
-import six
-from six.moves import http_client
-
 from vdsm.storage import exception as se
 
 DAEMON_SOCK = "/run/ovirt-imageio/sock"
@@ -21,7 +19,7 @@ DAEMON_SOCK = "/run/ovirt-imageio/sock"
 log = logging.getLogger('storage.imagetickets')
 
 
-class UnixHTTPConnection(http_client.HTTPConnection):
+class UnixHTTPConnection(http.client.HTTPConnection):
     """
     HTTP connection over unix domain socket.
     """
@@ -29,9 +27,7 @@ class UnixHTTPConnection(http_client.HTTPConnection):
     def __init__(self, path, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         self.path = path
         extra = {}
-        if six.PY2:
-            extra['strict'] = True
-        http_client.HTTPConnection.__init__(
+        http.client.HTTPConnection.__init__(
             self, "localhost", timeout=timeout, **extra)
 
     def connect(self):
@@ -88,7 +84,7 @@ def _request(method, uuid, body=None):
         try:
             con.request(method, "/tickets/%s" % uuid, body=body)
             res = con.getresponse()
-        except (http_client.HTTPException, EnvironmentError) as e:
+        except (http.client.HTTPException, EnvironmentError) as e:
             raise se.ImageTicketsError("Error communicating with "
                                        "ovirt-imageio-daemon: "
                                        "{error}".format(error=e))

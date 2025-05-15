@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import logging
-import six
 from collections import deque
 from threading import Event
 from uuid import uuid4
@@ -213,7 +212,7 @@ class AsyncClient(object):
         self.queue_frame(Frame(Command.RECEIPT, headers))
 
     def restore_subscriptions(self):
-        subs = [sub for sub in six.viewvalues(self._subscriptions)]
+        subs = [sub for sub in self._subscriptions.values()]
         self._subscriptions.clear()
 
         for sub in subs:

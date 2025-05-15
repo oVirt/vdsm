@@ -4,9 +4,9 @@
 from __future__ import absolute_import
 from __future__ import division
 import logging
+import queue
 import time
 from contextlib import contextmanager
-from six.moves import queue
 from monkeypatch import MonkeyPatch
 from testValidation import slowtest
 from vdsm import executor

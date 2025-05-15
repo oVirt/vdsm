@@ -6,6 +6,7 @@ from __future__ import division
 
 import os
 import errno
+import queue
 import time
 import threading
 import struct
@@ -13,8 +14,6 @@ import logging
 import uuid
 
 from functools import partial
-
-from six.moves import queue
 
 from vdsm.common import commands
 from vdsm.common.units import KiB

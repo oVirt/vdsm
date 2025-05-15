@@ -12,8 +12,6 @@ import logging
 import os
 import select
 
-import six
-
 from vdsm.common import filecontrol
 from vdsm.common import osutils
 from vdsm.common import time
@@ -369,7 +367,7 @@ def poll(timeout=0.0, map=None):
 
     # No need to copy the map during iteration, nobody can access the map
     # during the iteration, fixes http://bugs.python.org/issue30994.
-    for fd, obj in six.iteritems(map):
+    for fd, obj in map.items():
         flags = 0
         if obj.readable():
             flags |= select.POLLIN | select.POLLPRI

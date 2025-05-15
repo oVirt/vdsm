@@ -4,15 +4,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
-"""
-Code to perform periodic maintenance and bookkeeping of the VMs.
-"""
-
+import libvirt
 import logging
 import threading
-
-import libvirt
-import six
 
 from vdsm import executor
 from vdsm import host
@@ -29,6 +23,9 @@ from vdsm.virt import vmstatus
 from vdsm.virt.externaldata import ExternalDataKind
 from vdsm.virt.utils import vm_kill_paused_timeout
 
+"""
+Code to perform periodic maintenance and bookkeeping of the VMs.
+"""
 
 # Just a made up number. Maybe should be equal to number of cores?
 # TODO: make them tunable through private, unsupported configuration items
@@ -257,7 +254,7 @@ class VmDispatcher(object):
         vms = self._get_vms()
         skipped = []
 
-        for vm_id, vm_obj in six.viewitems(vms):
+        for vm_id, vm_obj in vms.items():
             try:
                 op = self._create(vm_obj)
 

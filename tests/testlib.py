@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
+import configparser
 import errno
 import functools
 import glob
@@ -17,8 +18,6 @@ import uuid
 from functools import wraps
 import shutil
 import sys
-from six.moves import configparser
-from six.moves import range
 import tempfile
 import threading
 from contextlib import contextmanager

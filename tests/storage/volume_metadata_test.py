@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 import textwrap
 import time
 
@@ -93,7 +92,7 @@ class TestVolumeMetadata:
 
         monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
         info = volume.VolumeMetadata(**params)
-        for key, value in six.iteritems(expected):
+        for key, value in expected.items():
             assert info[key] == value
 
     def test_storage_format_v4(self):

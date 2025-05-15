@@ -5,9 +5,6 @@ from __future__ import absolute_import
 import itertools
 import logging
 import operator
-import sys
-
-import six
 
 log = logging.getLogger('storage.guarded')
 
@@ -74,17 +71,13 @@ class context(object):
         for lock in self._locks:
             try:
                 lock.acquire()
-            except:
-                exc = sys.exc_info()
+            except Exception as exc:
                 log.error("Error acquiring lock %r", lock)
                 try:
                     self._release()
                 except ReleaseError:
                     log.exception("Error releasing locks")
-                try:
-                    six.reraise(*exc)
-                finally:
-                    del exc
+                raise exc
 
             self._held_locks.append(lock)
         return self

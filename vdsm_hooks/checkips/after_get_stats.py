@@ -7,7 +7,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
-import six
 import sys
 import tempfile
 import time
@@ -47,7 +46,7 @@ def _is_network_accessible(net, stats_dir):
 
 
 def update_networks_state(stats_json, networks, stats_dir):
-    for net, net_attrs in six.iteritems(networks):
+    for net, net_attrs in networks.items():
         ping_addresses = checkips_utils.get_ping_addresses(net_attrs)
         if ping_addresses and not _is_network_accessible(net, stats_dir):
             net_if = None
@@ -103,7 +102,7 @@ def test():
             'bond_ipv6': 'up',
             'eth_fqdn': 'down'
         }
-        for interface, state in six.iteritems(expected_states):
+        for interface, state in expected_states.items():
             test_msg = 'pass'
             if network_stats['network'][interface]['state'] != state:
                 test_msg = 'fail'

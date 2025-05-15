@@ -5,9 +5,8 @@ from __future__ import absolute_import
 from __future__ import division
 from contextlib import contextmanager
 from functools import partial
+import queue
 import threading
-
-from six.moves import queue
 
 from . import libnl
 

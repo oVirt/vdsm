@@ -3,9 +3,9 @@
 
 from __future__ import absolute_import
 from __future__ import division
+import queue
 import uuid
 from contextlib import contextmanager
-from six.moves import queue
 
 import yajsonrpc
 from yajsonrpc.exception import JsonRpcInvalidRequestError

@@ -5,8 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 import os
 
-import six
-
 from vdsm.network.link.bond import Bond
 
 from vdsm.network.link.setup import parse_bond_options
@@ -59,9 +57,7 @@ def bondOptsForIfcfg(opts):
     the order symbolic name, numeric value, e.g. 'balance-rr 0'.
     Choose the numeric value from a list given by bondOpts().
     """
-    return ' '.join(
-        (opt + '=' + val for (opt, val) in sorted(six.iteritems(opts)))
-    )
+    return ' '.join((opt + '=' + val for (opt, val) in sorted(opts.items())))
 
 
 def permanent_address():

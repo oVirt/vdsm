@@ -5,12 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import libvirt
-import six
-from six.moves import map
-
-"""
-Support for VM and host statistics sampling.
-"""
 
 from collections import defaultdict, deque, namedtuple
 import logging
@@ -28,6 +22,10 @@ from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN
 from vdsm.host import api as hostapi
 from vdsm.virt.utils import ExpiringCache
+
+"""
+Support for VM and host statistics sampling.
+"""
 
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
@@ -438,7 +436,7 @@ class VMBulkstatsMonitor(object):
     def _get_responsive_doms(self):
         vms = self._get_vms()
         doms = []
-        for vm_id, vm_obj in six.iteritems(vms):
+        for vm_id, vm_obj in vms.items():
             to_skip = self._skip_doms.get(vm_id, False)
             if to_skip:
                 continue

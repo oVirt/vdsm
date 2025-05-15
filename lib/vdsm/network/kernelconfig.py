@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 from __future__ import division
 import copy
-import six
 
 from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
@@ -43,13 +42,13 @@ class KernelConfig(BaseConfig):
 
     def _analyze_netinfo_nets(self, netinfo):
         _routes = routes.get_routes()
-        for net, net_attr in six.viewitems(netinfo.networks):
+        for net, net_attr in netinfo.networks.items():
             attrs = _translate_netinfo_net(net, net_attr, netinfo, _routes)
             yield net, attrs
 
     def _analyze_netinfo_bonds(self, netinfo):
         rconfig = RunningConfig()
-        for bond, bond_attr in six.viewitems(netinfo.bondings):
+        for bond, bond_attr in netinfo.bondings.items():
             bond_rconf = rconfig.bonds.get(bond)
             yield bond, _translate_netinfo_bond(bond_attr, bond_rconf)
 
@@ -176,17 +175,17 @@ def _remove_zero_values_in_net_qos(net_qos):
             'ul': {'m2': 8000000},
             'ls': {'m1': 4000000, 'd': 100000, 'm2': 3000000}}}"""
     stripped_qos = {}
-    for part, part_config in six.viewitems(net_qos):
+    for part, part_config in net_qos.items():
         stripped_qos[part] = dict(part_config)  # copy
-        for curve, curve_config in six.viewitems(part_config):
+        for curve, curve_config in part_config.items():
             stripped_qos[part][curve] = dict(
-                (k, v) for k, v in six.viewitems(curve_config) if v != 0
+                (k, v) for k, v in curve_config.items() if v != 0
             )
     return stripped_qos
 
 
 def _normalize_bonding_opts(config_copy):
-    for bond, bond_attr in six.viewitems(config_copy.bonds):
+    for bond, bond_attr in config_copy.bonds.items():
         # TODO: globalize default bond options from Bond in models.py
         normalized_opts = _parse_bond_options(bond_attr.get('options'))
         if 'mode' not in normalized_opts:
@@ -197,7 +196,7 @@ def _normalize_bonding_opts(config_copy):
     # we are upgrading from an older version, they should be ignored if
     # they exist.
     # REQUIRED_FOR upgrade from vdsm<=4.16.20
-    for net_attr in six.viewvalues(config_copy.networks):
+    for net_attr in config_copy.networks.values():
         net_attr.pop('bondingOptions', None)
 
 
@@ -221,4 +220,4 @@ def _parse_bond_options(opts):
             opts[opname] = numeric_val
 
     defaults = sysfs_options.getDefaultBondingOptions(numeric_mode)
-    return dict((k, v) for k, v in six.viewitems(opts) if v != defaults.get(k))
+    return dict((k, v) for k, v in opts.items() if v != defaults.get(k))

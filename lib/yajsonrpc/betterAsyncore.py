@@ -14,8 +14,6 @@ import logging
 import socket
 import ssl
 
-import six
-
 from vdsm import sslutils
 from vdsm.common.eventfd import EventFD
 
@@ -240,14 +238,14 @@ class Reactor(object):
                 count=1,
             )
 
-        for dispatcher in list(six.viewvalues(self._map)):
+        for dispatcher in list(self._map.values()):
             dispatcher.close()
 
         self._map.clear()
 
     def _get_timeout(self, map):
         timeout = 30.0
-        for disp in list(six.viewvalues(self._map)):
+        for disp in list(self._map.values()):
             if hasattr(disp, "next_check_interval"):
                 interval = disp.next_check_interval()
                 if interval is not None and interval >= 0:

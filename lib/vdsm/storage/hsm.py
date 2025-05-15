@@ -19,9 +19,6 @@ import signal
 import numbers
 import stat
 
-import six
-from six.moves import map
-
 from vdsm import jobs
 from vdsm import utils
 from vdsm.common import api
@@ -1328,7 +1325,7 @@ class HSM(object):
         # on data domains, images should not be deleted if they are templates
         # being used by other images.
         fakeTUUID = None
-        for k, v in six.iteritems(volsByImg):
+        for k, v in volsByImg.items():
             if len(v.imgs) > 1 and v.imgs[0] == imgUUID:
                 if dom.isBackup():
                     fakeTUUID = k
@@ -1418,7 +1415,7 @@ class HSM(object):
         # Filter volumes related to this image
         srcVolsImgs = sd.getVolsOfImage(srcAllVols, imgUUID)
         # Find the template
-        for volName, imgsPar in six.iteritems(srcVolsImgs):
+        for volName, imgsPar in srcVolsImgs.items():
             if len(imgsPar.imgs) > 1:
                 # This is the template. Should be only one.
                 tName, tImgs = volName, imgsPar.imgs
@@ -1716,7 +1713,7 @@ class HSM(object):
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
 
-        for d, status in six.iteritems(domDict):
+        for d, status in domDict.items():
             misc.validateUUID(d)
             try:
                 sd.validateSDStatus(status)
@@ -2190,7 +2187,7 @@ class HSM(object):
 
         self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
                        (k, v.__module__, v.__name__)
-                       for k, v in six.iteritems(sdCache.knownSDs)))
+                       for k, v in sdCache.knownSDs.items()))
 
         # Connecting new device may change the visible storage domain list
         # so invalidate caches
@@ -2328,7 +2325,7 @@ class HSM(object):
         sdCache.knownSDs[sdUUID] = findMethod
         self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
                        (k, v.__module__, v.__name__)
-                       for k, v in six.iteritems(sdCache.knownSDs)))
+                       for k, v in sdCache.knownSDs.items()))
 
         sdCache.manuallyAddDomain(newSD)
 
@@ -3055,7 +3052,7 @@ class HSM(object):
         if imgUUID == sc.BLANK_UUID:
             volUUIDs = list(vols)
         else:
-            volUUIDs = [k for k, v in six.iteritems(vols) if imgUUID in v.imgs]
+            volUUIDs = [k for k, v in vols.items() if imgUUID in v.imgs]
         return dict(uuidlist=volUUIDs)
 
     @public
@@ -3217,7 +3214,7 @@ class HSM(object):
         domInfo = {}
         repoStats = self._getRepoStats(domainMonitor)
 
-        for sdUUID, sdStatus in six.iteritems(doms):
+        for sdUUID, sdStatus in doms.items():
             # Return statistics for active domains only
             domInfo[sdUUID] = {'status': sdStatus, 'alerts': [],
                                'isoprefix': ''}

@@ -13,8 +13,6 @@ import re
 
 from contextlib import contextmanager
 
-import six
-
 from vdsm import utils
 from vdsm.common import concurrent
 from vdsm.common import supervdsm
@@ -297,7 +295,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         #    image.
 
         volumes = {}
-        for imgUUID, volUUIDs in six.iteritems(images):
+        for imgUUID, volUUIDs in images.items():
             for volUUID in volUUIDs:
                 if volUUID in volumes:
                     # This must be a template volume (rule 2)
@@ -312,7 +310,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                     volumes[volUUID] = {'imgs': [imgUUID], 'parent': None}
 
         return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
-                    for k, v in six.iteritems(volumes))
+                    for k, v in volumes.items())
 
     def getAllImages(self):
         """
@@ -424,7 +422,7 @@ class FileStorageDomain(sd.StorageDomain):
         procPool.fileUtils.createdir(metadataDir, 0o775)
 
         special_volumes = cls.manifestClass.special_volumes(version)
-        for name, size_mb in six.iteritems(FILE_SPECIAL_VOLUME_SIZES_MIB):
+        for name, size_mb in FILE_SPECIAL_VOLUME_SIZES_MIB.items():
             if name in special_volumes:
                 try:
                     procPool.truncateFile(

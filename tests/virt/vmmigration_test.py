@@ -13,9 +13,6 @@ import uuid
 
 import libvirt
 
-from six.moves import range
-from six.moves import zip
-
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.config import config

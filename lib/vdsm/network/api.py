@@ -8,7 +8,6 @@ from contextlib import contextmanager
 
 import sys
 import logging
-import six
 import copy
 
 from vdsm.common import hooks
@@ -256,8 +255,8 @@ def _change_switch_type(networks, bondings, options, running_config):
 
 
 def _remove_nets_and_bonds(nets, bonds, in_rollback):
-    nets_removal = {name: {'remove': True} for name in six.iterkeys(nets)}
-    bonds_removal = {name: {'remove': True} for name in six.iterkeys(bonds)}
+    nets_removal = {name: {'remove': True} for name in nets.keys()}
+    bonds_removal = {name: {'remove': True} for name in bonds.keys()}
     netswitch.configurator.setup(
         nets_removal, bonds_removal, {'connectivityCheck': False}, in_rollback
     )

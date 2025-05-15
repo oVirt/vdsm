@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import socket
 
 _client = None
@@ -23,7 +22,7 @@ def stop():
 
 
 def send(report):
-    for name, value in six.iteritems(report):
+    for name, value in report.items():
         _client.gauge(name, value)
 
 

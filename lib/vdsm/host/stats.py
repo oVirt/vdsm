@@ -6,8 +6,6 @@ from __future__ import division
 
 import logging
 
-import six
-
 from vdsm import numa
 from vdsm.common import cache
 from vdsm.common import time
@@ -106,7 +104,7 @@ def _get_cpu_core_stats(first_sample, last_sample):
         return ("%.2f" % (jiffies / interval))
 
     cpu_core_stats = {}
-    for node_index, numa_node in six.iteritems(numa.topology()):
+    for node_index, numa_node in numa.topology().items():
         cpu_cores = numa_node['cpus']
         for cpu_core in cpu_cores:
             try:

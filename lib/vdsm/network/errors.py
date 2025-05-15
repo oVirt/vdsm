@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 
 ERR_BAD_PARAMS = 21
 ERR_BAD_ADDR = 22
@@ -55,5 +54,5 @@ def _get_message(args):
     this helper function fetches the message argument.
     """
     for arg in args:
-        if isinstance(arg, six.string_types):
+        if isinstance(arg, str):
             return arg

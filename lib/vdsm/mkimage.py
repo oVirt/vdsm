@@ -11,8 +11,6 @@ import stat
 import base64
 import errno
 
-import six
-
 from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
     DISKIMAGE_USER, DISKIMAGE_GROUP
 from vdsm.constants import P_VDSM_RUN
@@ -47,7 +45,7 @@ def _decodeFilesIntoDir(files, parentdir):
     :returns: temp dir that store the temp files
     '''
 
-    for name, content in six.viewitems(files):
+    for name, content in files.items():
         filename = os.path.join(parentdir, name)
         dirname = os.path.dirname(filename)
         if not os.path.exists(dirname):

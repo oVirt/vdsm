@@ -8,18 +8,12 @@ import errno
 import logging
 import os
 import selinux
-import six
 
 import blivet
 import blivet.formats
 import blivet.formats.fs
 import blivet.size
 from blivet.devices import LVMLogicalVolumeDevice
-
-if six.PY2:
-    # pylint: disable=no-name-in-module
-    from blivet.devices import LVMThinLogicalVolumeDevice
-
 from blivet import udev
 
 from vdsm.common import cmdutils
@@ -59,24 +53,15 @@ DEFAULT_MOUNT_OPTIONS = "inode64,noatime"
 
 
 def _is_parent(device):
-    if six.PY2:
-        return device.kids > 0
-    else:
-        return len(device.children) > 0
+    return len(device.children) > 0
 
 
 def _get_sysfs_path(device):
-    if six.PY2:
-        return getattr(device, 'sysfsPath')
-    else:
-        return getattr(device, 'sysfs_path')
+    return getattr(device, 'sysfs_path')
 
 
 def _get_convert_to(device):
-    if six.PY2:
-        return getattr(device.size, 'convertTo')
-    else:
-        return getattr(device.size, 'convert_to')
+    return getattr(device.size, 'convert_to')
 
 
 # This method helps to convert the size to given Unittype.
@@ -299,19 +284,12 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
                            poolDataSize)
     # Size of the thin LV should be same as the size of Thinpool to avoid
     # over allocation. Refer bz#1412455 for more info.
-    if six.PY2:
-        thinlv = LVMThinLogicalVolumeDevice(
-            brickName,
-            parents=[pool],
-            size=blivet.size.Size('%d KiB' % poolDataSize),
-            grow=True)
-    else:
-        thinlv = LVMLogicalVolumeDevice(
-            brickName,
-            parents=[pool],
-            size=blivet.size.Size('%d KiB' % poolDataSize),
-            grow=True,
-            seg_type="thin")
+    thinlv = LVMLogicalVolumeDevice(
+        brickName,
+        parents=[pool],
+        size=blivet.size.Size('%d KiB' % poolDataSize),
+        grow=True,
+        seg_type="thin")
 
     blivetEnv.createDevice(thinlv)
     blivetEnv.doIt()
@@ -320,10 +298,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         log.error("fstype %s is currently unsupported" % fsType)
         raise ge.GlusterHostStorageDeviceMkfsFailedException(fsType)
 
-    if six.PY2:
-        get_format = blivet.formats.getFormat  # pylint: disable=no-member
-    else:
-        get_format = blivet.formats.get_format  # pylint: disable=no-member
+    get_format = blivet.formats.get_format  # pylint: disable=no-member
 
     format = get_format(DEFAULT_FS_TYPE, device=thinlv.path,
                         mountopts=DEFAULT_MOUNT_OPTIONS)

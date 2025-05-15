@@ -336,14 +336,11 @@ def env_dump(hooks_dir):
         #!{}
         import os
         import pickle
-        import six
         import sys
 
         with open("{}", "wb") as dump_file:
             env = dict()
             for k, v in os.environ.items():
-                if six.PY2:
-                    v = v.decode(sys.getfilesystemencoding())
                 env[k] = v
             pickle.dump(env, dump_file)
         """).format(sys.executable, dump_path)

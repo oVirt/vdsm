@@ -6,7 +6,6 @@ from __future__ import absolute_import
 import itertools
 import libvirt
 import logging
-import six
 import xml.etree.ElementTree as ET
 
 from vdsm.common import cache
@@ -145,7 +144,7 @@ def compatible_cpu_models():
     cpu_mode = _CpuMode.HOST_MODEL if cpuarch.is_ppc(arch) else _CpuMode.CUSTOM
     all_models = domain_cpu_models(c, arch, cpu_mode)
     compatible_models = [model for (model, usable)
-                         in six.iteritems(all_models)
+                         in all_models.items()
                          if usable == 'yes']
     # Current QEMU doesn't report POWER compatibility modes, so we
     # must add them ourselves.

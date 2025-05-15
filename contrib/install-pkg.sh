@@ -44,7 +44,6 @@ sudo dnf install -y \
     python3-pyyaml \
     python3-requests \
     python3-sanlock \
-    python3-six \
     python3-yaml \
     qemu-img \
     rpm-build \
