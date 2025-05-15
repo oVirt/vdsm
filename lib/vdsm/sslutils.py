@@ -8,8 +8,6 @@ import logging
 import socket
 import ssl
 
-import six
-
 from ssl import SSLError
 from vdsm.common import pki
 from vdsm.common.time import monotonic_time
@@ -69,11 +67,7 @@ class SSLSocket(object):
 
     def makefile(self, mode='rb', bufsize=-1):
         if mode == 'rb':
-            if six.PY2:
-                # pylint: disable=no-member
-                return socket._fileobject(self, mode, bufsize)
-            else:
-                return socket.socket.makefile(self, mode, bufsize)
+            return socket.socket.makefile(self, mode, bufsize)
         else:
             return self.sock.makefile(mode, bufsize)
 
@@ -130,7 +124,7 @@ class SSLHandshakeDispatcher(object):
         client_socket = dispatcher.socket
 
         # pylint: disable=no-member
-        protocol = ssl.PROTOCOL_TLSv1_2 if six.PY2 else ssl.PROTOCOL_TLS
+        protocol = ssl.PROTOCOL_TLS
         # TODO: Drop 'protocol' param when purging py2
         context = ssl.SSLContext(protocol)
         context.load_verify_locations(self._sslctx.ca_certs, None, None)

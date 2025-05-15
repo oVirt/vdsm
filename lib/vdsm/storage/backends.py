@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import sanlock
-import six
 
 from . import blockSD
 from . import constants as sc
@@ -32,7 +31,7 @@ def supported_block_size():
         have_4k = False
 
     res = {}
-    for name, backend in six.iteritems(_BACKENDS):
+    for name, backend in _BACKENDS.items():
         if have_4k:
             res[name] = backend.supported_block_size
         else:

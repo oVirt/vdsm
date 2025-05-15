@@ -8,8 +8,6 @@ from collections import defaultdict
 import itertools
 import logging
 
-import six
-
 from vdsm.network.ipwrapper import IPRoute2Error
 from vdsm.network.ipwrapper import routeGet, Route, routeShowGateways
 from vdsm.network.ipwrapper import route6_show_gateways
@@ -47,7 +45,7 @@ def is_default_route(gateway, routes):
     if not gateway:
         return False
 
-    for route in itertools.chain.from_iterable(six.viewvalues(routes)):
+    for route in itertools.chain.from_iterable(routes.values()):
         if (
             route.get('table') == RtKnownTables.RT_TABLE_MAIN
             and route['family'] == 'inet'

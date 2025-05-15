@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
-import six
 
 from pwd import getpwnam
 
@@ -39,6 +38,6 @@ def test_ksm_action(dropped_privileges):
                  "pages_to_scan": 0xffff}
     proxy.ksmTune(ksmParams)
 
-    for k, v in six.iteritems(ksmParams):
+    for k, v in ksmParams.items():
         with open("/sys/kernel/mm/ksm/%s" % k, "r") as f:
             assert str(v) == f.read().rstrip()

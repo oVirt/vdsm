@@ -6,8 +6,6 @@ from __future__ import division
 
 import inspect
 
-import six
-
 from collections import defaultdict
 
 import pytest
@@ -40,7 +38,7 @@ def test_collisions():
     for obj in find_module_exceptions(storage_exception, GeneralException):
         codes[obj.code].append(obj.__name__)
 
-    problems = [(k, v) for k, v in six.iteritems(codes)
+    problems = [(k, v) for k, v in codes.items()
                 if len(v) != 1 or k >= 5000]
 
     assert not problems, "Duplicated or invalid exception code"

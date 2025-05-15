@@ -8,8 +8,6 @@ import collections
 import logging
 import threading
 
-import six
-
 from vdsm.common import concurrent
 from vdsm.config import config
 
@@ -43,7 +41,7 @@ def stop():
 
 def send(report):
     metrics_list = [_get_gauge_metric(name, value)
-                    for name, value in six.iteritems(report)]
+                    for name, value in report.items()]
     _queue.append(metrics_list)
     with _cond:
         _cond.notify()

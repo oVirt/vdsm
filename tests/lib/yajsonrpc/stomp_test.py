@@ -3,7 +3,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from six.moves import queue
+import queue
 from uuid import uuid4
 
 from testlib import VdsmTestCase as TestCaseBase, \

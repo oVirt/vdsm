@@ -8,7 +8,6 @@ import errno
 import fcntl
 import os
 import selinux
-import six
 from functools import wraps
 
 from vdsm.common import cmdutils
@@ -95,7 +94,7 @@ def glusterAdditionalFeatures():
         'volumeGeoRepSessionCreate': 'GLUSTER_GEO_REPLICATION',
         'storageDevicesList': 'GLUSTER_BRICK_MANAGEMENT'}
     additionalFeatures = []
-    for feature, code in six.iteritems(glusterfeatureSampleVerbs):
+    for feature, code in glusterfeatureSampleVerbs.items():
         if feature in dir(GlusterApi):
             additionalFeatures.append(code)
     return additionalFeatures
@@ -710,7 +709,7 @@ class GlusterApi(object):
             mountBrokerOptions = {'mountbroker-root': MOUNT_BROKER_ROOT,
                                   'geo-replication-log-group': remoteGroupName,
                                   'rpc-auth-allow-insecure': 'on'}
-            for optionName, optionValue in six.iteritems(mountBrokerOptions):
+            for optionName, optionValue in mountBrokerOptions.items():
                 self.svdsmProxy.glusterExecuteMountBrokerOpt(optionName,
                                                              optionValue)
             self.svdsmProxy.glusterExecuteMountBrokerUserAdd(remoteUserName,

@@ -6,8 +6,6 @@ from __future__ import absolute_import
 import logging
 import time
 
-import six
-
 from vdsm.storage import constants as sc
 from vdsm.storage import exception
 
@@ -205,7 +203,7 @@ class VolumeMetadata(object):
 
     @classmethod
     def _validate_integer(cls, property, value):
-        if not isinstance(value, six.integer_types):
+        if not isinstance(value, int):
             raise AssertionError(
                 "Invalid value for metadata property {!r}: {!r}".format(
                     property, value))

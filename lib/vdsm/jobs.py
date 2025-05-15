@@ -6,8 +6,6 @@ from __future__ import absolute_import
 import logging
 import threading
 
-import six
-
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.config import config
@@ -286,7 +284,7 @@ def abort(job_id):
 def info(job_type=None, job_ids=()):
     job_ids = frozenset(job_ids)
     with _lock:
-        jobs = list(six.itervalues(_jobs))
+        jobs = list(_jobs.values())
     result = {}
     for job in jobs:
         if job_type and job.job_type != job_type:

@@ -6,7 +6,6 @@ from __future__ import absolute_import
 import argparse
 from contextlib import contextmanager
 import libvirt
-import six
 import sys
 import os
 import threading
@@ -255,7 +254,7 @@ def main(argv=None):
                                             get_password(options))
 
     write_output('preparing for copy')
-    disks = six.moves.zip(options.source, options.dest, options.storagetype)
+    disks = zip(options.source, options.dest, options.storagetype)
     for diskno, (src, dst, fmt) in enumerate(disks, start=1):
         if fmt == 'volume':
             handle_volume(con, diskno, src, dst, options)

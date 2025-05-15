@@ -38,7 +38,6 @@ from oslo_concurrency import processutils as putils
 from oslo_privsep import priv_context
 from oslo_utils import fileutils
 from oslo_utils import strutils
-import six
 
 
 class RBDConnector(connectors.rbd.RBDConnector):
@@ -133,7 +132,7 @@ def _execute(*cmd, **kwargs):
     except OSError as e:
         sanitized_cmd = strutils.mask_password(' '.join(cmd))
         raise putils.ProcessExecutionError(
-            cmd=sanitized_cmd, description=six.text_type(e))
+            cmd=sanitized_cmd, description=str(e))
 
 
 def init(root_helper='sudo'):

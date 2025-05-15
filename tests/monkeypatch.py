@@ -8,8 +8,6 @@ from contextlib import contextmanager
 from functools import wraps
 import inspect
 
-import six
-
 
 #
 # Monkey patch.
@@ -47,16 +45,13 @@ class Patch(object):
 
     @staticmethod
     def _is_static_method(cls, method_name, method):
-        is_static_py2 = six.PY2 and inspect.isfunction(method)
         # In Python 3, static methods are returned as 'function' and lose
         # 'staticmethod' class relationship when returned by 'getattr'
         # so we have to reach to __dict__ directly. Calling 'inspect.ismethod'
         # to differentiate between a regular method and a static method won't
         # work without referring to *bound* method and thus, creating
         # an instance of a class.
-        is_static_py3 = six.PY3 and isinstance(cls.__dict__[method_name],
-                                               staticmethod)
-        return is_static_py2 or is_static_py3
+        return isinstance(cls.__dict__[method_name], staticmethod)
 
     @staticmethod
     def _is_class_method(method):

@@ -4,15 +4,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import io
 import logging
 import time
+import types
 from weakref import proxy
 from random import Random
 import threading
 from resource import getrlimit, RLIMIT_NPROC
-
-import six
-from six.moves._thread import error as ThreadError
 
 import pytest
 
@@ -42,7 +41,7 @@ class ErrorResourceFactory(rm.SimpleResourceFactory):
 
 class StringResourceFactory(rm.SimpleResourceFactory):
     def createResource(self, name, lockType):
-        s = six.StringIO("%s:%s" % (name, lockType))
+        s = io.StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
         def switchLockType(self, lockType):
@@ -53,31 +52,31 @@ class StringResourceFactory(rm.SimpleResourceFactory):
             self.write("%s:%s" % (name, lockType))
             self.seek(0)
 
-        s.switchLockType = six.create_bound_method(switchLockType, s)
+        s.switchLockType = types.MethodType(switchLockType, s)
         return s
 
 
 class SwitchFailFactory(rm.SimpleResourceFactory):
     def createResource(self, name, lockType):
-        s = six.StringIO("%s:%s" % (name, lockType))
+        s = io.StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
         def switchLockType(self, lockType):
             raise Exception("I NEVER SWITCH!!!")
 
-        s.switchLockType = six.create_bound_method(switchLockType, s)
+        s.switchLockType = types.MethodType(switchLockType, s)
         return s
 
 
 class CrashOnCloseFactory(rm.SimpleResourceFactory):
     def createResource(self, name, lockType):
-        s = six.StringIO("%s:%s" % (name, lockType))
+        s = io.StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
         def close(self):
             raise Exception("I NEVER CLOSE!!!")
 
-        s.close = six.create_bound_method(close, s)
+        s.close = types.MethodType(close, s)
         return s
 
 
@@ -89,7 +88,7 @@ class FailAfterSwitchFactory(rm.SimpleResourceFactory):
         if self.fail:
             raise Exception("I CANT TAKE ALL THIS SWITCHING!")
 
-        s = six.StringIO("%s:%s" % (name, lockType))
+        s = io.StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
         factory = self
@@ -98,7 +97,7 @@ class FailAfterSwitchFactory(rm.SimpleResourceFactory):
             factory.fail = True
             raise Exception("FAIL!!!")
 
-        s.switchLockType = six.create_bound_method(switchLockType, s)
+        s.switchLockType = types.MethodType(switchLockType, s)
         return s
 
 
@@ -178,7 +177,7 @@ class TestResourceManager:
             rm.releaseResource("storage", "DOT")
 
     def testResourceWrapper(self, tmp_manager):
-        s = six.StringIO
+        s = io.StringIO
         with rm.acquireResource("string", "test", rm.EXCLUSIVE) as resource:
             for attr in dir(s):
                 if attr == "close":
@@ -566,7 +565,7 @@ class TestResourceManager:
             t = threading.Thread(target=register)
             try:
                 t.start()
-            except ThreadError:
+            except threading.ThreadError:
                 # Reached thread limit, bail out
                 # Mark test as "maxedOut" which will be used later to make sure
                 # we clean up without using threads.
@@ -596,7 +595,7 @@ class TestResourceManager:
                     t = threading.Thread(target=f, args=queue.pop())
                     try:
                         t.start()
-                    except ThreadError:
+                    except threading.ThreadError:
                         threadLimit.release()
                         f(*queue.pop())
                     else:

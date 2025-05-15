@@ -17,8 +17,6 @@ import re
 from collections import namedtuple
 from threading import RLock
 
-import six
-
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import supervdsm
@@ -415,7 +413,7 @@ class IscsiInterface(object):
     def update(self):
         # If this fails mid operation we get a partially updated interface.
         # Suggestions are welcome.
-        for key, value in six.iteritems(self._conf):
+        for key, value in self._conf.items():
             if value is None or key == 'iface.iscsi_ifacename':
                 continue
 

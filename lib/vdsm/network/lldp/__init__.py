@@ -6,8 +6,6 @@ from __future__ import division
 
 import abc
 
-import six
-
 from vdsm.network import driverloader
 
 
@@ -23,9 +21,10 @@ class TlvReportLldpError(Exception):
     pass
 
 
-@six.add_metaclass(abc.ABCMeta)
 class LldpAPI(object):
     """LLDP driver interface"""
+
+    __metaclass__ = abc.ABCMeta
 
     @staticmethod
     def enable_lldp_on_iface(iface, rx_only=True):

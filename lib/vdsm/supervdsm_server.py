@@ -22,8 +22,6 @@ from multiprocessing import connection
 from multiprocessing import Pipe
 from multiprocessing import Process
 
-import six
-
 from vdsm.common import commands
 from vdsm.common import concurrent
 from vdsm.common import constants
@@ -244,7 +242,7 @@ def main(args):
             module = importlib.import_module('%s.%s' %
                                              (supervdsm_api.__name__,
                                               module_name))
-            api_funcs = [f for _, f in six.iteritems(module.__dict__)
+            api_funcs = [f for _, f in module.__dict__.items()
                          if callable(f) and getattr(f, 'exposed_api', False)]
             for func in api_funcs:
                 setattr(_SuperVdsm, func.__name__, bind(logDecorator(func)))

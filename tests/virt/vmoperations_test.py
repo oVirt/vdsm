@@ -6,7 +6,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import libvirt
-from six.moves import zip
 
 from vdsm import numa
 from vdsm.common import define

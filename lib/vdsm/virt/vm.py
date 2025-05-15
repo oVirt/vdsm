@@ -34,7 +34,6 @@ import libvirt
 #
 # [1] https://wiki.libvirt.org/page/Qemu_guest_agent
 import libvirt_qemu
-import six
 
 # vdsm imports
 from vdsm import taskset
@@ -109,8 +108,6 @@ from vdsm.virt.utils import extract_cluster_version
 from vdsm.virt.utils import TimedAcquireLock
 from vdsm.virt.utils import vm_kill_paused_timeout
 from vdsm.virt.utils import VolumeSize
-from six.moves import range
-
 
 # A libvirt constant for undefined cpu quota
 _NO_CPU_QUOTA = 0
@@ -2085,8 +2082,7 @@ class Vm(object):
         disk_mapping_hash = self.guestAgent.diskMappingHash
         if disk_mapping_hash == self._last_disk_mapping_hash:
             return
-        guest_disk_mapping = list(six.iteritems(
-            self.guestAgent.guestDiskMapping))
+        guest_disk_mapping = list(self.guestAgent.guestDiskMapping.items())
         with self._confLock:
             disk_devices = list(self.getDiskDevices())
             vmdevices.common.update_guest_disk_mapping(
@@ -3579,7 +3575,7 @@ class Vm(object):
 
         if params:
             self.log.warning("updateVmPolicy got unknown parameters: %s",
-                             ", ".join(six.iterkeys(params)))
+                             ", ".join(params.keys()))
 
         #
         # Save modified metadata
@@ -3981,7 +3977,7 @@ class Vm(object):
     def _readPauseCode(self):
         if self.paused_on_io_error():
             diskErrors = self._dom.diskErrors()
-            for device, error in six.viewitems(diskErrors):
+            for device, error in diskErrors.items():
                 if error == libvirt.VIR_DOMAIN_DISK_ERROR_NO_SPACE:
                     self.log.warning('device %s out of space', device)
                     return 'ENOSPC'
@@ -4207,7 +4203,7 @@ class Vm(object):
                 with self._md_desc.device(
                         devtype=vmDrive.type, name=vmDrive.name
                 ) as dev:
-                    for k, v in six.iteritems(driveParams):
+                    for k, v in driveParams.items():
                         setattr(vmDrive, k, v)
                         # only a subset of driveParams is relevant to
                         # metadata (e.g. drive IDs). Skip fields that
@@ -5142,7 +5138,7 @@ class Vm(object):
             self._console_disconnect_action_delay = \
                 consoleDisconnectActionDelay or 0
         except virdomain.TimeoutError as tmo:
-            raise exception.SpiceTicketError(six.text_type(tmo))
+            raise exception.SpiceTicketError(str(tmo))
 
         else:
             hooks.after_vm_set_ticket(self._domain.xml, self._custom, params)

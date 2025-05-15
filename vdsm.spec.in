@@ -77,7 +77,6 @@ ExcludeArch:   ppc64le
 
 BuildRequires: openssl
 BuildRequires: python3
-BuildRequires: python3-six >= 1.9.0
 BuildRequires: python3-dateutil
 BuildRequires: python3-devel
 BuildRequires: rpm-build
@@ -117,7 +116,6 @@ Requires: ndctl
 Requires: swtpm-tools
 Requires: xz
 Requires: python3-rpm
-Requires: python3-six >= 1.9.0
 Requires: python3-requests
 Requires: curl
 Requires: %{name}-http = %{version}-%{release}
@@ -352,7 +350,6 @@ Requires:       systemd
 Requires:       glibc
 Requires:       python3-dbus
 Requires:       python3-dateutil
-Requires:       python3-six >= 1.9.0
 %if 0%{?rhel}
 Requires:       python3-decorator
 %endif
@@ -386,7 +383,6 @@ Requires:       nmstate-plugin-ovsdb
 Requires:       python3-libnmstate
 Requires:       libnl3
 Requires:       lldpad
-Requires:       python3-six
 Requires:       python3-cryptography
 Requires:       %{name}-common = %{version}-%{release}
 

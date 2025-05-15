@@ -5,12 +5,11 @@ from __future__ import absolute_import
 from __future__ import division
 
 import logging
+import queue
 import time
 
 from contextlib import contextmanager
 from unittest import mock
-
-from six.moves import queue
 
 from integration.jsonRpcHelper import constructClient
 from integration.sslhelper import generate_key_cert_pair, create_ssl_context

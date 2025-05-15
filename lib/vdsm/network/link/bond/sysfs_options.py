@@ -8,8 +8,6 @@ from glob import iglob
 import json
 import os
 
-import six
-
 from vdsm.common import constants
 from vdsm.common.cache import memoized
 
@@ -44,7 +42,7 @@ BONDING_MODES_NAME_TO_NUMBER = {
 }
 
 BONDING_MODES_NUMBER_TO_NAME = dict(
-    (v, k) for k, v in six.iteritems(BONDING_MODES_NAME_TO_NUMBER)
+    (v, k) for k, v in BONDING_MODES_NAME_TO_NUMBER.items()
 )
 
 
@@ -66,7 +64,7 @@ def _set_mode(bond, mode):
 
 
 def _set_options(bond, requested_options, current_options):
-    for key, value in six.iteritems(requested_options):
+    for key, value in requested_options.items():
         if key != 'mode' and (
             key not in current_options or value != current_options[key]
         ):
@@ -77,7 +75,7 @@ def _set_untouched_options_to_defaults(
     bond, mode, requested_options, current_options
 ):
     mode = numerize_bond_mode(mode)
-    for key, value in six.iteritems(getDefaultBondingOptions(mode)):
+    for key, value in getDefaultBondingOptions(mode).items():
         if (
             key != 'mode'
             and key not in requested_options
@@ -130,7 +128,7 @@ def get_options(bond_properties, filter_out_defaults=True, filter_opts=None):
     can be set and affect bond operation.
     """
     opts_keys = (
-        filter_opts or six.viewkeys(bond_properties) - EXCLUDED_BONDING_ENTRIES
+        filter_opts or bond_properties.keys() - EXCLUDED_BONDING_ENTRIES
     )
 
     if filter_out_defaults:
