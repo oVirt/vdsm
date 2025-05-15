@@ -10,8 +10,6 @@ import logging
 import logging.config
 import threading
 
-import six
-
 from vdsm.network import api as net_api
 from vdsm.network.link.bond import sysfs_options_mapper
 from vdsm.network.restore_net_config import restore
@@ -67,7 +65,7 @@ def list_networks(*args):
     """
     caps = net_api.network_caps()
     output = ''
-    for net, attrs in six.viewitems(caps['networks']):
+    for net, attrs in caps['networks'].items():
         output += net
         if attrs['ipv4defaultroute']:
             output += ' (default route)\n'

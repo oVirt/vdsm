@@ -6,8 +6,6 @@ from __future__ import division
 
 import re
 
-import six
-
 from vdsm.network import errors as ne
 
 
@@ -23,7 +21,7 @@ def validate_bond_names(nets, bonds):
     }
     bad_bond_names |= {
         net_attrs['bonding']
-        for net_attrs in six.viewvalues(nets)
+        for net_attrs in nets.values()
         if 'bonding' in net_attrs
         and not re.match(r'^bond\w+$', net_attrs['bonding'])
     }
@@ -36,7 +34,7 @@ def validate_bond_names(nets, bonds):
 
 
 def validate_bond_configuration(bonds):
-    for bond_name, bond_attrs in six.viewitems(bonds):
+    for bond_name, bond_attrs in bonds.items():
         if bond_attrs.get('remove', False):
             continue
 
@@ -49,7 +47,7 @@ def validate_bond_configuration(bonds):
 
 
 def validate_vlan_configuration(nets):
-    for net_name, net_attrs in six.viewitems(nets):
+    for net_name, net_attrs in nets.items():
         if net_attrs.get('remove', False):
             continue
 

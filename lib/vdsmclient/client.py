@@ -121,7 +121,6 @@ from __future__ import print_function
 import argparse
 import json
 import os
-import six
 import sys
 
 from vdsm import client
@@ -175,7 +174,7 @@ def main(args=None):
 
 
 def add_command_arguments(namespaces, subparsers):
-    for namespace in six.iterkeys(namespaces):
+    for namespace in namespaces.keys():
         parser = subparsers.add_parser(namespace, help='')
         parser.set_defaults(namespace=namespace)
         methods = parser.add_subparsers(title=namespace + ' methods',
@@ -188,7 +187,7 @@ def add_command_arguments(namespaces, subparsers):
             command.set_defaults(method=method['name'])
             method_args = '\n'.join(
                 ['{}: {}'.format(key, val)
-                 for key, val in six.iteritems(method['args'])])
+                 for key, val in method['args'].items()])
             if method_args:
                 method_args += \
                     '\n\n\nJSON representation:\n' + \

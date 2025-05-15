@@ -15,12 +15,10 @@ import pwd
 import shutil
 import stat
 import subprocess
-import sys
 import tempfile
 import time
 
 import selinux
-import six
 
 from vdsm import constants
 from vdsm.common.network import address
@@ -232,7 +230,7 @@ def createdir(dirPath, mode=None):
 
 
 def resolveUid(user):
-    if isinstance(user, six.string_types):
+    if isinstance(user, str):
         uid = pwd.getpwnam(user).pw_uid
     else:
         uid = int(user)
@@ -240,7 +238,7 @@ def resolveUid(user):
 
 
 def resolveGid(group):
-    if isinstance(group, six.string_types):
+    if isinstance(group, str):
         gid = grp.getgrnam(group).gr_gid
     else:
         gid = int(group)
@@ -349,14 +347,13 @@ def atomic_symlink(target, name):
     try:
         log.debug("Renaming %r to %r", tmp_name, name)
         os.rename(tmp_name, name)
-    except:
-        exc_info = sys.exc_info()
+    except Exception as exc:
         log.debug("Unlinking %r", tmp_name)
         try:
             os.unlink(tmp_name)
         except OSError as e:
             log.error("Cannot remove temporary link %r: %s", tmp_name, e)
-        six.reraise(*exc_info)
+        raise exc
 
 
 def fsyncPath(path):

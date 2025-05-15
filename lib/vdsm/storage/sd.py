@@ -11,8 +11,6 @@ from collections import namedtuple
 import codecs
 from contextlib import contextmanager
 
-import six
-
 from vdsm import host
 from vdsm import utils
 from vdsm.common import exception
@@ -191,7 +189,7 @@ def getVolsOfImage(allVols, imgUUID):
     allVols: The getAllVols() return dict.
     """
 
-    return dict((volName, vol) for volName, vol in six.iteritems(allVols)
+    return dict((volName, vol) for volName, vol in allVols.items()
                 if imgUUID in vol.imgs)
 
 
@@ -225,7 +223,7 @@ def validateSDStatus(status):
 
 
 def storageType(t):
-    if isinstance(t, (six.text_type, six.binary_type)):
+    if isinstance(t, (str, bytes)):
         t = t.upper()
     if t in DOMAIN_TYPES.values():
         return t
@@ -240,7 +238,7 @@ def type2name(domType):
 
 
 def name2type(name):
-    for (k, v) in six.iteritems(DOMAIN_TYPES):
+    for (k, v) in DOMAIN_TYPES.items():
         if v == name.upper():
             return k
     raise KeyError(name)
@@ -251,7 +249,7 @@ def class2name(domClass):
 
 
 def name2class(name):
-    for (k, v) in six.iteritems(DOMAIN_CLASSES):
+    for (k, v) in DOMAIN_CLASSES.items():
         if v == name:
             return k
     raise KeyError(name)
@@ -1060,7 +1058,7 @@ class StorageDomain(object):
             Volume instance
         """
         all_volumes = self.getAllVolumes()
-        for vol_id, (img_ids, _) in six.iteritems(all_volumes):
+        for vol_id, (img_ids, _) in all_volumes.items():
             # The first img_id is the id of the template or the only image
             # where the volume id appears.
             img_id = img_ids[0]

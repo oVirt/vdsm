@@ -14,8 +14,6 @@ from weakref import proxy
 from collections import defaultdict
 from typing import Dict
 
-import six
-
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.exception import JsonRpcBindingsError
 from yajsonrpc.stompclient import StompClient
@@ -530,7 +528,7 @@ class clientIF(object):
                                              drive['poolID'], drive['imageID'])
         except TypeError:
             # paths (strings) are not deactivated
-            if not isinstance(drive, six.string_types):
+            if not isinstance(drive, str):
                 self.log.warning("Drive is not a vdsm image: %s",
                                  drive, exc_info=True)
 

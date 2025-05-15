@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 
+import http.client as httpclient
 import json
 import logging
 import socket
@@ -11,8 +12,6 @@ import time
 from unittest import mock
 
 import pytest
-
-from six.moves import http_client
 
 from vdsm.common import concurrent
 from vdsm.rpc import http
@@ -65,7 +64,7 @@ def irh_connection(server_thread):
 
     def send_request(verb, headers, body):
         host, port = server_thread
-        conn = http_client.HTTPConnection(host, port)
+        conn = httpclient.HTTPConnection(host, port)
         conn.request(verb, "http://not.important.com", body, headers)
         return conn
 
@@ -172,7 +171,7 @@ def test_irh_should_report_missing_headers(
                      for (_, logging_level, logged_msg) in caplog.record_tuples
                      if logging_level == logging.ERROR]
 
-    assert response.status == http_client.BAD_REQUEST
+    assert response.status == httpclient.BAD_REQUEST
     assert any(expected_error in error for error in errors_logged), \
         "expected error '{}' not found in logs".format(expected_error)
 
@@ -271,7 +270,7 @@ def put_headers():
             get_headers(),
             b"",
             0,
-            http_client.PARTIAL_CONTENT,
+            httpclient.PARTIAL_CONTENT,
             id="valid get"
         ),
     ]
@@ -300,7 +299,7 @@ def test_irh_should_retrieve_image(
             get_headers(range_boundary=8),
             b"",
             0,
-            http_client.PARTIAL_CONTENT,
+            httpclient.PARTIAL_CONTENT,
             id="valid partial get"
         )
     ]
@@ -327,7 +326,7 @@ def test_irh_should_retrieve_partial_image(
             put_headers(),
             IMAGE_DATA,
             0,
-            http_client.OK,
+            httpclient.OK,
             id="valid put"
         ),
     ]
@@ -372,7 +371,7 @@ def test_irh_should_respond_with_error_after_unsuccessful_image_operation(
 
     api_image_mock.assert_called_with(IMAGE_UUID, POOL_UUID, DOMAIN_UUID)
 
-    assert response.status == http_client.INTERNAL_SERVER_ERROR
+    assert response.status == httpclient.INTERNAL_SERVER_ERROR
     assert response.getheader(IRH.HEADER_CONTENT_TYPE) == "application/json"
 
     response_body = json.loads(response.read())
@@ -402,4 +401,4 @@ def test_irh_should_respond_with_error_after_unexpected_exception(
     api_image_mock.side_effect = ValueError("smth went wrong")
     response = irh_connection(verb, headers, body).getresponse()
 
-    assert response.status == http_client.INTERNAL_SERVER_ERROR
+    assert response.status == httpclient.INTERNAL_SERVER_ERROR

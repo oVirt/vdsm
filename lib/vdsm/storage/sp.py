@@ -13,8 +13,6 @@ import codecs
 from functools import partial
 from weakref import proxy
 
-import six
-
 from vdsm.common import concurrent
 from vdsm.common.config import config
 from vdsm.common.panic import panic
@@ -1362,7 +1360,7 @@ class StoragePool(object):
                 domDirs[domUUID] = domaindir
 
         # Link all the domains to the pool
-        for domUUID, domaindir in six.iteritems(domDirs):
+        for domUUID, domaindir in domDirs.items():
             linkName = os.path.join(self.poolPath, domUUID)
             self._linkStorageDomain(domaindir, linkName)
             oldLinks.discard(linkName)
@@ -1588,7 +1586,7 @@ class StoragePool(object):
     @unsecured
     def getDomains(self, activeOnly=False):
         return dict((sdUUID, status) for sdUUID, status
-                    in six.iteritems(self._backend.getDomainsMap())
+                    in self._backend.getDomainsMap().items()
                     if not activeOnly or status == sd.DOM_ACTIVE_STATUS)
 
     def checkBackupDomain(self):

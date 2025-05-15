@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import copy
-import six
 
 
 class ProtectedPassword(object):
@@ -68,7 +67,7 @@ def unprotect(obj):
 
 def _walk(obj):
     if isinstance(obj, dict):
-        for key, value in six.iteritems(obj):
+        for key, value in obj.items():
             if key == "password" or \
                isinstance(key, str) and key.startswith("_X_"):
                 yield obj, key, value

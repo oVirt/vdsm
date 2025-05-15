@@ -6,7 +6,6 @@ from __future__ import absolute_import
 from functools import partial
 from uuid import uuid4
 
-import six
 from yajsonrpc import stompclient
 from yajsonrpc import \
     JsonRpcRequest, \
@@ -166,7 +165,7 @@ class _Server(object):
             # None is translated to True inside our JSONRPC implementation
             if isinstance(resp.result, list):
                 return response.success(items=resp.result)
-            elif isinstance(resp.result, six.string_types):
+            elif isinstance(resp.result, str):
                 return response.success(resp.result)
             else:
                 return response.success(**resp.result)

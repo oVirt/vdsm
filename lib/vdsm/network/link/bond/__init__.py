@@ -6,8 +6,6 @@ from __future__ import division
 
 import abc
 
-import six
-
 from vdsm.network import driverloader
 from vdsm.network.link.iface import iface
 from vdsm.network.netlink import waitfor
@@ -17,11 +15,12 @@ from .bond_speed import speed
 speed
 
 
-@six.add_metaclass(abc.ABCMeta)
 class BondAPI(object):
     """
     Bond driver interface.
     """
+
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, name, slaves=(), options=None):
         self._master = name

@@ -3,14 +3,13 @@
 
 from __future__ import absolute_import
 
+import queue
 import threading
 import logging
 import re
 import weakref
 from functools import partial
 from uuid import uuid4
-
-from six.moves import queue
 
 from vdsm import utils
 from vdsm.common import concurrent

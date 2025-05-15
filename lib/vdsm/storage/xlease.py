@@ -128,7 +128,6 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 import sanlock
-import six
 
 from vdsm import utils
 from vdsm.common import cmdutils
@@ -1194,29 +1193,13 @@ class DirectFile(object):
         """
         self._file.seek(offset, os.SEEK_SET)
         pos = 0
-        if six.PY2:
-            # There is no way to create a writable memoryview on mmap object in
-            # python 2, so we must read into a temporary buffer and copy into
-            # the given buffer.
-            rbuf = mmap.mmap(-1, len(buf), mmap.MAP_SHARED)
-            with utils.closing(rbuf, log=log.name):
-                while pos < len(buf):
-                    # TODO: Handle EOF
-                    nread = uninterruptible(self._file.readinto, rbuf)
-                    if nread == 0:
-                        break  # EOF
-                    buf.write(rbuf[:nread])
-                    pos += nread
-        else:
-            # In python 3 we can read directly into the underlying buffer
-            # without any copies using a memoryview.
-            while pos < len(buf):
-                rbuf = memoryview(buf)[pos:]
-                # TODO: Handle EOF
-                nread = uninterruptible(self._file.readinto, rbuf)
-                if nread == 0:
-                    break  # EOF
-                pos += nread
+        while pos < len(buf):
+            rbuf = memoryview(buf)[pos:]
+            # TODO: Handle EOF
+            nread = uninterruptible(self._file.readinto, rbuf)
+            if nread == 0:
+                break  # EOF
+            pos += nread
         return pos
 
     def pwrite(self, offset, buf):
@@ -1227,11 +1210,7 @@ class DirectFile(object):
         self._file.seek(offset, os.SEEK_SET)
         pos = 0
         while pos < len(buf):
-            if six.PY2:
-                # pylint: disable=undefined-variable
-                wbuf = buffer(buf, pos)  # noqa: F821
-            else:
-                wbuf = memoryview(buf)[pos:]
+            wbuf = memoryview(buf)[pos:]
             pos += uninterruptible(self._file.write, wbuf)
         os.fsync(self._file.fileno())
 

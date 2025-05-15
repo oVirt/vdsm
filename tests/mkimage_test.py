@@ -5,19 +5,11 @@
 from __future__ import absolute_import
 from __future__ import division
 
-"""
-Tests for mkimage vdsm module.
-@author: U{Sandro Bonazzola <mailto:sandro.bonazzola@gmail.com>}
-@copyright: 2012 U{Sandro Bonazzola <mailto:sandro.bonazzola@gmail.com>}
-"""
-
 from base64 import b64encode
 import os
 import stat
 from shutil import rmtree
 from tempfile import mkdtemp
-
-import six
 
 from monkeypatch import Patch
 from testlib import VdsmTestCase, permutations, expandPermutations
@@ -59,8 +51,7 @@ class MkimageTestCase(VdsmTestCase):
 
             # the base64-encoded file contents are actually read from the
             # domain XML, so they're unicode strings in py3
-            if six.PY3:
-                encoded_content = encoded_content.decode("utf-8")
+            encoded_content = encoded_content.decode("utf-8")
 
             filename = "test_%d" % i
             longpath = os.path.join(self.subdir, filename)

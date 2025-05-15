@@ -16,8 +16,6 @@ from nose.plugins import Plugin
 
 from vdsm import utils
 
-import six
-
 
 class SlowTestsPlugin(Plugin):
     """
@@ -361,6 +359,6 @@ def _check_decorator_misuse(arg):
     Decorators that are not used as a function call, have their single argument
     as the method they wrap, which is not of type string.
     """
-    if not isinstance(arg, six.string_types):
+    if not isinstance(arg, str):
         raise TypeError("First argument should be a string. "
                         "Has the decorator been used as a function call?")

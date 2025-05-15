@@ -3,6 +3,21 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
+
+from collections import deque
+import argparse
+import sys
+import traceback
+
+from . import \
+    service, \
+    expose, \
+    UsageError, \
+    requiresRoot
+from . import configurators
+from vdsm import moduleloader
+
 """I handle vdsm's configuration life cycle.
 
 This is achieved by utilizing modules from configurators package to:
@@ -12,22 +27,6 @@ This is achieved by utilizing modules from configurators package to:
 
 configurators interface is described below.
 """
-
-
-from collections import deque
-import argparse
-import sys
-import traceback
-
-import six
-
-from . import \
-    service, \
-    expose, \
-    UsageError, \
-    requiresRoot
-from . import configurators
-from vdsm import moduleloader
 
 
 def _init_configurators():
@@ -289,7 +288,7 @@ def _parse_args(*args):
 
     pargs = parser.parse_args(args[1:])
     if not pargs.modules:
-        pargs.modules = six.iterkeys(_CONFIGURATORS)
+        pargs.modules = _CONFIGURATORS.keys()
 
     pargs.modules = _sort_modules(_add_dependencies(pargs.modules))
 

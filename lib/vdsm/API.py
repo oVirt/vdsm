@@ -10,8 +10,6 @@ import logging
 import pickle
 import subprocess
 
-import six
-
 from vdsm.network.api import confirm_connectivity
 from vdsm.network.errors import ConfigNetworkError
 
@@ -1263,7 +1261,7 @@ class Global(APIBase):
             # HOST_STATUS_LIVE means that host renewed its lease in last 80
             # seconds. If so, we consider the host Up and we won't execute
             # fencing, even when it's unreachable from engine
-            for sd, status in six.iteritems(result['domains']):
+            for sd, status in result['domains'].items():
                 if status == clusterlock.HOST_STATUS_LIVE:
                     self.log.debug("Host has live lease on '%s'", sd)
                     return False

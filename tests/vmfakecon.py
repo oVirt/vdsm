@@ -11,7 +11,6 @@ import re
 import xml.etree.ElementTree as etree
 
 import libvirt
-import six
 
 from vdsm.common.cache import memoized
 
@@ -129,7 +128,7 @@ class Connection(object):
             dir_name, 'devices', 'data', name + '.xml')
 
         device_xml = None
-        mode = 'rb' if six.PY2 else 'r'
+        mode = 'r'
         try:
             with io.open(xml_path, mode) as device_xml_file:
                 device_xml = device_xml_file.read()
@@ -146,8 +145,6 @@ class Connection(object):
         def string_to_stub(xml_template, index):
             filled_template = xml_template.format(index)
             final_xml = filled_template.replace('  ', '').replace('\n', '')
-            if six.PY2:
-                final_xml = final_xml.encode('utf-8')
             return VirNodeDeviceStub(final_xml)
 
         fakelib_path = os.path.realpath(__file__)
@@ -155,7 +152,7 @@ class Connection(object):
         xml_path = os.path.join(dir_name, 'devices', 'data', 'devicetree.xml')
 
         ret = []
-        mode = 'rb' if six.PY2 else 'r'
+        mode = 'r'
         with open(xml_path, mode) as device_xml_file:
             for device in device_xml_file:
                 ret.append(VirNodeDeviceStub(device))
@@ -234,11 +231,7 @@ class VirNodeDeviceStub(object):
             raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
 
     def _re_search(self, regexp, data):
-        if six.PY2:
-            regexp = regexp.encode('utf-8')
         result = re.search(regexp, data).group(0)
-        if six.PY2:
-            result = result.decode('utf-8')
         return result
 
 

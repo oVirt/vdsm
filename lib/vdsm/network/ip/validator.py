@@ -4,15 +4,13 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import six
-
 from vdsm.network import errors as ne
 
 from .address import IPAddressData, IPAddressDataError
 
 
 def validate(nets):
-    for net, attrs in six.iteritems(nets):
+    for net, attrs in nets.items():
         if 'remove' in attrs:
             continue
 

@@ -6,11 +6,10 @@ from __future__ import division
 from contextlib import closing, contextmanager
 import logging
 import os
+import queue
 import select
 import sys
 import threading
-
-from six.moves import queue
 
 from vdsm.common import concurrent
 from vdsm.common.osutils import uninterruptible_poll

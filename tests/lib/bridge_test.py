@@ -6,9 +6,6 @@ from __future__ import division
 
 import importlib
 
-import pytest
-import six
-
 from vdsm.common.exception import GeneralException, VdsmException
 from vdsm.rpc.Bridge import DynamicBridge
 
@@ -129,7 +126,6 @@ def _get_api_instance(self, className, argObj):
     return apiObj(*ctorArgs)
 
 
-@pytest.mark.xfail(six.PY2, reason="unsupported on py2")
 class BridgeTests(TestCaseBase):
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)

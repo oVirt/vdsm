@@ -16,7 +16,6 @@ import xml.etree.ElementTree as etree
 
 from collections import namedtuple
 import libvirt
-import six
 
 from vdsm.common import commands
 from vdsm.common import conv
@@ -268,7 +267,7 @@ def physical_function_net_name(pf_pci_name):
     the network interface name associated with it (e.g. enp2s0f0)
     """
     devices = list_by_caps()
-    libvirt_device_names = [name for name, device in six.iteritems(devices) if
+    libvirt_device_names = [name for name, device in devices.items() if
                             device['params'].get('parent') == pf_pci_name and
                             device['params'].get('capability') == 'net']
     if len(libvirt_device_names) > 1:
@@ -518,9 +517,6 @@ def _process_device_params(device_xml):
     also doing sysfs lookups for sr-iov related information
     """
     params = {}
-
-    if six.PY2:
-        device_xml = device_xml.decode('ascii', errors='ignore')
 
     devXML = etree.fromstring(device_xml)
 

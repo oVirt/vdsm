@@ -7,12 +7,9 @@ from __future__ import print_function
 
 import gc
 
-import six
-
 from vdsm.common import function
 
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import skipif
 
 
 class TestWeakmethod(TestCaseBase):
@@ -30,20 +27,6 @@ class TestWeakmethod(TestCaseBase):
                 gc.garbage.remove(obj)
         gc.set_debug(self.saved_flags)
         gc.enable()
-
-    @skipif(six.PY3, "https://docs.python.org/3/library/gc.html#gc.garbage")
-    def test_with_reference_cycle(self):
-        def _leaking_wrapper(meth):
-            def wrapper(*args, **kwargs):
-                return meth(*args, **kwargs)
-            return wrapper
-
-        obj = ObjectWithDel()
-        obj.public = _leaking_wrapper(obj.public)
-        self.assertEqual(obj.public(), ("public", (), {}))
-        del obj
-        gc.collect()
-        self.assertIn(ObjectWithDel, [type(obj) for obj in gc.garbage])
 
     def test_without_reference_cycle(self):
         obj = ObjectWithDel()

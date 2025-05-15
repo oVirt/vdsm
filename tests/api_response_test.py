@@ -4,10 +4,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import sys
-
-import six
-
 from vdsm.common import api
 from vdsm.common import concurrent
 from vdsm.common import exception
@@ -180,8 +176,8 @@ def run_with_vars(context, task, func, *args, **kwargs):
             vars.task = task
         try:
             result[0] = (True, func(*args, **kwargs))
-        except:
-            result[0] = (False, sys.exc_info())
+        except Exception as exc:
+            result[0] = (False, exc)
 
     t = concurrent.thread(run)
     t.start()
@@ -189,7 +185,7 @@ def run_with_vars(context, task, func, *args, **kwargs):
 
     ok, value = result[0]
     if not ok:
-        six.reraise(*value)
+        raise value
     return value
 
 

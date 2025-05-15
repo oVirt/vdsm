@@ -8,7 +8,6 @@ from collections import defaultdict
 import logging
 import threading
 
-import six
 import xml.etree.ElementTree as etree
 from xml.sax.saxutils import escape
 
@@ -46,7 +45,7 @@ def createNetworkDef(network, bridged=True, iface=None):
         if text:
             elem.text = escape(text)
         if attrs:
-            for attr, value in six.iteritems(attrs):
+            for attr, value in attrs.items():
                 elem.set(attr, escape(str(value)))
         return elem
 

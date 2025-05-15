@@ -5,8 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 import errno
 
-import six
-
 from vdsm.network import tc
 from vdsm.network.netinfo import qos as netinfo_qos
 from vdsm.network.netinfo.cache import NetInfo, get as cache_get
@@ -231,7 +229,7 @@ def _is_explicit_defined_default_class(dev):
     definitions.
     """
     netinfo = NetInfo(cache_get())
-    for attrs in six.viewvalues(netinfo.networks):
+    for attrs in netinfo.networks.values():
         if 'vlan' not in attrs and 'hostQos' in attrs:
             ports = attrs['ports'] if attrs['bridged'] else [attrs['iface']]
             if dev in ports:
