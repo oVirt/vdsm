@@ -175,6 +175,7 @@ class RtnlObjectType(object):
     BASE = 'route'
     ADDR = BASE + '/addr'  # libnl/lib/route/addr.c
     LINK = BASE + '/link'  # libnl/lib/route/link.c
+    ROUTE = BASE + '/link'  # libnl/lib/route/link.c
 
 
 # linux/genetlink.h

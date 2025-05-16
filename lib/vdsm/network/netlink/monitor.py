@@ -224,7 +224,7 @@ def _object_input(obj, queue):
         obj_dict = _addr_info(obj)
     elif obj_type == libnl.RtnlObjectType.LINK:
         obj_dict = _link_info(obj)
-    elif obj_type.split('/', 1)[0] == libnl.RtnlObjectType.BASE:
+    elif obj_type == libnl.RtnlObjectType.ROUTE:
         obj_dict = _route_info(obj)
 
     if obj_dict is not None:
