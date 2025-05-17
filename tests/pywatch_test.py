@@ -91,7 +91,7 @@ outer()
 '''
         with pytest.raises(cmdutils.Error) as e:
             commands.run([
-                sys.executable, 'py-watch', '0.1', sys.executable,
+                sys.executable, 'py-watch', '0.2', sys.executable,
                 '-c', script])
         assert b'line 8, in inner' in e.value.out
         assert b'line 5, in outer' in e.value.out
