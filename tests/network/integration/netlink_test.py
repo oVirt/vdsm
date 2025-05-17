@@ -148,10 +148,7 @@ class TestNetlinkEventMonitor(object):
             return {k: v for (k, v) in event.items() if k in allow}
 
         def _expected_events(nic, address, cidr):
-            events_add = [
-                {'event': 'new_link', 'name': nic},
-                {'event': 'new_link', 'name': nic},
-            ]
+            events_add = [{'event': 'new_link', 'name': nic}]
             events_del = [{'event': 'del_link', 'name': nic}]
             events_add_ipv4 = [
                 {'event': 'new_addr', 'address': address + '/' + cidr}
@@ -159,18 +156,26 @@ class TestNetlinkEventMonitor(object):
             events_add_ipv6 = [{'event': 'new_addr', 'family': 'inet6'}]
             events_del_ipv4 = [
                 {'address': address + '/' + cidr, 'event': 'del_addr'},
-                {'destination': address, 'event': 'del_route'},
             ]
             events_del_ipv6 = [{'event': 'del_addr', 'family': 'inet6'}]
             if is_disabled_ipv6():
                 return deque(
-                    events_add + events_add_ipv4 + events_del_ipv4 + events_del
+                    events_add
+                    + events_add
+                    + events_add
+                    + events_add_ipv4
+                    + events_add
+                    + events_del_ipv4
+                    + events_del
                 )
             else:
                 return deque(
                     events_add
+                    + events_add
+                    + events_add
                     + events_add_ipv6
                     + events_add_ipv4
+                    + events_add
                     + events_del_ipv6
                     + events_del_ipv4
                     + events_del
