@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import time
 import pytest
 
 from vdsm.network import errors as ne
@@ -335,6 +336,9 @@ class TestNetworkBasicLegacy(object):
             else:
                 dev_name = f'{nic0}.{NETCREATE[NETWORK_NAME]["vlan"]}'
             Interface.from_existing_dev_name(dev_name).remove()
+
+            # Sleep a bit to be able to settle
+            time.sleep(0.5)
 
             adapter.refresh_netinfo()
 
