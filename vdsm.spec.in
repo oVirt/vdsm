@@ -75,6 +75,7 @@ Source0:        https://github.com/oVirt/vdsm/releases/download/v%{version}/%{vd
 ExcludeArch:   ppc64le
 %endif
 
+BuildRequires: make
 BuildRequires: openssl
 BuildRequires: python3
 BuildRequires: python3-dateutil
