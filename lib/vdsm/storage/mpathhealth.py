@@ -6,8 +6,6 @@ from __future__ import absolute_import
 import logging
 import threading
 
-import six
-
 from vdsm.common import concurrent
 from vdsm.storage import devicemapper
 
@@ -69,7 +67,7 @@ class Monitor(object):
         """
         res = {}
         with self._lock:
-            for uuid, status in six.iteritems(self._status):
+            for uuid, status in self._status.items():
                 res[uuid] = status.info()
         return res
 

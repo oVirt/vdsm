@@ -7,8 +7,6 @@ from __future__ import division
 import contextlib
 import logging
 
-import six
-
 from vdsm.common.time import monotonic_time
 from vdsm.utils import convertToStr
 
@@ -48,7 +46,7 @@ def translate(vm_stats):
                 for ioTune in value:
                     ioTune["ioTune"] = dict(
                         (k, convertToStr(v)) for k, v
-                        in six.iteritems(ioTune["ioTune"]))
+                        in ioTune["ioTune"].items())
                 stats[var] = vm_stats[var]
         elif type(vm_stats[var]) is not dict:
             stats[var] = convertToStr(vm_stats[var])
@@ -407,7 +405,7 @@ def _usage_percentage(val, interval):
 
 def _find_bulk_stats_reverse_map(stats, group):
     name_to_idx = {}
-    for idx in six.moves.xrange(stats.get('%s.count' % group, 0)):
+    for idx in range(stats.get('%s.count' % group, 0)):
         try:
             name = stats['%s.%d.name' % (group, idx)]
         except KeyError:
@@ -452,7 +450,7 @@ def memory(stats, first_sample, last_sample, interval):
             'majflt': 'balloon.major_fault',
             'minflt': 'balloon.minor_fault',
         }
-        for (k, v) in six.iteritems(stats_map):
+        for (k, v) in stats_map.items():
             # pylint: disable=round-builtin
             mem_stats[k] = int(round((
                 last_sample.get(v, 0) - first_sample.get(v, 0)

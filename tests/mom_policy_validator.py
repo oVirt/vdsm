@@ -6,11 +6,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import configparser
 import io
 import json
 import sys
-
-import six
 
 import mom
 
@@ -39,7 +38,7 @@ def load_policy_file(policy, filename):
 
 
 def prepare_entity(name, data):
-    cfg = six.moves.configparser.SafeConfigParser()
+    cfg = configparser.SafeConfigParser()
     cfg.add_section("__int__")
     cfg.set("__int__", "plot-subdir", "")
 

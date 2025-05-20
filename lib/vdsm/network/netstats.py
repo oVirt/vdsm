@@ -6,8 +6,6 @@ from __future__ import division
 
 from time import time as current_time_since_epoch
 
-import six
-
 from vdsm.network.link import stats as link_stats
 
 
@@ -15,7 +13,7 @@ def report():
     rx_dropped = tx_dropped = 0
     stats = link_stats.report()
     timestamp = current_time_since_epoch()
-    for iface_stats in six.viewvalues(stats):
+    for iface_stats in stats.values():
         iface_stats['sampleTime'] = timestamp
 
         rx_dropped += iface_stats['rxDropped']

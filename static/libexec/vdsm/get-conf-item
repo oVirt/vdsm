@@ -13,7 +13,7 @@ import sys
 try:
     from vdsm.config import config
 except:
-    from six.moves import configparser
+    import configparser
     config = configparser.ConfigParser()
 
 (dummy, file, section, item, default) = sys.argv

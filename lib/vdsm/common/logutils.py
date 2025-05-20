@@ -19,8 +19,6 @@ import time
 from dateutil import tz
 from inspect import ismethod
 
-import six
-
 from . import concurrent
 
 
@@ -117,7 +115,7 @@ class SimpleLogAdapter(logging.LoggerAdapter):
         """
         self.logger = logger
         items = ", ".join(
-            "%s='%s'" % (k, v) for k, v in six.viewitems(context))
+            "%s='%s'" % (k, v) for k, v in context.items())
         self.prefix = "(%s) " % items
 
     def process(self, msg, kwargs):

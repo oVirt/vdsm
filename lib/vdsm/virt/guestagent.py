@@ -14,8 +14,6 @@ import threading
 import uuid
 import weakref
 
-import six
-
 from vdsm import utils
 from vdsm.common import filecontrol
 from vdsm.common import supervdsm
@@ -71,7 +69,7 @@ _apps_duplicates_re = re.compile(
 
 
 def _filterXmlChars(u):
-    if not isinstance(u, six.text_type):
+    if not isinstance(u, str):
         raise TypeError
     return _filter_chars_re.sub(_REPLACEMENT_CHAR, u)
 
@@ -82,10 +80,10 @@ def _filterObject(obj):
     """
     def filt(o):
         if isinstance(o, dict):
-            return {filt(k): filt(v) for k, v in six.iteritems(o)}
+            return {filt(k): filt(v) for k, v in o.items()}
         elif isinstance(o, list):
             return [filt(i) for i in o]
-        elif isinstance(o, six.text_type):
+        elif isinstance(o, str):
             return _filterXmlChars(o)
         return o
     return filt(obj)

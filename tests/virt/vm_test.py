@@ -16,7 +16,6 @@ from contextlib import contextmanager
 from itertools import product
 
 import libvirt
-from six.moves import zip
 
 from vdsm import constants
 

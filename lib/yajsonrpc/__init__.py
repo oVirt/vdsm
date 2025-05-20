@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from __future__ import division
 import json
 import logging
-from six.moves import queue
+import queue
 
 from vdsm.common import exception as vdsmexception
 

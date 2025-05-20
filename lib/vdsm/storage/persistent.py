@@ -11,13 +11,10 @@ import hashlib
 import logging
 from contextlib import contextmanager
 
-import six
-
 from vdsm.storage import exception as se
 
 import threading
 from copy import deepcopy
-from six.moves import filter as ifilter
 
 SHA_CKSUM_TAG = "_SHA_CKSUM"
 
@@ -30,7 +27,7 @@ def _format_line(key, value):
 
 def _dump_lines(md):
     return [_format_line(key, value)
-            for key, value in sorted(six.iteritems(md))]
+            for key, value in sorted(md.items())]
 
 
 def _calc_checksum(lines):
@@ -111,8 +108,8 @@ class DictValidator(object):
         del self._dict[key]
 
     def __iter__(self):
-        return ifilter(lambda k: k in self._validatorDict,
-                       self._dict.__iter__())
+        return filter(lambda k: k in self._validatorDict,
+                      self._dict.__iter__())
 
     def keys(self):
         return list(self.__iter__())
@@ -122,7 +119,7 @@ class DictValidator(object):
 
     def update(self, metadata):
         metadata = metadata.copy()
-        for key, value in six.iteritems(metadata):
+        for key, value in metadata.items():
             enc = self._encoder(key)
             metadata[key] = enc(value)
 
@@ -135,7 +132,7 @@ class DictValidator(object):
 
     def copy(self):
         md = self._dict.copy()
-        for key, value in six.iteritems(md):
+        for key, value in md.items():
             try:
                 dec = self._decoder(key)
                 md[key] = dec(value)

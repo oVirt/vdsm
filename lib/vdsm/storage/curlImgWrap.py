@@ -3,8 +3,6 @@
 
 from __future__ import absolute_import
 
-import six
-
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm import constants
@@ -29,7 +27,7 @@ class CurlError(Exception):
 
 def _headersToOptions(headers):
     options = []
-    for k, v in six.iteritems(headers):
+    for k, v in headers.items():
         options.extend(("--header", "%s: %s" % (k, v)))
     return options
 

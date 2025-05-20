@@ -16,14 +16,7 @@ from __future__ import print_function
 import os
 import sys
 import signal
-import threading
-
-import six
-
-if six.PY2:
-    import subprocess32 as subprocess
-else:
-    import subprocess
+import subprocess
 
 
 class Terminated(Exception):

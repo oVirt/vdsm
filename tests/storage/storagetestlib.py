@@ -12,8 +12,6 @@ import shutil
 import tempfile
 import threading
 
-import six
-
 from contextlib import contextmanager
 
 from testlib import make_file, make_uuid
@@ -255,7 +253,7 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
     bsd = blockSD.BlockStorageDomain
     special = bsd.special_volumes(sd_version)
     sizes_mb = bsd.special_volumes_size_mb(sc.ALIGNMENT_1M)
-    for name, size_mb in six.iteritems(sizes_mb):
+    for name, size_mb in sizes_mb.items():
         if name in special:
             fake_lvm.createLV(sduuid, name, size_mb)
 
