@@ -17,7 +17,6 @@ RUN dnf install -y 'dnf-command(copr)' \
         e2fsprogs \
         gcc \
         gdb \
-        genisoimage \
         git \
         glusterfs-api \
         iproute-tc \
@@ -61,6 +60,7 @@ RUN dnf install -y 'dnf-command(copr)' \
         systemd-udev \
         which \
         xfsprogs \
+        xorriso \
     && dnf clean all
 
 # Create vdsm user with groups kvm,qemu,sanlock
