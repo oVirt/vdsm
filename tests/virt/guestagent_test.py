@@ -10,7 +10,6 @@ import logging
 import timeit
 
 import pytest
-import six
 
 from vdsm.virt import guestagent
 from vdsm.virt import qemuguestagent
@@ -187,7 +186,7 @@ class TestGuestIF(TestCaseBase):
         for t in zip(_MSG_TYPES, _INPUTS, _OUTPUTS):
             t = testCase(*t)
             fakeGuestAgent._handleMessage(t.msgType, t.message)
-            for (k, v) in six.iteritems(t.assertDict):
+            for (k, v) in t.assertDict.items():
                 assert fakeGuestAgent.guestInfo[k] == v
 
     def test_guestinfo_encapsulation(self):
@@ -208,7 +207,7 @@ class TestGuestIF(TestCaseBase):
                     value = 'modified'
                 guest_info[k] = value
             guest_info = fake_guest_agent.getGuestInfo()
-            for (k, v) in six.iteritems(_OUTPUTS[0]):
+            for (k, v) in _OUTPUTS[0].items():
                 assert guest_info[k] == v
 
 
@@ -249,7 +248,7 @@ class TestGuestIFHandleData(TestCaseBase):
             msgStr = self.dataToMessage(t.msgType, t.message)
             input += msgStr
             isOverSize = len(msgStr) > self.maxMessageSize
-            for (k, v) in six.iteritems(t.assertDict):
+            for (k, v) in t.assertDict.items():
                 if not isOverSize:
                     expected[k] = v
 
@@ -257,7 +256,7 @@ class TestGuestIFHandleData(TestCaseBase):
         for chunk in self.messageChunks(input, (self.maxMessageSize // 2) + 1):
             self.fakeGuestAgent._handleData(chunk.encode('utf-8'))
 
-        for (k, v) in six.iteritems(expected):
+        for (k, v) in expected.items():
             assert self.fakeGuestAgent.guestInfo[k] == expected[k]
 
     def testMixed(self):
@@ -277,7 +276,7 @@ class TestGuestIFHandleData(TestCaseBase):
             assert self.fakeGuestAgent._messageState == \
                 guestagent.MessageState.NORMAL
 
-            for (k, v) in six.iteritems(t.assertDict):
+            for (k, v) in t.assertDict.items():
                 if isOverLimit:
                     # If the message size was over the allowed limit
                     # the message should contain the default value

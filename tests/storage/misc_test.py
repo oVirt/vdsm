@@ -15,7 +15,6 @@ import weakref
 from functools import partial
 
 import pytest
-import six
 
 from testlib import AssertingLock
 from testlib import VdsmTestCase
@@ -702,8 +701,6 @@ def test_isAscii(check_str, result):
     assert misc.isAscii(check_str) == result
 
 
-@pytest.mark.skipif(
-    six.PY2, reason="Bytes support both encode and decode calls")
 def test_checkBytes():
     with pytest.raises(AttributeError):
         misc.isAscii(b"bytes")

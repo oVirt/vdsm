@@ -8,15 +8,7 @@ import os
 import random
 import string
 import subprocess
-import sys
 import time
-
-import six
-from six.moves import range
-
-"""
-shared utilities and common code for the virt package
-"""
 
 import os.path
 import threading
@@ -30,6 +22,9 @@ from vdsm.common.time import monotonic_time
 from vdsm.config import config
 from vdsm.constants import P_VDSM_LOG
 
+"""
+shared utilities and common code for the virt package
+"""
 
 _COMMANDS_LOG_DIR = os.path.join(P_VDSM_LOG, 'commands')
 
@@ -104,7 +99,7 @@ class ExpiringCache(object):
         with self._lock:
             expired_keys = [
                 key for key, (expiration, _)
-                in six.iteritems(self._items)
+                in self._items.items()
                 if expiration <= now]
             for key in expired_keys:
                 del self._items[key]
@@ -248,17 +243,13 @@ class prepared(object):
         for image in self._images:
             try:
                 image.prepare()
-            except:
-                exc = sys.exc_info()
+            except Exception as exc:
                 log.error("Error preparing image %r", image)
                 try:
                     self._teardown()
                 except TeardownError:
                     log.exception("Error tearing down images")
-                try:
-                    six.reraise(*exc)
-                finally:
-                    del exc
+                raise exc
 
             self._prepared_images.append(image)
         return self

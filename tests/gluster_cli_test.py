@@ -5,10 +5,9 @@ from __future__ import absolute_import
 from __future__ import division
 
 import sys
-import six
 
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import skipif
+
 from vdsm.gluster import cli as gcli
 from vdsm.gluster import exception
 import xml.etree.ElementTree as etree
@@ -563,7 +562,7 @@ class GlusterCliTests(TestCaseBase):
 """
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatusClients(tree)
-        self.assertEqual(set(six.iterkeys(status)), {'bricks', 'name'})
+        self.assertEqual(set(status.keys()), {'bricks', 'name'})
         self.assertEqual(status['name'], 'music')
         oBricks = [{'brick': '192.168.122.2:/tmp/music-b1',
                     'hostuuid':
@@ -1222,14 +1221,6 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatusMem(tree)
         self.assertEqual(status, ostatus)
-
-    @skipif(six.PY3, "Needs porting to python 3")
-    def test_parseStorageDevices(self):
-        from vdsm.gluster.storagedev import _parseDevices \
-            as parseStorageDevices
-
-        status = parseStorageDevices(glusterTestData.glusterStorageDevData())
-        self.assertEqual(status, glusterTestData.GLUSTER_STORAGE_DEVICES)
 
     def test_parseVolumeStatus(self):
         self._parseVolumeStatus_test()

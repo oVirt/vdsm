@@ -5,7 +5,6 @@
 from __future__ import absolute_import
 from __future__ import division
 import logging
-import six
 import socket
 from collections import deque
 
@@ -109,7 +108,7 @@ class Frame(object):
             headers = {}
 
         self.headers = headers
-        if isinstance(body, six.text_type):
+        if isinstance(body, str):
             body = body.encode("utf-8")
 
         self.body = body
@@ -123,7 +122,7 @@ class Frame(object):
 
         data = [encode_value(self.command), b"\n"]
 
-        for key, value in six.viewitems(self.headers):
+        for key, value in self.headers.items():
             data.append(encode_value(key))
             data.append(b":")
             data.append(encode_value(value))
@@ -145,7 +144,7 @@ class Frame(object):
 
 
 def decode_value(s):
-    if not isinstance(s, six.binary_type):
+    if not isinstance(s, bytes):
         raise ValueError(
             "Unable to decode non-binary value: {!r}".format(repr(s)))
 
@@ -168,13 +167,13 @@ def decode_value(s):
 
 
 def encode_value(s):
-    if isinstance(s, six.text_type):
+    if isinstance(s, str):
         s = s.encode("utf-8")
     # TODO: Remove handling ints as 'decode_value'
     #       doesn't do the reverse conversion
     elif isinstance(s, int):
         s = str(s).encode("utf-8")
-    elif not isinstance(s, six.binary_type):
+    elif not isinstance(s, bytes):
         raise ValueError(
             "Unable to encode non-string value: {!r}".format(repr(s)))
 
@@ -185,7 +184,7 @@ class Parser(object):
     _STATE_CMD = "Parsing command"
     _STATE_HEADER = "Parsing headers"
     _STATE_BODY = "Receiving body"
-    _FRAME_TERMINATOR = b"\x00" if six.PY2 else 0
+    _FRAME_TERMINATOR = 0
 
     def __init__(self):
         self._states = {

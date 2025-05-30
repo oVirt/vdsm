@@ -11,8 +11,6 @@ import os
 import random
 import string
 
-import six
-
 from vdsm.network import ethtool
 from vdsm.network import ipwrapper
 from vdsm.network.netlink import libnl
@@ -43,11 +41,12 @@ class Type(object):
     VF = 'vf'
 
 
-@six.add_metaclass(abc.ABCMeta)
 class IfaceAPI(object):
     """
     Link iface driver interface.
     """
+
+    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def up(self, admin_blocking=True, oper_blocking=False):

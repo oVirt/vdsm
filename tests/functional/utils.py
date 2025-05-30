@@ -6,7 +6,6 @@ from __future__ import division
 from contextlib import contextmanager
 from functools import wraps
 import inspect
-import six
 import socket
 import time
 import threading
@@ -142,7 +141,7 @@ class _VdsProxy(object):
         return _parse_result(result)
 
     def _vlanInRunningConfig(self, devName, vlanId):
-        for attrs in six.itervalues(self.config.networks):
+        for attrs in self.config.networks.values():
             if (int(vlanId) == attrs.get('vlan') and
                     (attrs.get('bonding') == devName or
                      attrs.get('nic') == devName)):

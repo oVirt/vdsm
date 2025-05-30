@@ -10,7 +10,6 @@ import mmap
 import os
 import re
 import signal
-import sys
 import threading
 import time
 
@@ -19,7 +18,6 @@ from contextlib import contextmanager
 from contextlib import closing
 
 import sanlock
-import six
 
 from vdsm.common import concurrent
 from vdsm.common import exception
@@ -180,7 +178,7 @@ def lvmTagEncode(s):
 
 
 def lvmTagDecode(s):
-    return LVM_ENC_ESCAPE.sub(lambda c: six.unichr(int(c.groups()[0])), s)
+    return LVM_ENC_ESCAPE.sub(lambda c: chr(int(c.groups()[0])), s)
 
 
 def _getVolsTree(sdUUID):
@@ -272,7 +270,7 @@ def getAllVolumes(sdUUID):
     for volName in vols:
         res[volName] = {'imgs': [], 'parent': None}
 
-    for volName, vImg, parentVol in six.itervalues(vols):
+    for volName, vImg, parentVol in vols.values():
         res[volName]['parent'] = parentVol
         if vImg not in res[volName]['imgs']:
             res[volName]['imgs'].insert(0, vImg)
@@ -287,7 +285,7 @@ def getAllVolumes(sdUUID):
                     res[parentVol]['imgs'].append(vImg)
 
     return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
-                for k, v in six.iteritems(res))
+                for k, v in res.items())
 
 
 def deleteVolumes(sdUUID, vols):
@@ -533,7 +531,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         devNum = len(oldMapping)
         for dev in pvlist:
             knownDev = False
-            for pvID, oldInfo in six.iteritems(oldMapping):
+            for pvID, oldInfo in oldMapping.items():
                 if os.path.basename(dev) == oldInfo["guid"]:
                     mapping[pvID] = oldInfo
                     knownDev = True
@@ -611,8 +609,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         with self.metadata_lock:
             try:
                 lvm.reduceVG(self.sdUUID, guid)
-            except Exception:
-                exc = sys.exc_info()
+            except Exception as ex:
+                exc = ex
             else:
                 exc = None
 
@@ -627,10 +625,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 log.exception("Failed to update the domain metadata mapping")
 
             if exc:
-                try:
-                    six.reraise(*exc)
-                finally:
-                    del exc
+                raise exc  # pylint: disable=raising-bad-type
 
     def getVolumeClass(self):
         """
@@ -640,7 +635,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def _getImgExclusiveVols(self, imgUUID, volsImgs):
         """Filter vols belonging to imgUUID only."""
-        exclusives = dict((vName, v) for vName, v in six.iteritems(volsImgs)
+        exclusives = dict((vName, v) for vName, v in volsImgs.items()
                           if v.imgs[0] == imgUUID)
         return exclusives
 
@@ -735,7 +730,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         vols = {}  # The "legal" volumes: not half deleted/removed volumes.
         remnants = {}  # Volumes which are part of failed image deletes.
         allVols = getAllVolumes(self.sdUUID)
-        for volName, ip in six.iteritems(allVols):
+        for volName, ip in allVols.items():
             if (volName.startswith(sc.REMOVED_IMAGE_PREFIX) or
                     ip.imgs[0].startswith(sc.REMOVED_IMAGE_PREFIX)):
                 remnants[volName] = ip
@@ -756,7 +751,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         vols = self.getAllVolumes()  # {volName: ([imgs], parent)}
         images = set()
-        for imgs, parent in six.itervalues(vols):
+        for imgs, parent in vols.values():
             images.update(imgs)
         return images
 
@@ -1077,7 +1072,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # Create the rest of the BlockSD internal volumes
         special_lvs = cls.special_volumes(version)
         lvs_size_mb = cls.special_volumes_size_mb(alignment)
-        for name, size_mb in six.iteritems(lvs_size_mb):
+        for name, size_mb in lvs_size_mb.items():
             if name in special_lvs:
                 lvm.createLV(vgName, name, size_mb)
 

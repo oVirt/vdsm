@@ -3,21 +3,12 @@
 
 from __future__ import absolute_import
 
-"""
-A module containing miscellaneous functions and classes that are used
-plentifuly around vdsm.
-
-.. attribute:: utils.symbolerror
-
-    Contains a reverse dictionary pointing from error string to its error code.
-"""
 from collections import namedtuple, deque, OrderedDict
 from contextlib import contextmanager
 import errno
 import functools
 import logging
 import pickle
-import six
 import sys
 import os
 import socket
@@ -26,6 +17,15 @@ import time
 
 from vdsm.common import time as vdsm_time
 from vdsm.common.proc import pidstat
+
+"""
+A module containing miscellaneous functions and classes that are used
+plentifuly around vdsm.
+
+.. attribute:: utils.symbolerror
+
+    Contains a reverse dictionary pointing from error string to its error code.
+"""
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -141,7 +141,7 @@ def cancelpoint(meth):
 
 
 symbolerror = {}
-for code, symbol in six.iteritems(errno.errorcode):
+for code, symbol in errno.errorcode.items():
     symbolerror[os.strerror(code)] = symbol
 
 
@@ -274,7 +274,11 @@ class RollbackContext(object):
                     undoExcInfo = sys.exc_info()
 
         if exc_type is None and undoExcInfo is not None:
-            six.reraise(undoExcInfo[0], undoExcInfo[1], undoExcInfo[2])
+            if undoExcInfo[1] is None:
+                undoExcInfo[1] = undoExcInfo[0]()
+            if undoExcInfo[1].__traceback__ is not undoExcInfo[2]:
+                raise undoExcInfo[1].with_traceback(undoExcInfo[2])
+            raise undoExcInfo[1]
 
     def defer(self, func, *args, **kwargs):
         self._finally.append((func, args, kwargs))

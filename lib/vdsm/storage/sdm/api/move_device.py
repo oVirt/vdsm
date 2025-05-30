@@ -3,8 +3,6 @@
 
 from __future__ import absolute_import
 
-import six
-
 from vdsm.common import properties
 from vdsm.storage import exception as se
 from vdsm.storage.constants import STORAGE
@@ -53,7 +51,7 @@ class StorageDomainDeviceMoveParams(properties.Owner):
             raise ValueError("dst_guids is not a list")
 
         for item in dst_guids:
-            if not isinstance(item, six.string_types):
+            if not isinstance(item, str):
                 raise ValueError("dst_guids item %s isn't a string" % item)
 
         if len(self.dst_guids) != len(dst_guids):

@@ -7,9 +7,7 @@ from __future__ import division
 import json
 import logging
 
-import six
-
-from six.moves import queue
+import queue
 from threading import Lock, Event
 
 from yajsonrpc import \
@@ -42,10 +40,10 @@ class _JsonRpcClientRequestContext(object):
         return True
 
     def getResponses(self):
-        return list(six.itervalues(self._responses))
+        return list(self._responses.values())
 
     def ids(self):
-        return six.iterkeys(self._responses)
+        return self._responses.keys()
 
     def encode(self):
         return ("[" +
