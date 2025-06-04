@@ -88,12 +88,11 @@ import random
 import re
 import signal
 import socket
+import socketserver
 import threading
 import time
 
 from contextlib import closing
-
-from six.moves import socketserver
 
 try:
     # builtin subprocess in python 2 can have deadlocks with high concurrency.

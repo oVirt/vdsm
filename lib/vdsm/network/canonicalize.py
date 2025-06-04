@@ -6,8 +6,6 @@ from __future__ import division
 
 import logging
 
-import six
-
 from .netinfo import bonding, bridges
 from vdsm.common.conv import tobool
 from vdsm.network import dns
@@ -59,13 +57,13 @@ def _entities_to_canonicalize(entities):
     """
     return (
         (name, attrs)
-        for name, attrs in six.viewitems(entities)
+        for name, attrs in entities.items()
         if not _canonicalize_remove(attrs)
     )
 
 
 def canonicalize_external_bonds_used_by_nets(nets, bonds):
-    for netattrs in six.viewvalues(nets):
+    for netattrs in nets.values():
         if 'remove' in netattrs:
             continue
         bondname = netattrs.get('bonding')
@@ -145,9 +143,7 @@ def bridge_opts_str_to_dict(opts_str):
 
 
 def bridge_opts_dict_to_sorted_str(opts_dict):
-    opts_pairs = [
-        '{}={}'.format(key, val) for key, val in six.viewitems(opts_dict)
-    ]
+    opts_pairs = ['{}={}'.format(key, val) for key, val in opts_dict.items()]
     opts_pairs.sort()
     return ' '.join(opts_pairs)
 
@@ -241,7 +237,7 @@ def _canonicalize_ip_default_route(nets):
 
 
 def _net_with_default_route_from_config():
-    for net, attrs in six.iteritems(RunningConfig().networks):
+    for net, attrs in RunningConfig().networks.items():
         if attrs.get('defaultRoute', False):
             return net, attrs
     return None

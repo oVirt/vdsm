@@ -6,8 +6,6 @@ from __future__ import absolute_import
 import logging
 import weakref
 
-import six
-
 from vdsm.common import exception
 from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
@@ -34,7 +32,7 @@ PMDK_MASTER_VER = "MASTER_VERSION"
 
 
 def _domainListEncoder(domDict):
-    domains = ','.join(['%s:%s' % (k, v) for k, v in six.iteritems(domDict)])
+    domains = ','.join(['%s:%s' % (k, v) for k, v in domDict.items()])
     return domains
 
 
@@ -411,7 +409,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
 
     def setDomainsMap(self, domainsMap):
         self.domainsMap = dict(
-            ((k, v.capitalize()) for k, v in six.iteritems(domainsMap)))
+            ((k, v.capitalize()) for k, v in domainsMap.items()))
         self.log.info(
             'new storage pool master version %s and domains map %s',
             self.masterVersion, self.domainsMap)

@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-FROM quay.io/almalinuxorg/almalinux:9
+FROM quay.io/centos/centos:stream10
 
 # Add runtime dependencies.
 RUN dnf -y install dnf-plugins-core \
     && \
-    dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-9 \
+    dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-10 \
     && \
     dnf install -y ovirt-release-master \
     && \
@@ -22,12 +22,9 @@ RUN dnf -y install dnf-plugins-core \
         dnsmasq \
         git \
         make \
-        python3 \
         python3-devel \
         python3-pip \
-        python3-yaml \
         systemd \
-        systemd-udev \
         # Install vdsm-network for its dependencies
         vdsm-network \
     && \

@@ -13,7 +13,6 @@ import types
 import weakref
 
 from functools import partial
-import six
 
 import ioprocess
 
@@ -58,7 +57,7 @@ def stop():
 
 def cleanIdleIOProcesses(clientName):
     now = elapsed_time()
-    for name, (eol, proc) in list(six.iteritems(_procPool)):
+    for name, (eol, proc) in list(_procPool.items()):
         if (eol < now and name != clientName):
             log.debug("Removing idle ioprocess %s", name)
             del _procPool[name]

@@ -7,8 +7,6 @@ from __future__ import division
 from collections import defaultdict
 import logging
 
-import six
-
 from vdsm.network import tc
 
 NON_VLANNED_ID = 5000
@@ -20,7 +18,7 @@ def report_network_qos(nets_info, devs_info):
     qdiscs = defaultdict(list)
     for qdisc in tc.qdiscs(dev=None):  # None -> all dev qdiscs
         qdiscs[qdisc['dev']].append(qdisc)
-    for net, attrs in six.viewitems(nets_info):
+    for net, attrs in nets_info.items():
         iface = attrs['iface']
         if iface in devs_info['bridges']:
             host_ports = [

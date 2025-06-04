@@ -5,12 +5,11 @@ from __future__ import absolute_import
 from __future__ import division
 
 import logging
+import queue
 import threading
 import time
 
 from contextlib import contextmanager
-
-from six.moves import queue
 
 from vdsm.storage import exception as se
 from vdsm.storage import monitor

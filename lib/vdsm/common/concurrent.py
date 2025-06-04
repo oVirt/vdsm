@@ -6,14 +6,12 @@ from __future__ import division
 
 import itertools
 import logging
+import queue
 import sys
 import threading
 import traceback
 
 from collections import namedtuple
-
-from six.moves import queue
-from six.moves import range
 
 from vdsm.common import pthread
 from vdsm.common import time

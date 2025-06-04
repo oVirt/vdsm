@@ -3,11 +3,11 @@
 
 from __future__ import absolute_import
 from __future__ import division
+import configparser
 import functools
 import os
 import tempfile
 import selinux
-from six.moves import configparser
 import io
 
 from .. import utils

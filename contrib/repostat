@@ -14,7 +14,6 @@ from __future__ import division
 from __future__ import print_function
 import fileinput
 import re
-import six
 
 pattern = re.compile(r' FINISH repoStats return=(\{.+\}\}) from=internal')
 
@@ -36,7 +35,7 @@ for line in fileinput.input():
         stats[uuid]['delays'].append(float(info['delay']))
         stats[uuid]['checks'].append(float(info['lastCheck']))
 
-for uuid, info in six.iteritems(stats):
+for uuid, info in stats.items():
     print('domain:', uuid)
     print('  delay      avg: %f min: %f max: %f' % liststat(info['delays']))
     print('  last check avg: %f min: %f max: %f' % liststat(info['checks']))

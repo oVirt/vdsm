@@ -4,14 +4,15 @@
 from __future__ import absolute_import
 from __future__ import division
 from errno import EINTR
+
+import http.client
 import json
 import logging
 import threading
 import re
 import socket
 
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from six.moves import http_client as httplib
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from vdsm import API
 from vdsm.common import concurrent
@@ -109,7 +110,7 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
                                           startEvent, volUUID)
 
             if response['status']['code'] == 0:
-                self.send_response(httplib.PARTIAL_CONTENT)
+                self.send_response(http.client.PARTIAL_CONTENT)
                 self.send_header(self.HEADER_CONTENT_TYPE,
                                  'application/octet-stream')
                 self.send_header(self.HEADER_CONTENT_LENGTH, length)
@@ -126,7 +127,7 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
             # This is an expected exception, so traceback is unneeded
             self.send_error(e.httpStatusCode, e.errorMessage)
         except Exception:
-            self.send_error(httplib.INTERNAL_SERVER_ERROR,
+            self.send_error(http.client.INTERNAL_SERVER_ERROR,
                             "error during execution",
                             exc_info=True)
 
@@ -134,7 +135,7 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
         try:
             contentLength = self._getIntHeader(
                 self.HEADER_CONTENT_LENGTH,
-                httplib.LENGTH_REQUIRED)
+                http.client.LENGTH_REQUIRED)
 
             img = self._createImage()
 
@@ -154,7 +155,7 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
             if response['status']['code'] == 0:
                 while not uploadFinishedEvent.is_set():
                     uploadFinishedEvent.wait()
-                self.send_response(httplib.OK)
+                self.send_response(http.client.OK)
                 self.send_header(self.HEADER_TASK_ID, response['uuid'])
                 self.end_headers()
             else:
@@ -163,7 +164,7 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
         except RequestException as e:
             self.send_error(e.httpStatusCode, e.errorMessage)
         except Exception:
-            self.send_error(httplib.INTERNAL_SERVER_ERROR,
+            self.send_error(http.client.INTERNAL_SERVER_ERROR,
                             "error during execution",
                             exc_info=True)
 
@@ -174,7 +175,7 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
         imgUUID = self.headers.get(self.HEADER_IMAGE)
         if not all((spUUID, sdUUID, imgUUID)):
             raise RequestException(
-                httplib.BAD_REQUEST,
+                http.client.BAD_REQUEST,
                 "missing or empty required header(s):"
                 " spUUID=%s sdUUID=%s imgUUID=%s"
                 % (spUUID, sdUUID, imgUUID))
@@ -213,17 +214,17 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
             return int(value)
         except ValueError:
             raise RequestException(
-                httplib.BAD_REQUEST,
+                http.client.BAD_REQUEST,
                 "not int value %r" % value)
 
     def _getLength(self):
         value = self._getRequiredHeader(self.HEADER_RANGE,
-                                        httplib.BAD_REQUEST)
+                                        http.client.BAD_REQUEST)
 
         m = re.match(r'^bytes=0-(\d+)$', value)
         if m is None:
             raise RequestException(
-                httplib.BAD_REQUEST,
+                http.client.BAD_REQUEST,
                 "Unsupported range: %r , expected: bytes=0-last_byte" %
                 value)
 
@@ -244,7 +245,7 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
                            exc_info=True)
 
     def _send_error_response(self, response):
-        self.send_response(httplib.INTERNAL_SERVER_ERROR)
+        self.send_response(http.client.INTERNAL_SERVER_ERROR)
         json_response = json.dumps(response).encode("utf-8")
         self.send_header(self.HEADER_CONTENT_TYPE,
                          'application/json')

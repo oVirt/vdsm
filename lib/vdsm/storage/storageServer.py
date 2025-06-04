@@ -9,7 +9,6 @@ from os.path import normpath
 import os
 import socket
 from collections import namedtuple
-import six
 import sys
 
 from vdsm.config import config
@@ -219,7 +218,7 @@ class MountConnection(Connection):
 
         try:
             self._mount.mount(self.options, self._vfsType, cgroup=self.CGROUP)
-        except MountError:
+        except MountError as me:
             t, v, tb = sys.exc_info()
             try:
                 os.rmdir(self._getLocalPath())
@@ -227,18 +226,18 @@ class MountConnection(Connection):
                 log.warning(
                     "Error removing mountpoint directory %r: %s",
                     self._getLocalPath(), e)
-            six.reraise(t, v, tb)
+            raise me
         else:
             try:
                 fileSD.validateDirAccess(
                     self.getMountObj().getRecord().fs_file)
-            except se.StorageServerAccessPermissionError:
+            except se.StorageServerAccessPermissionError as ssape:
                 t, v, tb = sys.exc_info()
                 try:
                     self.disconnect()
                 except OSError:
                     log.exception("Error disconnecting")
-                six.reraise(t, v, tb)
+                raise ssape
 
     def validate(self):
         """

@@ -6,8 +6,6 @@ from __future__ import division
 
 import abc
 
-import six
-
 from vdsm.network import cmd
 from vdsm.network.lldp import EnableLldpError
 from vdsm.network.lldp import DisableLldpError
@@ -140,8 +138,9 @@ class Tlv(object):
         return self._property_parser.parse(self.name, properties_text)
 
 
-@six.add_metaclass(abc.ABCMeta)
 class PropertyParser(object):
+    __metaclass__ = abc.ABCMeta
+
     @abc.abstractmethod
     def parse(self, tlv_name, property_lines):
         pass

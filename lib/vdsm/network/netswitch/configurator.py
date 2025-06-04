@@ -6,8 +6,6 @@ from __future__ import division
 
 import logging
 
-import six
-
 from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
 from vdsm.network import errors as ne
@@ -78,16 +76,16 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
 
     with Transaction(in_rollback=in_rollback, persistent=False) as config:
         _setup_qos(networks, net_info, config.networks)
-        for net_name, net_attrs in six.viewitems(networks):
+        for net_name, net_attrs in networks.items():
             if net_attrs.get('remove'):
                 config.removeNetwork(net_name)
-        for net_name, net_attrs in six.viewitems(networks):
+        for net_name, net_attrs in networks.items():
             if not net_attrs.get('remove'):
                 config.setNetwork(net_name, net_attrs)
-        for bond_name, bond_attrs in six.viewitems(bondings):
+        for bond_name, bond_attrs in bondings.items():
             if bond_attrs.get('remove'):
                 config.removeBonding(bond_name)
-        for bond_name, bond_attrs in six.viewitems(bondings):
+        for bond_name, bond_attrs in bondings.items():
             if not bond_attrs.get('remove'):
                 config.setBonding(bond_name, bond_attrs)
         config.save()
@@ -113,7 +111,7 @@ def _get_qos_out(net_attrs):
 
 def _setup_dynamic_src_routing(networks):
     pool = MonitoredItemPool.instance()
-    for net_name, net_attrs in six.viewitems(networks):
+    for net_name, net_attrs in networks.items():
         is_remove = net_attrs.get('remove', False)
         is_dhcpv4 = net_attrs.get('bootproto') == 'dhcp'
         is_dhcpv6 = net_attrs.get('dhcpv6', False)
@@ -160,12 +158,10 @@ def _get_base_iface(net_attrs):
 
 def _order_networks(networks):
     vlanned_nets = (
-        (net, attr) for net, attr in six.viewitems(networks) if 'vlan' in attr
+        (net, attr) for net, attr in networks.items() if 'vlan' in attr
     )
     non_vlanned_nets = (
-        (net, attr)
-        for net, attr in six.viewitems(networks)
-        if 'vlan' not in attr
+        (net, attr) for net, attr in networks.items() if 'vlan' not in attr
     )
 
     for net, attr in vlanned_nets:
@@ -203,11 +199,11 @@ def netinfo(vdsmnets=None, compatibility=None):
 def _add_speed_device_info(net_caps):
     """Collect and include device speed information in the report."""
     timeout = 2
-    for devname, devattr in six.viewitems(net_caps['nics']):
+    for devname, devattr in net_caps['nics'].items():
         timeout -= _wait_for_link_up(devname, timeout)
         devattr['speed'] = nic.speed(devname)
 
-    for devname, devattr in six.viewitems(net_caps['bondings']):
+    for devname, devattr in net_caps['bondings'].items():
         timeout -= _wait_for_link_up(devname, timeout)
         devattr['speed'] = bond.speed(devname)
 
@@ -226,7 +222,7 @@ def _wait_for_link_up(devname, timeout):
 
 
 def _add_bridge_opts(net_caps):
-    for bridgename, bridgeattr in six.viewitems(net_caps['bridges']):
+    for bridgename, bridgeattr in net_caps['bridges'].items():
         bridgeattr['opts'] = bridges.bridge_options(bridgename)
 
 
@@ -277,7 +273,7 @@ def _get_switch_type(nets, bonds):
     therefore it is possible to return first found switch type.
     """
     for entries in nets, bonds:
-        for attrs in six.itervalues(entries):
+        for attrs in entries.values():
             if 'remove' not in attrs:
                 return attrs['switch']
     return None
@@ -285,7 +281,7 @@ def _get_switch_type(nets, bonds):
 
 def validate_switch_type_change(nets, bonds, running_config):
     for requests in nets, bonds:
-        for attrs in six.itervalues(requests):
+        for attrs in requests.values():
             if 'remove' in attrs:
                 raise ne.ConfigNetworkError(
                     ne.ERR_BAD_PARAMS,
