@@ -44,7 +44,7 @@ def version_info():
 
     if libvirt_version >= (8, 0):
         cluster_levels.append('4.7')
-    if libvirt_version >= (9, 5) and qemukvm_version >= (8, 1):
+    if libvirt_version >= (10, 10) and qemukvm_version >= (9, 1):
         cluster_levels.append('4.8')
 
     return {
