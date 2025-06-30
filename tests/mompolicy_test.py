@@ -9,9 +9,6 @@ import os
 import unittest
 import subprocess
 
-import six
-
-from testValidation import skipif
 
 MOM_POLICY_VALIDATOR = 'mom_policy_validator.py'
 
@@ -21,7 +18,6 @@ def setupModule():
         raise unittest.case.SkipTest()
 
 
-@skipif(six.PY3, "mom is not available for python 3 yet")
 def read_vm_controls(host_data, vm_data, *policy_files):
     cmd = [
         'python', MOM_POLICY_VALIDATOR,

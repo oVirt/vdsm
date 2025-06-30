@@ -8,12 +8,10 @@ import copy
 import io
 import xml.etree.ElementTree as etree
 
-import six
-
 
 def fromstring(data):
     parser = etree.XMLParser()
-    if isinstance(data, six.binary_type):
+    if isinstance(data, bytes):
         parser.feed(data)
     else:
         # ElementTree prefers binary type

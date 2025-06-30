@@ -4,17 +4,12 @@
 from __future__ import absolute_import
 from __future__ import division
 
-"""
-Periodic scheduler that polls QEMU Guest Agent for information.
-"""
-
 from collections import defaultdict
 import copy
 import ipaddress
 import json
 import libvirt
 import re
-import six
 import threading
 import time
 
@@ -36,6 +31,11 @@ from libvirt import \
     VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
     VIR_DOMAIN_GUEST_INFO_FILESYSTEM, \
     VIR_DOMAIN_GUEST_INFO_DISKS
+
+"""
+Periodic scheduler that polls QEMU Guest Agent for information.
+"""
+
 
 _QEMU_ACTIVE_USERS_COMMAND = 'guest-get-users'
 _QEMU_DEVICES_COMMAND = 'guest-get-devices'
@@ -413,7 +413,7 @@ class QemuGuestAgentPoller(object):
             self.set_last_check(vm.id, VDSM_GUEST_INFO_NETWORK, now)
 
     def _poller(self):
-        for vm_id, vm_obj in six.viewitems(self._cif.getVMs()):
+        for vm_id, vm_obj in self._cif.getVMs().items():
             now = monotonic_time()
             # Check if there is any state hint to accept/reject
             if self._channel_state_hint[vm_id] != CHANNEL_UNKNOWN:
@@ -736,7 +736,7 @@ class QemuGuestAgentPoller(object):
                 'Not querying QEMU-GA because domain is not running ' +
                 'for vm-id=%s', vm.id)
             return {}
-        for ifname, ifparams in six.iteritems(interfaces):
+        for ifname, ifparams in interfaces.items():
             iface = {
                 'hw': ifparams.get('hwaddr', ''),
                 'inet': [],

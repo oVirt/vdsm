@@ -17,8 +17,6 @@ import os
 import shlex
 import traceback
 
-import six
-
 import hooking
 from vdsm.common import fileutils
 from vdsm.network.netconfpersistence import RunningConfig
@@ -73,7 +71,7 @@ def _custom_parameter_to_config(custom_params):
                                 'auto_vlan': 'AUTO_VLAN', }
 
     config_params = {}
-    for name, value in six.iteritems(custom_params):
+    for name, value in custom_params.items():
         if name in parameter_config_mapping:
             config_params[parameter_config_mapping[name]] = value
     return config_params
@@ -90,7 +88,7 @@ def _configure(interface, custom_params):
     config = _parse_config(_custom_parameter_to_config(custom_params))
     with open(filename, 'w') as outfile:
         outfile.write(CONFFILE_HEADER + "\n")
-        for name, value in six.iteritems(config):
+        for name, value in config.items():
             outfile.write('%s="%s"\n' % (name, value))
 
 
@@ -110,7 +108,7 @@ def _all_configured_fcoe_networks():
     """
     existing_fcoe_networks = {}
     config = RunningConfig()
-    for net, net_attr in six.iteritems(config.networks):
+    for net, net_attr in config.networks.items():
         if _has_fcoe(net_attr):
             nic = net_attr.get('nic')
             if nic:
@@ -127,7 +125,7 @@ def _unconfigure_removed(configured, removed_networks):
     Unconfigure fcoe if network was removed from the DC
     """
     service_restart_required = False
-    for net, _ in six.iteritems(removed_networks):
+    for net, _ in removed_networks.items():
         if net in configured:
             if configured[net] is not None:
                 _unconfigure(configured[net])
@@ -141,7 +139,7 @@ def _unconfigure_non_fcoe(configured, changed_non_fcoe):
     Example:  Fcoe attribute was removed
     """
     service_restart_required = False
-    for net, net_nic in six.iteritems(changed_non_fcoe):
+    for net, net_nic in changed_non_fcoe.items():
         if net in configured and net_nic is not None:
             _unconfigure(net_nic)
             service_restart_required = True
@@ -155,7 +153,7 @@ def _reconfigure_fcoe(configured, changed_fcoe, custom_params):
     Example: Moved from one NIC to another
     """
     service_restart_required = False
-    for net, net_nic in six.iteritems(changed_fcoe):
+    for net, net_nic in changed_fcoe.items():
         if net in configured and configured[net] != net_nic:
             _unconfigure(configured[net])
             service_restart_required = True
@@ -199,7 +197,7 @@ def main():
     setup_nets_config = hooking.read_json()
     changed_all = setup_nets_config['request']['networks']
 
-    for net, net_attr in six.iteritems(changed_all):
+    for net, net_attr in changed_all.items():
         custom_parameters_string = net_attr.get('custom', {}).get('fcoe', '')
         custom_parameters[net] = _parse_custom(custom_parameters_string)
         if _has_fcoe(net_attr):

@@ -7,7 +7,6 @@ from __future__ import division
 import json
 import logging
 import yaml
-from six import iteritems
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
@@ -89,7 +88,7 @@ def _process_vdo_statistics(data):
     """
     entry = {}
     try:
-        for name, stats in iteritems(data):
+        for name, stats in data.items():
             blockSize = stats["block size"]
             entry["name"] = name
             entry["size"] = stats["1K-blocks"] * KiB
@@ -113,7 +112,7 @@ def vdoVolumeList():
         raise ge.GlusterCmdExecFailedException(rc=e.rc, err=e.err)
     vdoData = yaml.safe_load(out)
     result = []
-    for vdo, data in iteritems(vdoData["VDOs"]):
+    for vdo, data in vdoData["VDOs"].items():
         if data["VDO statistics"] == "not available":
             log.debug("VDO statistics data not available, skipping device ")
             continue

@@ -8,7 +8,6 @@ import logging
 import os
 import os.path
 import signal
-import six
 import subprocess
 import sys
 import threading
@@ -337,7 +336,11 @@ class TestExecCmdStress:
         for worker in self.workers:
             if worker.exc_info:
                 t, v, tb = worker.exc_info
-                six.reraise(t, v, tb)
+                if v is None:
+                    v = t()
+                if v.__traceback__ is not tb:
+                    raise v.with_traceback(tb)
+                raise v
 
     def read_stderr(self):
         args = ['if=/dev/zero',

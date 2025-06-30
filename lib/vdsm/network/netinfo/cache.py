@@ -7,8 +7,6 @@ from __future__ import division
 import errno
 import logging
 
-import six
-
 from vdsm.network import ipwrapper
 from vdsm.network import link
 from vdsm.network import nmstate
@@ -90,7 +88,7 @@ def _get_qos_info_from_net(nets_info):
             southbound=attrs['southbound'],
             net_name=net,
         )
-        for net, attrs in six.viewitems(nets_info)
+        for net, attrs in nets_info.items()
         if 'hostQos' in attrs
     ]
 
@@ -134,7 +132,7 @@ def _add_qos_info_to_southbound(qos_list, devices_info):
 
 
 def _sort_devices_qos_by_vlan(devices_info, iface_type):
-    for iface_attrs in six.viewvalues(devices_info[iface_type]):
+    for iface_attrs in devices_info[iface_type].values():
         if 'qos' in iface_attrs:
             iface_attrs['qos'].sort(key=lambda k: (k['vlan']))
 
@@ -151,25 +149,25 @@ def _get_devices_info_from_nmstate(interfaces_state):
 
 
 def _update_caps_info(nets_info, flat_devs_info, extra_info):
-    for net_info in six.viewvalues(nets_info):
+    for net_info in nets_info.values():
         net_info.update(extra_info[net_info['iface']])
 
-    for devname, devinfo in six.viewitems(flat_devs_info):
+    for devname, devinfo in flat_devs_info.items():
         devinfo.update(extra_info[devname])
 
 
 def _get_flat_devs_info(devices_info):
     return {
         devname: devinfo
-        for sub_devs in six.viewvalues(devices_info)
-        for devname, devinfo in six.viewitems(sub_devs)
+        for sub_devs in devices_info.values()
+        for devname, devinfo in sub_devs.items()
     }
 
 
 def _get_dev_names(nets_info, flat_devs_info):
-    return {
-        net_info['iface'] for net_info in six.viewvalues(nets_info)
-    } | frozenset(flat_devs_info)
+    return {net_info['iface'] for net_info in nets_info.values()} | frozenset(
+        flat_devs_info
+    )
 
 
 def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
@@ -179,7 +177,7 @@ def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
     else:
         nets_info = vdsmnets
 
-    for network_info in six.itervalues(nets_info):
+    for network_info in nets_info.values():
         network_info.update(LEGACY_SWITCH)
         _update_net_southbound_info(network_info, devices_info)
         _update_net_vlanid_info(network_info, devices_info['vlans'])
@@ -238,7 +236,7 @@ def _devices_report(ipaddrs, routes):
 def _permanent_hwaddr_info(devs_report):
     paddr = bonding.permanent_address()
     nics_info = devs_report.get('nics', {})
-    for nic, nicinfo in six.viewitems(nics_info):
+    for nic, nicinfo in nics_info.items():
         if nic in paddr:
             nicinfo['permhwaddr'] = paddr[nic]
 
@@ -255,7 +253,7 @@ def get(vdsmnets=None, compatibility=None):
 
 def _stringify_mtus(netinfo_data):
     for devtype in ('bondings', 'bridges', 'networks', 'nics', 'vlans'):
-        for dev in six.itervalues(netinfo_data[devtype]):
+        for dev in netinfo_data[devtype].values():
             dev['mtu'] = str(dev['mtu'])
     return netinfo_data
 
@@ -267,7 +265,7 @@ def networks_base_info(running_nets, routes=None, ipaddrs=None):
         ipaddrs = getIpAddrs()
 
     info = {}
-    for net, attrs in six.viewitems(running_nets):
+    for net, attrs in running_nets.items():
         if attrs.get('switch') != 'legacy':
             continue
         iface = get_net_iface_from_config(net, attrs)
@@ -390,15 +388,15 @@ class NetInfo(object):
     def ifaceUsers(self, iface):
         "Returns a list of entities using the interface"
         users = set()
-        for n, ndict in six.iteritems(self.networks):
+        for n, ndict in self.networks.items():
             if ndict['bridged'] and iface in ndict['ports']:
                 users.add(n)
             elif not ndict['bridged'] and iface == ndict['iface']:
                 users.add(n)
-        for b, bdict in six.iteritems(self.bondings):
+        for b, bdict in self.bondings.items():
             if iface in bdict['slaves']:
                 users.add(b)
-        for v, vdict in six.iteritems(self.vlans):
+        for v, vdict in self.vlans.items():
             if iface == vdict['iface']:
                 users.add(v)
         return users

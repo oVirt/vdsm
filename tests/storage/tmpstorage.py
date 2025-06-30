@@ -8,8 +8,6 @@ import itertools
 import logging
 import os
 
-import six
-
 from vdsm.common import commands
 from vdsm.common import cmdutils
 
@@ -55,13 +53,13 @@ class TemporaryStorage(object):
     def close(self):
         errors = []
 
-        for device in six.itervalues(self._devices):
+        for device in self._devices.values():
             try:
                 self._remove_device_vg(device)
             except CleanupError as e:
                 errors.append(e)
 
-        for device in six.itervalues(self._devices):
+        for device in self._devices.values():
             try:
                 device.detach()
             except Exception as e:

@@ -10,8 +10,6 @@ import logging
 import os
 import shutil
 
-import six
-
 from vdsm.common import constants
 from vdsm.common import fileutils
 
@@ -108,7 +106,7 @@ class BaseConfig(object):
             if name not in lhs:
                 result[name] = {'remove': True}
 
-        for name, attr in six.iteritems(lhs):
+        for name, attr in lhs.items():
             if name not in rhs or attr != rhs[name]:
                 result[name] = lhs[name]
         return result
@@ -123,9 +121,7 @@ class BaseConfig(object):
     @staticmethod
     def _filter_out_net_attrs(netattrs):
         attrs = {
-            key: value
-            for key, value in six.viewitems(netattrs)
-            if value is not None
+            key: value for key, value in netattrs.items() if value is not None
         }
 
         _filter_out_volatile_net_attrs(attrs)
@@ -139,7 +135,7 @@ class Config(BaseConfig):
         self.bondingsPath = os.path.join(savePath, NETCONF_BONDS)
         self.devicesPath = os.path.join(savePath, NETCONF_DEVS)
         nets = self._getConfigs(self.networksPath)
-        for net_attrs in six.viewvalues(nets):
+        for net_attrs in nets.values():
             _filter_out_volatile_net_attrs(net_attrs)
         bonds = self._getConfigs(self.bondingsPath)
         devices = self._getConfigs(self.devicesPath)
@@ -175,7 +171,7 @@ class Config(BaseConfig):
 
     def _save_config(self, configs, configpath):
         os.makedirs(configpath)
-        for configname, attrs in six.iteritems(configs):
+        for configname, attrs in configs.items():
             self._setConfig(attrs, os.path.join(configpath, configname))
 
     @staticmethod
