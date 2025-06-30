@@ -240,6 +240,9 @@ USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
 
 USE_DEVICES = config.get("lvm", "config_method").lower() == "devices"
 
+KEEPACTIVE = [lvm for lvm in config.get("lvm", "keep_active").split(",")
+              if lvm is not None]
+
 
 def _get_lvm_version():
     packages = osinfo.package_versions()
@@ -1173,6 +1176,9 @@ def deactivateUnusedLVs(vgname, skiplvs=()):
                           vgname, lv.name)
             elif lv.opened:
                 log.debug("Skipping open lv: vg=%s lv=%s", vgname,
+                          lv.name)
+            elif lvPath(vgname, lv.name) in KEEPACTIVE:
+                log.debug("Skipping KEEPACTIVE lv: vg=%s lv=%s", vgname,
                           lv.name)
             else:
                 deactivate.append(lv.name)
