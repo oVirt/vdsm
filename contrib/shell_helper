@@ -89,14 +89,14 @@ vdsm_downgrade() {
 
 vdsm_build() {
     pushd $VDSM_SOURCE_DIR
-    ./autogen.sh --system && NOSE_EXCLUDE=.* make rpm
+    ./autogen.sh --system && make rpm
     popd
 }
 
 vdsm_build_with_hooks() {
     pushd $VDSM_SOURCE_DIR
     ./autogen.sh --system && ./configure --enable-hooks && make \
-    && NOSE_EXCLUDE=.* make rpm
+    && make rpm
     popd
 }
 
@@ -179,7 +179,7 @@ for d in dirs:
         full_path = os.path.join(d, f)
         print('removing %s' % full_path)
         os.remove(full_path)
-
+EOF
 }
 
 emergency_net_cleanup() {

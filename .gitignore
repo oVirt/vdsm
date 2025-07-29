@@ -19,6 +19,8 @@ Makefile.in
 aclocal.m4
 autom4te.cache
 build
+conf*.dir/
+conf[A-Za-z0-9]*/
 build-aux/compile
 build-aux/config.guess
 build-aux/config.sub

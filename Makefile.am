@@ -129,9 +129,16 @@ lint: gitignore reuse execcmd black flake8 pylint
 
 .PHONY: venv
 venv:
-	python3 -m venv $(VENV_DIR) && \
-	$(VENV)/python3 -m pip install --upgrade pip && \
-	$(VENV)/python3 -m pip install -r docker/requirements.txt
+	@if [ -d /venv ]; then \
+		echo "Container virtual environment detected at /venv"; \
+		echo "No need to create local venv - using container's /venv instead"; \
+		echo "Packages are already installed during container build"; \
+	else \
+		echo "Creating local virtual environment at $(VENV_DIR)"; \
+		python3 -m venv --system-site-packages $(VENV_DIR) && \
+		$(VENV)/python3 -m pip install --upgrade pip && \
+		$(VENV)/python3 -m pip install -r docker/requirements.txt; \
+	fi
 
 .PHONY: tests
 tests: tox

@@ -18,15 +18,28 @@ Note: Not all tests have been converted to tox and/or pytest yet.
 
 ## Running the tests
 
-Before running Vdsm tests, activate the virtual environment (which you need to
-create once, with `make venv`, as described in
-[/doc/development.md](/doc/development.md)):
+### Virtual environment setup
 
+The way you set up and activate the virtual environment depends on whether you're 
+running in a container or on your local machine:
+
+**In a (dev)container:**
+The virtual environment is automatically created at `/venv` during the container 
+build process and is automatically activated in your shell sessions. No manual setup or activation is required.
+
+**Outside a container (local development):**
+You need to create the virtual environment once with `make venv` (as described in
+[/doc/development.md](/doc/development.md)), then activate it:
+
+    make venv
     source ~/.venv/vdsm/bin/activate
 
 When done with testing, you can deactivate the virtual environment:
 
     deactivate
+
+> **Note**: The `make venv` command automatically detects if you're in a container 
+> and will skip creating a local venv if `/venv` already exists.
 
 To run tests from only one module, for example `lib`:
 

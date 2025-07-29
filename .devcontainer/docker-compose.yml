@@ -1,0 +1,17 @@
+services:
+  vdsm-dev:
+    build:
+      context: ../docker
+      dockerfile: Dockerfile.${DISTRO:-centos-9}
+    volumes:
+      - ..:/workspace:cached
+      - vdsm-cache-${DISTRO:-centos-9}:/home/vdsm/.cache
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: sleep infinity
+    privileged: true
+    working_dir: /workspace
+
+volumes:
+  vdsm-cache-alma-9:
+  vdsm-cache-centos-9:
+  vdsm-cache-centos-10:

@@ -1,0 +1,44 @@
+export VDSM_SOURCE_DIR=/workspace
+source /workspace/contrib/shell_helper
+
+if [ -d /venv ] && [ -z "$VIRTUAL_ENV" ]; then
+    source /venv/bin/activate
+fi
+
+git_branch() { git branch 2>/dev/null | grep "^*" | colrm 1 2; }
+
+git_status_indicators() {
+  local branch=$(git_branch)
+  if [[ -n "$branch" ]]; then
+    local indicators=""
+    # Check for staged changes
+    if ! git diff --cached --quiet 2>/dev/null; then
+      indicators+="+"
+    fi
+    # Check for unstaged changes
+    if ! git diff --quiet 2>/dev/null; then
+      indicators+="*"
+    fi
+    # Check for untracked files
+    if [[ -n $(git ls-files --others --exclude-standard 2>/dev/null) ]]; then
+      indicators+="?"
+    fi
+    echo "$branch$indicators"
+  fi
+}
+
+venv_info() { [[ -n "$VIRTUAL_ENV" ]] && printf "[\033[0;95mvenv\033[0m] "; }
+
+# Use PROMPT_COMMAND to build PS1 dynamically with proper color handling
+update_prompt() {
+    local git_info=$(git_status_indicators)
+    if [[ -n "$git_info" ]]; then
+        PS1="$(venv_info)\[\e[0;32m\]\w\[\e[0m\] \[\e[0;34m\](\[\e[0;33m\]$git_info\[\e[0;34m\])\[\e[0m\]$ "
+    else
+        PS1="$(venv_info)\[\e[0;32m\]\w\[\e[0m\]$ "
+    fi
+}
+
+PROMPT_COMMAND=update_prompt
+
+export VIRTUAL_ENV_DISABLE_PROMPT=1
