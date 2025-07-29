@@ -1,0 +1,30 @@
+{
+  "name": "VDSM Development - CentOS Stream 9",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "vdsm-dev", 
+  "workspaceFolder": "/workspace",
+  "containerEnv": {
+    "DISTRO": "centos-9"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.pylint",
+        "ms-python.black-formatter",
+        "ms-vscode.makefile-tools",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/venv/bin/python"
+      }
+    }
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": ".devcontainer/setup.sh"
+}

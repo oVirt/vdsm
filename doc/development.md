@@ -7,6 +7,29 @@ SPDX-License-Identifier: GPL-2.0-or-later
 
 ## Environment setup
 
+You can develop VDSM either locally on your machine or using a dev container. Choose the option that works best for your setup:
+
+### Option 1: Dev Container (Recommended)
+
+The easiest way to get started is using the provided dev container, which includes all dependencies pre-installed:
+
+1. **Prerequisites**: Install VS Code with the Dev Containers extension
+2. **Choose distribution** (optional): You can change the Linux distribution by modifying the `DISTRO` environment variable in `.devcontainer/devcontainer.json`:
+   ```json
+   "containerEnv": {
+     "DISTRO": "centos-9"  // Options: centos-9, centos-10, alma-9
+   }
+   ```
+3. **Open in container**: Use "Dev Containers: Open Folder in Container" from VS Code
+
+In the dev container, the virtual environment is automatically created at `/venv` and VS Code is configured to use `/venv/bin/python` as the interpreter. The virtual environment is also automatically activated in your shell sessions via `.bashrc`, so you don't need to manually activate it. However, you can still activate it manually if needed:
+
+    source /venv/bin/activate
+
+### Option 2: Local Development
+
+For local development on Fedora, CentOS, or RHEL:
+
 Enable oVirt packages for Fedora:
 
     sudo dnf copr enable -y nsoffer/ioprocess-preview
@@ -37,9 +60,15 @@ Generate the Makefile (and configure script):
 
     ./autogen.sh --system --enable-timestamp
 
-Now you can create the virtual environment
-(https://docs.python.org/3/library/venv.html), which is necessary to run the
-tests later. This needs to be done only once:
+### Virtual Environment Setup
+
+The virtual environment setup depends on your development environment:
+
+**In a dev container:**
+The virtual environment is automatically created at `/venv` during container build. No additional setup is required.
+
+**For local development:**
+Create the virtual environment (https://docs.python.org/3/library/venv.html), which is necessary to run the tests later. This needs to be done only once:
 
     make venv
 
@@ -69,6 +98,12 @@ activate maintenance mode for Vdsm):
 ## Running the tests
 
 To run tests, first enter the virtual environment:
+
+**In a dev container:**
+
+    source /venv/bin/activate
+
+**For local development:**
 
     source ~/.venv/vdsm/bin/activate
 
