@@ -82,6 +82,15 @@ AC_ARG_ENABLE(
     ,
     [enable_gluster_mgmt="yes"]
 )
+
+# Auto-disable gluster management on EL10+ where GlusterFS is unsupported
+AS_IF([test "${enable_gluster_mgmt}" = "yes"],
+    [AS_IF([test -f /etc/redhat-release],
+        [version_major=`grep -o 'release [[0-9]]*' /etc/redhat-release | grep -o '[[0-9]]*'`
+         AS_IF([test "$version_major" -ge "10"],
+            [enable_gluster_mgmt="no"
+             AC_MSG_WARN([Disabling gluster management on EL10+ where GlusterFS is unsupported])])])])
+
 AM_CONDITIONAL([GLUSTER_MGMT], [test "${enable_gluster_mgmt}" = "yes"])
 AS_IF([test "${enable_gluster_mgmt}" = "yes"],
       AC_SUBST([GLUSTER_MGMT], ['1']),

@@ -17,7 +17,12 @@
 
 # Features
 %{!?with_ovirt_vmconsole: %global with_ovirt_vmconsole 1}
+# Disable GlusterFS management on EL10+ where GlusterFS is not available
+%if 0%{?rhel} >= 10
+%{!?with_gluster_mgmt: %global with_gluster_mgmt 0}
+%else
 %{!?with_gluster_mgmt: %global with_gluster_mgmt 1}
+%endif
 %{!?with_hooks: %global with_hooks 1}
 %{!?with_vhostmd: %global with_vhostmd 1}
 
@@ -220,9 +225,12 @@ Requires: python3-policycoreutils
 Requires: qemu-kvm >= 15:6.2.0-11.module+el8.6.0+16360+9e5d914e.4
 
 # GlusterFS client-side RPMs needed for Gluster SD
+# Only include on EL < 10 where GlusterFS is available
+%if 0%{?rhel} < 10 || 0%{?fedora}
 %ifnarch ppc64le
 Requires: glusterfs-cli >= %{gluster_version}
 Requires: glusterfs-fuse >= %{gluster_version}
+%endif
 %endif
 
 Requires: psmisc >= 22.6-15
@@ -876,7 +884,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/fallocate
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
-%{_libexecdir}/%{vdsm_name}/__pycache__/*
 %dir %{_libexecdir}/%{vdsm_name}/hooks
 %dir %{_libexecdir}/%{vdsm_name}/hooks/*
 %{python3_sitelib}/dnf-plugins/*.py
