@@ -71,7 +71,7 @@ pZeroChecksum = packed_checksum(EMPTYMAILBOX)
 
 
 def runTask(args):
-    if type(args) == tuple:
+    if isinstance(args, tuple):
         cmd = args[0]
         args = args[1:]
     else:

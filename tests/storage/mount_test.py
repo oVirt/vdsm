@@ -17,8 +17,6 @@ from vdsm.common.units import MiB, GiB
 from vdsm.common import commands
 from vdsm.storage import mount
 
-import pytest
-
 from testlib import VdsmTestCase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations

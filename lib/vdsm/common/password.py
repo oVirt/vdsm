@@ -15,7 +15,7 @@ class ProtectedPassword(object):
         self.value = value
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.value == other.value
+        return isinstance(other, type(self)) and self.value == other.value
 
     def __ne__(self, other):
         return not self.__eq__(other)

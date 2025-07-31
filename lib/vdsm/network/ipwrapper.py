@@ -54,7 +54,7 @@ def _isValid(ip, verifier):
 
 def equals(cls):
     def __eq__(self, other):
-        return type(other) == cls and self.__dict__ == other.__dict__
+        return isinstance(other, cls) and self.__dict__ == other.__dict__
 
     cls.__eq__ = __eq__
     return cls

@@ -72,7 +72,7 @@ class TestDirectioChecker:
             result = self.results[0]
             delay = result.delay()
             print("delay:", delay)
-            assert type(delay) == float
+            assert isinstance(delay, float)
 
     def test_path_ok_leak(self):
         fds_before = set(os.listdir("/proc/self/fd"))

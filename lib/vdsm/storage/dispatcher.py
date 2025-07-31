@@ -55,7 +55,7 @@ class Dispatcher(object):
                 try:
                     response = self.STATUS_OK.copy()
                     result = ctask.prepare(func, *args, **kwargs)
-                    if type(result) == dict:
+                    if isinstance(result, dict):
                         response.update(result)
                     return response
                 except se.GeneralException as e:

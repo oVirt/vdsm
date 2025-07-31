@@ -261,7 +261,7 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
 
     # We'll store the domain metadata in the VG's tags
     metadata = make_sd_metadata(sduuid, version=sd_version, pools=[spuuid])
-    assert(metadata[sd.DMDK_VERSION] >= 3)  # Tag based MD is V3 and above
+    assert (metadata[sd.DMDK_VERSION] >= 3)  # Tag based MD is V3 and above
     tag_md = blockSD.TagBasedSDMetadata(sduuid)
     tag_md.update(metadata)
 

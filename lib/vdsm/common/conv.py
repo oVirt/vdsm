@@ -9,7 +9,7 @@ def tobool(s):
     try:
         if s is None:
             return False
-        if type(s) == bool:
+        if isinstance(s, bool):
             return s
         if s.lower() == 'true':
             return True

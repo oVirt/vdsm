@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 from vdsm.common import concurrent
 from vdsm.storage import outOfProcess as oop
-from vdsm.storage.task import Job, Recovery, Task, TaskCleanType,\
+from vdsm.storage.task import Job, Recovery, Task, TaskCleanType, \
     TaskPersistType, TaskRecoveryType
 
 from . storagetestlib import Callable

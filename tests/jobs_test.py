@@ -31,7 +31,7 @@ class TestingJob(jobs.Job):
         self._aborted = True
 
     def _run(self):
-        assert(self.status == jobs.STATUS.RUNNING)
+        assert (self.status == jobs.STATUS.RUNNING)
         if self._exception:
             raise self._exception
 
