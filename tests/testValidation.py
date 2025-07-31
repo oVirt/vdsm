@@ -35,8 +35,8 @@ class SlowTestsPlugin:
         )
 
     def pytest_configure(self, config):
-        if (config.getoption('--enable-slow-tests') or 
-            os.environ.get('PYTEST_SLOW_TESTS')):
+        if (config.getoption('--enable-slow-tests') or
+                os.environ.get('PYTEST_SLOW_TESTS')):
             SlowTestsPlugin.enabled = True
 
 
@@ -63,8 +63,7 @@ class StressTestsPlugin:
         )
 
     def pytest_configure(self, config):
-        if (config.getoption('--enable-stress-tests') or
-            os.environ.get('PYTEST_STRESS_TESTS')):
+        if (config.getoption('--enable-stress-tests') or os.environ.get('PYTEST_STRESS_TESTS')):
             StressTestsPlugin.enabled = True
 
 
@@ -85,7 +84,7 @@ class ThreadLeakPlugin:
 
     def pytest_configure(self, config):
         if (config.getoption('--enable-thread-leak-check') or
-            os.environ.get('PYTEST_THREAD_LEAK_CHECK')):
+                os.environ.get('PYTEST_THREAD_LEAK_CHECK')):
             ThreadLeakPlugin.enabled = True
 
     def _threads(self):
@@ -130,7 +129,7 @@ class ProcessLeakPlugin:
 
     def pytest_configure(self, config):
         if (config.getoption('--enable-process-leak-check') or
-            os.environ.get('PYTEST_PROCESS_LEAK_CHECK')):
+                os.environ.get('PYTEST_PROCESS_LEAK_CHECK')):
             ProcessLeakPlugin.enabled = True
 
     def pytest_runtest_setup(self, item):
@@ -181,7 +180,7 @@ class FileLeakPlugin:
 
     def pytest_configure(self, config):
         if (config.getoption('--enable-file-leak-check') or
-            os.environ.get('PYTEST_FILE_LEAK_CHECK')):
+                os.environ.get('PYTEST_FILE_LEAK_CHECK')):
             FileLeakPlugin.enabled = True
 
     def _fd_desc(self, fd):
@@ -223,19 +222,19 @@ class FileLeakPlugin:
     def pytest_runtest_teardown(self, item, nextitem):
         if not self.enabled:
             return
-            
+
         leaked_files = self._open_files() - self._start_files
         if leaked_files:
             # Print detailed debugging information
             print(f"\n=== FILE LEAK DETECTED in {item.name} ===")
             print(f"Leaked files: {leaked_files}")
-            
+
             # Show current fd state for debugging
             current_fds = self._detailed_fd_info()
-            print(f"Current file descriptors:")
+            print("Current file descriptors:")
             for fd, desc in sorted(current_fds.items(), key=lambda x: int(x[0]) if x[0].isdigit() else 999):
                 print(f"  fd {fd}: {desc}")
-            
+
             raise Exception('This test leaked files: %s' % leaked_files)
 
 

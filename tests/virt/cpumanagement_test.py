@@ -48,7 +48,7 @@ class FakeVM(object):
 
 def test_libvirt_cpuset_spec():
     cpuset = cpumanagement.libvirt_cpuset_spec({2, 4}, 6)
-    assert type(cpuset) == tuple
+    assert isinstance(cpuset, tuple)
     assert len(cpuset) == 6
     assert cpuset == (False, False, True, False, True, False)
 

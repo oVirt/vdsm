@@ -139,7 +139,7 @@ class TestEventLoop:
 
         self.loop.call_soon(callback)
         self.loop.run_forever()
-        assert type(self.error) == RuntimeError
+        assert isinstance(self.error, RuntimeError)
 
     def test_fail_when_running_close(self):
         self.error = None
@@ -153,7 +153,7 @@ class TestEventLoop:
 
         self.loop.call_soon(callback)
         self.loop.run_forever()
-        assert type(self.error) == RuntimeError
+        assert isinstance(self.error, RuntimeError)
 
     def test_fail_when_closed_call_soon(self):
         self.loop.close()

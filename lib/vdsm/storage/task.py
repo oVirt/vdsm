@@ -229,7 +229,7 @@ class EnumType(object):
         return str(self.value)
 
     def __eq__(self, x):
-        if type(x) == str:
+        if isinstance(x, str):
             # TODO: This is really bad usage of __eq__, it should not succeed
             #  when passing object with different type. If fixed should be done
             #  carefully, may break code due to poor tests.
@@ -270,7 +270,7 @@ class ParamList:
         if not params:
             self.params = ""
 
-        if type(params) == list:
+        if isinstance(params, list):
             for i in params:
                 if not isinstance(i, str):
                     raise ValueError("ParamsList: param item %s not a string"

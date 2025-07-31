@@ -92,7 +92,7 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
         job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
         job.run()
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == se.GeneralException
+        assert isinstance(job.error, se.GeneralException)
         assert env_vol.getLegality() == sc.LEGAL_VOL
         assert env_vol.getMetaParam(sc.GENERATION) == generation
 
@@ -112,7 +112,7 @@ def test_qemu_amend_failure(fake_scheduler, monkeypatch, env_type):
         job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
         job.run()
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == se.GeneralException
+        assert isinstance(job.error, se.GeneralException)
         assert env_vol.getLegality() == sc.LEGAL_VOL
         assert env_vol.getMetaParam(sc.GENERATION) == generation
 
@@ -131,6 +131,6 @@ def test_sd_version_no_support_compat(fake_scheduler, env_type):
         job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
         job.run()
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == se.GeneralException
+        assert isinstance(job.error, se.GeneralException)
         assert env_vol.getLegality() == sc.LEGAL_VOL
         assert env_vol.getMetaParam(sc.GENERATION) == generation

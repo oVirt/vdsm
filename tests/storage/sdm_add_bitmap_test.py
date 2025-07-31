@@ -99,7 +99,7 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
         job.run()
 
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == se.GeneralException
+        assert isinstance(job.error, se.GeneralException)
         assert env_vol.getLegality() == sc.LEGAL_VOL
         assert env_vol.getMetaParam(sc.GENERATION) == generation
 
@@ -120,7 +120,7 @@ def test_qemu_bitmap_add_failure(fake_scheduler, monkeypatch, env_type):
         job.run()
 
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == exception.AddBitmapError
+        assert isinstance(job.error, exception.AddBitmapError)
         assert env_vol.getLegality() == sc.LEGAL_VOL
         assert env_vol.getMetaParam(sc.GENERATION) == generation
 
@@ -144,6 +144,6 @@ def test_bitmap_already_exists(fake_scheduler, env_type):
         job.run()
 
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == se.GeneralException
+        assert isinstance(job.error, se.GeneralException)
         assert env_vol.getLegality() == sc.LEGAL_VOL
         assert env_vol.getMetaParam(sc.GENERATION) == generation

@@ -51,6 +51,5 @@ class TestEventFD(VdsmTestCase):
 
     def _set_flag(self, flag):
         efd = eventfd.EventFD(flags=flag)
-        assert 0 == eventfd.EFD_CLOEXEC & fcntl.fcntl(
-                            efd, fcntl.F_GETFD)
+        assert 0 == eventfd.EFD_CLOEXEC & fcntl.fcntl(efd, fcntl.F_GETFD)
         return efd

@@ -38,7 +38,7 @@ if __name__ == '__main__':
         print("testrunner options:\n"
               "--local-modules   use vdsm modules from source tree, "
               "instead of installed ones.\n")
-    
+
     if findRemove(sys.argv, "--local-modules"):
         from vdsm import constants
         from vdsm.common import constants as common_constants

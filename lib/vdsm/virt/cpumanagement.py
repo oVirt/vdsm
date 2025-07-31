@@ -192,7 +192,7 @@ def replace_cpu_pinning(vm, dom, target_vcpupin):
             cputune.remove(vcpu)
     # Reconfigure CPU pinning based on the call parameter
     if target_vcpupin is not None and len(target_vcpupin) > 0:
-        if type(target_vcpupin) == dict:
+        if isinstance(target_vcpupin, dict):
             target_vcpupin = _flatten_cpusets(target_vcpupin)
         else:
             # Make sure we don't modify original list
