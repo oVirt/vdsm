@@ -13,6 +13,10 @@
     source /venv/bin/activate
 }
 
+# Force colored output for linting tools
+export FORCE_COLOR=1
+export PY_COLORS=1
+
 ./autogen.sh --system
 make
 make lint

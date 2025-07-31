@@ -76,6 +76,7 @@ function run_tests {
         && \
         pytest \
           -vv \
+          --color=yes \
           tests/network/$1 \
           ${*:2}
     "

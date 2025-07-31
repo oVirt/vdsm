@@ -19,6 +19,10 @@ ip link add mod_bond$SUFFIX type bond && ip link del mod_bond$SUFFIX
     source /venv/bin/activate
 }
 
+# Force colored output for tests and builds
+export FORCE_COLOR=1
+export PY_COLORS=1
+
 ./autogen.sh --system
 make
 make tests
