@@ -135,7 +135,7 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
         job.run()
 
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == se.UnsupportedOperation
+        assert isinstance(job.error, se.UnsupportedOperation)
         assert top_vol.getLegality() == sc.LEGAL_VOL
         assert top_vol.getMetaParam(sc.GENERATION) == generation
 
@@ -159,7 +159,7 @@ def test_shared_vol(fake_scheduler, env_type):
         job.run()
 
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == se.UnsupportedOperation
+        assert isinstance(job.error, se.UnsupportedOperation)
         assert top_vol.getLegality() == sc.LEGAL_VOL
         assert top_vol.getMetaParam(sc.GENERATION) == generation
 

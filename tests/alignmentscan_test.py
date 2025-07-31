@@ -52,7 +52,7 @@ class AlignmentScanTests(TestCaseBase):
             mkimage(img.name, aligned=False)
             msg = scanImage(img.name)
             assert msg[0][0] == '/dev/sda1'
-            assert msg[0][3] == False
+            assert msg[0][3] is False
             assert msg[0][4] == 'bad (alignment < 4K)'
 
     @slowtest
@@ -63,5 +63,5 @@ class AlignmentScanTests(TestCaseBase):
             mkimage(img.name, aligned=True)
             msg = scanImage(img.name)
             assert msg[0][0] == '/dev/sda1'
-            assert msg[0][3] == True
+            assert msg[0][3] is True
             assert msg[0][4] == 'ok'

@@ -54,7 +54,6 @@ def load_modules():
         tool_command: a lookup dictionary of the commands useful to execute
                       the commands when requested
     """
-    global tool_modules, tool_command
 
     mod_path = os.path.dirname(vdsm.tool.__file__)
     package_name = vdsm.tool.__name__

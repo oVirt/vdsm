@@ -213,7 +213,8 @@ def receive(p, timeout=None, bufsize=io.DEFAULT_BUFFER_SIZE):
         log.debug("Waiting for process (pid=%d, remaining=%s)",
                   p.pid, remaining)
         # Unlike all other time apis, poll is using milliseconds
-        remaining_msec = int(remaining * 1000) if deadline and remaining is not None else None
+        remaining_msec = (int(remaining * 1000)
+                          if deadline and remaining is not None else None)
         try:
             ready = poller.poll(remaining_msec)
         except select.error as e:

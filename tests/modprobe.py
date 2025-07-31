@@ -56,4 +56,4 @@ def _validate_module(name):
             commands.run(cmd_modprobe, sudo=True)
         except cmdutils.Error as e:
             pytest.skip("This test requires %s module "
-                       "(failed to load module: %s)" % (name, e))
+                        "(failed to load module: %s)" % (name, e))

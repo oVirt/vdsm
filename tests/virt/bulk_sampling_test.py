@@ -131,7 +131,7 @@ class TestVMBulkSampling(TestCaseBase):
         self.assertCallSequence(conn.__calls__, expected)
         # now we make sure the call #1 (fast) is completed.
         # we expect NOT to wait here, timeout added just in case
-        assert(cache.sync.wait(self.TIMEOUT))
+        assert (cache.sync.wait(self.TIMEOUT))
 
         # reset fake environment to pristine state
         vms['1'].ready = True
@@ -185,7 +185,7 @@ class FakeStatsCache(object):
         try:
             yield self
         finally:
-            assert(self.sync.wait(timeout))
+            assert (self.sync.wait(timeout))
 
 
 class FakeDomain(object):

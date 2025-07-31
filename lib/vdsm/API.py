@@ -192,7 +192,7 @@ class VM(APIBase):
                         with io.open(fname, 'rb') as f:
                             pickledMachineParams = pickle.load(f)
 
-                        if type(pickledMachineParams) == dict:
+                        if isinstance(pickledMachineParams, dict):
                             self.log.info('loaded pickledMachineParams: %s',
                                           pickledMachineParams)
                             self.log.debug('former conf: %s', vmParams)

@@ -110,7 +110,7 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
         job.run()
 
         assert job.status == jobs.STATUS.FAILED
-        assert type(job.error) == se.GeneralException
+        assert isinstance(job.error, se.GeneralException)
         assert top_vol.getLegality() == sc.LEGAL_VOL
         assert top_vol.getMetaParam(sc.GENERATION) == generation
 

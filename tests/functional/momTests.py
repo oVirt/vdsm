@@ -127,8 +127,7 @@ class MOMTest(TestCaseBase):
                 testPolicyStr = f.read()
         except IOError as e:
             if e.errno == errno.ENOENT:
-                pytest.skip('The policy file %s is missing.' %
-                           file_name)
+                pytest.skip('The policy file %s is missing.' % file_name)
             else:
                 pytest.skip(str(e))
 
