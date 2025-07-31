@@ -5,6 +5,10 @@
 
 git config --global --add safe.directory "$PWD"
 
+# Force colored output for build tools
+export FORCE_COLOR=1
+export PY_COLORS=1
+
 export EXPORT_DIR="${EXPORT_DIR:-exported-artifacts}"
 
 if [ "$GITHUB_EVENT_NAME" = "push" ]; then

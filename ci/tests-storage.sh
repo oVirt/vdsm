@@ -66,6 +66,10 @@ fi
     source /venv/bin/activate
 }
 
+# Force colored output for storage tests
+export FORCE_COLOR=1
+export PY_COLORS=1
+
 echo "Running tests as user $user"
 
 setup_storage
