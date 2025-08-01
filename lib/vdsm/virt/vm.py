@@ -5451,7 +5451,6 @@ class Vm(object):
             self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
         try:
             # The flag is not 100% reliable but it is a good hint
-            is_active = self.cif.qga_poller.is_active(self.id)
             with self.qga_context():
                 self._dom.shutdownFlags(
                     libvirt.VIR_DOMAIN_SHUTDOWN_GUEST_AGENT)
@@ -5469,7 +5468,11 @@ class Vm(object):
             # It's likely QEMU GA is not installed or not responding. If we
             # expected this hide the backtrace. Caller will log the error
             # anyway.
-            if is_active:
+            try:
+                is_active_check = self.cif.qga_poller.is_active(self.id)
+            except Exception:
+                is_active_check = False
+            if is_active_check:
                 self.log.exception("Shutdown by QEMU Guest Agent failed")
             else:
                 self.log.warning(
@@ -5481,7 +5484,6 @@ class Vm(object):
     def qemuGuestAgentReboot(self):
         try:
             # The flag is not 100% reliable but it is a good hint
-            is_active = self.cif.qga_poller.is_active(self.id)
             with self.qga_context():
                 self._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_GUEST_AGENT)
         except exception.NonResponsiveGuestAgent as e:
@@ -5497,7 +5499,11 @@ class Vm(object):
             # It's likely QEMU GA is not installed or not responding. If we
             # expected this hide the backtrace. Caller will log the error
             # anyway.
-            if is_active:
+            try:
+                is_active_check = self.cif.qga_poller.is_active(self.id)
+            except Exception:
+                is_active_check = False
+            if is_active_check:
                 self.log.exception("Reboot by QEMU Guest Agent failed")
             else:
                 self.log.debug(

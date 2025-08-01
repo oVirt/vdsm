@@ -8,23 +8,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-<<<<<<< Updated upstream
-# Python 3.12 compatibility: asyncore was removed from standard library
-try:
-    import asyncore
-except ImportError:
-    # Fall back to pyasyncore package for Python 3.12+
-    try:
-        import pyasyncore as asyncore
-    except ImportError:
-        raise ImportError(
-            "asyncore module not available. For Python 3.12+, install pyasyncore: "
-            "pip install pyasyncore"
-        )
-
-=======
 import asyncore
->>>>>>> Stashed changes
 import errno
 import logging
 import socket
@@ -46,6 +30,7 @@ class Dispatcher(asyncore.dispatcher):
         # This has to be done before the super initialization because
         # dispatcher implements __getattr__.
         self.__impl = None
+        self.closing = False
         asyncore.dispatcher.__init__(self, sock=sock, map=map)
         if impl is not None:
             self.switch_implementation(impl)

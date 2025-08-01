@@ -114,9 +114,11 @@ class Drive(core.Base):
                  '_monitor_lock', '_monitorable', 'guestName', '_iotune',
                  'RBD', 'managed', 'scratch_disk', 'exceeded_time',
                  'extend_time', 'managed_reservation')
-    VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
-                        MiB)
-    VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
+    # pylint: disable=used-before-assignment
+    VOLWM_CHUNK_SIZE = (
+        config.getint('irs', 'volume_utilization_chunk_mb') * MiB)
+    VOLWM_FREE_PCT = (
+        100 - config.getint('irs', 'volume_utilization_percent'))
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
 
     # Estimate of the additional space needed for qcow format internal data.

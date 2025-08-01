@@ -4,23 +4,7 @@
 
 from __future__ import absolute_import
 
-<<<<<<< Updated upstream
-# Python 3.12 compatibility: asyncore was removed from standard library
-try:
-    import asyncore
-except ImportError:
-    # Fall back to pyasyncore package for Python 3.12+
-    try:
-        import pyasyncore as asyncore
-    except ImportError:
-        raise ImportError(
-            "asyncore module not available. For Python 3.12+, install pyasyncore: "
-            "pip install pyasyncore"
-        )
-
-=======
 import asyncore
->>>>>>> Stashed changes
 import collections
 import errno
 import heapq
@@ -513,6 +497,7 @@ class Waker(asyncore.file_dispatcher):
         filecontrol.set_close_on_exec(wfd)
         filecontrol.set_non_blocking(wfd)
         self._wfd = wfd
+        self.closing = False
 
     def wakeup(self):
         try:
@@ -559,6 +544,7 @@ class BufferedReader(asyncore.file_dispatcher):
         self._complete = complete
         self._bufsize = bufsize
         self._data = bytearray()
+        self.closing = False
 
     def handle_read(self):
         chunk = self.socket.read(self._bufsize)

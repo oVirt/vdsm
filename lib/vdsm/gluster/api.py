@@ -216,9 +216,9 @@ def mountMetaVolume(metaVolumeName):
 
     command = [constants.EXT_MOUNT, META_VOL_MOUNT_POINT]
     try:
-        out = commands.run(command)
+        commands.run(command)
     except cmdutils.Error as e:
-        raise ge.GlusterMetaVolumeMountFailedException(e.rc, out, e.err)
+        raise ge.GlusterMetaVolumeMountFailedException(e.rc, None, e.err)
     return True
 
 
