@@ -80,13 +80,18 @@ class SSLContext(object):
         self.ca_certs = ca_certs
 
     def wrapSocket(self, sock):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        if self.ca_certs:
+            context.load_verify_locations(self.ca_certs, None, None)
+            context.verify_mode = ssl.CERT_REQUIRED
+        else:
+            context.verify_mode = ssl.CERT_NONE
+        context.load_cert_chain(self.cert_file, self.key_file)
+
         return SSLSocket(
-            ssl.wrap_socket(sock,
-                            keyfile=self.key_file,
-                            certfile=self.cert_file,
-                            server_side=False,
-                            cert_reqs=ssl.CERT_REQUIRED,
-                            ca_certs=self.ca_certs)
+            context.wrap_socket(sock,
+                                server_side=False,
+                                do_handshake_on_connect=True)
         )
 
 

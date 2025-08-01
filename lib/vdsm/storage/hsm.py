@@ -2487,6 +2487,7 @@ class HSM(object):
         vars.task.setDefaultException(
             se.StorageDomainActionError("spUUID: %s" % spUUID))
         sdCache.refreshStorage()
+        local_path = None
         if remotePath:
             remotePath = fileUtils.normalize_path(remotePath)
             local_path = fileUtils.transformPath(remotePath)

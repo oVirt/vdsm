@@ -673,6 +673,8 @@ class Owner(object):
 
         if timeout_ms is not None:
             timeout = timeout_ms / 1000.0
+        else:
+            timeout = None
 
         with self.lock:
             try:
