@@ -31,6 +31,8 @@ def speed(bond_name):
                 s = min(nic.speed(slave) for slave in opts['slaves'])
             elif mode in BONDING_LOADBALANCE_MODES:
                 s = sum(nic.speed(slave) for slave in opts['slaves'])
+            else:
+                raise ValueError()
             return s
     except Exception:
         logging.exception('cannot read %s speed', bond_name)

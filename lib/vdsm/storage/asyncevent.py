@@ -497,6 +497,7 @@ class Waker(asyncore.file_dispatcher):
         filecontrol.set_close_on_exec(wfd)
         filecontrol.set_non_blocking(wfd)
         self._wfd = wfd
+        self.closing = False
 
     def wakeup(self):
         try:
@@ -543,6 +544,7 @@ class BufferedReader(asyncore.file_dispatcher):
         self._complete = complete
         self._bufsize = bufsize
         self._data = bytearray()
+        self.closing = False
 
     def handle_read(self):
         chunk = self.socket.read(self._bufsize)

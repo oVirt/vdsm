@@ -30,6 +30,7 @@ class Dispatcher(asyncore.dispatcher):
         # This has to be done before the super initialization because
         # dispatcher implements __getattr__.
         self.__impl = None
+        self.closing = False
         asyncore.dispatcher.__init__(self, sock=sock, map=map)
         if impl is not None:
             self.switch_implementation(impl)
