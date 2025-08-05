@@ -48,6 +48,7 @@ RUN dnf install -y 'dnf-command(copr)' \
         python3-requests \
         python3-rpm \
         python3-sanlock \
+        python3-pyasyncore \
         python3-yaml \
         qemu-img \
         redhat-rpm-config \
