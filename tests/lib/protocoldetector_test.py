@@ -199,7 +199,10 @@ class AcceptorTests(VdsmTestCase):
         try:
             data = client.recv(self.BUFSIZE)
         except socket.error as e:
-            self.assertEqual(e.errno, errno.ECONNRESET)
+            # Both ECONNRESET and EPIPE (broken pipe) are valid
+            # disconnection errors. SSL connections may raise EPIPE
+            # instead of ECONNRESET
+            self.assertIn(e.errno, (errno.ECONNRESET, errno.EPIPE))
         else:
             self.assertEqual(data, b'')
 
@@ -219,7 +222,7 @@ class AcceptorTests(VdsmTestCase):
         self.acceptor_address = \
             self.acceptor._acceptor.socket.getsockname()[0:2]
         t = threading.Thread(target=self.reactor.process_requests)
-        t.deamon = True
+        t.daemon = True
         t.start()
 
     @contextmanager
@@ -232,8 +235,11 @@ class AcceptorTests(VdsmTestCase):
         try:
             s.settimeout(self.TIMEOUT)
             if use_ssl:
-                s = ssl.wrap_socket(s, self.key_file, self.cert_file,
-                                    ca_certs=self.cert_file, server_side=False)
+                context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+                context.load_cert_chain(self.cert_file, self.key_file)
+                s = context.wrap_socket(s, server_hostname=None)
             s.connect(sockaddr)
             yield s
         finally:

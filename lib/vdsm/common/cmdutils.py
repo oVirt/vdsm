@@ -4,13 +4,13 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import distutils.spawn
 import errno
 import io
 import logging
 import os
 import re
 import select
+import shutil
 import subprocess
 import time
 
@@ -48,7 +48,7 @@ class CommandPath(object):
                     break
             else:
                 if self._search_path:
-                    self._cmd = distutils.spawn.find_executable(self.name)
+                    self._cmd = shutil.which(self.name)
                 if self._cmd is None:
                     raise OSError(errno.ENOENT,
                                   os.strerror(errno.ENOENT) + ': ' +
@@ -213,7 +213,7 @@ def receive(p, timeout=None, bufsize=io.DEFAULT_BUFFER_SIZE):
         log.debug("Waiting for process (pid=%d, remaining=%s)",
                   p.pid, remaining)
         # Unlike all other time apis, poll is using milliseconds
-        remaining_msec = remaining * 1000 if deadline else None
+        remaining_msec = int(remaining * 1000) if deadline and remaining is not None else None
         try:
             ready = poller.poll(remaining_msec)
         except select.error as e:
