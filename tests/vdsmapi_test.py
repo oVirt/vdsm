@@ -13,7 +13,8 @@ from io import StringIO
 from textwrap import dedent
 from unittest import mock
 
-from nose.plugins.attrib import attr
+import pytest
+
 from vdsm.api import vdsmapi
 from vdsm.api.schema_inconsistency_formatter \
     import SchemaInconsistencyFormatter
@@ -696,7 +697,7 @@ class DataVerificationTests(TestCaseBase):
             'VM', 'getStats'), json.dumps(complex_type, indent=4))
 
 
-@attr(type='unit')
+@pytest.mark.unit
 class SchemaTypeTest(TestCaseBase):
 
     @mock.patch.object(vdsmapi.os.path, "dirname", return_value="/a/b/c")
@@ -710,7 +711,7 @@ class SchemaTypeTest(TestCaseBase):
     def test_path_should_raise_in(self, exists_mock, schema_dirs_mock):
         expected_msg = ("Unable to find API schema file, tried: "
                         "/a/b/c/vdsm-api.pickle")
-        with self.assertRaisesRegexp(vdsmapi.SchemaNotFound, expected_msg):
+        with self.assertRaisesRegex(vdsmapi.SchemaNotFound, expected_msg):
             vdsmapi.SchemaType.VDSM_API.path()
 
     @mock.patch.object(vdsmapi.SchemaType, "schema_dirs",
@@ -722,7 +723,7 @@ class SchemaTypeTest(TestCaseBase):
         self.assertEqual(vdsmapi.SchemaType.VDSM_API.path(), expected_path)
 
 
-@attr(type='unit')
+@pytest.mark.unit
 class MethodArgumentsParsingTests(TestCaseBase):
 
     def check_with_own_types(self, types_yaml, arguments_yaml, expected_args):
@@ -979,7 +980,7 @@ class MethodArgumentsParsingTests(TestCaseBase):
             })
 
 
-@attr(type='unit')
+@pytest.mark.unit
 class SchemaInconsistencyFormatterTest(TestCaseBase):
 
     def run(self, result=None):

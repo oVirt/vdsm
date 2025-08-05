@@ -50,7 +50,7 @@ else
 fi
 
 if [ -f /usr/bin/rpmbuild ]; then
-  NOSE_EXCLUDE=.* rpmbuild --nodeps \
+  rpmbuild --nodeps \
      --define "extra_release $EXTRA_RELEASE" \
      --define "_sourcedir `pwd`" \
      -ba --clean vdsm.spec

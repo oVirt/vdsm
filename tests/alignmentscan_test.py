@@ -7,8 +7,9 @@ from __future__ import division
 
 import os
 import tempfile
-from nose.tools import eq_, raises
-from nose.plugins.skip import SkipTest
+
+import pytest
+
 from vdsm.common.units import GiB
 from vdsm.storage.misc import execCmd
 from testlib import VdsmTestCase as TestCaseBase
@@ -27,7 +28,7 @@ def mkimage(imagepath, aligned=True):
 def validate_virtalignscan_installed():
     fpath = "/usr/bin/virt-alignment-scan"
     if not (os.path.isfile(fpath) and os.access(fpath, os.X_OK)):
-        raise SkipTest('cannot execute %s' % fpath)
+        pytest.skip('cannot execute %s' % fpath)
 
 
 class AlignmentScanTests(TestCaseBase):
@@ -35,13 +36,13 @@ class AlignmentScanTests(TestCaseBase):
     def test_help_response(self):
         validate_virtalignscan_installed()
         rc, out, err = runScanArgs("--help")
-        eq_(rc, 0)
-        eq_(err, [])
+        assert rc == 0
+        assert err == []
 
-    @raises(VirtAlignError)
     def test_bad_path(self):
         validate_virtalignscan_installed()
-        scanImage("nonexistent-image-name")
+        with pytest.raises(VirtAlignError):
+            scanImage("nonexistent-image-name")
 
     @slowtest
     @brokentest("libguestfs occasionally fails to open libvirt-sock")
@@ -50,9 +51,9 @@ class AlignmentScanTests(TestCaseBase):
         with tempfile.NamedTemporaryFile() as img:
             mkimage(img.name, aligned=False)
             msg = scanImage(img.name)
-            eq_(msg[0][0], '/dev/sda1')
-            eq_(msg[0][3], False)
-            eq_(msg[0][4], 'bad (alignment < 4K)')
+            assert msg[0][0] == '/dev/sda1'
+            assert msg[0][3] == False
+            assert msg[0][4] == 'bad (alignment < 4K)'
 
     @slowtest
     @brokentest("libguestfs occasionally fails to open libvirt-sock")
@@ -61,6 +62,6 @@ class AlignmentScanTests(TestCaseBase):
         with tempfile.NamedTemporaryFile() as img:
             mkimage(img.name, aligned=True)
             msg = scanImage(img.name)
-            eq_(msg[0][0], '/dev/sda1')
-            eq_(msg[0][3], True)
-            eq_(msg[0][4], 'ok')
+            assert msg[0][0] == '/dev/sda1'
+            assert msg[0][3] == True
+            assert msg[0][4] == 'ok'

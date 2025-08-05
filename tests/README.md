@@ -228,7 +228,7 @@ To enable slow tests:
      
     ./run_tests_local.sh --enable-slow-tests filename [...]
 
-Slow tests are also enabled if NOSE_SLOW_TESTS environment variable is set.
+Slow tests are also enabled if PYTEST_SLOW_TESTS environment variable is set.
 
 ## Enabling stress tests
 
@@ -241,39 +241,51 @@ To enable stress tests:
      
     ./run_tests_local.sh --enable-stress-tests filename [...]
 
-Stress tests are also enabled if NOSE_STRESS_TESTS environment variable is set.
+Stress tests are also enabled if PYTEST_STRESS_TESTS environment variable is set.
 
 ## Enabling threads leak check
 
 To find tests leaking threads, you can enable the thread leak checker plugin:
 
-    ./run_tests_local.sh --with-thread-leak-check filename [...]
+    ./run_tests_local.sh --enable-thread-leak-check filename [...]
+
+Or set the environment variable:
+
+    PYTEST_THREAD_LEAK_CHECK=1 ./run_tests_local.sh filename [...]
 
 To run the entire test suit with thread leak detection:
 
-    make check NOSE_WITH_THREAD_LEAK_CHECK=1
+    make check PYTEST_THREAD_LEAK_CHECK=1
 
 ## Enabling process leak check
 
 To find tests leaking child processes, you can enable the process leak checker
 plugin:
 
-    ./run_tests_local.sh --with-process-leak-check filename [...]
+    ./run_tests_local.sh --enable-process-leak-check filename [...]
+
+Or set the environment variable:
+
+    PYTEST_PROCESS_LEAK_CHECK=1 ./run_tests_local.sh filename [...]
 
 To run the entire test suit with process leak detection:
 
-    make check NOSE_WITH_PROCESS_LEAK_CHECK=1
+    make check PYTEST_PROCESS_LEAK_CHECK=1
 
 ## Enabling file leak check
 
-To find tests leaking file descriptors, you can enable the process leak checker
+To find tests leaking file descriptors, you can enable the file leak checker
 plugin:
 
-    ./run_tests_local.sh --with-file-leak-check filename [...]
+    ./run_tests_local.sh --enable-file-leak-check filename [...]
+
+Or set the environment variable:
+
+    PYTEST_FILE_LEAK_CHECK=1 ./run_tests_local.sh filename [...]
 
 To run the entire test suit with file leak detection:
 
-    make check NOSE_WITH_FILE_LEAK_CHECK=1
+    make check PYTEST_FILE_LEAK_CHECK=1
 
 ## Control verbose level
 
@@ -282,7 +294,7 @@ To run with verbose output, set verbose level to 3.
 
 To set verbose level:
     
-    make check NOSE_VERBOSE=<VERBOSE LEVEL>
+    make check PYTEST_VERBOSE=<VERBOSE LEVEL>
 
 ## Functional test suite
 

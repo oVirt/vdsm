@@ -11,94 +11,100 @@ import subprocess
 import threading
 from functools import wraps
 
-from nose.plugins.skip import SkipTest
-from nose.plugins import Plugin
+import pytest
 
 from vdsm import utils
 
 
-class SlowTestsPlugin(Plugin):
+class SlowTestsPlugin:
     """
     Tests that might be too slow to run on every build are marked with the
-    @slowtest plugin, and disable by default. Use this plugin to enable these
+    @slowtest decorator, and disable by default. Use this plugin to enable these
     tests.
     """
     name = 'slowtests'
     enabled = False
 
-    def add_options(self, parser, env=os.environ):
-        env_opt = 'NOSE_SLOW_TESTS'
-        if env is None:
-            default = False
-        else:
-            default = env.get(env_opt)
+    def pytest_addoption(self, parser):
+        parser.addoption(
+            '--enable-slow-tests',
+            action='store_true',
+            default=False,
+            help='Some tests might take a long time to run, ' +
+                 'use this to enable slow tests.'
+        )
 
-        parser.add_option('--enable-slow-tests',
-                          action='store_true',
-                          default=default,
-                          dest='enable_slow_tests',
-                          help='Some tests might take a long time to run, ' +
-                               'use this to enable slow tests.' +
-                               '  [%s]' % env_opt)
-
-    def configure(self, options, conf):
-        Plugin.configure(self, options, conf)
-        if options.enable_slow_tests:
+    def pytest_configure(self, config):
+        if (config.getoption('--enable-slow-tests') or 
+            os.environ.get('PYTEST_SLOW_TESTS')):
             SlowTestsPlugin.enabled = True
 
 
-class StressTestsPlugin(Plugin):
+class StressTestsPlugin:
     """
     Tests that stress the resources of the machine, are too slow to run on each
-    build and may fail on overloaded machines or machines with unpreditable
+    build and may fail on overloaded machines or machines with unpredictable
     resources.
 
-    These tests are mark with @stresstest decorator and are disabled by
+    These tests are marked with @stresstest decorator and are disabled by
     default. Use this plugin to enable these tests.
     """
     name = 'stresstests'
     enabled = False
 
-    def add_options(self, parser, env=os.environ):
-        env_opt = 'NOSE_STRESS_TESTS'
-        if env is None:
-            default = False
-        else:
-            default = env.get(env_opt)
+    def pytest_addoption(self, parser):
+        parser.addoption(
+            '--enable-stress-tests',
+            action='store_true',
+            default=False,
+            help='Some tests stress the resources of the ' +
+                 'system running the tests. Use this to ' +
+                 'enable stress tests'
+        )
 
-        parser.add_option('--enable-stress-tests',
-                          action='store_true',
-                          default=default,
-                          dest='enable_stress_tests',
-                          help='Some tests stress the resources of the ' +
-                               'system running the tests. Use this to ' +
-                               'enable stress tests [%s]' % env_opt)
-
-    def configure(self, options, conf):
-        Plugin.configure(self, options, conf)
-        if options.enable_stress_tests:
+    def pytest_configure(self, config):
+        if (config.getoption('--enable-stress-tests') or
+            os.environ.get('PYTEST_STRESS_TESTS')):
             StressTestsPlugin.enabled = True
 
 
-class ThreadLeakPlugin(Plugin):
+class ThreadLeakPlugin:
     """
     Check whether a test (or the code it triggers) leaks threads
     """
     name = 'thread-leak-check'
+    enabled = False
+
+    def pytest_addoption(self, parser):
+        parser.addoption(
+            '--enable-thread-leak-check',
+            action='store_true',
+            default=False,
+            help='Enable thread leak detection for tests'
+        )
+
+    def pytest_configure(self, config):
+        if (config.getoption('--enable-thread-leak-check') or
+            os.environ.get('PYTEST_THREAD_LEAK_CHECK')):
+            ThreadLeakPlugin.enabled = True
 
     def _threads(self):
         return frozenset(threading.enumerate())
 
-    def startTest(self, test):
+    def pytest_runtest_setup(self, item):
+        if not self.enabled:
+            return
         self._start_threads = self._threads()
 
-    def stopTest(self, test):
+    def pytest_runtest_teardown(self, item, nextitem):
+        if not self.enabled:
+            return
         leaked_threads = self._threads() - self._start_threads
         if leaked_threads:
             raise Exception('This test leaked threads: %s ' % leaked_threads)
 
 
-class ProcessLeakPlugin(Plugin):
+class ProcessLeakPlugin:
     """
     Fail tests that leaked child processes.
 
@@ -110,13 +116,31 @@ class ProcessLeakPlugin(Plugin):
     Running the tests with --with-process-leak-check will fail any test that
     leaked a child process.
     """
-    PGREP_CMD = ("pgrep", "-P", "%s" % os.getpid())
     name = 'process-leak-check'
+    enabled = False
+    PGREP_CMD = ("pgrep", "-P", "%s" % os.getpid())
 
-    def startTest(self, test):
+    def pytest_addoption(self, parser):
+        parser.addoption(
+            '--enable-process-leak-check',
+            action='store_true',
+            default=False,
+            help='Enable process leak detection for tests'
+        )
+
+    def pytest_configure(self, config):
+        if (config.getoption('--enable-process-leak-check') or
+            os.environ.get('PYTEST_PROCESS_LEAK_CHECK')):
+            ProcessLeakPlugin.enabled = True
+
+    def pytest_runtest_setup(self, item):
+        if not self.enabled:
+            return
         self._start_processes = self._child_processes()
 
-    def stopTest(self, test):
+    def pytest_runtest_teardown(self, item, nextitem):
+        if not self.enabled:
+            return
         leaked_processes = self._child_processes() - self._start_processes
         if leaked_processes:
             info = [dict(pid=pid, cmdline=utils.getCmdArgs(pid))
@@ -138,17 +162,37 @@ class ProcessLeakPlugin(Plugin):
         return frozenset(int(pid) for pid in out.splitlines())
 
 
-class FileLeakPlugin(Plugin):
+class FileLeakPlugin:
     """
     Check whether a test (or the code it triggers) open files and do not close
     them.
     """
     name = 'file-leak-check'
+    enabled = False
     FD_DIR = '/proc/%s/fd' % os.getpid()
+
+    def pytest_addoption(self, parser):
+        parser.addoption(
+            '--enable-file-leak-check',
+            action='store_true',
+            default=False,
+            help='Enable file descriptor leak detection for tests'
+        )
+
+    def pytest_configure(self, config):
+        if (config.getoption('--enable-file-leak-check') or
+            os.environ.get('PYTEST_FILE_LEAK_CHECK')):
+            FileLeakPlugin.enabled = True
 
     def _fd_desc(self, fd):
         try:
-            return os.readlink(os.path.join(self.FD_DIR, fd))
+            link_target = os.readlink(os.path.join(self.FD_DIR, fd))
+            # Try to get more info about the file descriptor
+            try:
+                fd_info = os.stat(os.path.join(self.FD_DIR, fd))
+                return f'{link_target} (fd:{fd}, mode:{oct(fd_info.st_mode)})'
+            except (OSError, ValueError):
+                return f'{link_target} (fd:{fd})'
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
@@ -157,12 +201,41 @@ class FileLeakPlugin(Plugin):
     def _open_files(self):
         return frozenset(self._fd_desc(fd) for fd in os.listdir(self.FD_DIR))
 
-    def startTest(self, test):
+    def _detailed_fd_info(self):
+        """Get detailed information about current file descriptors"""
+        info = {}
+        try:
+            for fd in os.listdir(self.FD_DIR):
+                try:
+                    link = os.readlink(os.path.join(self.FD_DIR, fd))
+                    info[fd] = link
+                except OSError:
+                    info[fd] = f"fd:{fd} (unable to read link)"
+        except OSError:
+            pass
+        return info
+
+    def pytest_runtest_setup(self, item):
+        if not self.enabled:
+            return
         self._start_files = self._open_files()
 
-    def stopTest(self, test):
+    def pytest_runtest_teardown(self, item, nextitem):
+        if not self.enabled:
+            return
+            
         leaked_files = self._open_files() - self._start_files
         if leaked_files:
+            # Print detailed debugging information
+            print(f"\n=== FILE LEAK DETECTED in {item.name} ===")
+            print(f"Leaked files: {leaked_files}")
+            
+            # Show current fd state for debugging
+            current_fds = self._detailed_fd_info()
+            print(f"Current file descriptors:")
+            for fd, desc in sorted(current_fds.items(), key=lambda x: int(x[0]) if x[0].isdigit() else 999):
+                print(f"  fd {fd}: {desc}")
+            
             raise Exception('This test leaked files: %s' % leaked_files)
 
 
@@ -170,7 +243,7 @@ def ValidateRunningAsRoot(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if os.geteuid() != 0:
-            raise SkipTest("This test must be run as root")
+            pytest.skip("This test must be run as root")
 
         return f(*args, **kwargs)
 
@@ -181,7 +254,7 @@ def ValidateNotRunningAsRoot(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if os.geteuid() == 0:
-            raise SkipTest("This test must not run as root")
+            pytest.skip("This test must not run as root")
 
         return f(*args, **kwargs)
 
@@ -192,7 +265,7 @@ def slowtest(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not SlowTestsPlugin.enabled:
-            raise SkipTest("Slow tests are disabled")
+            pytest.skip("Slow tests are disabled")
 
         return f(*args, **kwargs)
 
@@ -227,7 +300,7 @@ def xfail(reason):
             try:
                 f(*args, **kwargs)
             except:
-                raise SkipTest(reason)
+                pytest.skip(reason)
             else:
                 raise AssertionError("This test is expected to fail")
         return wrapper
@@ -251,7 +324,7 @@ def skipif(cond, reason):
         @wraps(f)
         def wrapper(*args, **kwargs):
             if cond:
-                raise SkipTest(reason)
+                pytest.skip(reason)
             return f(*args, **kwargs)
         return wrapper
 
@@ -276,7 +349,7 @@ def brokentest(reason):
             try:
                 return f(*args, **kwargs)
             except:
-                raise SkipTest(reason)
+                pytest.skip(reason)
         return wrapper
 
     return wrap
@@ -314,7 +387,7 @@ def broken_on_ci(reason, exception=Exception, name="OVIRT_CI"):
                 return f(*args, **kwargs)
             except exception:
                 if os.environ.get(name):
-                    raise SkipTest(reason)
+                    pytest.skip(reason)
                 else:
                     raise
         return wrapper
@@ -326,7 +399,7 @@ def stresstest(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not StressTestsPlugin.enabled:
-            raise SkipTest("Stress tests are disabled")
+            pytest.skip("Stress tests are disabled")
 
         return f(*args, **kwargs)
 
@@ -340,14 +413,14 @@ def checkSudo(cmd):
                              stderr=subprocess.PIPE)
     except OSError as e:
         if e.errno == errno.ENOENT:
-            raise SkipTest("Test requires SUDO executable (%s)" % e)
+            pytest.skip("Test requires SUDO executable (%s)" % e)
         else:
             raise
 
     out, err = p.communicate()
 
     if p.returncode != 0:
-        raise SkipTest("Test requires SUDO configuration (%s)" % err.strip())
+        pytest.skip("Test requires SUDO configuration (%s)" % err.strip())
 
 
 def _check_decorator_misuse(arg):

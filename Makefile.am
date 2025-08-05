@@ -118,11 +118,11 @@ check-recursive:
 
 .PHONY: check-all
 check-all:
-	$(MAKE) check NOSE_STRESS_TESTS=1 NOSE_SLOW_TESTS=1
+	$(MAKE) check PYTEST_STRESS_TESTS=1 PYTEST_SLOW_TESTS=1
 
 .PHONY: check-unit
 check-unit:
-	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
+	$(MAKE) -C tests/ check PYTEST_EVAL_ATTR="type=='unit'"
 
 .PHONY: lint
 lint: gitignore reuse execcmd black flake8 pylint
@@ -142,7 +142,11 @@ venv:
 
 .PHONY: tests
 tests: tox
-	tox -e "tests,lib,network,virt,gluster,hooks"
+	if [ "$(GLUSTER_MGMT)" = "1" ]; then \
+		tox -e "tests,lib,network,virt,gluster,hooks"; \
+	else \
+		tox -e "tests,lib,network,virt,hooks"; \
+	fi
 
 .PHONY: tests-storage-user
 tests-storage-user: tox
