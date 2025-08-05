@@ -11,7 +11,6 @@ import subprocess
 import sys
 import time
 
-from nose import tools
 from testValidation import broken_on_ci
 from testlib import VdsmTestCase
 
@@ -21,7 +20,7 @@ CHILD_SCRIPT = os.path.abspath('tests_child.py')
 def assert_read(stream, expected):
     while True:
         try:
-            tools.assert_equals(stream.read(len(expected)), expected)
+            assert stream.read(len(expected)) == expected
         except IOError as e:
             if e.errno != errno.EINTR:
                 raise
@@ -60,7 +59,7 @@ class TestSigutils(VdsmTestCase):
             later = time.time()
 
             # 3 is a safety factor
-            tools.assert_true(TIMEOUT < (later - now) < TIMEOUT * 3)
+            assert TIMEOUT < (later - now) < TIMEOUT * 3
 
     def test_signal_3_times(self):
         '''

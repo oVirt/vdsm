@@ -14,7 +14,9 @@ from vdsm.profiling import cpu
 from vdsm.profiling.errors import UsageError
 
 from monkeypatch import MonkeyPatchScope
-from nose.plugins.skip import SkipTest
+
+import pytest
+
 from testlib import VdsmTestCase, make_config
 from testlib import temporaryPath
 
@@ -27,7 +29,7 @@ except ImportError:
 
 def requires_yappi():
     if yappi is None:
-        raise SkipTest('yappi is not installed')
+        pytest.skip('yappi is not installed')
 
 
 @contextmanager

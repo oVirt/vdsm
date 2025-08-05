@@ -9,7 +9,8 @@ import xml.etree.ElementTree as ET
 
 from vdsm.virt import libvirtnetwork
 
-from nose.plugins.attrib import attr
+import pytest
+
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -34,7 +35,7 @@ class LibvirtTestCase(TestCaseBase):
         assert a_xml_normalized == b_xml_normalized
 
 
-@attr(type='unit')
+@pytest.mark.unit
 class LibvirtTests(LibvirtTestCase):
 
     def test_create_net_xml_with_bridge(self):
@@ -58,7 +59,7 @@ class LibvirtTests(LibvirtTestCase):
         self.assertEqualXml(expected_doc, actual_doc)
 
 
-@attr(type='unit')
+@pytest.mark.unit
 class LibvirtNetworksUsersCacheTests(TestCaseBase):
 
     def test_add_remove_new_net(self):

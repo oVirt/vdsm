@@ -19,7 +19,8 @@ from testlib import Sigargs
 from testlib import VdsmTestCase as TestCaseBase
 
 from contextlib import contextmanager
-from nose.plugins.skip import SkipTest
+
+import pytest
 
 
 @contextmanager
@@ -27,7 +28,7 @@ def schema_not_found():
     try:
         yield
     except vdsmapi.SchemaNotFound:
-        raise SkipTest('yaml schema not available')
+        pytest.skip('yaml schema not available')
 
 
 class SchemaValidation(TestCaseBase):

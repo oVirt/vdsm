@@ -17,7 +17,7 @@ from vdsm.common.units import MiB, GiB
 from vdsm.common import commands
 from vdsm.storage import mount
 
-from nose.plugins.skip import SkipTest
+import pytest
 
 from testlib import VdsmTestCase
 from testlib import namedTemporaryDir, temporaryPath
@@ -42,7 +42,7 @@ def createFloppyImage(size):
         commands.run([MKFS_EXEC, "-F", path])
     except OSError as e:
         if e.errno == errno.ENOENT:
-            raise SkipTest("cannot execute " + MKFS_EXEC)
+            pytest.skip("cannot execute " + MKFS_EXEC)
         raise
 
     try:
