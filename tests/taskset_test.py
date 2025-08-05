@@ -8,7 +8,7 @@ import multiprocessing
 import os
 import tempfile
 
-from nose.plugins.skip import SkipTest
+import pytest
 
 from vdsm import taskset
 from vdsm.common import cmdutils
@@ -132,6 +132,6 @@ def validate_running_with_enough_cpus(cpu_set):
     max_required_cpu = sorted(cpu_set)[-1]
 
     if max_available_cpu < max_required_cpu:
-        raise SkipTest(
+        pytest.skip(
             "This test requires at least %i available CPUs"
             " (running with %i)" % (max_required_cpu, max_available_cpu))

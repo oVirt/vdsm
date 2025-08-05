@@ -15,7 +15,9 @@ from math import ceil
 
 import testValidation
 from testlib import VdsmTestCase as TestCaseBase
-from nose.plugins.skip import SkipTest
+
+import pytest
+
 from vdsm.common.define import errCode
 from .utils import getProxy, SUCCESS
 
@@ -26,7 +28,7 @@ def skipNoMOM(method):
         status, msg, info = self.s.getVdsCapabilities()
         self.assertEqual(status, SUCCESS)
         if not info['packages2'].get('mom'):
-            raise SkipTest('MOM is not installed')
+            pytest.skip('MOM is not installed')
         return method(self, *args, **kwargs)
     return wrapped
 
@@ -125,10 +127,10 @@ class MOMTest(TestCaseBase):
                 testPolicyStr = f.read()
         except IOError as e:
             if e.errno == errno.ENOENT:
-                raise SkipTest('The policy file %s is missing.' %
-                               file_name)
+                pytest.skip('The policy file %s is missing.' %
+                           file_name)
             else:
-                raise SkipTest(str(e))
+                pytest.skip(str(e))
 
         status, msg = self.s.setMOMPolicy(testPolicyStr)
         self.assertEqual(status, SUCCESS, msg)
@@ -159,7 +161,7 @@ class MOMTest(TestCaseBase):
         vmCandidates = self._prepare(balloonRatio)
 
         if not vmCandidates:
-            raise SkipTest('No VM can be candidate of ballooning operation.')
+            pytest.skip('No VM can be candidate of ballooning operation.')
 
         # Set policy to trigger the balloon operation.
         self._setPolicy(policy)

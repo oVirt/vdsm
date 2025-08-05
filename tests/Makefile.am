@@ -103,13 +103,9 @@ check-virt: run_tests_local.sh
 .PHONY: check
 check: run_tests_local.sh
 	@echo '=== Running check target with python3 interpreter version.              ==='
-	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
 	@echo '=== Do not submit untested code!                                        ==='
 	PYTHON_EXE=python3 \
-		$(top_srcdir)/tests/run_tests_local.sh $(run_modules) && \
-	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
-		mv .coverage .coverage-nose; \
-	fi
+		$(top_srcdir)/tests/run_tests_local.sh $(run_modules)
 
 # Disable builtin %.out rule, overrwriting out files
 %.out: ;

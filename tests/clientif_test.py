@@ -213,7 +213,7 @@ class ClientIFTests(TestCaseBase):
                 },
             }
         self.cif.irs.getDeviceVisibility = _not_visible
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             VolumeError,
             'Drive ^[a-z]*$ not visible')
 
@@ -222,7 +222,7 @@ class ClientIFTests(TestCaseBase):
             # any error is actually fine
             return response.error('unexpected')
         self.cif.irs.appropriateDevice = _not_appropriatable
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             VolumeError,
             'Cannot appropriate drive ^[a-z]*$')
 
