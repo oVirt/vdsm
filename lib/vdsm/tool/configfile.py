@@ -246,6 +246,6 @@ class ParserWrapper(object):
 
     def read(self, path):
         with io.open(path, 'r', encoding='utf8') as f:
-            return self.wrapped.readfp(
+            return self.wrapped.read_file(
                 io.StringIO(u'[root]\n' + f.read())
             )

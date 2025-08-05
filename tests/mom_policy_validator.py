@@ -38,7 +38,7 @@ def load_policy_file(policy, filename):
 
 
 def prepare_entity(name, data):
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.add_section("__int__")
     cfg.set("__int__", "plot-subdir", "")
 
