@@ -443,7 +443,10 @@ class NetFuncTestAdapter(object):
         bond_ad_partner_mac = bond_caps[partner_bond]['ad_partner_mac']
         assert bond_hwaddr == bond_ad_partner_mac
 
+    @retry_assert
     def assertNetworkIp(self, net, attrs, ignore_ip=False):
+        self.refresh_netinfo()
+
         bridged = attrs.get('bridged', True)
         vlan = attrs.get('vlan')
         bond = attrs.get('bonding')

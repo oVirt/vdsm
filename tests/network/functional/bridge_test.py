@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 from contextlib import contextmanager
+import time
 
 import pytest
 
@@ -106,6 +107,7 @@ class TestBridge(object):
                 NETCREATE[NETWORK_NAME]['nic'] = nic1
                 adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK)
 
+            time.sleep(0.5)
             adapter.refresh_netinfo()
             assert adapter.netinfo.networks[NETWORK_NAME]['ports'] == []
 
