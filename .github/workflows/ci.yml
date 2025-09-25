@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 name: CI
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
 env:
   EXPORT_DIR: exported-artifacts
 jobs:
