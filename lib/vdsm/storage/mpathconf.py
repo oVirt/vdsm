@@ -142,7 +142,7 @@ defaults {
     # Helps propagating I/O errors to processes when the last path
     # failed.  Not necessary when using "no_path_retry fail".
 
-    flush_on_last_del           yes
+    flush_on_last_del           always
 
     # Ensures fast failover between paths.
     #
