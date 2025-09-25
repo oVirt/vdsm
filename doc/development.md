@@ -17,7 +17,7 @@ The easiest way to get started is using the provided dev container, which includ
 2. **Choose distribution** (optional): You can change the Linux distribution by modifying the `DISTRO` environment variable in `.devcontainer/devcontainer.json`:
    ```json
    "containerEnv": {
-     "DISTRO": "centos-9"  // Options: centos-9, centos-10, alma-9
+     "DISTRO": "centos-9"  // Options: centos-9, centos-10, alma-9, alma-10
    }
    ```
 3. **Open in container**: Use "Dev Containers: Open Folder in Container" from VS Code
