@@ -225,7 +225,7 @@ class SourceRouteHelper(object):
             ),
             _create_route_state(
                 self._next_hop,
-                self._ipaddr,
+                "0.0.0.0",
                 self._network,
                 table_id=self._table_id,
             ),
