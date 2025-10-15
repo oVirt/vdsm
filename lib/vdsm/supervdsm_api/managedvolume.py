@@ -9,5 +9,5 @@ from . import expose
 
 
 @expose
-def managedvolume_run_helper(cmd, cmd_input=None):
-    return managedvolume.run_helper(cmd, cmd_input=cmd_input)
+def managedvolume_run_helper(cmd, cmd_input=None, adapter=None):
+    return managedvolume.run_helper(cmd, cmd_input=cmd_input, adapter=adapter)
