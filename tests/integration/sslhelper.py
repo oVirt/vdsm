@@ -13,7 +13,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import ssl
 import tempfile
 
 from contextlib import contextmanager
@@ -79,12 +78,3 @@ def key_cert_pair():
 def create_ssl_context(key_file, cert_file):
     return SSLContext(cert_file=cert_file, key_file=key_file,
                       ca_certs=cert_file)
-
-
-def get_server_socket(key_file, cert_file, socket):
-    return ssl.wrap_socket(socket,
-                           keyfile=key_file,
-                           certfile=cert_file,
-                           server_side=False,
-                           cert_reqs=ssl.CERT_REQUIRED,
-                           ca_certs=cert_file)
