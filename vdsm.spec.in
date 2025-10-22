@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # Packages names
@@ -37,11 +37,7 @@
 %{!?enable_autotools:%global enable_autotools 0}
 
 # Required paths
-%if 0%{?fedora}
-%global _polkitdir %{_datadir}/polkit-1/rules.d
-%else
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
-%endif
 %global _vdsm_log_dir %{_localstatedir}/log/%{vdsm_name}
 
 # Disable debuginfo package, since vdsm is a meta-package
@@ -114,23 +110,20 @@ Requires: virt-v2v
 Requires: chrony
 Requires: crontabs
 Requires: which
-Requires: sudo >= 1.7.3
+Requires: sudo
 Requires: logrotate
 Requires: lshw
 Requires: lsof
 Requires: ndctl
 Requires: swtpm-tools
 Requires: xz
+Requires: python3 >= 3.6
 Requires: python3-rpm
 Requires: python3-requests
 Requires: curl
 Requires: %{name}-http = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
-%if 0%{?rhel} >= 8
-Requires: safelease >= 1.0.1-1.el8ev
-%else
-Requires: safelease >= 1.0-7
-%endif
+Requires: safelease
 Requires: mom >= 0.5.14
 Requires: util-linux
 Requires(pre): shadow-utils
@@ -149,80 +142,39 @@ Requires: ovirt-imageio-daemon >= 2.2.0-1
 Requires: ovirt-vmconsole >= 1.0.0-0
 %endif
 
-Requires: python3 >= 3.6
 
 Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
-Requires: libvirt-lock-sanlock
-# Zero-copy migrations, https://bugzilla.redhat.com/2089434
-Requires: libvirt-daemon-kvm >= 8.0.0-5.4.module+el8.6.0+16370+bb85faee
-%if 0%{?centos} == 8
+Requires: libvirt-daemon-plugin-sanlock
+Requires: libvirt-daemon-kvm
 Requires: python3-libvirt
-%else
-# VIR_MIGRATE_ZEROCOPY flag, https://bugzilla.redhat.com/2089434
-Requires: python3-libvirt >= 8.0.0-1.1.module+el8.6.0+16381+3abc475c
-%endif
 
 # iscsi-intiator versions
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
 
-%if 0%{?rhel}
-# For https://bugzilla.redhat.com/1961752
+# sanlock
 Requires: python3-sanlock >= 3.8.3-3
 Requires: sanlock >= 3.8.3-3
-%endif
 
 Requires: device-mapper-multipath
 
 # augeas
-
-%if 0%{?rhel}
 Requires: python3-augeas
-%endif
 
 # fence-agents
-
-%if 0%{?centos}
-# TODO: Require 4.2.1-53+ when CentOS 8.3 is released
 Requires: fence-agents-all
-%else
-# fence-agents package without telnet dependency
-Requires: fence-agents-all >= 4.2.1-53
-%endif
-
-%if 0%{?fedora}
-Requires: python3-augeas
-%endif
 
 Requires: python3-policycoreutils
 Requires: systemd >= 219-11
-Requires: initscripts >= 9.49.31
+Requires: initscripts
 Requires: cyrus-sasl-scram
-%if 0%{?fedora}
-# Required for solving bug 1575762
-Requires: lvm2 >= 2.02.177-5
-%else
-# EL 8.1 baseline.
-Requires: lvm2 >= 8:2.03
-%endif
-
-# EL 8.4 baseline
-Requires: kernel >= 4.18.0-305
+Requires: lvm2
 
 Requires: e2fsprogs
 Requires: selinux-policy-targeted
 
-%if 0%{?fedora}
-Requires: ed
-Requires: sed
-Requires: policycoreutils
-Requires: python3-policycoreutils
-%endif
-
 # qemu-kvm
-
-# Zero-copy migrations, https://bugzilla.redhat.com/2089434
-Requires: qemu-kvm >= 15:6.2.0-11.module+el8.6.0+16360+9e5d914e.4
+Requires: qemu-kvm
 
 # GlusterFS client-side RPMs needed for Gluster SD
 # Only include on EL < 10 where GlusterFS is available
@@ -236,50 +188,23 @@ Requires: glusterfs-fuse >= %{gluster_version}
 Requires: psmisc >= 22.6-15
 
 # Make sure we require sos version which includes VDSM plugin
-%if 0%{?centos} || 0%{?fedora}
-# Currently we are without sos VDSM plugin on CentOS/Fedora:
-#  - CentOS: When 7.7 is released, we also need to require 3.7-3+
-#  - Fedora: When sos 3.7.1/3.8 is relased, we need to require it
 Requires: sos
-%else
-# RHEL
-%if 0%{?rhel} >= 8
-Requires: sos >= 3.7-1
-%else
-Requires: sos >= 3.7-3
-%endif
-%endif
 
 Requires: tree
 Requires: dosfstools
-%if 0%{?rhel} >= 9
-# xorriso replaced genisoimage on RHEL 9
 Requires: xorriso
-%else
-Requires: genisoimage
-%endif
 Requires: python3-libselinux
 Requires: %{name}-python = %{version}-%{release}
 Requires: libguestfs-tools-c
 
 Requires(post): /usr/sbin/saslpasswd2
-
-%if 0%{?fedora} || 0%{?rhel} >= 8
 Requires(post): hostname
-%else
-# RHEL/CentOS 7
-Requires(post): /bin/hostname
-%endif
+
 
 # SecureBoot & q35, supported by x86_64 and aarch64; no ppc64le support at
 # the moment.
 %ifarch x86_64 %{arm}
-%if 0%{?rhel}
-Requires: OVMF
-%else
-# fedora
 Requires: edk2-ovmf
-%endif
 %endif
 
 Conflicts: ovirt-hosted-engine-ha < 2.3.6
@@ -362,12 +287,7 @@ Requires:       systemd
 Requires:       glibc
 Requires:       python3-dbus
 Requires:       python3-dateutil
-%if 0%{?rhel}
 Requires:       python3-decorator
-%endif
-%if 0%{?fedora}
-Requires:       python3-decorator
-%endif
 
 %description common
 VDSM libraries that are imported by all subsystems
@@ -379,19 +299,9 @@ Requires:       NetworkManager-ovs
 Requires:       ethtool
 Requires:       iproute
 Requires:       iproute-tc
-%if 0%{?rhel} >= 9
 Requires:       ovirt-openvswitch >= 2.17
-# Workaround for BZ#1966143
 Requires:       ovirt-python-openvswitch >= 2.17
-%else
-Requires:       ovirt-openvswitch >= 2.15
-# Workaround for BZ#1966143
-Requires:       ovirt-python-openvswitch >= 2.15
-%endif
 Requires:       nmstate >= 1.2.1-3
-%if 0%{?rhel} < 9
-Requires:       nmstate-plugin-ovsdb
-%endif
 Requires:       python3-libnmstate
 Requires:       libnl3
 Requires:       lldpad
