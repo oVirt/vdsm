@@ -52,6 +52,9 @@ SUPPORTED_DRIVERS = (
 
     # Tested by Moritz Wanzenböck <technik+ovirt (at) linbit.com>
     "local",
+
+    # Tested by Viktor Ivanov <info (at) storpool.com>
+    "storpool",
 )
 
 log = logging.getLogger("storage.managedvolume")
@@ -234,6 +237,9 @@ def _resolve_path(vol_id, connection_info, attachment):
     elif vol_type == "rbd":
         # /dev/rbd/poolname/volume-vol-id
         return os.path.join(DEV_RBD, connection_info['data']['name'])
+    elif vol_type == "storpool":
+        # StorPool returns a full device path
+        return attachment["path"]
     else:
         log.warning("Managed Volume without multipath info: %s",
                     attachment)
