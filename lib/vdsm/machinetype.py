@@ -12,6 +12,7 @@ from vdsm.common import cache
 from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common.config import config
+from vdsm.validatehost import is_valid_virt_host
 
 
 class _CpuMode:
@@ -146,12 +147,15 @@ def compatible_cpu_models():
     compatible_models = [model for (model, usable)
                          in all_models.items()
                          if usable == 'yes']
+    logging.debug(Compatible CPU models: %s', compatible_models)
     # Current QEMU doesn't report POWER compatibility modes, so we
     # must add them ourselves.
     if cpuarch.is_ppc(arch) and \
        'POWER9' in compatible_models and \
        'POWER8' not in compatible_models:
         compatible_models.append('POWER8')
+    if cpuarch.is_arm(arch) and is_valid_virt_host():
+        compatible_models.append('virt_aarch64')
     return list(set(["model_" + model for model in compatible_models]))
 
 
