@@ -105,13 +105,14 @@ class TestVmDevices(XMLTestCase):
                     <inbound average="1000" burst="1024" peak="5000"/>
                     <outbound average="128" burst="256"/>
                 </bandwidth>"""
-        NEW_OUT = {'outbound': {'average': 1042, 'burst': 128, 'peak': 500}}
+        NEW_BW = {'inbound': {'average': 1000, 'burst': 1024, 'peak': 5000},
+                  'outbound': {'average': 1042, 'burst': 128, 'peak': 500}}
         updatedBwidthXML = """
                 <bandwidth>
                     <inbound average="1000" burst="1024" peak="5000"/>
                     <outbound average="%(average)s" burst="%(burst)s"
                     peak="%(peak)s"/>
-                </bandwidth>""" % NEW_OUT['outbound']
+                </bandwidth>""" % NEW_BW['outbound']
 
         dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
                'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
@@ -126,7 +127,7 @@ class TestVmDevices(XMLTestCase):
         iface = vmdevices.network.Interface(self.log, **dev)
         orig_bandwidth = iface.getXML().findall('bandwidth')[0]
         self.assert_dom_xml_equal(orig_bandwidth, originalBwidthXML)
-        bandwith = iface.get_bandwidth_xml(NEW_OUT, orig_bandwidth)
+        bandwith = iface.get_bandwidth_xml(NEW_BW)
         self.assert_dom_xml_equal(bandwith, updatedBwidthXML)
 
     def testInterfaceFilterUpdate(self):
