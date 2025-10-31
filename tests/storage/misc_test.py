@@ -64,7 +64,7 @@ class TestEvent(VdsmTestCase):
         event.register(callback)
         event.emit()
         ev.wait(TIMEOUT)
-        self.assertTrue(ev.isSet())
+        self.assertTrue(ev.is_set())
 
     def testEmitStale(self):
         ev = threading.Event()
@@ -74,7 +74,7 @@ class TestEvent(VdsmTestCase):
         del callback
         event.emit()
         ev.wait(TIMEOUT)
-        self.assertFalse(ev.isSet())
+        self.assertFalse(ev.is_set())
 
     def testUnregister(self):
         ev = threading.Event()
@@ -84,7 +84,7 @@ class TestEvent(VdsmTestCase):
         event.unregister(callback)
         event.emit()
         ev.wait(TIMEOUT)
-        self.assertFalse(ev.isSet())
+        self.assertFalse(ev.is_set())
 
     def testOneShot(self):
         ev = threading.Event()
@@ -97,11 +97,11 @@ class TestEvent(VdsmTestCase):
         event.register(callback, oneshot=True)
         event.emit()
         ev.wait(TIMEOUT)
-        self.assertTrue(ev.isSet())
+        self.assertTrue(ev.is_set())
         ev.clear()
         event.emit()
         ev.wait(TIMEOUT)
-        self.assertFalse(ev.isSet())
+        self.assertFalse(ev.is_set())
 
     def testEmitCallbackException(self):
         ev = threading.Event()
@@ -117,7 +117,7 @@ class TestEvent(VdsmTestCase):
         event.register(callback2)
         event.emit()
         ev.wait(TIMEOUT)
-        self.assertTrue(ev.isSet())
+        self.assertTrue(ev.is_set())
 
     def testInstanceMethod(self):
         ev = threading.Event()
@@ -126,7 +126,7 @@ class TestEvent(VdsmTestCase):
         print(event._registrar)
         event.emit()
         ev.wait(TIMEOUT)
-        self.assertTrue(ev.isSet())
+        self.assertTrue(ev.is_set())
         receiver  # Makes pyflakes happy
 
     def testInstanceMethodDead(self):
@@ -138,7 +138,7 @@ class TestEvent(VdsmTestCase):
         print(event._registrar)
         event.emit()
         ev.wait(TIMEOUT)
-        self.assertFalse(ev.isSet())
+        self.assertFalse(ev.is_set())
 
 
 class Receiver(object):
