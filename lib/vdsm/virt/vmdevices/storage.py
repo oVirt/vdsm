@@ -113,7 +113,7 @@ class Drive(core.Base):
                  'vm_custom', '_block_info', '_threshold_state', '_lock',
                  '_monitor_lock', '_monitorable', 'guestName', '_iotune',
                  'RBD', 'managed', 'scratch_disk', 'exceeded_time',
-                 'extend_time', 'managed_reservation')
+                 'extend_time', 'managed_reservation', 'discard_no_unref')
     # pylint: disable=used-before-assignment
     VOLWM_CHUNK_SIZE = (
         config.getint('irs', 'volume_utilization_chunk_mb') * MiB)
@@ -1125,6 +1125,8 @@ def _getDriverXML(drive):
 
     if 'discard' in drive and drive['discard']:
         driverAttrs['discard'] = 'unmap'
+        if 'discard_no_unref' in drive:
+            driverAttrs['discard_no_unref'] = drive['discard_no_unref']
 
     try:
         driverAttrs['iothread'] = str(drive['specParams']['pinToIoThread'])

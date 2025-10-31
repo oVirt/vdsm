@@ -221,6 +221,10 @@ def _get_driver_params(driver):
         'format': 'cow' if driver.attrib.get('type') == 'qcow2' else 'raw',
     }
 
+    discard_no_unref = driver.attrib.get('discard_no_unref', None)
+    if discard_no_unref:
+        params['discard_no_unref'] = discard_no_unref
+
     error_policy = driver.attrib.get('error_policy', 'stop')
     if error_policy == 'report':
         params['propagateErrors'] = 'report'
