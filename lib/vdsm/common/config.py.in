@@ -481,6 +481,10 @@ parameters = [
             'are either "filter" or "devices". Filter method will use LVM '
             'filter, while device will use LVM devices file. The default '
             'value is "devices".'),
+
+        ('keep_active', '',
+            'Comma-separated list of LVM paths that will never be deactivated.'
+            'For instance: "/dev/vg1/lv1,/dev/vg1/lv2,..."'),
     ]),
 
     # Section: [sanlock]
