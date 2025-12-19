@@ -9928,6 +9928,35 @@ Image.delete:
         description: A task UUID
         type: *UUID
 
+Image.deleteUnusedLinks:
+    added: '4.2'
+    description: Delete unused links for volumes after delete disk.
+    params:
+    -   description: The UUID of the Image
+        name: imageID
+        type: *UUID
+
+    -   description: The UUID of the Storage Pool associated with the Image
+        name: storagepoolID
+        type: *UUID
+
+    -   description: The UUID of the Storage Domain associated with the Image
+        name: storagedomainID
+        type: *UUID
+
+    -   description: If True, overwrite Volume data with zeroes after deletion
+        name: postZero
+        type: boolean
+
+    -   description: Force the operation and do not perform any validation
+        name: force
+        type: boolean
+
+    -   defaultvalue: false
+        description: If true, discard the image and its volumes before deletion
+        name: discard
+        type: boolean
+
 Image.deleteVolumes:
     added: '3.1'
     description: Delete one or more Volumes associated with this image.
