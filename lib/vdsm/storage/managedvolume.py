@@ -94,7 +94,7 @@ def attach_volume(sd_id, vol_id, connection_info):
                   vol_id, connection_info)
 
         try:
-            attachment = run_helper("attach", connection_info)
+            attachment = run_helper("attach", connection_info, connection_info.get("adapter"))
             try:
                 path = _resolve_path(vol_id, connection_info, attachment)
                 db.update_volume(
@@ -137,8 +137,12 @@ def detach_volume(sd_id, vol_id):
 
         log.debug("Starting detach volume %s vol_info=%s", vol_id, vol_info)
 
+        adapter = None
+        if connection_info := vol_info.get("connection_info"):
+            adapter = connection_info.get("adapter")
+
         if "path" in vol_info and os.path.exists(vol_info["path"]):
-            run_helper("detach", vol_info)
+            run_helper("detach", vol_info, adapter)
 
         _remove_udev_rule(sd_id, vol_info['vol_id'])
         _remove_run_link(sd_id, vol_id)
@@ -181,17 +185,24 @@ def volumes_info(vol_ids=()):
 # supervdsm interface
 
 
-def run_helper(sub_cmd, cmd_input=None):
+def run_helper(sub_cmd, cmd_input=None, adapter=None):
     if os.geteuid() != 0:
         return supervdsm.getProxy().managedvolume_run_helper(
-            sub_cmd, cmd_input=cmd_input)
+            sub_cmd, cmd_input=cmd_input, adapter=adapter)
     try:
         if cmd_input:
             cmd_input = json.dumps(cmd_input).encode("utf-8")
+        helper = HELPER
+        if adapter:
+            helper = f"{HELPER}-{adapter}"
+            if not os.path.exists(helper):
+                raise se.ManagedVolumeHelperFailed(
+                    f"Helper for adapter '{adapter}' not found"
+                    f" at '{helper}'")
         # This is the only sane way to run python scripts that work with both
         # python2 and python3 in the tests.
         # TODO: Remove when we drop python 2.
-        cmd = [sys.executable, HELPER, sub_cmd]
+        cmd = [sys.executable, helper, sub_cmd]
         result = commands.run(cmd, input=cmd_input)
     except cmdutils.Error as e:
         raise se.ManagedVolumeHelperFailed("Error executing helper: %s" % e)

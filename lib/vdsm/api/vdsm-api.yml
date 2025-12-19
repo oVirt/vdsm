@@ -1185,6 +1185,11 @@ types:
                 volume type.
             name: data
             type: *StringMap
+        -   defaultvalue: null
+            description: Adapter vendor
+            name: adapter
+            type: string
+            added: '4.5.6'
         type: object
 
     ManagedVolumeAttachement: &ManagedVolumeAttachement
