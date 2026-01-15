@@ -40,8 +40,41 @@ parser.add_argument('-x', dest='libguestfsTrace',
                     action='store_true',
                     help='Enable tracing of libguestfs API calls.')
 parser.add_argument('vmname', nargs='?')
+parser.add_argument('-oo', action='append', dest='oo', default=[],
+                    help='virt-v2v plugin option in form key=value')
+
+
+def _apply_oo_options(options):
+    """
+    Normalize -oo key=value plugin options into the same argparse attributes
+    that the rest of fake-virt-v2v expects (vdsmImageId, vdsmVolId, vdsmVmId, vdsmOvfOutput).
+    """
+    # Ensure list attributes exist when expected by rest of script
+    if getattr(options, 'vdsmImageId', None) is None:
+        options.vdsmImageId = []
+    if getattr(options, 'vdsmVolId', None) is None:
+        options.vdsmVolId = []
+
+    # Walk -oo items and map them
+    for item in getattr(options, 'oo', []) or []:
+        if not item or '=' not in item:
+            continue
+        key, val = item.split('=', 1)
+        if key == 'vdsm-image-uuid':
+            options.vdsmImageId.append(val)
+        elif key == 'vdsm-vol-uuid':
+            options.vdsmVolId.append(val)
+        elif key == 'vdsm-vm-uuid':
+            options.vdsmVmId = val
+        elif key == 'vdsm-ovf-output':
+            options.vdsmOvfOutput = val
+        else:
+            # Unknown -oo option: ignore (or log for debug)
+            # e.g. print("Unknown -oo option:", key)
+            pass
 
 options = parser.parse_args()
+_apply_oo_options(options)
 if options.vmname is None:
     if not options.machineReadable:
         sys.stderr.write(

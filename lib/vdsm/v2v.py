@@ -440,10 +440,10 @@ class V2VCommand(object):
         parameters = []
         for disk in self._vminfo['disks']:
             try:
-                parameters.append('--vdsm-image-uuid')
-                parameters.append(disk['imageID'])
-                parameters.append('--vdsm-vol-uuid')
-                parameters.append(disk['volumeID'])
+                parameters.extend([
+                    '-oo', 'vdsm-image-uuid=' + disk['imageID'],
+                    '-oo', 'vdsm-vol-uuid=' + disk['volumeID'],
+                ])
             except KeyError as e:
                 raise InvalidInputError('Job %r missing required property: %s'
                                         % (self._vmid, e))
@@ -564,10 +564,8 @@ class LibvirtCommand(V2VCommand):
         cmd.extend(self._disk_parameters())
         cmd.extend(['--password-file',
                     self._passwd_file,
-                    '--vdsm-vm-uuid',
-                    self._vmid,
-                    '--vdsm-ovf-output',
-                    _V2V_DIR,
+                    '-oo', 'vdsm-vm-uuid=' + self._vmid,
+                    '-oo', 'vdsm-ovf-output=' + _V2V_DIR,
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
@@ -592,10 +590,8 @@ class OvaCommand(V2VCommand):
                     '-o', 'vdsm',
                     '-of', self._get_disk_format(),
                     '-oa', self._vminfo.get('allocation', 'sparse').lower(),
-                    '--vdsm-vm-uuid',
-                    self._vmid,
-                    '--vdsm-ovf-output',
-                    _V2V_DIR,
+                    '-oo', 'vdsm-vm-uuid=' + self._vmid,
+                    '-oo', 'vdsm-ovf-output=' + _V2V_DIR,
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
@@ -631,10 +627,8 @@ class XenCommand(V2VCommand):
                     '-of', self._get_disk_format(),
                     '-oa', self._vminfo.get('allocation', 'sparse').lower()])
         cmd.extend(self._disk_parameters())
-        cmd.extend(['--vdsm-vm-uuid',
-                    self._vmid,
-                    '--vdsm-ovf-output',
-                    _V2V_DIR,
+        cmd.extend(['-oo', 'vdsm-vm-uuid=' + self._vmid,
+                    '-oo', 'vdsm-ovf-output=' + _V2V_DIR,
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
