@@ -31,9 +31,6 @@ from . import expose
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
 _UDEV_RULE_FILE_EXT = ".rules"
-_UDEV_RULE_FILE_NAME_VM = os.path.join(
-    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + '%s-%s' +
-    _UDEV_RULE_FILE_EXT)
 
 # TODO: remove this when managed devices no longer use appropriateDevice
 _UDEV_RULE_FILE_NAME = os.path.join(
