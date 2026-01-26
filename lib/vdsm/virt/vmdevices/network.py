@@ -302,18 +302,12 @@ class Interface(core.Base):
                 yield parameter['name'], parameter['value']
 
     @staticmethod
-    def get_bandwidth_xml(specParams, oldBandwidth=None):
+    def get_bandwidth_xml(specParams):
         """Returns a valid libvirt xml dom element object."""
         bandwidth = vmxml.Element('bandwidth')
-        old = {} if oldBandwidth is None else dict(
-            (vmxml.tag(elem), elem)
-            for elem in vmxml.children(oldBandwidth))
         for key in ('inbound', 'outbound'):
             elem = specParams.get(key)
-            if elem is None:  # Use the old setting if present
-                if key in old:
-                    bandwidth.appendChild(etree_element=old[key])
-            elif elem:
+            if elem:
                 # Convert the values to string for adding them to the XML def
                 attrs = dict((key, str(value)) for key, value in elem.items())
                 bandwidth.appendChildWithArgs(key, **attrs)
@@ -487,7 +481,7 @@ def update_bandwidth_xml(iface, vnicXML, specParams=None):
         vmxml.remove_child(vnicXML, oldBandwidth)
     if (specParams and
             ('inbound' in specParams or 'outbound' in specParams)):
-        newBandwidth = iface.get_bandwidth_xml(specParams, oldBandwidth)
+        newBandwidth = iface.get_bandwidth_xml(specParams)
         vmxml.append_child(vnicXML, newBandwidth)
 
 

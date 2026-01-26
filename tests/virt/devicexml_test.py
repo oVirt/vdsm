@@ -162,6 +162,28 @@ class DeviceToXMLTests(XMLTestCase):
         vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
         self.assertXMLEqual(xmlutils.tostring(vnic_xml), XML)
 
+        specParams = {
+            'outbound': {
+                'average': 128,
+                'peak': 256,
+                'burst': 256,
+            },
+        }
+        XML = u"""
+        <interface type='network'>
+          <mac address="fake" />
+          <source bridge='default'/>
+          <link state="up"/>
+          <bandwidth>
+            <outbound average='128' peak='256' burst='256'/>
+          </bandwidth>
+        </interface>
+        """
+        dev = vmdevices.network.Interface(self.log, **conf)
+        vnic_xml = dev.getXML()
+        vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
+        self.assertXMLEqual(xmlutils.tostring(vnic_xml), XML)
+
         specParams = {}
         XML = u"""
         <interface type='network'>
@@ -170,6 +192,8 @@ class DeviceToXMLTests(XMLTestCase):
           <link state="up"/>
         </interface>
         """
+        dev = vmdevices.network.Interface(self.log, **conf)
+        vnic_xml = dev.getXML()
         vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
         self.assertXMLEqual(xmlutils.tostring(vnic_xml), XML)
 

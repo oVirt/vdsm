@@ -5822,7 +5822,7 @@ class Vm(object):
         self.log.debug('migration destination: waiting %ss '
                        'for path preparation', prepare_timeout)
         self._incoming_migration_prepared.wait(prepare_timeout)
-        if not self._incoming_migration_prepared.isSet():
+        if not self._incoming_migration_prepared.is_set():
             self.log.debug('Timeout while waiting for path preparation')
             return False
         srcDomXML = self._src_domain_xml

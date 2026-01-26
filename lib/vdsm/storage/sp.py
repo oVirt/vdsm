@@ -105,7 +105,7 @@ class StoragePool(object):
 
     @unsecured
     def is_secure(self):
-        return self._secured.isSet()
+        return self._secured.is_set()
 
     @unsecured
     def _set_secure(self):
