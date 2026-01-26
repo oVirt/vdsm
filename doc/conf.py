@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-# -*- coding: utf-8 -*-
 #
 # VDSM documentation build configuration file, created by
 # sphinx-quickstart on Thu Dec 24 14:07:47 2009.

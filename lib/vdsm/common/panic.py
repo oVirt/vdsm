@@ -23,3 +23,4 @@ def panic(msg):
         logging.shutdown()
     finally:
         ready.set()
+    t.join()

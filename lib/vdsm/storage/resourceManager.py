@@ -186,7 +186,7 @@ class Request(object):
         with self._syncRoot:
             if self._isCanceled:
                 return "canceled"
-            if self._doneEvent.isSet():
+            if self._doneEvent.is_set():
                 return "granted"
             return "waiting"
 
@@ -217,7 +217,7 @@ class Request(object):
 
     def granted(self):
         with self._syncRoot:
-            return (not self._isCanceled) and self._doneEvent.isSet()
+            return (not self._isCanceled) and self._doneEvent.is_set()
 
     def __str__(self):
         return "Request for %s - %s: %s" % (self.full_name, self.lockType,

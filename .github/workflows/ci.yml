@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 name: CI
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
 env:
   EXPORT_DIR: exported-artifacts
 jobs:
@@ -11,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [centos-9, centos-10, alma-9]
+        distro: [centos-9, centos-10, alma-9, alma-10]
     container: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
     steps:
     - uses: ovirt/checkout-action@main
@@ -24,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [centos-9, centos-10, alma-9]
+        distro: [centos-9, centos-10, alma-9, alma-10]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Required to create loop devices.
@@ -44,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [centos-9, centos-10, alma-9]
+        distro: [centos-9, centos-10, alma-9, alma-10]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Required to create loop devices.
@@ -64,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [centos-9, centos-10, alma-9]
+        distro: [centos-9, centos-10, alma-9, alma-10]
     container:
       image: quay.io/ovirt/vdsm-test:${{ matrix.distro }}
       # Needed for many operations, i.e. creating bridges

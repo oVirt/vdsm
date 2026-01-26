@@ -853,7 +853,7 @@ class MonitorThread(object):
 
         self._execute_init(self._conv_schedule['init'])
 
-        while not self._stop.isSet():
+        while not self._stop.is_set():
             stopped = self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
             if stopped:
                 break
@@ -912,7 +912,7 @@ class MonitorThread(object):
                 self._vm.log.debug('new iteration: %i', current_iteration)
                 self._next_action(current_iteration)
 
-            if self._stop.isSet():
+            if self._stop.is_set():
                 break
 
             self.progress = progress
