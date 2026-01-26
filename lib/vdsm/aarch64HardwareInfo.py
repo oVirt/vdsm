@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 
+import logging
 import os.path
 import subprocess
 
@@ -30,7 +31,7 @@ def get_sys_info():
                 sys_info[key]=value
 
     except:
-        print("ERROR")
+        logging.exception('Error while getting system information')
 
     return sys_info
 
