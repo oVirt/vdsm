@@ -147,7 +147,7 @@ def compatible_cpu_models():
     compatible_models = [model for (model, usable)
                          in all_models.items()
                          if usable == 'yes']
-    logging.debug(Compatible CPU models: %s', compatible_models)
+    logging.debug('Compatible CPU models: %s', compatible_models)
     # Current QEMU doesn't report POWER compatibility modes, so we
     # must add them ourselves.
     if cpuarch.is_ppc(arch) and \
