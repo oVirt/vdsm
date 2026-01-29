@@ -41,6 +41,7 @@ def is_valid_virt_host():
     """
 
     out = exec_validate_cmd(VIRT_HOST_VALIDATE_CMD)
+    valid_host = False
 
     if ('fail' not in out.lower()):
         valid_host = True
