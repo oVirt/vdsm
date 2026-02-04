@@ -97,7 +97,8 @@ def attach_volume(sd_id, vol_id, connection_info):
                   vol_id, connection_info)
 
         try:
-            attachment = run_helper("attach", connection_info)
+            vol_info = {"connection_info": connection_info}
+            attachment = run_helper("attach", vol_info)
             try:
                 path = _resolve_path(vol_id, connection_info, attachment)
                 db.update_volume(
@@ -184,13 +185,14 @@ def volumes_info(vol_ids=()):
 # supervdsm interface
 
 
-def run_helper(sub_cmd, cmd_input=None):
+def run_helper(sub_cmd, vol_info=None):
     if os.geteuid() != 0:
         return supervdsm.getProxy().managedvolume_run_helper(
-            sub_cmd, cmd_input=cmd_input)
+            sub_cmd, vol_info=vol_info)
     try:
-        if cmd_input:
-            cmd_input = json.dumps(cmd_input).encode("utf-8")
+        cmd_input = None
+        if vol_info:
+            cmd_input = json.dumps(vol_info).encode("utf-8")
         # This is the only sane way to run python scripts that work with both
         # python2 and python3 in the tests.
         # TODO: Remove when we drop python 2.

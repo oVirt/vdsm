@@ -116,7 +116,8 @@ def get_connector(conn_info):
 
 
 def attach(args):
-    conn_info = read_input()
+    volume_info = read_input()
+    conn_info = volume_info["connection_info"]
     log.debug("Connection info: %s", conn_info)
     conn = get_connector(conn_info)
     attachment = conn.connect_volume(conn_info['data'])
