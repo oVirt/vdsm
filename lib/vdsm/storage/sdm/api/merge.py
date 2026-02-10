@@ -9,8 +9,6 @@ This job performs the following steps:
 3. Tears down the image
 """
 
-from __future__ import absolute_import
-
 import logging
 
 from vdsm.storage import bitmaps

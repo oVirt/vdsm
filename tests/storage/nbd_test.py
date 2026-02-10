@@ -22,9 +22,6 @@ To setup the environment for unprivileged user:
           --disable-network
 """
 
-from __future__ import absolute_import
-from __future__ import division
-
 import logging
 import os
 import stat

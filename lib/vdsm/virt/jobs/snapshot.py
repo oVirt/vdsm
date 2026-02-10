@@ -5,8 +5,6 @@
 This module implements a job that creates a snapshot for a given VM.
 """
 
-from __future__ import absolute_import
-
 import os
 import pickle
 import threading

@@ -81,8 +81,6 @@ See also
   `vdsm.storage.xlease`
 
 """
-from __future__ import absolute_import
-from __future__ import division
 
 import logging
 import xml.etree.ElementTree as ET

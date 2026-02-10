@@ -13,8 +13,6 @@ for version 3 and 4.
 Version 4 is different from version 3 by supporting qcow version 1.1 as
 well the old qcow 0.10 version which was supported in version 3 and below.
 """
-from __future__ import absolute_import
-from __future__ import division
 
 import logging
 

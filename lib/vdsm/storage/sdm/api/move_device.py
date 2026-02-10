@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-
 from vdsm.common import properties
 from vdsm.storage import exception as se
 from vdsm.storage.constants import STORAGE

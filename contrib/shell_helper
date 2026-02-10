@@ -148,7 +148,6 @@ del_ovs_bridges() {
 
 del_test_nets() {
     cat << EOF | sudo $PYTHON -
-from __future__ import print_function
 from vdsm.common import libvirtconnection
 c = libvirtconnection.get()
 nets = c.listAllNetworks(0)

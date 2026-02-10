@@ -15,9 +15,6 @@ native Python manner.
 - Errors are raised as exceptions, never as a return code.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-
 from ctypes import CDLL
 from ctypes import CFUNCTYPE
 from ctypes import POINTER

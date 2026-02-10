@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
-
 import logging
 import os
 import os.path
@@ -199,7 +196,6 @@ class TestRun:
 
     def test_setsid(self):
         args = [sys.executable, '-c',
-                'from __future__ import print_function;'
                 'import os;'
                 'print(os.getsid(os.getpid()))']
         out = commands.run(args, setsid=True)
@@ -281,7 +277,7 @@ class TestExecCmd:
     @pytest.mark.parametrize("cmd", CMD_TYPES)
     def test_set_sid(self, cmd):
         cmd_args = (sys.executable, '-c',
-                    'from __future__ import print_function;import os;'
+                    'import os;'
                     'print(os.getsid(os.getpid()))')
         rc, out, _ = commands.execCmd(cmd(cmd_args), setsid=True)
         assert int(out[0]) != os.getsid(os.getpid())

@@ -13,8 +13,6 @@ DirectioChecker  checker using dd process for file or block based
 CheckResult      result object provided to user callback on each check.
 """
 
-from __future__ import absolute_import
-
 import logging
 import re
 import threading

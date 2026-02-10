@@ -10,9 +10,6 @@ This module provides needed interfaces to for attaching and detaching volumes:
     - detach_volume() - detach a volume according to the device info provided
 """
 
-from __future__ import absolute_import
-from __future__ import division
-
 import functools
 import json
 import logging
