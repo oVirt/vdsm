@@ -5,9 +5,6 @@
 NBD - manage network block devices
 """
 
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import errno
 import json

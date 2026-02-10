@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-
 from collections import namedtuple, deque, OrderedDict
 from contextlib import contextmanager
 import errno

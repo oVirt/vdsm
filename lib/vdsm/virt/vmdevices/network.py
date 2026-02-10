@@ -3,10 +3,6 @@
 #
 # pylint: disable=no-member
 
-from __future__ import absolute_import
-from __future__ import division
-
-
 from vdsm.common import conv
 from vdsm.common import hostdev
 from vdsm.common import validate

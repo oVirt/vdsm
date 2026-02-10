@@ -5,9 +5,6 @@
 testing - Testing environment helpers
 """
 
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 
 

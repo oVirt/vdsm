@@ -2,8 +2,6 @@
 # SPDX-FileCopyrightText: 2014 Saggi Mizrahi
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 import logging
 import socket
 from collections import deque

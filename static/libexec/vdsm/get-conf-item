@@ -6,8 +6,6 @@
 # Access python's config files from bash.
 # Usage: get-conf-item filename.conf section item default
 
-from __future__ import absolute_import
-from __future__ import print_function
 import sys
 
 try:

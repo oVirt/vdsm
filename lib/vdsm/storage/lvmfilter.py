@@ -19,8 +19,6 @@ For more info why LVM filter is needed, see
 https://bugzilla.redhat.com/1449968
 """
 
-from __future__ import absolute_import
-
 import collections
 import itertools
 import json

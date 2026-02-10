@@ -9,9 +9,6 @@ progress is a number which represent percentage of a single disk copy,
 status is a way to feedback information on the job (init, error etc)
 """
 
-from __future__ import absolute_import
-from __future__ import division
-
 from collections import namedtuple
 from contextlib import closing, contextmanager
 import errno

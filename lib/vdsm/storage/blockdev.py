@@ -5,8 +5,6 @@
 blockdev - data operations on block devices.
 """
 
-from __future__ import absolute_import
-
 import logging
 
 from contextlib import contextmanager

@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
-
 """
 Functions to encode and decode base 10 values to base 26, which are used
 by the Linux kernel to construct the storage device node names (e.g. vda,
