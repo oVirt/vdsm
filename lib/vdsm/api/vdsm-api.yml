@@ -9847,6 +9847,28 @@ ManagedVolume.detach_volume:
         name: sd_id
         type: *UUID
 
+ManagedVolume.convert_volume:
+    added: '4.6'
+    description: Run qemu-img convert from source volume to destination volume.
+        Both volumes must be attached and managed via ManagedVolume. Used for
+        format conversion after upload on Managed Block Storage.
+    params:
+    -   description: The storage domain ID
+        name: sd_id
+        type: *UUID
+    -   description: The source volume ID
+        name: src_vol_id
+        type: *UUID
+    -   description: The destination volume ID
+        name: dst_vol_id
+        type: *UUID
+    -   description: Source volume format (e.g. qcow2, raw)
+        name: src_format
+        type: string
+    -   description: Destination volume format (e.g. qcow2, raw)
+        name: dst_format
+        type: string
+
 ManagedVolume.volumes_info:
     added: '4.3'
     description: Get information about list of volumes

@@ -35,6 +35,7 @@ from vdsm.common import supervdsm
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import managedvolumedb
+from vdsm.storage import qemuimg
 
 HELPER = '/usr/libexec/vdsm/managedvolume-helper'
 DEV_MAPPER = "/dev/mapper"
@@ -97,6 +98,8 @@ def attach_volume(sd_id, vol_id, connection_info):
                   vol_id, connection_info)
 
         try:
+            # Pass connection_info directly so the helper receives it as stdin;
+            # it expects a dict with driver_volume_type and data (same for all MBS backends).
             attachment = run_helper("attach", connection_info)
             try:
                 path = _resolve_path(vol_id, connection_info, attachment)
@@ -179,6 +182,36 @@ def volumes_info(vol_ids=()):
             result.append(vol_info)
 
     return {"result": result}
+
+
+def convert_volume(sd_id, src_vol_id, dst_vol_id, src_format, dst_format):
+    """
+    Run qemu-img convert from source volume to destination volume.
+    Both volumes must be attached (managed via attach_volume).
+    Paths are /run/vdsm/managedvolumes/{sd_id}_{vol_id}.
+    """
+    src_path = _run_link(sd_id, src_vol_id)
+    dst_path = _run_link(sd_id, dst_vol_id)
+    if not os.path.exists(src_path):
+        raise se.ManagedVolumeHelperFailed(
+            "Source volume %s not attached at %s" % (src_vol_id, src_path))
+    if not os.path.exists(dst_path):
+        raise se.ManagedVolumeHelperFailed(
+            "Destination volume %s not attached at %s" % (dst_vol_id, dst_path))
+
+    log.info("Converting managed volume %s -> %s (src_fmt=%s dst_fmt=%s)",
+             src_vol_id, dst_vol_id, src_format, dst_format)
+    operation = qemuimg.convert(
+        src_path,
+        dst_path,
+        srcFormat=src_format,
+        dstFormat=dst_format,
+        create=False,
+        target_is_zero=True,
+    )
+    operation.run()
+    log.info("Convert completed for managed volume %s -> %s",
+             src_vol_id, dst_vol_id)
 
 
 # supervdsm interface
@@ -310,14 +343,20 @@ def _remove_udev_rule(sd_id, vol_id):
 def _add_run_link(sd_id, vol_id, path):
     _create_run_dir()
     run_path = _run_link(sd_id, vol_id)
+    if os.path.islink(run_path):
+        if os.path.realpath(run_path) == os.path.realpath(path):
+            return run_path
+        os.remove(run_path)
     os.symlink(path, run_path)
     return run_path
 
 
 def _remove_run_link(sd_id, vol_id):
     try:
-        os.remove(_run_link(sd_id, vol_id))
-    except Exception:
+        run_path = _run_link(sd_id, vol_id)
+        if os.path.exists(run_path):
+            os.remove(run_path)
+    except OSError:
         log.exception("Failed to remove run link for volume %s", vol_id)
 
 

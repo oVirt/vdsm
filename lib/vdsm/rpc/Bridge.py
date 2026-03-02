@@ -428,6 +428,8 @@ command_info = {
     'Lease_status': {'ret': 'result'},
     'NBD_start_server': {'ret': 'result'},
     'ManagedVolume_attach_volume': {'ret': 'result'},
+    'ManagedVolume_detach_volume': {},   # Returns status only, no result payload
+    'ManagedVolume_convert_volume': {},   # Returns status only, no result payload
     'ManagedVolume_volumes_info': {'ret': 'result'},
     'VM_start_backup': {'ret': 'result'},
     'VM_stop_backup': {'ret': 'status'},
