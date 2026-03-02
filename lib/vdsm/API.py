@@ -1807,5 +1807,12 @@ class ManagedVolume(APIBase):
 
     @api.logged(on="api.storage")
     @api.method
+    def convert_volume(self, sd_id, src_vol_id, dst_vol_id, src_format,
+                       dst_format):
+        return managedvolume.convert_volume(
+            sd_id, src_vol_id, dst_vol_id, src_format, dst_format)
+
+    @api.logged(on="api.storage")
+    @api.method
     def volumes_info(self, vol_ids=()):
         return managedvolume.volumes_info(vol_ids)
