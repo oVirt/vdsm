@@ -400,7 +400,8 @@ class V2VCommand(object):
                 raise ValueError('Invalid QCOW2 compat version %r' %
                                  qcow2_compat)
             if 'vdsm-compat-option' in self._v2v_caps:
-                self._base_command.extend(['--vdsm-compat', qcow2_compat])
+                self._base_command.extend(
+                    ['-oo', 'vdsm-compat=%s' % qcow2_compat])
             elif qcow2_compat != '0.10':
                 # Note: qcow2 is only a suggestion from the engine
                 # if virt-v2v doesn't support it we fall back to default
@@ -440,10 +441,10 @@ class V2VCommand(object):
         parameters = []
         for disk in self._vminfo['disks']:
             try:
-                parameters.append('--vdsm-image-uuid')
-                parameters.append(disk['imageID'])
-                parameters.append('--vdsm-vol-uuid')
-                parameters.append(disk['volumeID'])
+                parameters.append('-oo')
+                parameters.append('vdsm-image-uuid=%s' % disk['imageID'])
+                parameters.append('-oo')
+                parameters.append('vdsm-vol-uuid=%s' % disk['volumeID'])
             except KeyError as e:
                 raise InvalidInputError('Job %r missing required property: %s'
                                         % (self._vmid, e))
@@ -564,10 +565,8 @@ class LibvirtCommand(V2VCommand):
         cmd.extend(self._disk_parameters())
         cmd.extend(['--password-file',
                     self._passwd_file,
-                    '--vdsm-vm-uuid',
-                    self._vmid,
-                    '--vdsm-ovf-output',
-                    _V2V_DIR,
+                    '-oo', 'vdsm-vm-uuid=%s' % self._vmid,
+                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
@@ -592,10 +591,8 @@ class OvaCommand(V2VCommand):
                     '-o', 'vdsm',
                     '-of', self._get_disk_format(),
                     '-oa', self._vminfo.get('allocation', 'sparse').lower(),
-                    '--vdsm-vm-uuid',
-                    self._vmid,
-                    '--vdsm-ovf-output',
-                    _V2V_DIR,
+                    '-oo', 'vdsm-vm-uuid=%s' % self._vmid,
+                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
@@ -631,10 +628,8 @@ class XenCommand(V2VCommand):
                     '-of', self._get_disk_format(),
                     '-oa', self._vminfo.get('allocation', 'sparse').lower()])
         cmd.extend(self._disk_parameters())
-        cmd.extend(['--vdsm-vm-uuid',
-                    self._vmid,
-                    '--vdsm-ovf-output',
-                    _V2V_DIR,
+        cmd.extend(['-oo', 'vdsm-vm-uuid=%s' % self._vmid,
+                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
