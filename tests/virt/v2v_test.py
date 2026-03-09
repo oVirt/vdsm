@@ -473,13 +473,13 @@ class v2vTests(TestCaseBase):
                '-o', 'vdsm',
                '-of', 'raw',
                '-oa', 'sparse',
-               '--vdsm-image-uuid', self.image_id_a,
-               '--vdsm-vol-uuid', self.volume_id_a,
-               '--vdsm-image-uuid', self.image_id_b,
-               '--vdsm-vol-uuid', self.volume_id_b,
+               '-oo', 'vdsm-image-uuid=%s' % self.image_id_a,
+               '-oo', 'vdsm-vol-uuid=%s' % self.volume_id_a,
+               '-oo', 'vdsm-image-uuid=%s' % self.image_id_b,
+               '-oo', 'vdsm-vol-uuid=%s' % self.volume_id_b,
                '--password-file', '/tmp/mypass',
-               '--vdsm-vm-uuid', self.job_id,
-               '--vdsm-ovf-output', '/usr/local/var/run/vdsm/v2v',
+               '-oo', 'vdsm-vm-uuid=%s' % self.job_id,
+               '-oo', 'vdsm-ovf-output=%s' % '/usr/local/var/run/vdsm/v2v',
                '--machine-readable',
                '-os', '/rhev/data-center/%s/%s' % (self.pool_id,
                                                    self.domain_id),
@@ -548,9 +548,9 @@ class v2vTests(TestCaseBase):
 
         # Look for the command line argument
         cmd = v2v.V2VCommand({'qcow2_compat': '1.1'}, None, None)
-        assert '--vdsm-compat' in cmd._base_command
-        i = cmd._base_command.index('--vdsm-compat')
-        assert '1.1' == cmd._base_command[i + 1]
+        assert '-oo' in cmd._base_command
+        i = cmd._base_command.index('-oo')
+        assert 'vdsm-compat=1.1' == cmd._base_command[i + 1]
 
     def test_v2v_error(self):
 
