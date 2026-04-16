@@ -26,6 +26,7 @@ from vdsm.common import concurrent
 from vdsm.common import exception
 from vdsm.common import function
 from vdsm.common import supervdsm
+from vdsm.common import response
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.common.time import monotonic_time
@@ -1279,6 +1280,7 @@ class HSM(object):
                           volUUID, desc, srcImgUUID, srcVolUUID, initial_size,
                           addBitmaps, legal, sequence, bitmap)
 
+
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,
                      force=False, discard=False):
@@ -1352,6 +1354,36 @@ class HSM(object):
             self._spmSchedule(spUUID, "purgeImage_%s" % imgUUID,
                               pool.purgeImage, sdUUID, imgUUID, volsByImg,
                               discard)
+
+    @public
+    def deleteUnusedLinks(self, sdUUID, spUUID, imgUUID, postZero=False,
+                     force=False, discard=False):
+        """
+        Delete Unused links
+        """
+        argsStr = "sdUUID=%s, spUUID=%s, imgUUID=%s, " \
+                  "postZero=%s, force=%s, discard=%s" % \
+                  (sdUUID, spUUID, imgUUID, postZero, force, discard)
+        # fileVolume path has pattern:/rhev/data-center/mnt/blockSD/sdUUID/images/imgUUID/volUUID
+        mountpoint = os.path.dirname("/rhev/data-center/mnt/blockSD/")
+        sdPath = os.path.join(mountpoint, sdUUID)
+        domainImages = 'images'
+        imagePath = os.path.join(sdPath, domainImages, imgUUID)
+        if os.path.exists(imagePath):
+            try:
+                for file in os.listdir(imagePath):
+                    self.log.info("Unlinking volume: %s", file)
+                    os.unlink(os.path.join(imagePath, file))
+                self.log.info("Deleting unused imagePath: %s" % imagePath)
+                os.rmdir(imagePath)
+                return response.success()
+            except Exception as e:
+                self.log.error("Cannot delete image's %s/%s link path: %s",
+                               sdUUID, imgUUID, imagePath, exc_info=True)
+                raise se.CannotDeleteLinks()
+        else:
+            self.log.info("Unused links for image %s doesn't exists", imgUUID)
+            return response.success()
 
     @public
     def verify_untrusted_volume(self, spUUID, sdUUID, imgUUID, volUUID):
