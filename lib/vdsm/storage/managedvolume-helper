@@ -116,8 +116,10 @@ def get_connector(conn_info):
 
 
 def attach(args):
-    conn_info = read_input()
-    log.debug("Connection info: %s", conn_info)
+    vol_info = read_input()
+    log.debug("Volume info: %s", vol_info)
+    # VDSM sends vol_info = {"connection_info": {"driver_volume_type": ..., "data": ...}}
+    conn_info = vol_info.get("connection_info", vol_info)
     conn = get_connector(conn_info)
     attachment = conn.connect_volume(conn_info['data'])
     log.debug("Attachment %s", attachment)
