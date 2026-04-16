@@ -71,7 +71,7 @@ class ApplicationProfileTests(VdsmTestCase):
             dict()
             cpu.stop()
             stats = open_ystats(filename)
-            self.assertTrue(find_module(stats, '__builtin__'))
+            self.assertTrue(find_module(stats, 'builtins'))
 
     def test_without_builtins(self):
         requires_yappi()
@@ -80,7 +80,7 @@ class ApplicationProfileTests(VdsmTestCase):
             dict()
             cpu.stop()
             stats = open_ystats(filename)
-            self.assertFalse(find_module(stats, '__builtin__'))
+            self.assertFalse(find_module(stats, 'builtins'))
 
     def test_cpu_clock(self):
         requires_yappi()
@@ -199,7 +199,7 @@ class FunctionProfileTests(VdsmTestCase):
 
             with_builtins()
             stats = open_ystats(filename)
-            self.assertTrue(find_module(stats, '__builtin__'))
+            self.assertTrue(find_module(stats, 'builtins'))
 
     def test_without_builtins(self):
         requires_yappi()
@@ -211,7 +211,7 @@ class FunctionProfileTests(VdsmTestCase):
 
             without_builtins()
             stats = open_ystats(filename)
-            self.assertFalse(find_module(stats, '__builtin__'))
+            self.assertFalse(find_module(stats, 'builtins'))
 
     def test_cpu_clock(self):
         requires_yappi()
