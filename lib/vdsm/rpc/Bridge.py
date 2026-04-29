@@ -345,6 +345,7 @@ command_info = {
     'Host_echo': {'ret': 'logged'},
     'Image_cloneStructure': {'ret': 'uuid'},
     'Image_delete': {'ret': 'uuid'},
+    'Image_deleteUnusedLinks': {'ret': 'status'},
     'Image_deleteVolumes': {'ret': 'uuid'},
     'Image_getVolumes': {'ret': 'uuidlist'},
     'Image_download': {'ret': 'uuid'},
