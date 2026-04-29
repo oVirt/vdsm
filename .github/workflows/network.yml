@@ -17,6 +17,7 @@ on:
       - 'lib/vdsm/common/**'
       - 'tests/network/**'
       - '.github/workflows/network.yml'
+  workflow_dispatch:
   # Build every week on Sunday 02:00 to pick up new container
   schedule:
     - cron:  '0 2 * * 0'
