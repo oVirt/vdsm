@@ -23,6 +23,9 @@ def getHardwareInfo(*args, **kwargs):
     elif cpuarch.is_ppc(arch):
         from vdsm.ppc64HardwareInfo import getHardwareInfoStructure
         return getHardwareInfoStructure()
+    elif cpuarch.is_arm(arch):
+        from vdsm.aarch64HardwareInfo import getHardwareInfoStructure
+        return getHardwareInfoStructure()
     else:
         #  not implemented over other architecture
         return {}
