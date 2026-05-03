@@ -31,6 +31,7 @@ class _StatsClient(object):
 
     Currently supports only gauge reports which is used in VDSM.
     """
+
     def __init__(self, host, port=8125, maxudpsize=512, ipv6=False):
         fam = socket.AF_INET6 if ipv6 else socket.AF_INET
         family, _, _, _, addr = socket.getaddrinfo(

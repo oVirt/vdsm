@@ -319,6 +319,7 @@ class AssertingLock(object):
     """
     Lock that raises when trying to acquire a locked lock.
     """
+
     def __init__(self):
         self._lock = threading.Lock()
 

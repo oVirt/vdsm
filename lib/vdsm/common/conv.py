@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 def tobool(s):
     try:
         if s is None:

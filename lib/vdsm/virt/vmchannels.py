@@ -25,6 +25,7 @@ class Listener(object):
     """
     An events driven listener which handle messages from virtual machines.
     """
+
     def __init__(self, log):
         self.log = log
         self._quit = False

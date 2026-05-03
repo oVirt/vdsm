@@ -83,6 +83,7 @@ class SimpleResourceFactory(object):
     .. note:
         except for `resourceExists` nothing is used at the moment
     """
+
     def resourceExists(self, resourceName):
         """
         Return :keyword:`True` if a resource with that name is producible with
@@ -635,6 +636,7 @@ class Namespace(object):
     """
     Namespace struct
     """
+
     def __init__(self, factory):
         self.resources = {}
         self.lock = threading.Lock()  # rwlock.RWLock()
@@ -645,6 +647,7 @@ class ResourceInfo(object):
     """
     Resource struct
     """
+
     def __init__(self, realObj, namespace, name):
         self.queue = []
         self.activeUsers = 0
@@ -762,6 +765,7 @@ class Lock(guarded.AbstractLock):
 
     This lock can also be used as a context manager.
     """
+
     def __init__(self, ns, name, mode):
         self._ns = ns
         self._name = name

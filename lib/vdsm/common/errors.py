@@ -9,7 +9,6 @@ error handling. For public vdsm errors see vdsm.common.exception.
 """
 
 
-
 class Base(Exception):
     msg = "Base class for vdsm errors"
 

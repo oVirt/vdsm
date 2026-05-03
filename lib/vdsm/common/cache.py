@@ -13,6 +13,7 @@ class memoized(object):
 
     Adaptation from http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
     """
+
     def __init__(self, func):
         self.func = func
         self.cache = {}

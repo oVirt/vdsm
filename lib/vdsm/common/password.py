@@ -9,6 +9,7 @@ class ProtectedPassword(object):
     """
     Protect a password so it will not be logged or serialized by mistake.
     """
+
     def __init__(self, value):
         self.value = value
 

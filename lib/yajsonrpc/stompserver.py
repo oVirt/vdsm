@@ -43,6 +43,7 @@ class StompAdapterImpl(object):
               representing stomp subscription.
     req_dest - maps a request id to a destination.
     """
+
     def __init__(self, reactor, sub_map, req_dest):
         self._reactor = reactor
         self._outbox = deque()
@@ -289,6 +290,7 @@ class StompServer(object):
     """
     Sends message to all subscribes that subscribed to destination.
     """
+
     def send(self, message, destination=stomp.SUBSCRIPTION_ID_RESPONSE):
         resp = json.loads(message)
         if not isinstance(resp, dict):

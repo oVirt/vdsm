@@ -1624,6 +1624,7 @@ class VolumeLease(guarded.AbstractLock):
     """
     Extend AbstractLock so Volume Leases may be used with guarded utilities.
     """
+
     def __init__(self, host_id, sd_id, img_id, vol_id):
         self._host_id = host_id
         self._sd_id = sd_id

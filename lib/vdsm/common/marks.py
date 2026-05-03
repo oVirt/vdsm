@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 def deprecated(thing):
     """
     Mark functions, methods, and classes as deprecated.

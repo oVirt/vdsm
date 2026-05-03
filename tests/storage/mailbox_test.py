@@ -118,6 +118,7 @@ class FakeSPMMailer(object):
     Fake SPM mailer class for sending reply message when
     pool extend volume request handling is done.
     """
+
     def __init__(self):
         self.msg_id = None
         self.msg = None

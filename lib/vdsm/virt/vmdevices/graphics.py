@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 from vdsm.common import xmlutils
 from vdsm.virt import displaynetwork
 from vdsm.virt import libvirtnetwork

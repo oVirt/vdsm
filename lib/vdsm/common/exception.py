@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 # pragma pylint: disable=exception-message-attribute
 # TODO: Rename `message' attribute and remove the pragma above.
 

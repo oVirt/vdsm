@@ -140,6 +140,7 @@ def channel_state_to_str(state):
 @virdomain.expose("guestInfo", "interfaceAddresses", "guestVcpus")
 class QemuGuestAgentDomain(object):
     """Wrapper object exposing libvirt API."""
+
     def __init__(self, vm):
         self._vm = vm
 

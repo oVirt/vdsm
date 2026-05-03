@@ -58,6 +58,7 @@ class DomainAdapter:
     VM wrapper class that exposes only
     libvirt merge related operations.
     """
+
     def __init__(self, vm):
         self._vm = vm
 

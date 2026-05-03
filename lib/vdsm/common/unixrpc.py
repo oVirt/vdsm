@@ -13,6 +13,7 @@ class UnixXmlRpcClient(xmlrpc.client.ServerProxy):
     This class implements a XML-RPC client that connects to a UNIX socket. The
     path to the UNIX socket to create must be provided.
     """
+
     def __init__(self, sock_path, timeout):
         # We can't pass funny characters in the host part of a URL, so we
         # encode the socket path in base16.

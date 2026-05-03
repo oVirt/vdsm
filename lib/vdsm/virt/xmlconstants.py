@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 _METADATA_PREFIX = 'ovirt'
 
 METADATA_VM_VDSM_URI = 'http://ovirt.org/vm/1.0'

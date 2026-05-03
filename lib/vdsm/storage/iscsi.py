@@ -33,6 +33,7 @@ class IscsiPortal(namedtuple("IscsiPortal", "hostname, port")):
     Represents transport (TCP) address like defined in rfc 3721 or
     Network Portal of rfc 3720.
     """
+
     def __str__(self):
         return hosttail_join(self.hostname, str(self.port))
 
@@ -45,6 +46,7 @@ class IscsiTarget(namedtuple("IscsiTarget", "portal, tpgt, iqn")):
     Represents the iSCSI Address like defined in rfc 3721 or
     the target record of rfc 3720 Appendix D.
     """
+
     def __str__(self):
         return "%s %s" % (self.address, self.iqn)
 

@@ -89,6 +89,7 @@ class PopenAdapter:
     Adapt multiprocessing.Process() to subprocess.Popen() interface so it can
     be used with commands.wait_async().
     """
+
     def __init__(self, proc):
         self._proc = proc
 

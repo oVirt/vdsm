@@ -435,6 +435,7 @@ class FakeDomainMonitor(object):
     This class cannot be used for tests relying over domain
     monitor's functionality itself.
     """
+
     def __init__(self):
         self.onDomainStateChange = MonitorEvent()
         self.monitors = {}
@@ -461,6 +462,7 @@ class FakeTaskManager(object):
     This class cannot be used for tests relying over task
     manager's functionality itself.
     """
+
     def loadDumpedTasks(self, task_dir):
         pass
 

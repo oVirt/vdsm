@@ -110,7 +110,6 @@ failed::
 """
 
 
-
 import contextlib
 import functools
 import uuid
@@ -221,6 +220,7 @@ class _Client(object):
     A wrapper class for client class. Encapulates client run and responsible
     for closing client connection in the end of its run.
     """
+
     def __init__(self, client, default_timeout, gluster_enabled=False):
         self._client = client
         self._default_timeout = default_timeout

@@ -227,6 +227,7 @@ class ParserWrapper(object):
     configparser is for parsing of ini files. Use this
     class for files with no sections.
     """
+
     def __init__(self, defaults=None):
         self.wrapped = configparser.RawConfigParser(defaults=defaults)
 

@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 MIN_PORT = 0
 MAX_PORT = 65535
 

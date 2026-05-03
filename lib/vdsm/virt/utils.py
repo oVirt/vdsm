@@ -60,6 +60,7 @@ class ExpiringCache(object):
 
     Expired keys are removed on the first attempt to access them.
     """
+
     def __init__(self, ttl, clock=monotonic_time):
         self._ttl = ttl
         self._clock = clock

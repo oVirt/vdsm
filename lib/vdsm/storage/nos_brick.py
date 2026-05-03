@@ -49,6 +49,7 @@ class RBDConnector(connectors.rbd.RBDConnector):
 
     We need a third one, local attachment on non controller node.
     """
+
     def connect_volume(self, connection_properties):
         # NOTE(e0ne): sanity check if ceph-common is installed.
         try:

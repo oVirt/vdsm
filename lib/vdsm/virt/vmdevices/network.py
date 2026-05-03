@@ -4,7 +4,6 @@
 # pylint: disable=no-member
 
 
-
 from vdsm.common import conv
 from vdsm.common import hostdev
 from vdsm.common import validate

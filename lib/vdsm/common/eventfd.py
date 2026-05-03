@@ -36,6 +36,7 @@ class EventFD(object):
     maintained by the kernel.  This counter is initialized with the value
     specified in the argument initial_value.
     """
+
     def __init__(self, initial_value=0, flags=0):
         fd = libc.eventfd(
             ctypes.c_uint(initial_value),

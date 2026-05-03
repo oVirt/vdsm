@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 def confirm(msg):
     """
     Display a message to the user and wait for confirmation.

@@ -59,6 +59,7 @@ class DisconnectedPool(object):
 
     If the pool is not connected, we raise the correct error.
     """
+
     def is_connected(self):
         return False
 

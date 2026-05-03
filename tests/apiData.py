@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 class APIData(object):
     def __init__(self, obj, meth, data):
         self.obj = obj

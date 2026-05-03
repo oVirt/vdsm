@@ -25,6 +25,7 @@ class NullResourceFactory(rm.SimpleResourceFactory):
     """
     A resource factory that has no resources. Used for testing.
     """
+
     def resourceExists(self, name):
         return False
 
@@ -33,6 +34,7 @@ class ErrorResourceFactory(rm.SimpleResourceFactory):
     """
     A resource factory that has no resources. Used for testing.
     """
+
     def createResource(self, name, lockType):
         raise Exception("EPIC FAIL!! LOLZ!!")
 
