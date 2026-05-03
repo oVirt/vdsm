@@ -976,7 +976,9 @@ def _get_network_iface_name(net_name, net_attrs):
     return (
         net_name
         if bridged
-        else '{}.{}'.format(base_iface, vlan) if vlan else base_iface
+        else '{}.{}'.format(base_iface, vlan)
+        if vlan
+        else base_iface
     )
 
 

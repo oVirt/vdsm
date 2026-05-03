@@ -94,9 +94,9 @@ def create_bridge_iface_state(
     }
 
     if state == nmstate.InterfaceState.UP:
-        bridge_state[nmstate.Interface.TYPE] = (
-            nmstate.InterfaceType.LINUX_BRIDGE
-        )
+        bridge_state[
+            nmstate.Interface.TYPE
+        ] = nmstate.InterfaceType.LINUX_BRIDGE
         bridge_state[nmstate.Interface.MTU] = mtu
     if port:
         bridge_state[nmstate.LinuxBridge.CONFIG_SUBTREE] = {
