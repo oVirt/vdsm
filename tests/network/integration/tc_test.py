@@ -33,7 +33,6 @@ from .iperf import IperfClient
 from .iperf import requires_iperf3
 from .netintegtestlib import network_namespace
 
-
 EXT_TC = '/sbin/tc'
 
 VLAN16_TAG = 16
@@ -93,7 +92,6 @@ class TestQdisc(object):
     not os.path.exists('/dev/net/tun'), reason='No tun device available'
 )
 class TestPortMirror(object):
-
     """
     Tests port mirroring of IP traffic between two bridges.
 

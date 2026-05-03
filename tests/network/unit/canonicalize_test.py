@@ -11,7 +11,6 @@ import pytest
 from vdsm.network import canonicalize
 from vdsm.network import errors as ne
 
-
 NET0_SETUP = {'NET0': {'nic': 'eth0', 'switch': 'legacy'}}
 NET1_SETUP = {'NET1': {'nic': 'eth0', 'switch': 'legacy'}}
 NET2_SETUP = {'NET2': {'nic': 'eth0', 'switch': 'legacy'}}

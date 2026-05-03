@@ -17,7 +17,6 @@ from vdsm.network.netconfpersistence import NETCONF_NETS
 from vdsm.network.netconfpersistence import NETCONF_BONDS
 from vdsm.network.netconfpersistence import NETCONF_DEVS
 
-
 NETWORK = 'luke'
 NETWORK_ATTRIBUTES = {'bonding': 'bond0', 'vlan': 1}
 BONDING = 'skywalker'

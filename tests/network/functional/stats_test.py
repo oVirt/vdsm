@@ -8,7 +8,6 @@ from network.nettestlib import veth_pair
 from .netfunctestlib import NOCHK
 from .netfunctestlib import parametrize_switch
 
-
 NETWORK_NAME1 = 'test-network-1'
 NETWORK_NAME2 = 'test-network-2'
 

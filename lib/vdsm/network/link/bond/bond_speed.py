@@ -8,7 +8,6 @@ from vdsm.network.link import nic
 
 from .sysfs_options import properties
 
-
 BONDING_ACTIVE_BACKUP_MODE = frozenset('1')
 BONDING_BROADCAST_MODE = frozenset('3')
 BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))

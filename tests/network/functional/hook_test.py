@@ -15,7 +15,6 @@ from . import netfunctestlib as nftestlib
 from .netfunctestlib import NOCHK
 from network.nettestlib import dummy_device
 
-
 NETWORK_NAME = 'test-network'
 ENABLE_BRIDGE_HOOK = f"""\
 #!/usr/bin/python3

@@ -15,7 +15,6 @@ from vdsm.network.netlink import libnl
 from vdsm.network.netlink import link
 from vdsm.network.netlink.waitfor import waitfor_linkup
 
-
 STATE_UP = 'up'
 STATE_DOWN = 'down'
 

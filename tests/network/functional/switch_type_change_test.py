@@ -18,7 +18,6 @@ from network.nettestlib import wait_for_ipv4
 
 from .netfunctestlib import SetupNetworksError, NOCHK
 
-
 NET1_NAME = 'test-network1'
 NET2_NAME = 'test-network2'
 VLAN = 10

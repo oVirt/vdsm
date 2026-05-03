@@ -6,7 +6,6 @@ from unittest import mock
 
 from vdsm.network.link import sriov
 
-
 PCI1 = '0000.1234.1.1'
 PCI2 = '0000.1234.1.2'
 NUMVFS = 2

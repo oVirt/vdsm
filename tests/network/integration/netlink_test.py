@@ -22,7 +22,6 @@ from network.nettestlib import Bond
 from network.nettestlib import IpFamily
 from network.nettestlib import running_on_ovirt_ci
 
-
 IP_ADDRESS = '192.0.2.1'
 IP_CIDR = '24'
 

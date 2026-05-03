@@ -25,7 +25,6 @@ from .addr import _addr_info
 from .link import _link_info
 from .route import _route_info
 
-
 E_NOT_RUNNING = 1
 E_TIMEOUT = 2
 

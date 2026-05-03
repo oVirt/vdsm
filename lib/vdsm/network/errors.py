@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
-
 ERR_BAD_PARAMS = 21
 ERR_BAD_ADDR = 22
 ERR_BAD_NIC = 23

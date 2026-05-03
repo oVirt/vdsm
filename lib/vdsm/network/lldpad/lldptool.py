@@ -9,7 +9,6 @@ from vdsm.network.lldp import EnableLldpError
 from vdsm.network.lldp import DisableLldpError
 from vdsm.network.lldp import TlvReportLldpError
 
-
 SYSTEMCTL = '/usr/bin/systemctl'
 LLDPTOOL = '/usr/sbin/lldptool'
 LLDPAD_SERVICE = 'lldpad.service'

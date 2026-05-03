@@ -7,7 +7,6 @@ import pytest
 from vdsm.network import errors as ne
 from vdsm.network.link import validator
 
-
 BOND_NAME = 'bond_name'
 NETWORK1_NAME = 'test-network1'
 VLANID = 10

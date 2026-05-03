@@ -21,7 +21,6 @@ The priority of the configuration files is determined by the number prefix of
 each file.
 """
 
-
 import configparser
 
 parameters = [

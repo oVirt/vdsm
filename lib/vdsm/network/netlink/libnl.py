@@ -15,7 +15,6 @@ native Python manner.
 - Errors are raised as exceptions, never as a return code.
 """
 
-
 from ctypes import CDLL
 from ctypes import CFUNCTYPE
 from ctypes import POINTER
