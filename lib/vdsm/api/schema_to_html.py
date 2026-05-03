@@ -4,9 +4,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import sys
 from contextlib import contextmanager
 

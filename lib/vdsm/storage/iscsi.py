@@ -6,7 +6,6 @@ iSCSI service module. Provides helper functions to interact with iscsiadm
 facility
 """
 
-from __future__ import absolute_import
 
 import errno
 import glob

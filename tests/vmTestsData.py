@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 CONF_TO_DOMXML_X86_64 = [({
     'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',

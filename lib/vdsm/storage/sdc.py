@@ -5,7 +5,6 @@
 Cache module provides general purpose (more or less) cache infrastructure
 for keeping storage related data that is expensive to harvest, but needed often
 """
-from __future__ import absolute_import
 
 import logging
 import threading

@@ -2,7 +2,6 @@
 # SPDX-FileCopyrightText: 2001-2015 Python Software Foundation
 # SPDX-License-Identifier: PSF-2.0
 
-from __future__ import absolute_import
 
 import asyncore
 import collections

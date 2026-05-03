@@ -11,7 +11,6 @@ TODO: The configuration in these specific entries in the logger.config.in
 should be drop, letting the application define them (without exposing this
 to users).
 """
-from __future__ import absolute_import
 
 from vdsm.common.logutils import (  # NOQA: F401 (unused import)
     TimezoneFormatter,

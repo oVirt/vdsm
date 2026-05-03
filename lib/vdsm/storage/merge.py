@@ -13,7 +13,6 @@ This step performs the following:
    extend baes by base-size + top-size.
 """
 
-from __future__ import absolute_import
 
 from contextlib import contextmanager
 

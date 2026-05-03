@@ -5,7 +5,6 @@
 multipath module provides helper procedures for configuring multipath
 daemon and maintaining its state
 """
-from __future__ import absolute_import
 import os
 import errno
 from glob import glob
