@@ -360,6 +360,34 @@ def test_reattach_volume_other_connection(
 
 @requires_root
 @pytest.mark.root
+def test_reattach_after_fence_reboot_drops_stale_db_entry(
+    monkeypatch, fake_os_brick, tmpdir, tmp_db, fake_lvm, fake_supervdsm
+):
+    monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
+    monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
+    tmpdir.join("fakemultipathid").write("")
+    connection_info = {
+        "driver_volume_type": "iscsi",
+        "data": {"some_info": 26},
+    }
+    managedvolume.attach_volume("fake_sd_id", "fake_vol_id", connection_info)
+
+    # Simulate a fence-reboot: /run is wiped, the DB row and the device
+    # path survive.
+    os.remove(str(managedvolume._run_link("fake_sd_id", "fake_vol_id")))
+
+    # Re-attach must succeed like a first attach.
+    fake_lvm.devices_invalidated = False
+    managedvolume.attach_volume("fake_sd_id", "fake_vol_id", connection_info)
+
+    assert managedvolume._run_link_exists("fake_sd_id", "fake_vol_id")
+    entries = fake_os_brick.log()
+    actions = [e["action"] for e in entries]
+    assert actions == ["connect_volume", "connect_volume"]
+
+
+@requires_root
+@pytest.mark.root
 def test_detach_volume_iscsi_not_attached(
     monkeypatch, fake_os_brick, tmp_db, fake_lvm, fake_supervdsm
 ):
