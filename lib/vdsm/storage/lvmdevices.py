@@ -161,9 +161,17 @@ def _list_all_visible_vgs():
     (because use_devicesfile was off when they were created) are
     surfaced. Returns a sorted list of VG names; empty list if lvm
     sees no VGs.
+
+    Skips VGs tagged as oVirt storage domains
+    (lvmfilter.OVIRT_VG_TAG). vdsm registers SD VGs through its own
+    flow on attach; pulling a stale-from-prior-install SD VG into
+    the devices file here would let sanlock try to acquire leases
+    on a VG the engine no longer references. Same skip rule as
+    lvmfilter.find_lvm_mounts.
     """
     cmd = [constants.EXT_LVM, 'vgs',
-           '--noheadings', '-o', 'vg_name',
+           '--noheadings', '-o', 'vg_name,vg_tags',
+           '--separator', '|',
            '--config',
            'devices { use_devicesfile = 0 filter = ["a|.*|"] }']
 
@@ -177,11 +185,21 @@ def _list_all_visible_vgs():
     if p.returncode != 0:
         raise cmdutils.Error(cmd, p.returncode, out, err)
 
-    return sorted({
-        name.strip()
-        for name in out.decode("utf-8").splitlines()
-        if name.strip()
-    })
+    result = set()
+    for line in out.decode("utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # vgs prints "vg_name|tag1,tag2,..." with our --separator.
+        name, _, tags = line.partition("|")
+        name = name.strip()
+        if not name:
+            continue
+        if lvmfilter.OVIRT_VG_TAG in tags.split(","):
+            log.debug("Skipping oVirt-tagged VG %r", name)
+            continue
+        result.add(name)
+    return sorted(result)
 
 
 def _run_vgimportdevices(vg):

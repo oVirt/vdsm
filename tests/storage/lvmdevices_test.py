@@ -123,3 +123,26 @@ def test_create_treats_empty_header_only_file_as_unpopulated(
     lvmdevices._create_system_devices({"vg_root"})
 
     assert stub_imports == ["drbdpool", "vg_root"]
+
+
+def test_list_all_visible_vgs_filters_ovirt_sd_tag(monkeypatch):
+    # Stale oVirt SD VGs (tag RHAT_storage_domain) must not be
+    # imported back into the devices file by the VG-listing path --
+    # the engine no longer references them, but sanlock would still
+    # try to acquire leases on a VG that's visible to lvm.
+    # find_lvm_mounts already skips this tag for the same reason.
+    fake_out = (
+        "  drbdpool|\n"
+        "  0d504179-2606-4e62-87ee-0e5502dc00da|"
+        "MDT_TYPE=ISCSI,RHAT_storage_domain\n"
+        "  vg_root|\n"
+    ).encode("utf-8")
+
+    class FakeProc:
+        returncode = 0
+    monkeypatch.setattr(
+        lvmdevices.commands, "start", lambda *a, **kw: FakeProc())
+    monkeypatch.setattr(
+        lvmdevices.commands, "communicate", lambda p: (fake_out, b""))
+
+    assert lvmdevices._list_all_visible_vgs() == ["drbdpool", "vg_root"]
