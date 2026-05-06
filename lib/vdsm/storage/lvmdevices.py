@@ -105,20 +105,101 @@ def _configure_devices_file(enable=True):
 
 def _create_system_devices(vgs):
     """
-    Import devices of provided VGs into LVM devices file.
-    """
-    if not vgs:
-        # Create empty devices file if no VGs are provided.
-        devices_file = _get_devices_file_path()
-        now = datetime.datetime.now()
-        data = (f"# Created by Vdsm pid {os.getpid()} at "
-                f"{now.strftime('%a %b %d %H:%M:%S %Y')}\n")
+    Populate the LVM devices file from currently-visible VGs and the
+    `vgs` argument.
 
-        os.makedirs(os.path.dirname(devices_file), exist_ok=True)
-        fileUtils.atomic_write(devices_file, data.encode("utf-8"))
-    else:
-        for vg in vgs:
+    Imports the VGs received in the `vgs` argument -- typically
+    populated by `lvmfilter.find_lvm_mounts`, i.e. the VGs that back
+    the host's mounted filesystems (the OS root VG if root is on
+    LVM; empty if root is on a partition) -- plus any other VGs
+    already visible to lvm at the moment vdsm runs. Without this,
+    VGs created by an external layer (e.g. LINSTOR's drbdpool, or
+    any operator-deployed VG) while use_devicesfile=0 -- or auto-
+    imported under use_devicesfile=1 on a host where vdsm is the
+    first agent to populate the file -- are silently evicted from
+    the devices file when vdsm rewrites it or first-creates it.
+
+    Operator philosophy: storage intended for oVirt should be blank
+    before being attached. Anything already on the host belongs to
+    whoever put it there, and vdsm has no signal to override that
+    ownership. Strictly safer than today's empty-overwrite behaviour.
+    """
+    devices_file = _get_devices_file_path()
+    file_was_populated = (
+        os.path.exists(devices_file) and os.path.getsize(devices_file) > 0
+    )
+
+    if not file_was_populated:
+        # File doesn't exist or holds only an empty header. List every
+        # VG lvm currently sees so external-storage VGs are not evicted
+        # on the use_devicesfile=1 transition.
+        existing_vgs = _list_all_visible_vgs()
+        if not existing_vgs and not vgs:
+            # No VGs anywhere on the host. Drop a minimal header file
+            # so the PR #324 invariant ("file exists when
+            # use_devicesfile=1") still holds; otherwise lvm sees all
+            # devices on a host that just wanted the gate flipped on.
+            now = datetime.datetime.now()
+            data = (f"# Created by Vdsm pid {os.getpid()} at "
+                    f"{now.strftime('%a %b %d %H:%M:%S %Y')}\n")
+            os.makedirs(os.path.dirname(devices_file), exist_ok=True)
+            fileUtils.atomic_write(devices_file, data.encode("utf-8"))
+            return
+
+        for vg in existing_vgs:
             _run_vgimportdevices(vg)
+
+    # vgimportdevices is additive; existing entries are not touched.
+    for vg in vgs:
+        _run_vgimportdevices(vg)
+
+
+def _list_all_visible_vgs():
+    """
+    Enumerate VGs lvm can currently see, bypassing the devices file
+    so VGs that exist on disk but are not yet recorded in the file
+    (because use_devicesfile was off when they were created) are
+    surfaced. Returns a sorted list of VG names; empty list if lvm
+    sees no VGs.
+
+    Skips VGs tagged as oVirt storage domains
+    (lvmfilter.OVIRT_VG_TAG). vdsm registers SD VGs through its own
+    flow on attach; pulling a stale-from-prior-install SD VG into
+    the devices file here would let sanlock try to acquire leases
+    on a VG the engine no longer references. Same skip rule as
+    lvmfilter.find_lvm_mounts.
+    """
+    cmd = [constants.EXT_LVM, 'vgs',
+           '--noheadings', '-o', 'vg_name,vg_tags',
+           '--separator', '|',
+           '--config',
+           'devices { use_devicesfile = 0 filter = ["a|.*|"] }']
+
+    p = commands.start(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    out, err = commands.communicate(p)
+
+    if p.returncode != 0:
+        raise cmdutils.Error(cmd, p.returncode, out, err)
+
+    result = set()
+    for line in out.decode("utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # vgs prints "vg_name|tag1,tag2,..." with our --separator.
+        name, _, tags = line.partition("|")
+        name = name.strip()
+        if not name:
+            continue
+        if lvmfilter.OVIRT_VG_TAG in tags.split(","):
+            log.debug("Skipping oVirt-tagged VG %r", name)
+            continue
+        result.add(name)
+    return sorted(result)
 
 
 def _run_vgimportdevices(vg):
