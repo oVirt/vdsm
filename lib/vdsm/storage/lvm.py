@@ -1140,19 +1140,27 @@ class CacheStats(object):
 
 _lvminfo = LVMCache()
 
+# Mirror blockSD.STORAGE_DOMAIN_TAG / lvmfilter.OVIRT_VG_TAG. Importing from
+# blockSD would create a circular import (blockSD already imports lvm).
+SD_VG_TAG = "RHAT_storage_domain"
+
 
 def bootstrap(skiplvs=()):
     """
     Bootstrap lvm module
 
-    This function builds the lvm cache and ensure that all unused lvs are
-    deactivated, expect lvs matching skiplvs.
+    This function builds the lvm cache and ensures that all unused lvs in
+    vdsm-managed storage domain VGs are deactivated, except lvs matching
+    skiplvs. VGs that are not tagged as vdsm storage domains are walked
+    past, leaving any non-vdsm LVs alone.
     """
     _lvminfo.bootstrap()
 
     skiplvs = set(skiplvs)
 
     for vg in _lvminfo.getAllVgs():
+        if SD_VG_TAG not in vg.tags:
+            continue
         deactivateUnusedLVs(vg.name, skiplvs=skiplvs)
 
 
