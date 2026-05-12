@@ -1001,6 +1001,10 @@ class Vm(object):
             if acquired:
                 self.log.debug('Releasing incoming migration semaphore')
                 migration.incomingMigrations.release()
+            if (not self.recovering and
+                    self.lastStatus == vmstatus.DOWN and
+                    not self._dom.connected):
+                self._cleanup()
 
     def _recover_status(self):
         try:
