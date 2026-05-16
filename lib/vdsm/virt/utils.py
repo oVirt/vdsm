@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 import logging
 import os
 import random
@@ -62,6 +60,7 @@ class ExpiringCache(object):
 
     Expired keys are removed on the first attempt to access them.
     """
+
     def __init__(self, ttl, clock=monotonic_time):
         self._ttl = ttl
         self._clock = clock

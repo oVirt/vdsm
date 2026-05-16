@@ -28,7 +28,6 @@ from .schema import Route
 from .schema import RouteRule
 from .schema import Vlan
 
-
 __all__ = [
     'add_dynamic_source_route_rules',
     'generate_state',

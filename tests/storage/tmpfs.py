@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import logging
 from collections import namedtuple
@@ -22,6 +20,7 @@ class TemporaryFS(object):
     Temporary file system created on provided device. Contains also support for
     mounting newly created FS.
     """
+
     def __init__(self, tmp_storage):
         self.tmp_storage = tmp_storage
         self._mounts = {}

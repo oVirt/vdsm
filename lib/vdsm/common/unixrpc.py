@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import base64
 import http.client
@@ -15,6 +13,7 @@ class UnixXmlRpcClient(xmlrpc.client.ServerProxy):
     This class implements a XML-RPC client that connects to a UNIX socket. The
     path to the UNIX socket to create must be provided.
     """
+
     def __init__(self, sock_path, timeout):
         # We can't pass funny characters in the host part of a URL, so we
         # encode the socket path in base16.

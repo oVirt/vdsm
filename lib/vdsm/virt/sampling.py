@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import libvirt
 
@@ -41,6 +39,7 @@ class TotalCpuSample(object):
 
     The sample is taken at initialization time and can't be updated.
     """
+
     def __init__(self):
         with open('/proc/stat') as f:
             self.user, userNice, self.sys, self.idle = \
@@ -82,6 +81,7 @@ class NumaNodeMemorySample(object):
 
     The sample is taken at initialization time and can't be updated.
     """
+
     def __init__(self):
         self.nodesMemSample = {}
         numaTopology = numa.topology()
@@ -112,6 +112,7 @@ class PidCpuSample(object):
 
     The sample is taken at initialization time and can't be updated.
     """
+
     def __init__(self, pid):
         with open('/proc/%s/stat' % pid) as stat:
             self.user, self.sys = \

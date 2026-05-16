@@ -2,8 +2,6 @@
 # SPDX-FileCopyrightText: 2017 IBM Corp.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import libvirt
 import os

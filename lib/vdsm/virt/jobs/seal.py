@@ -25,8 +25,6 @@ this volumes on the step (3) are ILLEGAL, that's why allowIllegal=True
 parameter is passed to prepareImage().
 """
 
-from __future__ import absolute_import
-from __future__ import division
 
 from vdsm import virtsysprep
 from vdsm.common import properties

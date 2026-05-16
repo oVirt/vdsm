@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 import json
 import os
 import tempfile
@@ -18,7 +16,6 @@ from vdsm.network.netconfpersistence import Transaction
 from vdsm.network.netconfpersistence import NETCONF_NETS
 from vdsm.network.netconfpersistence import NETCONF_BONDS
 from vdsm.network.netconfpersistence import NETCONF_DEVS
-
 
 NETWORK = 'luke'
 NETWORK_ATTRIBUTES = {'bonding': 'bond0', 'vlan': 1}

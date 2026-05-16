@@ -15,7 +15,6 @@ from network.nettestlib import IpFamily
 from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import vlan_device
 
-
 HWADDRESS = 'ce:0c:46:59:c9:d1'
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'

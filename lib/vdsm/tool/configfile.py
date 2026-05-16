@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 import configparser
 import functools
 import os
@@ -229,6 +227,7 @@ class ParserWrapper(object):
     configparser is for parsing of ini files. Use this
     class for files with no sections.
     """
+
     def __init__(self, defaults=None):
         self.wrapped = configparser.RawConfigParser(defaults=defaults)
 

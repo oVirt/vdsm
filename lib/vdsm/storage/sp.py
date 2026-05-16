@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
 
 import os
 from glob import iglob, glob
@@ -60,6 +59,7 @@ class DisconnectedPool(object):
 
     If the pool is not connected, we raise the correct error.
     """
+
     def is_connected(self):
         return False
 

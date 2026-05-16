@@ -7,8 +7,6 @@
 # Author: Tim Lesher
 #
 
-from __future__ import absolute_import
-from __future__ import print_function
 
 import logging
 import queue
@@ -26,7 +24,6 @@ class ThreadPool:
     log = logging.getLogger('storage.threadpool')
 
     def __init__(self, name, numThreads, waitTimeout=3, maxTasks=100):
-
         """Initialize the thread pool with numThreads workers."""
 
         self.log.debug("Enter - name: %s, numThreads: %s, waitTimeout: %s, "
@@ -48,7 +45,6 @@ class ThreadPool:
             self.__threads.append(newThread)
 
     def queueTask(self, id, task, args=None):
-
         """Insert a task into the queue.  task must be callable;
         args can be None. """
 
@@ -62,7 +58,6 @@ class ThreadPool:
         return True
 
     def getNextTask(self):
-
         """ Retrieve the next task from the task queue.  For use
         only by WorkerThread objects contained in the pool."""
         id = None
@@ -93,7 +88,6 @@ class ThreadPool:
             self.log.debug("Number of running tasks: %s", self.__runningTasks)
 
     def joinAll(self, waitForThreads=True):
-
         """ Clear the task queue and terminate all pooled threads,
         optionally allowing the tasks and threads to finish."""
 
@@ -118,7 +112,6 @@ class WorkerThread(object):
     log = logging.getLogger('storage.threadpool.workerthread')
 
     def __init__(self, pool, name):
-
         """ Initialize the thread and remember the pool. """
         self._thread = concurrent.thread(self.run, name=name)
         self.__pool = pool
@@ -153,7 +146,6 @@ class WorkerThread(object):
             self.__pool._task_finished()
 
     def run(self):
-
         """ Until told to quit, retrieve the next task and execute
         it. """
 
@@ -161,7 +153,6 @@ class WorkerThread(object):
             self._processNextTask()
 
     def goAway(self):
-
         """ Exit the run loop next time through."""
 
         self.__isDying = True

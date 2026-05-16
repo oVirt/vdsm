@@ -6,7 +6,6 @@ persistent module provides generic class with common verification and
 validation functionality implemented.
 """
 
-from __future__ import absolute_import
 import hashlib
 import logging
 from contextlib import contextmanager

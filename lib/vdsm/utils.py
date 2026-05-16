@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
 
 from collections import namedtuple, deque, OrderedDict
 from contextlib import contextmanager
@@ -154,6 +153,7 @@ class closing(object):
 
     Adaptation from https://docs.python.org/2.7/library/contextlib.html
     """
+
     def __init__(self, obj, log="utils.closing"):
         self.obj = obj
         self.log = log
@@ -248,6 +248,7 @@ class RollbackContext(object):
 
     More examples see tests/utilsTests.py
     '''
+
     def __init__(self, on_exception_only=False):
         self._finally = []
         self._on_exception_only = on_exception_only

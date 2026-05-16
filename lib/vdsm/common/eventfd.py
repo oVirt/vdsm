@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 """
 This is a module to implement a python wrapper for eventfd(2).
 
@@ -38,6 +36,7 @@ class EventFD(object):
     maintained by the kernel.  This counter is initialized with the value
     specified in the argument initial_value.
     """
+
     def __init__(self, initial_value=0, flags=0):
         fd = libc.eventfd(
             ctypes.c_uint(initial_value),

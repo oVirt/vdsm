@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 from contextlib import contextmanager
 
@@ -608,6 +606,7 @@ class RedirectionChecker(object):
     instance accessible via the 'target_name" attribute.  The target class
     methods must use the @recorded decorator.
     """
+
     def __init__(self, source_instance, target_name):
         self.source_instance = source_instance
         self.target_name = target_name

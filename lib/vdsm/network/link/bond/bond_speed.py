@@ -1,15 +1,12 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import logging
 
 from vdsm.network.link import nic
 
 from .sysfs_options import properties
-
 
 BONDING_ACTIVE_BACKUP_MODE = frozenset('1')
 BONDING_BROADCAST_MODE = frozenset('3')

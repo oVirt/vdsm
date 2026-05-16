@@ -2,8 +2,6 @@
 # SPDX-FileCopyrightText: 2014 Saggi Mizrahi
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 import logging
 import socket
 from collections import deque
@@ -346,6 +344,7 @@ class AsyncDispatcher(object):
     - StompAdapterImpl - responsible for server side
     - AsyncClient - responsible for client side
     """
+
     def __init__(self, connection, frame_handler, bufferSize=4096,
                  clock=time.monotonic_time, count=0):
         self._frame_handler = frame_handler
@@ -549,6 +548,7 @@ class Subscription(object):
     content of the message. Currently there are 2 handlers:
     JsonRpcClient and JsonRpcServer.
     """
+
     def set_message_handler(self, handler):
         self._message_handler = handler
 

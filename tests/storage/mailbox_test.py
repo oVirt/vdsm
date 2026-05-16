@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import collections
 import contextlib
@@ -120,6 +118,7 @@ class FakeSPMMailer(object):
     Fake SPM mailer class for sending reply message when
     pool extend volume request handling is done.
     """
+
     def __init__(self):
         self.msg_id = None
         self.msg = None

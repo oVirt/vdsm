@@ -21,10 +21,6 @@ The priority of the configuration files is determined by the number prefix of
 each file.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import configparser
 
 parameters = [

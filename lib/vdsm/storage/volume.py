@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
 
 import os.path
 import logging
@@ -1625,6 +1624,7 @@ class VolumeLease(guarded.AbstractLock):
     """
     Extend AbstractLock so Volume Leases may be used with guarded utilities.
     """
+
     def __init__(self, host_id, sd_id, img_id, vol_id):
         self._host_id = host_id
         self._sd_id = sd_id

@@ -2,8 +2,6 @@
 # SPDX-FileCopyrightText: 2014 Saggi Mizrahi
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 import json
 import logging
 import queue
@@ -266,6 +264,7 @@ class JsonRpcServer(object):
     which defining how often we should log connections stats and thread
     factory.
     """
+
     def __init__(self, bridge, timeout, cif, threadFactory=None):
         self._bridge = bridge
         self._cif = cif
@@ -283,6 +282,7 @@ class JsonRpcServer(object):
     a batch is added separately. After time defined by timeout we log
     number of requests.
     """
+
     def _attempt_log_stats(self):
         self._counter += 1
         if monotonic_time() > self._next_report:

@@ -6,7 +6,6 @@ Generic LVM interface wrapper
 
 Incapsulates the actual LVM mechanics.
 """
-from __future__ import absolute_import
 
 import os
 import re

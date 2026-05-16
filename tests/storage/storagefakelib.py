@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import collections
 import os
@@ -437,6 +435,7 @@ class FakeDomainMonitor(object):
     This class cannot be used for tests relying over domain
     monitor's functionality itself.
     """
+
     def __init__(self):
         self.onDomainStateChange = MonitorEvent()
         self.monitors = {}
@@ -463,6 +462,7 @@ class FakeTaskManager(object):
     This class cannot be used for tests relying over task
     manager's functionality itself.
     """
+
     def loadDumpedTasks(self, task_dir):
         pass
 

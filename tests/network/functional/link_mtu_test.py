@@ -7,7 +7,6 @@ from network.nettestlib import dummy_device
 
 from . import netfunctestlib as nftestlib
 
-
 NETWORK_NAME = 'test-network'
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'

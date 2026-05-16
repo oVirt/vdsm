@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 from contextlib import closing, contextmanager
 import logging
 import os
@@ -26,7 +24,6 @@ from . import libnl
 from .addr import _addr_info
 from .link import _link_info
 from .route import _route_info
-
 
 E_NOT_RUNNING = 1
 E_TIMEOUT = 2

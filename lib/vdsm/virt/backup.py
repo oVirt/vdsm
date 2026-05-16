@@ -46,6 +46,7 @@ class DomainAdapter(object):
     VM wrapper class that exposes only
     libvirt backup related operations.
     """
+
     def __init__(self, vm):
         self._vm = vm
 

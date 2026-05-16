@@ -9,8 +9,6 @@ progress is a number which represent percentage of a single disk copy,
 status is a way to feedback information on the job (init, error etc)
 """
 
-from __future__ import absolute_import
-from __future__ import division
 
 from collections import namedtuple
 from contextlib import closing, contextmanager
@@ -328,6 +326,7 @@ class SSHAgent(object):
     for more information please refer to the virt-v2v man page:
     http://libguestfs.org/virt-v2v.1.html
     """
+
     def __init__(self):
         self._auth = None
         self._agent_pid = None
@@ -616,6 +615,7 @@ class XenCommand(V2VCommand):
     - host must be in ~/.ssh/known_hosts (done automatically
       by ssh to the host before importing vm)
     """
+
     def __init__(self, uri, vminfo, job_id, irs):
         super(XenCommand, self).__init__(vminfo, job_id, irs)
         self._uri = uri

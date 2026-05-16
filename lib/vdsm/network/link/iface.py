@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import abc
 import errno
@@ -16,7 +14,6 @@ from vdsm.network import ipwrapper
 from vdsm.network.netlink import libnl
 from vdsm.network.netlink import link
 from vdsm.network.netlink.waitfor import waitfor_linkup
-
 
 STATE_UP = 'up'
 STATE_DOWN = 'down'

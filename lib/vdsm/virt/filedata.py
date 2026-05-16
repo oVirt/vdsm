@@ -49,6 +49,7 @@ class _FileSystemData(object):
     encoding and decoding it to or from ASCII, and detecting its
     changes.
     """
+
     def __init__(self, path, compress=True, allow_empty=False):
         """
         Define the data to be accessed.
@@ -221,6 +222,7 @@ class DirectoryData(_FileSystemData):
 
     `path` constructor argument is the directory location.
     """
+
     def last_modified(self):
         timestamp = 0
         for root, dirs, files in os.walk(self._path):
@@ -257,6 +259,7 @@ class Monitor(object):
     constructor.  This allows retrieving data from supervdsm using its
     API calls.
     """
+
     def __init__(self, data_retriever):
         """
         :param data_retriever: function of a single argument,

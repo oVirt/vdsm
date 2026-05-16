@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
 
 import errno
 import threading
@@ -27,6 +25,7 @@ class Listener(object):
     """
     An events driven listener which handle messages from virtual machines.
     """
+
     def __init__(self, log):
         self.log = log
         self._quit = False
