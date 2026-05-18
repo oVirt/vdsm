@@ -533,6 +533,7 @@ def json_uri(config):
 _MANAGED_VOLUME_PATH_PREFIXES = (
     "/dev/mapper/",
     "/dev/rbd/",
+    "/dev/drbd/",
     "/dev/storpool-byid/",
     "/run/vdsm/managedvolumes/",
 )

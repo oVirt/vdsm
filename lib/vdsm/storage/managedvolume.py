@@ -97,7 +97,8 @@ def attach_volume(sd_id, vol_id, connection_info):
                   vol_id, connection_info)
 
         try:
-            attachment = run_helper("attach", connection_info)
+            vol_info = {"connection_info": connection_info}
+            attachment = run_helper("attach", vol_info)
             try:
                 path = _resolve_path(vol_id, connection_info, attachment)
                 db.update_volume(
