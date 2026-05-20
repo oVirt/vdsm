@@ -21,6 +21,7 @@ import os
 import re
 import subprocess
 import tarfile
+import tempfile
 import time
 import threading
 import xml.etree.ElementTree as ET
@@ -388,7 +389,7 @@ class V2VCommand(object):
         self._vmid = vmid
         self._irs = irs
         self._prepared_volumes = []
-        self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
+        self._passwd_file = None
         self._password = password.ProtectedPassword('')
         self._base_command = [_VIRT_V2V.cmd, '-v', '-x']
         self._query_v2v_caps()
@@ -511,7 +512,8 @@ class V2VCommand(object):
 
     @contextmanager
     def _password_file(self):
-        fd = os.open(self._passwd_file, os.O_WRONLY | os.O_CREAT, 0o600)
+        fd, self._passwd_file = tempfile.mkstemp(
+            prefix='%s-' % self._vmid, suffix='.tmp', dir=_V2V_DIR)
         try:
             if self._password.value is None:
                 os.write(fd, b"")
