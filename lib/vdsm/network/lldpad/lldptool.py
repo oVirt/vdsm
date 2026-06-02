@@ -1,16 +1,12 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
-
 import abc
 
 from vdsm.network import cmd
 from vdsm.network.lldp import EnableLldpError
 from vdsm.network.lldp import DisableLldpError
 from vdsm.network.lldp import TlvReportLldpError
-
 
 SYSTEMCTL = '/usr/bin/systemctl'
 LLDPTOOL = '/usr/sbin/lldptool'

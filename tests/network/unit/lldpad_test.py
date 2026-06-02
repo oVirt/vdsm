@@ -1,13 +1,9 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
-
 from unittest import mock
 
 from vdsm.network.lldpad import lldptool
-
 
 LLDP_CHASSIS_ID_TLV = 'Chassis ID TLV\n\tMAC: 01:23:45:67:89:ab'
 

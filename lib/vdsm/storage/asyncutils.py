@@ -5,7 +5,6 @@
 Utilties for working with the event loop.
 """
 
-from __future__ import absolute_import
 import logging
 
 log = logging.getLogger("storage.asyncutils")

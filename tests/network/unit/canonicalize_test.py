@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
-
 import copy
 from unittest import mock
 
@@ -12,7 +9,6 @@ import pytest
 
 from vdsm.network import canonicalize
 from vdsm.network import errors as ne
-
 
 NET0_SETUP = {'NET0': {'nic': 'eth0', 'switch': 'legacy'}}
 NET1_SETUP = {'NET1': {'nic': 'eth0', 'switch': 'legacy'}}

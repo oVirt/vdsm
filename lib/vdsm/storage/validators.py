@@ -9,8 +9,6 @@ The purpose of these types is to validate the input and provide an
 easy way to pass the arguments around.
 """
 
-from __future__ import absolute_import
-
 from vdsm.common import properties
 from vdsm.storage import constants as sc
 

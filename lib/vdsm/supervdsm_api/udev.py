@@ -10,9 +10,6 @@ Example for Managed Block Storage paths that are handled:
 # /dev/nvme0n3
 """
 
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import errno
 import glob

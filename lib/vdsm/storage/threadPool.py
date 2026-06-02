@@ -7,8 +7,6 @@
 # Author: Tim Lesher
 #
 
-from __future__ import absolute_import
-from __future__ import print_function
 
 import logging
 import queue
@@ -161,7 +159,6 @@ class WorkerThread(object):
             self._processNextTask()
 
     def goAway(self):
-
         """ Exit the run loop next time through."""
 
         self.__isDying = True

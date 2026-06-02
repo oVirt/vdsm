@@ -25,7 +25,6 @@ from the nos-brick repository.
 
 # pylint: disable-all
 # Added for Vdsm compatibility
-from __future__ import absolute_import
 
 import functools
 import os

@@ -13,9 +13,6 @@ different events:
 This hook can be used to force a VM to use a libvirt network that is managed
 outside of ovirt, such as an openvswitch network, or libvirt's default network.
 """
-from __future__ import absolute_import
-from __future__ import print_function
-
 
 import os
 import sys

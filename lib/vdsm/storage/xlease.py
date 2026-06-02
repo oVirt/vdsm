@@ -115,8 +115,6 @@ This is where user leases are created.
 
 """
 
-from __future__ import absolute_import
-
 import io
 import logging
 import mmap

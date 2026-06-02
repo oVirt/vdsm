@@ -13,8 +13,6 @@ Example:
    macbind={'00:1a:4a:60:d1:9a': 'br0', '00:1a:4a:60:c4:88': 'br1'}
 '''
 
-from __future__ import absolute_import
-from __future__ import print_function
 
 import ast
 import os

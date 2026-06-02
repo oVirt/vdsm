@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import absolute_import
-from __future__ import division
-
 from collections import deque
 import threading
 import time
@@ -23,7 +20,6 @@ from vdsm.network.sysctl import is_disabled_ipv6
 from network.nettestlib import Bond
 from network.nettestlib import IpFamily
 from network.nettestlib import running_on_ovirt_ci
-
 
 IP_ADDRESS = '192.0.2.1'
 IP_CIDR = '24'

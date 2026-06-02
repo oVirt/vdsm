@@ -9,7 +9,6 @@ from vdsm.network import cmd
 from vdsm.network.ipwrapper import netns_add
 from vdsm.network.ipwrapper import netns_delete
 
-
 _SYSTEMCTL = 'systemctl'
 
 
