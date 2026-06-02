@@ -52,7 +52,7 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 import vdsm.common.supervdsm as svdsm
 
 
-STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
+STORAGE_DOMAIN_TAG = sc.STORAGE_DOMAIN_TAG
 STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"
 
 MASTERLV = "master"

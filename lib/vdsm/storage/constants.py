@@ -263,6 +263,9 @@ VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_IMAGE,
                TAG_PREFIX_MD]
 
+# VG tag marking a vdsm-managed block storage domain.
+STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
+
 SUPPORTED_BLOCKSIZE = (512,)
 
 # This is the domain version translation list

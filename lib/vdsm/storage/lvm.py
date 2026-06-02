@@ -1145,14 +1145,18 @@ def bootstrap(skiplvs=()):
     """
     Bootstrap lvm module
 
-    This function builds the lvm cache and ensure that all unused lvs are
-    deactivated, expect lvs matching skiplvs.
+    This function builds the lvm cache and ensures that all unused lvs in
+    vdsm-managed storage domain VGs are deactivated, except lvs matching
+    skiplvs. VGs that are not tagged as vdsm storage domains are walked
+    past, leaving any non-vdsm LVs alone.
     """
     _lvminfo.bootstrap()
 
     skiplvs = set(skiplvs)
 
     for vg in _lvminfo.getAllVgs():
+        if sc.STORAGE_DOMAIN_TAG not in vg.tags:
+            continue
         deactivateUnusedLVs(vg.name, skiplvs=skiplvs)
 
 
