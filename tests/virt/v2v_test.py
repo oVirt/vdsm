@@ -474,7 +474,7 @@ class v2vTests(TestCaseBase):
                '-oo', 'vdsm-vol-uuid=%s' % self.volume_id_a,
                '-oo', 'vdsm-image-uuid=%s' % self.image_id_b,
                '-oo', 'vdsm-vol-uuid=%s' % self.volume_id_b,
-               '--password-file', '/tmp/mypass',
+               '--ip', '/tmp/mypass',
                '-oo', 'vdsm-vm-uuid=%s' % self.job_id,
                '-oo', 'vdsm-ovf-output=%s' % '/usr/local/var/run/vdsm/v2v',
                '--machine-readable',
