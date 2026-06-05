@@ -388,6 +388,7 @@ class V2VCommand(object):
         self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
         self._password = password.ProtectedPassword('')
         self._base_command = [_VIRT_V2V.cmd, '-v', '-x']
+        self._output_mode = None
         self._query_v2v_caps()
         if 'qcow2_compat' in vminfo:
             qcow2_compat = vminfo['qcow2_compat']
@@ -398,7 +399,8 @@ class V2VCommand(object):
                                  qcow2_compat)
             if 'vdsm-compat-option' in self._v2v_caps:
                 self._base_command.extend(
-                    ['-oo', 'vdsm-compat=%s' % qcow2_compat])
+                    ['-oo', '%s-compat=%s' % (self._output_mode,
+                                              qcow2_compat)])
             elif qcow2_compat != '0.10':
                 # Note: qcow2 is only a suggestion from the engine
                 # if virt-v2v doesn't support it we fall back to default
@@ -439,9 +441,11 @@ class V2VCommand(object):
         for disk in self._vminfo['disks']:
             try:
                 parameters.append('-oo')
-                parameters.append('vdsm-image-uuid=%s' % disk['imageID'])
+                parameters.append('%s-image-uuid=%s' % (
+                    self._output_mode, disk['imageID']))
                 parameters.append('-oo')
-                parameters.append('vdsm-vol-uuid=%s' % disk['volumeID'])
+                parameters.append('%s-vol-uuid=%s' % (
+                    self._output_mode, disk['volumeID']))
             except KeyError as e:
                 raise InvalidInputError('Job %r missing required property: %s'
                                         % (self._vmid, e))
@@ -545,6 +549,14 @@ class V2VCommand(object):
         self._v2v_caps = frozenset(out.decode('utf8').splitlines())
         logging.debug("Detected virt-v2v capabilities: %r", self._v2v_caps)
 
+        if 'output:vdsm' in self._v2v_caps:
+            self._output_mode = 'vdsm'
+        elif 'output:rhev' in self._v2v_caps:
+            self._output_mode = 'rhev'
+        else:
+            raise V2VProcessError(
+                'virt-v2v does not support rhev or vdsm output mode')
+
 
 class LibvirtCommand(V2VCommand):
     def __init__(self, uri, username, password, vminfo, vmid, irs):
@@ -556,14 +568,14 @@ class LibvirtCommand(V2VCommand):
     def _command(self):
         cmd = self._base_command
         cmd.extend(['-ic', self._uri,
-                    '-o', 'vdsm',
+                    '-o', self._output_mode,
                     '-of', self._get_disk_format(),
                     '-oa', self._vminfo.get('allocation', 'sparse').lower()])
         cmd.extend(self._disk_parameters())
-        cmd.extend(['--password-file',
+        cmd.extend(['-ip',
                     self._passwd_file,
-                    '-oo', 'vdsm-vm-uuid=%s' % self._vmid,
-                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
+                    '-oo', '%s-vm-uuid=%s' % (self._output_mode, self._vmid),
+                    '-oo', '%s-ovf-output=%s' % (self._output_mode, _V2V_DIR),
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
@@ -585,11 +597,11 @@ class OvaCommand(V2VCommand):
     def _command(self):
         cmd = self._base_command
         cmd.extend(['-i', 'ova', self._ova_path,
-                    '-o', 'vdsm',
+                    '-o', self._output_mode,
                     '-of', self._get_disk_format(),
                     '-oa', self._vminfo.get('allocation', 'sparse').lower(),
-                    '-oo', 'vdsm-vm-uuid=%s' % self._vmid,
-                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
+                    '-oo', '%s-vm-uuid=%s' % (self._output_mode, self._vmid),
+                    '-oo', '%s-ovf-output=%s' % (self._output_mode, _V2V_DIR),
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
@@ -621,12 +633,12 @@ class XenCommand(V2VCommand):
     def _command(self):
         cmd = self._base_command
         cmd.extend(['-ic', self._uri,
-                    '-o', 'vdsm',
+                    '-o', self._output_mode,
                     '-of', self._get_disk_format(),
                     '-oa', self._vminfo.get('allocation', 'sparse').lower()])
         cmd.extend(self._disk_parameters())
-        cmd.extend(['-oo', 'vdsm-vm-uuid=%s' % self._vmid,
-                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
+        cmd.extend(['-oo', '%s-vm-uuid=%s' % (self._output_mode, self._vmid),
+                    '-oo', '%s-ovf-output=%s' % (self._output_mode, _V2V_DIR),
                     '--machine-readable',
                     '-os',
                     self._get_storage_domain_path(
@@ -660,7 +672,7 @@ class KVMCommand(V2VCommand):
         if self._username is not None:
             cmd.extend([
                 '--username', self._username,
-                '--password-file', self._passwd_file])
+                '-ip', self._passwd_file])
         src, fmt = self._source_images()
         cmd.append('--source')
         cmd.extend(src)

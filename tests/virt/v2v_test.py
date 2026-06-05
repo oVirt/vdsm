@@ -474,7 +474,7 @@ class v2vTests(TestCaseBase):
                '-oo', 'vdsm-vol-uuid=%s' % self.volume_id_a,
                '-oo', 'vdsm-image-uuid=%s' % self.image_id_b,
                '-oo', 'vdsm-vol-uuid=%s' % self.volume_id_b,
-               '--password-file', '/tmp/mypass',
+               '-ip', '/tmp/mypass',
                '-oo', 'vdsm-vm-uuid=%s' % self.job_id,
                '-oo', 'vdsm-ovf-output=%s' % '/usr/local/var/run/vdsm/v2v',
                '--machine-readable',
@@ -532,6 +532,54 @@ class v2vTests(TestCaseBase):
         assert 'virt-v2v' in cmd._v2v_caps
         assert 'input:libvirt' in cmd._v2v_caps
         assert 'output:vdsm' in cmd._v2v_caps
+        assert cmd._output_mode == 'vdsm'
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testV2VOutputModeRhev(self):
+        def _fake_rhev_caps(self):
+            self._v2v_caps = frozenset([
+                'virt-v2v', 'libguestfs-rewrite',
+                'input:libvirt', 'input:ova',
+                'output:rhev',
+                'convert:enterprise-linux', 'convert:windows'])
+            self._output_mode = 'rhev'
+
+        with MonkeyPatchScope([(v2v.V2VCommand, '_query_v2v_caps',
+                                _fake_rhev_caps)]):
+            cmd = v2v.V2VCommand({}, None, None)
+            assert 'output:rhev' in cmd._v2v_caps
+            assert 'output:vdsm' not in cmd._v2v_caps
+            assert cmd._output_mode == 'rhev'
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testV2VCommandLineRhevMode(self):
+        def _fake_rhev_caps(self):
+            self._v2v_caps = frozenset([
+                'virt-v2v', 'libguestfs-rewrite',
+                'input:libvirt', 'input:ova',
+                'output:rhev',
+                'convert:enterprise-linux', 'convert:windows'])
+            self._output_mode = 'rhev'
+
+        with MonkeyPatchScope([(v2v.V2VCommand, '_query_v2v_caps',
+                                _fake_rhev_caps)]):
+            cmd = v2v.LibvirtCommand(
+                self.vpx_url, 'root',
+                ProtectedPassword('mypassword'),
+                self.vminfo, self.job_id, FakeIRS())
+            cmd._prepare_volumes()
+            command = cmd._command()
+            # Check output mode is rhev
+            assert '-o' in command
+            assert command[command.index('-o') + 1] == 'rhev'
+            # Check option values use rhev-* prefix
+            rhev_options = [opt for opt in command if 'rhev-' in opt]
+            assert len(rhev_options) > 0, \
+                "No rhev-* options found in command"
+            # Verify no vdsm-* options
+            vdsm_options = [opt for opt in command if 'vdsm-' in opt]
+            assert len(vdsm_options) == 0, \
+                "Found vdsm-* options in rhev mode: %s" % vdsm_options
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     def testQcow2Compat(self):

@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import os
 import sys
 import argparse
 
@@ -32,8 +33,13 @@ parser.add_argument('-x', dest='libguestfsTrace',
                     action='store_true',
                     help='Enable tracing of libguestfs API calls.')
 parser.add_argument('vmname', nargs='?')
+parser.add_argument('--fake-output-mode', default='vdsm',
+                    choices=['vdsm', 'rhev'],
+                    help='Simulate virt-v2v version (vdsm=2.x, rhev=1.x)')
 
-options = parser.parse_args()
+options, _ = parser.parse_known_args()
+if 'FAKE_VIRT_V2V_MODE' in os.environ:
+    options.fake_output_mode = os.environ['FAKE_VIRT_V2V_MODE']
 if options.vmname is None:
     if not options.machineReadable:
         sys.stderr.write(
@@ -44,11 +50,13 @@ if options.vmname is None:
     # Output some capabilities and quit
     print("virt-v2v")
     print("libguestfs-rewrite")
-    print("vdsm-compat-option")
+    if options.fake_output_mode == 'vdsm':
+        print("vdsm-compat-option")
     print("input:libvirt")
     print("input:ova")
     print("output:rhev")
-    print("output:vdsm")
+    if options.fake_output_mode == 'vdsm':
+        print("output:vdsm")
     print("convert:enterprise-linux")
     print("convert:windows")
     sys.exit(0)
