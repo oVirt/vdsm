@@ -18,7 +18,7 @@ parser.add_argument('-oa', dest='outputAllocation',
                     help='Set output allocation format')
 parser.add_argument('-oo', dest='outputModeOptions', action='append',
                     help='Set option for output mode')
-parser.add_argument('--password-file', dest='passwordFile',
+parser.add_argument('--ip', dest='passwordFile',
                     help='Read connection password from a file')
 parser.add_argument('-os', dest='outputStorage',
                     help='Output directory for the images')
