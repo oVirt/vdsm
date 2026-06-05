@@ -560,7 +560,7 @@ class LibvirtCommand(V2VCommand):
                     '-of', self._get_disk_format(),
                     '-oa', self._vminfo.get('allocation', 'sparse').lower()])
         cmd.extend(self._disk_parameters())
-        cmd.extend(['--password-file',
+        cmd.extend(['--ip',
                     self._passwd_file,
                     '-oo', 'vdsm-vm-uuid=%s' % self._vmid,
                     '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
@@ -660,7 +660,7 @@ class KVMCommand(V2VCommand):
         if self._username is not None:
             cmd.extend([
                 '--username', self._username,
-                '--password-file', self._passwd_file])
+                '--ip', self._passwd_file])
         src, fmt = self._source_images()
         cmd.append('--source')
         cmd.extend(src)
