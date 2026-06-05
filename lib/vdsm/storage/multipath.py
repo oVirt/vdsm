@@ -589,3 +589,10 @@ def devIsiSCSI(type):
 
 def devIsFCP(type):
     return type in [DEV_FCP, DEV_MIXED]
+
+
+DEV_NVMEOF = "NVMe-oF"
+
+
+def devIsNvmeof(type):
+    return type in [DEV_NVMEOF, DEV_MIXED]

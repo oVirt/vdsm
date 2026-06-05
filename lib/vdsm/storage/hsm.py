@@ -2138,7 +2138,11 @@ class HSM(object):
                     dev.get("devtype")
                 )
             elif sd.storageType(storageType) == sd.type2name(sd.FCP_DOMAIN):
-                typeFilter = lambda dev: multipath.devIsFCP(dev.get("devtype"))
+                typeFilter = \
+                    lambda dev: multipath.devIsFCP(dev.get("devtype"))
+            elif sd.storageType(storageType) == sd.type2name(sd.NVMEOF_DOMAIN):
+                typeFilter = \
+                    lambda dev: multipath.devIsNvmeof(dev.get("devtype"))
 
         devices = []
         pvs = {os.path.basename(pv.name): pv for pv in lvm.getAllPVs()}
@@ -2556,7 +2560,7 @@ class HSM(object):
         # In case there were changes in devices size
         # while the VDSM was not connected, we need to
         # call refreshStorage.
-        if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
+        if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN, sd.NVMEOF_DOMAIN):
             sdCache.refreshStorage()
 
         for con, status in results:

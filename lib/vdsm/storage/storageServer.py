@@ -22,6 +22,7 @@ from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
 from vdsm.storage import iscsi
 from vdsm.storage import mount
+from vdsm.storage import nvme
 from vdsm.storage import sd
 from vdsm.storage.mount import MountError
 
@@ -33,9 +34,12 @@ PosixFsConnectionParameters = namedtuple(
     "PosixFsConnectionParameters", "id, spec, vfsType, options"
 )
 
-GlusterFsConnectionParameters = namedtuple(
-    "GlusterFsConnectionParameters", "id, spec, vfsType, options"
-)
+NvmeofConnectionParameters = namedtuple("NvmeofConnectionParameters",
+                                        "id, nqn, transport, traddr, "
+                                        "trsvcid, host_nqn, dhchap_key")
+
+PosixFsConnectionParameters = namedtuple("PosixFsConnectionParameters",
+                                         "id, spec, vfsType, options")
 
 LocaFsConnectionParameters = namedtuple(
     "LocaFsConnectionParameters", "id, path"
@@ -59,7 +63,7 @@ CON_TYPE_ID_2_CON_TYPE = {
     sd.FCP_DOMAIN: 'fcp',
     sd.POSIXFS_DOMAIN: 'posixfs',
     sd.GLUSTERFS_DOMAIN: 'glusterfs',
-}
+    sd.NVMEOF_DOMAIN: 'nvmeof'}
 
 log = logging.getLogger("storage.storageServer")
 
@@ -866,6 +870,103 @@ class FcpConnection(Connection):
         return hash((self.__class__, self._id))
 
 
+class NvmeofConnection(Connection):
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def nqn(self):
+        return self._nqn
+
+    @property
+    def transport(self):
+        return self._transport
+
+    @property
+    def traddr(self):
+        return self._traddr
+
+    @property
+    def trsvcid(self):
+        return self._trsvcid
+
+    def __init__(self, id, nqn, transport="tcp", traddr=None,
+                 trsvcid="4420", host_nqn=None, dhchap_key=None):
+        self._id = id
+        self._nqn = nqn
+        self._transport = transport or "tcp"
+        self._traddr = traddr
+        self._trsvcid = trsvcid or "4420"
+        self._host_nqn = host_nqn
+        self._dhchap_key = dhchap_key
+
+    def connect(self):
+        if self.isConnected():
+            return
+        nvme.connect(
+            self._nqn,
+            traddr=self._traddr,
+            trsvcid=self._trsvcid,
+            transport=self._transport,
+            host_nqn=self._host_nqn,
+            dhchap_key=self._dhchap_key)
+        self.settle_devices()
+
+    def disconnect(self):
+        if not self.isConnected():
+            log.debug("NVMe-oF not connected, skipping disconnect")
+            return
+        nvme.disconnect(self._nqn)
+
+    def isConnected(self):
+        return nvme.is_connected(self._nqn)
+
+    @classmethod
+    def settle_devices(cls):
+        timeout = config.getint("irs", "udev_settle_timeout")
+        udevadm.settle(timeout)
+
+    @classmethod
+    def translate_error(cls, e):
+        if isinstance(e, nvme.NvmeAuthenticationError):
+            return (502, "NVMe-oF authentication error")
+        if isinstance(e, nvme.NvmeConnectionError):
+            return (501, "NVMe-oF connection error")
+        if isinstance(e, nvme.NvmeDisconnectionError):
+            return (503, "NVMe-oF disconnection error")
+        return super().translate_error(e)
+
+    def __eq__(self, other):
+        if not isinstance(other, NvmeofConnection):
+            return False
+        return (self._id == other._id and
+                self._nqn == other._nqn and
+                self._traddr == other._traddr and
+                self._trsvcid == other._trsvcid and
+                self._transport == other._transport)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash((self.__class__,
+                     self._id,
+                     self._nqn,
+                     self._traddr,
+                     self._trsvcid,
+                     self._transport))
+
+    def __repr__(self):
+        return "<{0} id={1!r} nqn={2!r} traddr={3!r} trsvcid={4!r}>".format(
+            self.__class__.__name__,
+            self._id,
+            self._nqn,
+            self._traddr,
+            self._trsvcid)
+
+
 class LocalDirectoryConnection(Connection):
 
     @property
@@ -949,6 +1050,7 @@ class ConnectionFactory(object):
         "iscsi": IscsiConnection,
         "localfs": LocalDirectoryConnection,
         "fcp": FcpConnection,
+        "nvmeof": NvmeofConnection,
     }
 
     @classmethod
@@ -1098,6 +1200,15 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         params = IscsiConnectionParameters(conDict["id"], target, iface, cred)
     elif typeName == 'fcp':
         params = FcpConnectionParameters(conDict["id"])
+    elif typeName == 'nvmeof':
+        params = NvmeofConnectionParameters(
+            conDict["id"],
+            conDict.get('nqn'),
+            conDict.get('transport', 'tcp'),
+            conDict.get('connection'),
+            conDict.get('port', '4420'),
+            conDict.get('host_nqn'),
+            conDict.get('dhchap_key'))
     else:
         raise se.StorageServerActionError()
 
