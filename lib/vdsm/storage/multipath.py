@@ -27,6 +27,7 @@ from vdsm.storage import devicemapper
 from vdsm.storage import hba
 from vdsm.storage import iscsi
 from vdsm.storage import managedvolumedb
+from vdsm.storage import nvme
 
 DEV_ISCSI = "iSCSI"
 DEV_FCP = "FCP"
@@ -514,6 +515,22 @@ def pathListIter(filterGuids=()):
 
                     knownSessions[sessionID] = sessionInfo
                 devInfo["connections"].append(knownSessions[sessionID])
+            elif nvme.dev_is_nvme(slave):
+                devInfo["devtypes"].append(DEV_NVMEOF)
+                pathInfo["type"] = DEV_NVMEOF
+                conn_info = nvme.get_connection_info(slave)
+                if conn_info:
+                    session_key = conn_info["nqn"]
+                    if session_key not in knownSessions:
+                        sessionInfo = {
+                            "connection": conn_info["traddr"],
+                            "port": conn_info["trsvcid"],
+                            "nqn": conn_info["nqn"],
+                            "transport": conn_info["transport"],
+                        }
+                        knownSessions[session_key] = sessionInfo
+                    devInfo["connections"].append(
+                        knownSessions[session_key])
             else:
                 devInfo["devtypes"].append(DEV_FCP)
                 pathInfo["type"] = DEV_FCP
