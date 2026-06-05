@@ -88,7 +88,7 @@ def arguments(args):
                         help='Libvirt URI')
     parser.add_argument('--username', dest='username', default='',
                         help='Libvirt login user name')
-    parser.add_argument('--password-file', dest='password_file', default='',
+    parser.add_argument('--ip', dest='password_file', default='',
                         help='Libvirt login password read from a file')
     parser.add_argument('--source', dest='source', nargs='+', required=True,
                         help='Source remote volumes path')
