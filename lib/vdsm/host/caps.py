@@ -39,7 +39,7 @@ except ImportError:
     haClient = None
 
 
-def _parseKeyVal(lines, delim='='):
+def _parseKeyVal(lines, delim="="):
     d = {}
     for line in lines:
         kv = line.split(delim, 1)
@@ -52,11 +52,20 @@ def _parseKeyVal(lines, delim='='):
 
 def _getIscsiIniName():
     try:
-        with open('/etc/iscsi/initiatorname.iscsi') as f:
-            return _parseKeyVal(f)['InitiatorName']
+        with open("/etc/iscsi/initiatorname.iscsi") as f:
+            return _parseKeyVal(f)["InitiatorName"]
     except:
-        logging.error('reporting empty InitiatorName', exc_info=True)
-    return ''
+        logging.error("reporting empty InitiatorName", exc_info=True)
+    return ""
+
+
+def _getNvmeHostNqn():
+    try:
+        with open("/etc/nvme/hostnqn") as f:
+            return f.read().strip()
+    except:
+        logging.error("reporting empty nvmeHostNqn", exc_info=True)
+    return ""
 
 
 def get():
@@ -64,102 +73,99 @@ def get():
     caps = {}
     cpu_topology = numa.cpu_topology()
 
-    caps['kvmEnabled'] = str(os.path.exists('/dev/kvm')).lower()
+    caps["kvmEnabled"] = str(os.path.exists("/dev/kvm")).lower()
 
-    if config.getboolean('vars', 'report_host_threads_as_cores'):
-        caps['cpuCores'] = str(cpu_topology.threads)
+    if config.getboolean("vars", "report_host_threads_as_cores"):
+        caps["cpuCores"] = str(cpu_topology.threads)
     else:
-        caps['cpuCores'] = str(cpu_topology.cores)
+        caps["cpuCores"] = str(cpu_topology.cores)
 
-    caps['cpuThreads'] = str(cpu_topology.threads)
-    caps['cpuSockets'] = str(cpu_topology.sockets)
-    caps['onlineCpus'] = ','.join(
-        [str(cpu_id) for cpu_id in cpu_topology.online_cpus]
-    )
+    caps["cpuThreads"] = str(cpu_topology.threads)
+    caps["cpuSockets"] = str(cpu_topology.sockets)
+    caps["onlineCpus"] = ",".join([str(cpu_id) for cpu_id in cpu_topology.online_cpus])
 
-    caps['cpuTopology'] = [
+    caps["cpuTopology"] = [
         {
-            'cpu_id': cpu.cpu_id,
-            'numa_cell_id': cpu.numa_cell_id,
-            'socket_id': cpu.socket_id,
-            'die_id': cpu.die_id,
-            'core_id': cpu.core_id,
+            "cpu_id": cpu.cpu_id,
+            "numa_cell_id": cpu.numa_cell_id,
+            "socket_id": cpu.socket_id,
+            "die_id": cpu.die_id,
+            "core_id": cpu.core_id,
         }
         for cpu in numa.cpu_info()
     ]
 
-    caps['cpuSpeed'] = cpuinfo.frequency()
-    caps['cpuModel'] = cpuinfo.model()
-    caps['cpuFlags'] = ','.join(_getFlagsAndFeatures())
-    caps['vdsmToCpusAffinity'] = list(taskset.get(os.getpid()))
+    caps["cpuSpeed"] = cpuinfo.frequency()
+    caps["cpuModel"] = cpuinfo.model()
+    caps["cpuFlags"] = ",".join(_getFlagsAndFeatures())
+    caps["vdsmToCpusAffinity"] = list(taskset.get(os.getpid()))
 
     caps.update(dsaversion.version_info())
 
     proxy = supervdsm.getProxy()
     net_caps = proxy.network_caps()
     caps.update(net_caps)
-    caps['ovnConfigured'] = proxy.is_ovn_configured()
+    caps["ovnConfigured"] = proxy.is_ovn_configured()
 
     try:
-        caps['hooks'] = hooks.installed()
+        caps["hooks"] = hooks.installed()
     except:
-        logging.debug('not reporting hooks', exc_info=True)
+        logging.debug("not reporting hooks", exc_info=True)
 
-    caps['operatingSystem'] = osinfo.version()
-    caps['uuid'] = host.uuid()
-    caps['packages2'] = osinfo.package_versions()
-    caps['realtimeKernel'] = osinfo.runtime_kernel_flags().realtime
-    caps['kernelArgs'] = osinfo.kernel_args()
-    caps['nestedVirtualization'] = osinfo.nested_virtualization().enabled
-    caps['emulatedMachines'] = machinetype.emulated_machines(
-        cpuarch.effective()
+    caps["operatingSystem"] = osinfo.version()
+    caps["uuid"] = host.uuid()
+    caps["packages2"] = osinfo.package_versions()
+    caps["realtimeKernel"] = osinfo.runtime_kernel_flags().realtime
+    caps["kernelArgs"] = osinfo.kernel_args()
+    caps["nestedVirtualization"] = osinfo.nested_virtualization().enabled
+    caps["emulatedMachines"] = machinetype.emulated_machines(cpuarch.effective())
+    caps["ISCSIInitiatorName"] = _getIscsiIniName()
+    caps["nvmeHostNqn"] = _getNvmeHostNqn()
+    caps["HBAInventory"] = hba.HBAInventory()
+    caps["vmTypes"] = ["kvm"]
+
+    caps["memSize"] = str(utils.readMemInfo()["MemTotal"] // 1024)
+    caps["reservedMem"] = str(
+        config.getint("vars", "host_mem_reserve")
+        + config.getint("vars", "extra_mem_reserve")
     )
-    caps['ISCSIInitiatorName'] = _getIscsiIniName()
-    caps['HBAInventory'] = hba.HBAInventory()
-    caps['vmTypes'] = ['kvm']
+    caps["guestOverhead"] = config.get("vars", "guest_ram_overhead")
 
-    caps['memSize'] = str(utils.readMemInfo()['MemTotal'] // 1024)
-    caps['reservedMem'] = str(
-        config.getint('vars', 'host_mem_reserve')
-        + config.getint('vars', 'extra_mem_reserve')
-    )
-    caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
+    caps["rngSources"] = rngsources.list_available()
 
-    caps['rngSources'] = rngsources.list_available()
+    caps["numaNodes"] = dict(numa.topology())
+    caps["numaNodeDistance"] = dict(numa.distances())
+    caps["autoNumaBalancing"] = numa.autonuma_status()
 
-    caps['numaNodes'] = dict(numa.topology())
-    caps['numaNodeDistance'] = dict(numa.distances())
-    caps['autoNumaBalancing'] = numa.autonuma_status()
+    caps["selinux"] = osinfo.selinux_status()
 
-    caps['selinux'] = osinfo.selinux_status()
-
-    caps['liveSnapshot'] = 'true'
-    caps['liveMerge'] = 'true'
-    caps['kdumpStatus'] = osinfo.kdump_status()
+    caps["liveSnapshot"] = "true"
+    caps["liveMerge"] = "true"
+    caps["kdumpStatus"] = osinfo.kdump_status()
     caps["deferred_preallocation"] = True
 
-    caps['hostdevPassthrough'] = str(hostdev.is_supported()).lower()
+    caps["hostdevPassthrough"] = str(hostdev.is_supported()).lower()
     # TODO This needs to be removed after adding engine side support
     # and adding gdeploy support to enable libgfapi on RHHI by default
-    caps['additionalFeatures'] = ['libgfapi_supported']
+    caps["additionalFeatures"] = ["libgfapi_supported"]
     if osinfo.glusterEnabled:
         from vdsm.gluster.api import glusterAdditionalFeatures
 
-        caps['additionalFeatures'].extend(glusterAdditionalFeatures())
-    caps['hostedEngineDeployed'] = _isHostedEngineDeployed()
-    caps['hugepages'] = hugepages.supported()
-    caps['kernelFeatures'] = osinfo.kernel_features()
-    caps['vncEncrypted'] = _isVncEncrypted()
-    caps['backupEnabled'] = True
-    caps['coldBackupEnabled'] = True
-    caps['clearBitmapsEnabled'] = True
-    caps['fipsEnabled'] = _getFipsEnabled()
+        caps["additionalFeatures"].extend(glusterAdditionalFeatures())
+    caps["hostedEngineDeployed"] = _isHostedEngineDeployed()
+    caps["hugepages"] = hugepages.supported()
+    caps["kernelFeatures"] = osinfo.kernel_features()
+    caps["vncEncrypted"] = _isVncEncrypted()
+    caps["backupEnabled"] = True
+    caps["coldBackupEnabled"] = True
+    caps["clearBitmapsEnabled"] = True
+    caps["fipsEnabled"] = _getFipsEnabled()
     try:
-        caps['boot_uuid'] = osinfo.boot_uuid()
+        caps["boot_uuid"] = osinfo.boot_uuid()
     except Exception:
         logging.exception("Can not find boot uuid")
-    caps['tscFrequency'] = _getTscFrequency()
-    caps['tscScaling'] = _getTscScaling()
+    caps["tscFrequency"] = _getTscFrequency()
+    caps["tscScaling"] = _getTscScaling()
 
     try:
         caps["connector_info"] = managedvolume.connector_info()
@@ -175,11 +181,11 @@ def get():
     caps["cd_change_pdiv"] = True
     caps["refresh_disk_supported"] = True
     caps["replicate_extend"] = True
-    caps['measure_subchain'] = True
-    caps['measure_active'] = True
-    caps['mailbox_events'] = config.getboolean("mailbox", "events_enable")
-    caps['zerocopy_migrations'] = hasattr(libvirt, 'VIR_MIGRATE_ZEROCOPY')
-    caps['qemu_image_info_bitmaps'] = True
+    caps["measure_subchain"] = True
+    caps["measure_active"] = True
+    caps["mailbox_events"] = config.getboolean("mailbox", "events_enable")
+    caps["zerocopy_migrations"] = hasattr(libvirt, "VIR_MIGRATE_ZEROCOPY")
+    caps["qemu_image_info_bitmaps"] = True
 
     return caps
 
@@ -208,7 +214,7 @@ def _isVncEncrypted():
         vnc_tls = 1
     """
     try:
-        return supervdsm.getProxy().check_qemu_conf_contains('vnc_tls', '1')
+        return supervdsm.getProxy().check_qemu_conf_contains("vnc_tls", "1")
     except:
         logging.error(
             "Supervdsm was not able to read VNC TLS config. "
@@ -227,8 +233,8 @@ def _getTscFrequency():
     caps = xmlutils.fromstring(conn.getCapabilities())
     counter = caps.findall("./host/cpu/counter[@name='tsc']")
     if len(counter) > 0:
-        return counter[0].get('frequency')
-    logging.debug('No TSC counter returned by Libvirt')
+        return counter[0].get("frequency")
+    logging.debug("No TSC counter returned by Libvirt")
     return ""
 
 
@@ -240,8 +246,8 @@ def _getFipsEnabled():
 
     try:
         output = commands.run(*SYSCTL_FIPS_COMMAND)
-        enabled = output.split(b'=')[1].strip()
-        return enabled == b'1'
+        enabled = output.split(b"=")[1].strip()
+        return enabled == b"1"
     except Exception as e:
         logging.error("Could not read FIPS status with sysctl: %s", e)
         return False
@@ -256,8 +262,8 @@ def _getTscScaling():
     caps = xmlutils.fromstring(conn.getCapabilities())
     counter = caps.findall("./host/cpu/counter[@name='tsc']")
     if len(counter) > 0:
-        return counter[0].get('scaling') == 'yes'
-    logging.debug('No TSC counter returned by Libvirt')
+        return counter[0].get("scaling") == "yes"
+    logging.debug("No TSC counter returned by Libvirt")
     return False
 
 
@@ -271,16 +277,14 @@ def _getFlagsAndFeatures():
     # of flags (domcapabilities also return the content of
     # arch_capabilities). The sets overlap, so we convert
     # list -> set -> list to remove duplicates.
-    flags_and_features = list(
-        set(cpuinfo.flags() + machinetype.cpu_features())
-    )
+    flags_and_features = list(set(cpuinfo.flags() + machinetype.cpu_features()))
     cpu_models = machinetype.compatible_cpu_models()
     # Easier to add here than in Engine:
     # If -IBRS suffix is present in any of the compatible CPU models,
     # we can assume spec_ctrl feature.
     for model in cpu_models:
-        if model.endswith('-IBRS'):
-            spec_ctrl = 'spec_ctrl'
+        if model.endswith("-IBRS"):
+            spec_ctrl = "spec_ctrl"
             if spec_ctrl not in flags_and_features:
                 flags_and_features.append(spec_ctrl)
             break
