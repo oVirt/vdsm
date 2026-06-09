@@ -3,7 +3,7 @@
 
 import logging
 
-from .netinfo import bonding, bridges
+from .netinfo import bridges
 from vdsm.common.conv import tobool
 from vdsm.network import dns
 from vdsm.network.ip.address import IPAddressData
@@ -60,6 +60,7 @@ def _entities_to_canonicalize(entities):
 
 
 def canonicalize_external_bonds_used_by_nets(nets, bonds):
+    running_bonds = RunningConfig().bonds
     for netattrs in nets.values():
         if 'remove' in netattrs:
             continue
@@ -67,11 +68,14 @@ def canonicalize_external_bonds_used_by_nets(nets, bonds):
         if bondname and bondname not in bonds:
             bond_dev = bond.Bond(bondname)
             if bond_dev.exists():
-                bonds[bondname] = {
+                bond_entry = {
                     'nics': list(bond_dev.slaves),
-                    'options': bonding.bondOptsForIfcfg(bond_dev.options),
                     'switch': netattrs['switch'],
                 }
+                running_bond = running_bonds.get(bondname)
+                if running_bond and 'options' in running_bond:
+                    bond_entry['options'] = running_bond['options']
+                bonds[bondname] = bond_entry
 
 
 def _canonicalize_remove(data):
