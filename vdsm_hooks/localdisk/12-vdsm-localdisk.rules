@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Red Hat, Inc. and/or its affiliates.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # Vdsm udev rules for local lvs

@@ -9,7 +9,7 @@ my $VERSION = '2009-10-30 13:46'; # UTC
 # If you change this file with Emacs, please let the write hook
 # do its job.  Otherwise, update this string manually.
 
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-FileCopyrightText: 2008-2011 Free Software Foundation, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-FileCopyrightText: 2008 Andrew Collier
 # SPDX-License-Identifier: GPL-2.0-or-later
 #

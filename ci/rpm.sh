@@ -1,6 +1,6 @@
 #!/bin/bash -xe
 
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 git config --global --add safe.directory "$PWD"

@@ -1,4 +1,4 @@
-.\"SPDX-FileCopyrightText: Red Hat, Inc. and/or its affiliates.
+.\"SPDX-FileCopyrightText: oVirt Developers
 .\"SPDX-License-Identifier: GPL-2.0-or-later
 .\"
 .\" File Name macro definition plagiarized from bash.
@@ -305,4 +305,4 @@ probably others.
 Report bugs to <http://bugzilla.redhat.com>
 
 .SH COPYRIGHT
-Copyright 2010-2017 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.
+Copyright 2010-2026 oVirt Developers. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.

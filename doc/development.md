@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-FileCopyrightText: oVirt Developers
 SPDX-License-Identifier: GPL-2.0-or-later
 -->
 
@@ -168,10 +168,10 @@ To add the SPDX headers to new files in the project you can use:
     contrib/add-spdx-header.sh new_file.py
 
 This will create default `GPL-2.0-or-later` license header
-with `Red Hat, Inc.` as copyright holder.
+with `oVirt Developers` as copyright holder.
 
 ```
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 ```
 To add new license to be used in the project:
@@ -183,7 +183,7 @@ Check list of available license identifier in https://spdx.org/licenses/.
 To add SPDX header to a file with a non-default license:
 
     reuse addheader
-      --copyright="Red Hat, Inc." \
+      --copyright="oVirt Developers" \
       --license="<License-Identifier>" \
       --template=vdsm.jinja2 \
       --exclude-year \

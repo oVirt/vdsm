@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2012 Adam Litke, IBM Corporation
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
