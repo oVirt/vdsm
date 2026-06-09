@@ -2473,20 +2473,19 @@ class HSM(object):
     def _getSDTypeFindMethod(self, domType):
         # TODO: make sd.domain_types a real dictionary and remove this.
         # Storage Domain Types find methods
-        SDTypeFindMethod = {
-            sd.NFS_DOMAIN: nfsSD.findDomain,
-            sd.FCP_DOMAIN: blockSD.findDomain,
-            sd.ISCSI_DOMAIN: blockSD.findDomain,
-            sd.LOCALFS_DOMAIN: localFsSD.findDomain,
-            sd.POSIXFS_DOMAIN: nfsSD.findDomain,
-            sd.GLUSTERFS_DOMAIN: glusterSD.findDomain,
-        }
+        SDTypeFindMethod = {sd.NFS_DOMAIN: nfsSD.findDomain,
+                            sd.FCP_DOMAIN: blockSD.findDomain,
+                            sd.ISCSI_DOMAIN: blockSD.findDomain,
+                            sd.NVMEOF_DOMAIN: blockSD.findDomain,
+                            sd.LOCALFS_DOMAIN: localFsSD.findDomain,
+                            sd.POSIXFS_DOMAIN: nfsSD.findDomain,
+                            sd.GLUSTERFS_DOMAIN: glusterSD.findDomain}
         return SDTypeFindMethod.get(domType)
 
     def _prefetchDomains(self, domType, conObj):
         uuidPatern = "????????-????-????-????-????????????"
 
-        if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
+        if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN, sd.NVMEOF_DOMAIN):
             uuids = tuple(blockSD.getStorageDomainsList())
         elif domType is sd.NFS_DOMAIN:
             lPath = conObj._mountCon._getLocalPath()
@@ -3069,6 +3068,8 @@ class HSM(object):
                 vgType = sd.FCP_DOMAIN
             elif vgType == multipath.DEV_ISCSI:
                 vgType = sd.ISCSI_DOMAIN
+            elif vgType == multipath.DEV_NVMEOF:
+                vgType = sd.NVMEOF_DOMAIN
             else:
                 # TODO: Allow for mixed vgs to be specified as such in the API
                 vgType = sd.ISCSI_DOMAIN

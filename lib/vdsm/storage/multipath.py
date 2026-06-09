@@ -537,11 +537,9 @@ def pathListIter(filterGuids=()):
 
             if devInfo["devtype"] == "":
                 devInfo["devtype"] = pathInfo["type"]
-            elif (
-                devInfo["devtype"] != DEV_MIXED
-                and devInfo["devtype"] != pathInfo["type"]
-            ):
-                devInfo["devtype"] == DEV_MIXED
+            elif (devInfo["devtype"] != DEV_MIXED and
+                  devInfo["devtype"] != pathInfo["type"]):
+                devInfo["devtype"] = DEV_MIXED
 
             devInfo["paths"].append(pathInfo)
 
