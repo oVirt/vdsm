@@ -505,7 +505,13 @@ class TestExecCmdAffinity(TestCaseBase):
 
         proc = commands.start((EXT_SLEEP, '30s'))
         try:
-            self.assertEqual(taskset.get(proc.pid), self.ONLINE_CPUS)
+            deadline = time.monotonic() + 1.0
+            while time.monotonic() < deadline:
+                affinity = taskset.get(proc.pid)
+                if affinity == self.ONLINE_CPUS:
+                    break
+                time.sleep(0.05)
+            self.assertEqual(affinity, self.ONLINE_CPUS)
         finally:
             proc.kill()
 
