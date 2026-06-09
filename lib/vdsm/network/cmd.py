@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 from vdsm.common.cmdutils import exec_cmd as exec_sync_bytes

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: Apache-2.0
 
 """Helper code to attach/detach out of OpenStack

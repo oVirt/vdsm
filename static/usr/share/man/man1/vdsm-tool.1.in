@@ -1,4 +1,4 @@
-.\"SPDX-FileCopyrightText: Red Hat, Inc.
+.\"SPDX-FileCopyrightText: oVirt Developers
 .\"SPDX-License-Identifier: GPL-2.0-or-later
 .TH man 1 "29 May, 2014" "1.0" "vdsm-tool man page"
 .SH NAME
@@ -148,5 +148,5 @@ Prints the host UUID.
 .SH BUGS
 Report bugs to <http://bugzilla.redhat.com>
 .SH COPYRIGHT
-Copyright 2011-2020 Red Hat, Inc.
+Copyright 2011-2026 oVirt Developers.
 License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.

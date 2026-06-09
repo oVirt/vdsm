@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 echo 'Please run this script from vdsm main folder'

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Simple script to add SPDX copyright notice header lines to new files
@@ -12,7 +12,7 @@
 # Therefore wrong arguments may trigger reuse errors.
 #
 # Default options:
-# - Use 'Red Hat, Inc.' as default Copyright holder.
+# - Use 'oVirt Developers' as default Copyright holder.
 # - GPL-2.0-or-later as default license for new files in the project.
 # - Use vdsm-specific notice template.
 # - Exclude years, as they are not required and makes it easier to mantain.
@@ -36,7 +36,7 @@ if [ -z "$1" ]; then
 fi
 
 reuse addheader \
-    --copyright="Red Hat, Inc." \
+    --copyright="oVirt Developers" \
     --license="GPL-2.0-or-later" \
     --template=vdsm.jinja2 \
     --exclude-year \

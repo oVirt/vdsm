@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 targets := alma-9 centos-9 alma-10 centos-10

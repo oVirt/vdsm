@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: oVirt Developers
 # SPDX-FileCopyrightText: 2001-2015 Python Software Foundation
 # SPDX-License-Identifier: PSF-2.0
 
