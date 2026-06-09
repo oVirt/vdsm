@@ -1891,6 +1891,9 @@ def test_bootstrap(tmp_storage):
     vgs = (vg1_name, vg2_name)
 
     for vg_name in vgs:
+        # Set VG Tag
+        lvm.replaceVGTag(vg_name, "initial-tag", sc.STORAGE_DOMAIN_TAG)
+
         # Create active lvs.
         for lv_name in ("skip", "prepared", "opened", "unused"):
             lvm.createLV(vg_name, lv_name, 1024)
