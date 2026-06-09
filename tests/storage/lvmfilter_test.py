@@ -10,6 +10,7 @@ import pytest
 
 from vdsm.common import udevadm
 from vdsm.storage import lvmfilter
+from vdsm.storage import constants as sc
 from vdsm.storage.lvmfilter import MountInfo
 
 from . marks import requires_root
@@ -98,7 +99,7 @@ def test_find_lvm_mounts(monkeypatch, plat, expected):
 
     def fake_vg_info(lv_path):
         if lv_path.endswith("-master"):
-            return "vg0", ["tag", lvmfilter.OVIRT_VG_TAG, "another"]
+            return "vg0", ["tag", sc.STORAGE_DOMAIN_TAG, "another"]
         else:
             return "vg0", ["no,ovirt,tag"]
 

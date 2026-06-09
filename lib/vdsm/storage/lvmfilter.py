@@ -31,6 +31,7 @@ import subprocess
 from vdsm import constants
 from vdsm.common import errors
 from vdsm.common import udevadm
+from vdsm.storage import constants as sc
 from vdsm.storage import lvmconf
 
 LSBLK = "/usr/bin/lsblk"
@@ -50,9 +51,6 @@ MountInfo = collections.namedtuple(
 FilterItem = collections.namedtuple("FilterItem", "action,path")
 Advice = collections.namedtuple("Advice", "action,filter,wwids")
 
-# We use this tag to detect a mounted ovirt storage domain - typically the
-# master lv of a block storage domain.
-OVIRT_VG_TAG = "RHAT_storage_domain"
 
 # Advice actions
 
@@ -150,7 +148,7 @@ def find_lvm_mounts():
         if devtype != "lvm" or mountpoint == "":
             continue
         vg_name, tags = vg_info(name)
-        if OVIRT_VG_TAG in tags:
+        if sc.STORAGE_DOMAIN_TAG in tags:
             log.debug("Skipping oVirt logical volume %r", name)
             continue
         devices = vg_devices(vg_name)
