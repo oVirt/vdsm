@@ -57,7 +57,7 @@ class Detector(object):
 
 
 class Echo(Detector):
-    """ A detector echoing sent line """
+    """A detector echoing sent line"""
 
     NAME = "echo"
     REQUIRED_SIZE = len(NAME)
@@ -67,7 +67,7 @@ class Echo(Detector):
 
 
 class Uppercase(Detector):
-    """ A detector echoing sent line in UPPERCASE """
+    """A detector echoing sent line in UPPERCASE"""
 
     NAME = "uppercase"
     REQUIRED_SIZE = len(NAME)
@@ -208,16 +208,14 @@ class AcceptorTests(VdsmTestCase):
     def start_acceptor(self, use_ssl, address='127.0.0.1'):
         self.reactor = Reactor()
         self.acceptor = MultiProtocolAcceptor(
-            self.reactor,
-            address,
-            0,
-            sslctx=self.ssl_ctx if use_ssl else None
+            self.reactor, address, 0, sslctx=self.ssl_ctx if use_ssl else None
         )
         self.acceptor.TIMEOUT = 1
         self.acceptor.add_detector(Echo())
         self.acceptor.add_detector(Uppercase())
-        self.acceptor_address = \
-            self.acceptor._acceptor.socket.getsockname()[0:2]
+        self.acceptor_address = self.acceptor._acceptor.socket.getsockname()[
+            0:2
+        ]
         t = threading.Thread(target=self.reactor.process_requests)
         t.daemon = True
         t.start()
@@ -225,8 +223,9 @@ class AcceptorTests(VdsmTestCase):
     @contextmanager
     def connect(self, use_ssl):
         host, port = self.acceptor_address
-        addrinfo = socket.getaddrinfo(host, port,
-                                      socket.AF_UNSPEC, socket.SOCK_STREAM)
+        addrinfo = socket.getaddrinfo(
+            host, port, socket.AF_UNSPEC, socket.SOCK_STREAM
+        )
         family, socktype, proto, _, sockaddr = addrinfo[0]
         s = socket.socket(family, socktype, proto)
         try:

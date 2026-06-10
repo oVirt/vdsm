@@ -139,4 +139,9 @@ class AbstractLock(object):
 
     def __repr__(self):
         return "<%s ns=%s, name=%s, mode=%s at 0x%x>" % (
-            self.__class__.__name__, self.ns, self.name, self.mode, id(self))
+            self.__class__.__name__,
+            self.ns,
+            self.name,
+            self.mode,
+            id(self),
+        )

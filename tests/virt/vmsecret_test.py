@@ -18,7 +18,7 @@ import pytest
 
 
 class Unexpected(Exception):
-    """ Unexpected error """
+    """Unexpected error"""
 
 
 @expandPermutations
@@ -73,8 +73,9 @@ class SecretXMLTests(XMLTestCase):
             </usage>
         </secret>
         """
-        params = make_secret(sid='3a27b133-abb2-4302-8891-bd0a4032866f',
-                             usage_type="ceph")
+        params = make_secret(
+            sid='3a27b133-abb2-4302-8891-bd0a4032866f', usage_type="ceph"
+        )
         self.check(params, xml)
 
     def test_type_volume(self):
@@ -86,8 +87,9 @@ class SecretXMLTests(XMLTestCase):
             </usage>
         </secret>
         """
-        params = make_secret(sid='3a27b133-abb2-4302-8891-bd0a4032866f',
-                             usage_type="volume")
+        params = make_secret(
+            sid='3a27b133-abb2-4302-8891-bd0a4032866f', usage_type="volume"
+        )
         self.check(params, xml)
 
     def test_type_iscsi(self):
@@ -99,8 +101,9 @@ class SecretXMLTests(XMLTestCase):
             </usage>
         </secret>
         """
-        params = make_secret(sid='3a27b133-abb2-4302-8891-bd0a4032866f',
-                             usage_type="iscsi")
+        params = make_secret(
+            sid='3a27b133-abb2-4302-8891-bd0a4032866f', usage_type="iscsi"
+        )
         self.check(params, xml)
 
     def test_description(self):
@@ -113,8 +116,9 @@ class SecretXMLTests(XMLTestCase):
             </usage>
         </secret>
         """
-        params = make_secret(sid='3a27b133-abb2-4302-8891-bd0a4032866f',
-                             description="text")
+        params = make_secret(
+            sid='3a27b133-abb2-4302-8891-bd0a4032866f', description="text"
+        )
         self.check(params, xml)
 
     def test_escape(self):
@@ -127,8 +131,11 @@ class SecretXMLTests(XMLTestCase):
             </usage>
         </secret>
         """
-        params = make_secret(sid='3a27b133-abb2-4302-8891-bd0a4032866f',
-                             description="< & >", usage_id="< & >")
+        params = make_secret(
+            sid='3a27b133-abb2-4302-8891-bd0a4032866f',
+            description="< & >",
+            usage_id="< & >",
+        )
         self.check(params, xml)
 
     def check(self, params, xml):
@@ -140,9 +147,9 @@ class APITests(VdsmTestCase):
 
     def setUp(self):
         self.connection = vmfakecon.Connection()
-        self.patch = Patch([
-            (libvirtconnection, 'get', lambda: self.connection)
-        ])
+        self.patch = Patch(
+            [(libvirtconnection, 'get', lambda: self.connection)]
+        )
         self.patch.apply()
 
     def tearDown(self):
@@ -151,10 +158,12 @@ class APITests(VdsmTestCase):
 
     def test_clear(self):
         self.connection.secrets = {
-            "uuid1": vmfakecon.Secret(self.connection, "uuid1", "ceph",
-                                      "ovirt/name1", None),
-            "uuid2": vmfakecon.Secret(self.connection, "uuid2", "ceph",
-                                      "name2", None),
+            "uuid1": vmfakecon.Secret(
+                self.connection, "uuid1", "ceph", "ovirt/name1", None
+            ),
+            "uuid2": vmfakecon.Secret(
+                self.connection, "uuid2", "ceph", "name2", None
+            ),
         }
         secret.clear()
         assert "uuid1" not in self.connection.secrets
@@ -163,11 +172,14 @@ class APITests(VdsmTestCase):
     def test_clear_skip_failed(self):
         def fail():
             raise vmfakecon.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+
         self.connection.secrets = {
-            "uuid1": vmfakecon.Secret(self.connection, "uuid1", "ceph",
-                                      "ovirt/name1", None),
-            "uuid2": vmfakecon.Secret(self.connection, "uuid2", "ceph",
-                                      "ovirt/name2", None),
+            "uuid1": vmfakecon.Secret(
+                self.connection, "uuid1", "ceph", "ovirt/name1", None
+            ),
+            "uuid2": vmfakecon.Secret(
+                self.connection, "uuid2", "ceph", "ovirt/name2", None
+            ),
         }
         self.connection.secrets["uuid1"].undefine = fail
         secret.clear()
@@ -213,10 +225,12 @@ class APITests(VdsmTestCase):
 
     def test_register_clear(self):
         self.connection.secrets = {
-            "uuid1": vmfakecon.Secret(self.connection, "uuid1", "ceph",
-                                      "ovirt/name1", None),
-            "uuid2": vmfakecon.Secret(self.connection, "uuid2", "ceph",
-                                      "name2", None),
+            "uuid1": vmfakecon.Secret(
+                self.connection, "uuid1", "ceph", "ovirt/name1", None
+            ),
+            "uuid2": vmfakecon.Secret(
+                self.connection, "uuid2", "ceph", "name2", None
+            ),
         }
         sec = make_secret()
         res = secret.register([sec], clear=True)
@@ -233,6 +247,7 @@ class APITests(VdsmTestCase):
     def test_register_libvirt_error(self):
         def fail(xml):
             raise vmfakecon.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+
         self.connection.secretDefineXML = fail
         res = secret.register([make_secret()])
         assert res == response.error("secretRegisterErr")
@@ -240,6 +255,7 @@ class APITests(VdsmTestCase):
     def test_register_unexpected_error(self):
         def fail(xml):
             raise Unexpected
+
         self.connection.secretDefineXML = fail
         with pytest.raises(Unexpected):
             secret.register([make_secret()])
@@ -268,6 +284,7 @@ class APITests(VdsmTestCase):
     def test_unregister_libvirt_error(self):
         def fail(uuid):
             raise vmfakecon.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+
         self.connection.secretLookupByUUIDString = fail
         res = secret.unregister([str(uuid.uuid4())])
         assert res == response.error("secretUnregisterErr")
@@ -275,13 +292,19 @@ class APITests(VdsmTestCase):
     def test_unregister_unexpected_error(self):
         def fail(uuid):
             raise Unexpected
+
         self.connection.secretLookupByUUIDString = fail
         with pytest.raises(Unexpected):
             secret.unregister([str(uuid.uuid4())])
 
 
-def make_secret(sid=None, usage_type="ceph", usage_id=None,
-                password="12345678", description=None):
+def make_secret(
+    sid=None,
+    usage_type="ceph",
+    usage_id=None,
+    password="12345678",
+    description=None,
+):
     if sid is None:
         sid = str(uuid.uuid4())
 

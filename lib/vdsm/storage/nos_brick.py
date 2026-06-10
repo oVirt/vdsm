@@ -39,7 +39,7 @@ from oslo_utils import strutils
 
 
 class RBDConnector(connectors.rbd.RBDConnector):
-    """"Connector class to attach/detach RBD volumes locally.
+    """ "Connector class to attach/detach RBD volumes locally.
 
     OS-Brick's implementation covers only 2 cases:
 
@@ -48,6 +48,7 @@ class RBDConnector(connectors.rbd.RBDConnector):
 
     We need a third one, local attachment on non controller node.
     """
+
     def connect_volume(self, connection_properties):
         # NOTE(e0ne): sanity check if ceph-common is installed.
         try:
@@ -68,43 +69,57 @@ class RBDConnector(connectors.rbd.RBDConnector):
             msg = 'Malformed connection properties'
             raise exception.BrickException(msg)
 
-        conf = self._create_ceph_conf(monitor_ips, monitor_ports,
-                                      str(cluster_name), user,
-                                      keyring)
+        conf = self._create_ceph_conf(
+            monitor_ips, monitor_ports, str(cluster_name), user, keyring
+        )
 
         # Map RBD volume if it's not already mapped
         rbd_dev_path = self.get_rbd_device_name(pool, volume)
-        if (not os.path.islink(rbd_dev_path) or
-                not os.path.exists(os.path.realpath(rbd_dev_path))):
+        if not os.path.islink(rbd_dev_path) or not os.path.exists(
+            os.path.realpath(rbd_dev_path)
+        ):
             cmd = ['rbd', 'map', volume, '--pool', pool, '--conf', conf]
             cmd += self._get_rbd_args(connection_properties)
-            self._execute(*cmd, root_helper=self._root_helper,
-                          run_as_root=True)
+            self._execute(
+                *cmd, root_helper=self._root_helper, run_as_root=True
+            )
 
-        return {'path': os.path.realpath(rbd_dev_path),
-                'conf': conf,
-                'type': 'block'}
+        return {
+            'path': os.path.realpath(rbd_dev_path),
+            'conf': conf,
+            'type': 'block',
+        }
 
     def check_valid_device(self, path, run_as_root=True):
         """Verify an existing RBD handle is connected and valid."""
         try:
-            self._execute('dd', 'if=' + path, 'of=/dev/null', 'bs=4096',
-                          'count=1', root_helper=self._root_helper,
-                          run_as_root=True)
+            self._execute(
+                'dd',
+                'if=' + path,
+                'of=/dev/null',
+                'bs=4096',
+                'count=1',
+                root_helper=self._root_helper,
+                run_as_root=True,
+            )
         except putils.ProcessExecutionError:
             return False
         return True
 
-    def disconnect_volume(self, connection_properties, device_info,
-                          force=False, ignore_errors=False):
+    def disconnect_volume(
+        self,
+        connection_properties,
+        device_info,
+        force=False,
+        ignore_errors=False,
+    ):
 
         pool, volume = connection_properties['name'].split('/')
         conf_file = device_info['conf']
         dev_name = self.get_rbd_device_name(pool, volume)
         cmd = ['rbd', 'unmap', dev_name, '--conf', conf_file]
         cmd += self._get_rbd_args(connection_properties)
-        self._execute(*cmd, root_helper=self._root_helper,
-                      run_as_root=True)
+        self._execute(*cmd, root_helper=self._root_helper, run_as_root=True)
         fileutils.delete_if_exists(conf_file)
 
 
@@ -118,8 +133,9 @@ def unlink_root(*links, **kwargs):
     catch_exception = no_errors or raise_at_end
     for link in links:
         with exc.context(catch_exception, 'Unlink failed for %s', link):
-            putils.execute('unlink', link, run_as_root=True,
-                           root_helper=ROOT_HELPER)
+            putils.execute(
+                'unlink', link, run_as_root=True, root_helper=ROOT_HELPER
+            )
     if not no_errors and raise_at_end and exc:
         raise exc
 
@@ -130,7 +146,8 @@ def _execute(*cmd, **kwargs):
     except OSError as e:
         sanitized_cmd = strutils.mask_password(' '.join(cmd))
         raise putils.ProcessExecutionError(
-            cmd=sanitized_cmd, description=str(e))
+            cmd=sanitized_cmd, description=str(e)
+        )
 
 
 def init(root_helper='sudo'):

@@ -22,57 +22,68 @@ from . import vmfakelib as fake
 def _fake_qemuAgentCommand(domain, command, timeout, flags):
     if command == '{"execute": "guest-info"}':
         return json.dumps(
-            {"return": {
-                "version": "1.2.3",
-                "supported_commands": [
-                    {
-                        "enabled": True,
-                        "name": "guest-info",
-                        "success-response": True
-                    }, {
-                        "enabled": False,
-                        "name": "guest-exec",
-                        "success-response": True
-                    }]
-            }})
+            {
+                "return": {
+                    "version": "1.2.3",
+                    "supported_commands": [
+                        {
+                            "enabled": True,
+                            "name": "guest-info",
+                            "success-response": True,
+                        },
+                        {
+                            "enabled": False,
+                            "name": "guest-exec",
+                            "success-response": True,
+                        },
+                    ],
+                }
+            }
+        )
     if command == '{"execute": "guest-get-devices"}':
         return json.dumps(
-            {"return": [{
-                # original API
-                'driver-date': '2019-08-12',
-                'driver-name': 'Red Hat VirtIO Ethernet Adapter',
-                'driver-version': '100.80.104.17300',
-                'address': {
-                    'type': 'pci',
-                    'data': {
-                        'device-id': 4096,
-                        'vendor-id': 6900,
-                    }
-                }
-            }, {
-                # API in 5.2
-                'driver-date': 1565568000000000000,
-                'driver-name': 'VirtIO Balloon Driver',
-                'driver-version': '100.80.104.17300',
-                'id': {
-                    'type': 'pci',
-                    'device-id': 4098,
-                    'vendor-id': 6900
-                }
-            }, {
-                # Duplicate of first entry
-                'driver-date': '2019-08-12',
-                'driver-name': 'Red Hat VirtIO Ethernet Adapter',
-                'driver-version': '100.80.104.17300',
-                'address': {
-                    'type': 'pci',
-                    'data': {
-                        'device-id': 4096,
-                        'vendor-id': 6900,
-                    }
-                }
-            },
-            ]})
+            {
+                "return": [
+                    {
+                        # original API
+                        'driver-date': '2019-08-12',
+                        'driver-name': 'Red Hat VirtIO Ethernet Adapter',
+                        'driver-version': '100.80.104.17300',
+                        'address': {
+                            'type': 'pci',
+                            'data': {
+                                'device-id': 4096,
+                                'vendor-id': 6900,
+                            },
+                        },
+                    },
+                    {
+                        # API in 5.2
+                        'driver-date': 1565568000000000000,
+                        'driver-name': 'VirtIO Balloon Driver',
+                        'driver-version': '100.80.104.17300',
+                        'id': {
+                            'type': 'pci',
+                            'device-id': 4098,
+                            'vendor-id': 6900,
+                        },
+                    },
+                    {
+                        # Duplicate of first entry
+                        'driver-date': '2019-08-12',
+                        'driver-name': 'Red Hat VirtIO Ethernet Adapter',
+                        'driver-version': '100.80.104.17300',
+                        'address': {
+                            'type': 'pci',
+                            'data': {
+                                'device-id': 4096,
+                                'vendor-id': 6900,
+                            },
+                        },
+                    },
+                ]
+            }
+        )
     # Unknow command
     logging.error("Fake QEMU-GA cannot handle: %r", command)
     return '{"error": {"class": "CommandNotFound", "desc": "..."}}'
@@ -83,14 +94,25 @@ class FakeDomain(object):
         if source != libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT:
             return None
         ifdata = {
-            'ens2': {'addrs': [
-                {'addr': '192.168.124.216', 'prefix': 24, 'type': 0},
-                {'addr': 'fe80::5054:ff:feed:9976', 'prefix': 64, 'type': 1}],
-                'hwaddr': '52:54:00:ed:99:76'},
-            'lo': {'addrs': [
-                {'addr': '127.0.0.1', 'prefix': 8, 'type': 0},
-                {'addr': '::1', 'prefix': 128, 'type': 1}],
-                'hwaddr': '00:00:00:00:00:00'}}
+            'ens2': {
+                'addrs': [
+                    {'addr': '192.168.124.216', 'prefix': 24, 'type': 0},
+                    {
+                        'addr': 'fe80::5054:ff:feed:9976',
+                        'prefix': 64,
+                        'type': 1,
+                    },
+                ],
+                'hwaddr': '52:54:00:ed:99:76',
+            },
+            'lo': {
+                'addrs': [
+                    {'addr': '127.0.0.1', 'prefix': 8, 'type': 0},
+                    {'addr': '::1', 'prefix': 128, 'type': 1},
+                ],
+                'hwaddr': '00:00:00:00:00:00',
+            },
+        }
         return ifdata
 
     def guestInfo(self, types, flags):
@@ -101,8 +123,7 @@ class FakeDomain(object):
             'user.1.domain': 'hobbits',
             'os.id': 'rhel',
             'os.name': 'Red Hat Enterprise Linux Server',
-            'os.pretty-name':
-                'Red Hat Enterprise Linux Server 7.8 Beta (Maipo)',
+            'os.pretty-name': 'Red Hat Enterprise Linux Server 7.8 Beta (Maipo)',
             'os.version': '7.8 (Maipo)',
             'os.version-id': '7.8',
             'os.machine': 'x86_64',
@@ -138,11 +159,7 @@ class FakeDomain(object):
         }
 
     def guestVcpus(self, flags=0):
-        return {
-            'vcpus': '0-7',
-            'online': '0-3',
-            'offlinable': '0-7'
-        }
+        return {'vcpus': '0-7', 'online': '0-3', 'offlinable': '0-7'}
 
 
 class FakeGuestAgent(object):
@@ -161,7 +178,8 @@ class FakeVM(object):
 
     def qemu_agent_command(self, command, timeout, flags):
         return libvirt_qemu.qemuAgentCommand(
-            self._dom, command, timeout, flags)
+            self._dom, command, timeout, flags
+        )
 
     @contextmanager
     def qga_context(self, timeout=-1):
@@ -173,9 +191,11 @@ def _dom_guestInfo(self, types, flags):
 
 
 @MonkeyClass(libvirt_qemu, "qemuAgentCommand", _fake_qemuAgentCommand)
-@MonkeyClass(qemuguestagent, 'config', make_config([
-    ('guest_agent', 'periodic_workers', '1')
-]))
+@MonkeyClass(
+    qemuguestagent,
+    'config',
+    make_config([('guest_agent', 'periodic_workers', '1')]),
+)
 @MonkeyClass(qemuguestagent.QemuGuestAgentDomain, 'guestInfo', _dom_guestInfo)
 class QemuGuestAgentTests(TestCaseBase):
     def setUp(self):
@@ -196,10 +216,12 @@ class QemuGuestAgentTests(TestCaseBase):
                     qemuguestagent._QEMU_NETWORK_INTERFACES_COMMAND,
                     qemuguestagent._QEMU_OSINFO_COMMAND,
                     qemuguestagent._QEMU_TIMEZONE_COMMAND,
-                ]
-            })
+                ],
+            },
+        )
         self.qga_poller.channel_state_changed(
-            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0)
+            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0
+        )
 
     def test_caps(self):
         """
@@ -222,45 +244,54 @@ class QemuGuestAgentTests(TestCaseBase):
         """
         Make sure the internal arrays are consistent.
         """
-        assert frozenset(qemuguestagent._QEMU_COMMANDS.keys()) \
-            .issubset(
-                frozenset(qemuguestagent._QEMU_COMMAND_PERIODS.keys()))
+        assert frozenset(qemuguestagent._QEMU_COMMANDS.keys()).issubset(
+            frozenset(qemuguestagent._QEMU_COMMAND_PERIODS.keys())
+        )
 
     def test_failure(self):
-        """ Make sure failure timestamp is set on errors. """
+        """Make sure failure timestamp is set on errors."""
+
         def _qga_command_fail(*args, **kwargs):
             raise libvirt.libvirtError("Some error!")
 
         last = self.qga_poller.last_failure(self.vm.id)
         assert last == 0
-        with MonkeyPatchScope([
-                (libvirt_qemu, "qemuAgentCommand", _qga_command_fail)]):
+        with MonkeyPatchScope(
+            [(libvirt_qemu, "qemuAgentCommand", _qga_command_fail)]
+        ):
             self.qga_poller.call_qga_command(
-                self.vm,
-                qemuguestagent._QEMU_GUEST_INFO_COMMAND)
+                self.vm, qemuguestagent._QEMU_GUEST_INFO_COMMAND
+            )
         now = self.qga_poller.last_failure(self.vm.id)
         assert now > 0
 
     def test_no_failure(self):
-        """ Make sure reset_failure() does not break on unknown VM ID """
+        """Make sure reset_failure() does not break on unknown VM ID"""
         if self.vm.id in self.qga_poller._last_failure:
             del self.qga_poller._last_failure[self.vm.id]
         self.qga_poller.reset_failure(self.vm.id)
 
     def test_guest_info(self):
-        """ Set and read guest info. """
+        """Set and read guest info."""
         self.qga_poller.update_guest_info(
-            self.vm.id, {"test-key": "test-value"})
-        assert self.qga_poller.get_guest_info(self.vm.id)["test-key"] == \
-            "test-value"
+            self.vm.id, {"test-key": "test-value"}
+        )
+        assert (
+            self.qga_poller.get_guest_info(self.vm.id)["test-key"]
+            == "test-value"
+        )
         # Test with invalid VM
-        assert self.qga_poller.get_guest_info(
-            "99999999-9999-9999-9999-999999999999") is None
+        assert (
+            self.qga_poller.get_guest_info(
+                "99999999-9999-9999-9999-999999999999"
+            )
+            is None
+        )
 
     def test_capability_check(self):
         self.qga_poller.update_caps(
-            self.vm.id,
-            {"version": "0.0", "commands": []})
+            self.vm.id, {"version": "0.0", "commands": []}
+        )
         self.qga_poller._qga_capability_check(self.vm)
         c = self.qga_poller.get_caps(self.vm.id)
         assert c['version'] == '1.2.3'
@@ -272,23 +303,21 @@ class QemuGuestAgentTests(TestCaseBase):
         ifaces = info['netIfaces']
         iflo = [x for x in ifaces if x['name'] == 'lo'][0]
         ifens2 = [x for x in ifaces if x['name'] == 'ens2'][0]
-        assert iflo == \
-            {
-                'hw': '00:00:00:00:00:00',
-                'inet': ['127.0.0.1'],
-                'inet6': ['::1'],
-                'name': 'lo'
-            }
-        assert ifens2 == \
-            {
-                'hw': '52:54:00:ed:99:76',
-                'inet': ['192.168.124.216'],
-                'inet6': ['fe80::5054:ff:feed:9976'],
-                'name': 'ens2'
-            }
+        assert iflo == {
+            'hw': '00:00:00:00:00:00',
+            'inet': ['127.0.0.1'],
+            'inet6': ['::1'],
+            'name': 'lo',
+        }
+        assert ifens2 == {
+            'hw': '52:54:00:ed:99:76',
+            'inet': ['192.168.124.216'],
+            'inet6': ['fe80::5054:ff:feed:9976'],
+            'name': 'ens2',
+        }
 
     def test_libvirt_guest_info(self):
-        info = self.qga_poller._libvirt_get_guest_info(self.vm, 0xffffffff)
+        info = self.qga_poller._libvirt_get_guest_info(self.vm, 0xFFFFFFFF)
         # Disks/Filesystems
         assert info['disksUsage'][0] == {
             'path': '/',
@@ -321,7 +350,7 @@ class QemuGuestAgentTests(TestCaseBase):
         # fake appsList should exists
         assert self.qga_poller.get_guest_info(self.vm.id)['appsList'] == (
             'kernel-3.10.0-1101.el7.x86_64',
-            'qemu-guest-agent-0.0-test'
+            'qemu-guest-agent-0.0-test',
         )
 
     def test_pci_devices(self):
@@ -347,31 +376,42 @@ class QemuGuestAgentTests(TestCaseBase):
         }
 
     def test_state_changes(self):
-        self.qga_poller._channel_state[self.vm.id] = \
+        self.qga_poller._channel_state[self.vm.id] = (
             qemuguestagent.CHANNEL_UNKNOWN
+        )
         self.qga_poller.channel_state_changed(
-            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0)
-        assert self.qga_poller._channel_state[self.vm.id] == \
-            qemuguestagent.CHANNEL_CONNECTED
+            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0
+        )
+        assert (
+            self.qga_poller._channel_state[self.vm.id]
+            == qemuguestagent.CHANNEL_CONNECTED
+        )
         self.qga_poller.channel_state_changed(
-            self.vm.id, qemuguestagent.CHANNEL_DISCONNECTED, 0)
-        assert self.qga_poller._channel_state[self.vm.id] == \
-            qemuguestagent.CHANNEL_DISCONNECTED
+            self.vm.id, qemuguestagent.CHANNEL_DISCONNECTED, 0
+        )
+        assert (
+            self.qga_poller._channel_state[self.vm.id]
+            == qemuguestagent.CHANNEL_DISCONNECTED
+        )
         self.qga_poller.channel_state_changed(
-            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0)
-        assert self.qga_poller._channel_state[self.vm.id] == \
-            qemuguestagent.CHANNEL_CONNECTED
+            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0
+        )
+        assert (
+            self.qga_poller._channel_state[self.vm.id]
+            == qemuguestagent.CHANNEL_CONNECTED
+        )
         self.qga_poller.channel_state_changed(
-            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0)
-        assert self.qga_poller._channel_state[self.vm.id] == \
-            qemuguestagent.CHANNEL_CONNECTED
+            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0
+        )
+        assert (
+            self.qga_poller._channel_state[self.vm.id]
+            == qemuguestagent.CHANNEL_CONNECTED
+        )
         # Test invalid values
         with pytest.raises(ValueError):
-            self.qga_poller.channel_state_changed(
-                self.vm.id, -100, 0)
+            self.qga_poller.channel_state_changed(self.vm.id, -100, 0)
         with pytest.raises(TypeError):
-            self.qga_poller.channel_state_changed(
-                self.vm.id, 'abc', 0)
+            self.qga_poller.channel_state_changed(self.vm.id, 'abc', 0)
 
     def test_guest_vcpus(self):
         info = self.qga_poller._qga_call_get_vcpus(self.vm)

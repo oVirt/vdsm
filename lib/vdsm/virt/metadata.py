@@ -65,12 +65,19 @@ _VM_CUSTOM = 'vm_custom'
 _VOLUME_CHAIN = 'volumeChain'
 _VOLUME_CHAIN_NODE = 'volumeChainNode'
 _VOLUME_INFO = 'volumeInfo'
-_IGNORED_KEYS = (
-    _VOLUME_INFO,
-)
+_IGNORED_KEYS = (_VOLUME_INFO,)
 _DEVICE_SUBKEYS = (
-    _ADDRESS, _AUTH, _CHANGE, _CUSTOM, _HOSTS, _PAYLOAD, _PORT_MIRRORING,
-    _REPLICA, _SPEC_PARAMS, _VM_CUSTOM, _VOLUME_CHAIN,
+    _ADDRESS,
+    _AUTH,
+    _CHANGE,
+    _CUSTOM,
+    _HOSTS,
+    _PAYLOAD,
+    _PORT_MIRRORING,
+    _REPLICA,
+    _SPEC_PARAMS,
+    _VM_CUSTOM,
+    _VOLUME_CHAIN,
 )
 _NONEMPTY_KEYS = (_IO_TUNE,) + _DEVICE_SUBKEYS
 _LAYERED_KEYS = {
@@ -92,6 +99,7 @@ class UnsupportedType(Error):
     * floats
     * string
     """
+
     msg = 'Unsupported {self.value} for {self.key}'
 
     def __init__(self, key, value):
@@ -332,7 +340,7 @@ class Descriptor(object):
         self,
         name=xmlconstants.METADATA_VM_VDSM_ELEMENT,
         namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI,
     ):
         """
         Initializes one empty descriptor.
@@ -393,8 +401,7 @@ class Descriptor(object):
         # but still legitimate.
         with self._lock:
             return (
-                bool(self._values) or bool(self._devices) or
-                bool(self._custom)
+                bool(self._values) or bool(self._devices) or bool(self._custom)
             )
 
     # pylint: disable=nonzero-method
@@ -407,7 +414,7 @@ class Descriptor(object):
         xml_str,
         name=xmlconstants.METADATA_VM_VDSM_ELEMENT,
         namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI,
     ):
         """
         Initializes one descriptor given the namespace-prefixed metadata
@@ -433,7 +440,7 @@ class Descriptor(object):
         root,
         name=xmlconstants.METADATA_VM_VDSM_ELEMENT,
         namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI,
     ):
         """
         Initializes one descriptor given the root Element, obtained
@@ -465,9 +472,7 @@ class Descriptor(object):
         md_xml = "<{tag}/>".format(tag=self._name)
         try:
             md_xml = dom.metadata(
-                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                self._namespace_uri,
-                0
+                libvirt.VIR_DOMAIN_METADATA_ELEMENT, self._namespace_uri, 0
             )
         except libvirt.libvirtError as e:
             if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
@@ -476,7 +481,8 @@ class Descriptor(object):
             # and that's exactly what we want.
 
         self._log.debug(
-            'loading metadata for %s: %s', dom.UUIDString(), md_xml)
+            'loading metadata for %s: %s', dom.UUIDString(), md_xml
+        )
         self._load(xmlutils.fromstring(md_xml))
 
     def dump(self, dom):
@@ -488,12 +494,13 @@ class Descriptor(object):
         :type dom: libvirt.Domain
         """
         md_xml = self._build_xml()
-        dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                        md_xml,
-                        self._namespace,
-                        self._namespace_uri)
-        self._log.debug(
-            'dumped metadata for %s: %s', dom.UUIDString(), md_xml)
+        dom.setMetadata(
+            libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+            md_xml,
+            self._namespace,
+            self._namespace_uri,
+        )
+        self._log.debug('dumped metadata for %s: %s', dom.UUIDString(), md_xml)
 
     def to_xml(self):
         """
@@ -646,7 +653,7 @@ class Descriptor(object):
             yield utils.picklecopy(data)
 
     def _matching_devices(self, attrs_to_match):
-        for (dev_attrs, dev_data) in self._devices:
+        for dev_attrs, dev_data in self._devices:
             if _match_args(attrs_to_match, dev_attrs):
                 yield dev_data
 
@@ -665,7 +672,9 @@ class Descriptor(object):
             uuid_text = '?' if md_uuid is None else md_uuid.text
             self._log.debug(
                 'parsing metadata for %s: %s',
-                uuid_text, xmlutils.tostring(md_elem, pretty=True))
+                uuid_text,
+                xmlutils.tostring(md_elem, pretty=True),
+            )
             self._load(md_elem, self._namespace, self._namespace_uri)
 
     def _load(self, md_elem, namespace=None, namespace_uri=None):
@@ -688,7 +697,7 @@ class Descriptor(object):
     def _build_tree(self, namespace=None, namespace_uri=None):
         metadata_obj = Metadata(namespace, namespace_uri)
         md_elem = metadata_obj.dump(self._name, **self._values)
-        for (attrs, data) in self._devices:
+        for attrs, data in self._devices:
             if data:
                 dev_elem = _dump_device(metadata_obj, data)
                 dev_elem.attrib.update(attrs)
@@ -752,10 +761,7 @@ def _load_layered(md_obj, elem):
 def _dump_layered(md_obj, key, subkey, value):
     chain = md_obj.make_element(key)
     for val in value:
-        vmxml.append_child(
-            chain,
-            etree_child=md_obj.dump(subkey, **val)
-        )
+        vmxml.append_child(chain, etree_child=md_obj.dump(subkey, **val))
     return chain
 
 
@@ -777,9 +783,7 @@ def _dump_device(md_obj, data, node_name=_DEVICE):
         elif key == _REPLICA:
             elems.append(_dump_device(md_obj, value, _REPLICA))
         elif key in _LAYERED_KEYS:
-            elems.append(
-                _dump_layered(md_obj, key, _LAYERED_KEYS[key], value)
-            )
+            elems.append(_dump_layered(md_obj, key, _LAYERED_KEYS[key], value))
         elif key == _SPEC_PARAMS:
             elems.append(_dump_device_spec_params(md_obj, value))
         elif key == _PAYLOAD:
@@ -884,8 +888,9 @@ def _elem_to_keyvalue(elem):
                 value = ''
             else:
                 raise ValueError(
-                    'unknown type hint for %r (%s): %r' % (
-                        key, elem.attrib, value))
+                    'unknown type hint for %r (%s): %r'
+                    % (key, elem.attrib, value)
+                )
         if data_type == 'bool':
             value = conv.tobool(value)
         elif data_type == 'int':

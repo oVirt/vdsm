@@ -18,7 +18,7 @@ _LEASES_FIELDS = [
     ("timestamp", int),
     ("own", int),
     ("gen", int),
-    ("lver", int)
+    ("lver", int),
 ]
 
 _LOCKSPACE_FIELDS = [
@@ -27,7 +27,7 @@ _LOCKSPACE_FIELDS = [
     ("resource", str),
     ("timestamp", int),
     ("own", int),
-    ("gen", int)
+    ("gen", int),
 ]
 
 
@@ -35,11 +35,12 @@ log = logging.getLogger("storage.sanlock_direct")
 
 
 def dump_leases(
-        path,
-        offset=0,
-        size=None,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M):
+    path,
+    offset=0,
+    size=None,
+    block_size=sc.BLOCK_SIZE_512,
+    alignment=sc.ALIGNMENT_1M,
+):
 
     return _dump(
         _LEASES_FIELDS,
@@ -47,15 +48,17 @@ def dump_leases(
         offset=offset,
         size=size,
         block_size=block_size,
-        alignment=alignment)
+        alignment=alignment,
+    )
 
 
 def dump_lockspace(
-        path,
-        offset=0,
-        size=None,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M):
+    path,
+    offset=0,
+    size=None,
+    block_size=sc.BLOCK_SIZE_512,
+    alignment=sc.ALIGNMENT_1M,
+):
 
     return _dump(
         _LOCKSPACE_FIELDS,
@@ -63,15 +66,17 @@ def dump_lockspace(
         offset=offset,
         size=size,
         block_size=block_size,
-        alignment=alignment)
+        alignment=alignment,
+    )
 
 
 def run_dump(
-        path,
-        offset=0,
-        size=None,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M):
+    path,
+    offset=0,
+    size=None,
+    block_size=sc.BLOCK_SIZE_512,
+    alignment=sc.ALIGNMENT_1M,
+):
 
     if os.geteuid() != 0:
         return supervdsm.getProxy().sanlock_direct_run_dump(
@@ -79,7 +84,8 @@ def run_dump(
             offset=offset,
             size=size,
             block_size=block_size,
-            alignment=alignment)
+            alignment=alignment,
+        )
 
     # Split path to dirname and filename as sanlock direct command
     # would fail when its path argument contains a colon sign
@@ -96,20 +102,23 @@ def run_dump(
         "direct",
         "dump",
         filespec,
-        "-Z", str(block_size),
-        "-A", str(alignment // sc.ALIGNMENT_1M) + "M"
+        "-Z",
+        str(block_size),
+        "-A",
+        str(alignment // sc.ALIGNMENT_1M) + "M",
     ]
 
     return commands.run(cmd, cwd=dirname)
 
 
 def _dump(
-        fields,
-        path,
-        offset=0,
-        size=None,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M):
+    fields,
+    path,
+    offset=0,
+    size=None,
+    block_size=sc.BLOCK_SIZE_512,
+    alignment=sc.ALIGNMENT_1M,
+):
 
     out = run_dump(path, offset=offset, size=size)
     # Sanlock lockspace and resource names may have arbitrary values.
@@ -121,8 +130,10 @@ def _dump(
     for line in lines:
         values = line.split()
         try:
-            record = {name: conv(value)
-                      for (name, conv), value in zip(fields, values)}
+            record = {
+                name: conv(value)
+                for (name, conv), value in zip(fields, values)
+            }
         except Exception as e:
             log.warning("Failed to parse line %r from %s: %s", line, path, e)
             continue

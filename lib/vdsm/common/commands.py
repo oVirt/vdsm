@@ -21,8 +21,18 @@ BUFFSIZE = 1024
 log = logging.getLogger("common.commands")
 
 
-def run(args, input=None, cwd=None, env=None, sudo=False, setsid=False,
-        nice=None, ioclass=None, ioclassdata=None, reset_cpu_affinity=True):
+def run(
+    args,
+    input=None,
+    cwd=None,
+    env=None,
+    sudo=False,
+    setsid=False,
+    nice=None,
+    ioclass=None,
+    ioclassdata=None,
+    reset_cpu_affinity=True,
+):
     """
     Starts a command communicate with it, and wait until the command
     terminates. Ensures that the command is killed if an unexpected error is
@@ -60,18 +70,20 @@ def run(args, input=None, cwd=None, env=None, sudo=False, setsid=False,
         cmdutils.Error if the command terminated with a non-zero exit code.
         utils.TerminatingFailure if command could not be terminated.
     """
-    p = start(args,
-              stdin=subprocess.PIPE if input else None,
-              stdout=subprocess.PIPE,
-              stderr=subprocess.PIPE,
-              cwd=cwd,
-              env=env,
-              sudo=sudo,
-              setsid=setsid,
-              nice=nice,
-              ioclass=ioclass,
-              ioclassdata=ioclassdata,
-              reset_cpu_affinity=reset_cpu_affinity)
+    p = start(
+        args,
+        stdin=subprocess.PIPE if input else None,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=cwd,
+        env=env,
+        sudo=sudo,
+        setsid=setsid,
+        nice=nice,
+        ioclass=ioclass,
+        ioclassdata=ioclassdata,
+        reset_cpu_affinity=reset_cpu_affinity,
+    )
 
     with terminating(p):
         out, err = p.communicate(input)
@@ -84,9 +96,20 @@ def run(args, input=None, cwd=None, env=None, sudo=False, setsid=False,
     return out
 
 
-def start(args, stdin=None, stdout=None, stderr=None, cwd=None, env=None,
-          sudo=False, setsid=False, nice=None, ioclass=None, ioclassdata=None,
-          reset_cpu_affinity=True):
+def start(
+    args,
+    stdin=None,
+    stdout=None,
+    stderr=None,
+    cwd=None,
+    env=None,
+    sudo=False,
+    setsid=False,
+    nice=None,
+    ioclass=None,
+    ioclassdata=None,
+    reset_cpu_affinity=True,
+):
     """
     Starts a command and return it. The caller is responsible for communicating
     with the commmand, waiting for it, and if needed, terminating it.
@@ -138,12 +161,8 @@ def start(args, stdin=None, stdout=None, stderr=None, cwd=None, env=None,
     cmd_class = PrivilegedPopen if sudo else subprocess.Popen
 
     return cmd_class(
-        args,
-        cwd=cwd,
-        stdin=stdin,
-        stdout=stdout,
-        stderr=stderr,
-        env=env)
+        args, cwd=cwd, stdin=stdin, stdout=stdout, stderr=stderr, env=env
+    )
 
 
 def communicate(proc, input=None):
@@ -178,11 +197,16 @@ def wait_async(proc, event=None):
     The optional event can be used to synchronize with the waiter thread. This
     is useful mainly for testing this code.
     """
+
     def run():
         log.info("Waiting for process %s", proc.pid)
         out, err = proc.communicate()
-        log.info("Process terminated with rc=%r out=%r err=%r",
-                 proc.returncode, out, err)
+        log.info(
+            "Process terminated with rc=%r out=%r err=%r",
+            proc.returncode,
+            out,
+            err,
+        )
         if event:
             event.set()
 
@@ -191,18 +215,34 @@ def wait_async(proc, event=None):
 
 
 @deprecated
-def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
-            printable=None, env=None, nice=None, ioclass=None,
-            ioclassdata=None, setsid=False, execCmdLogger=logging.root,
-            resetCpuAffinity=True):
+def execCmd(
+    command,
+    sudo=False,
+    cwd=None,
+    data=None,
+    raw=False,
+    printable=None,
+    env=None,
+    nice=None,
+    ioclass=None,
+    ioclassdata=None,
+    setsid=False,
+    execCmdLogger=logging.root,
+    resetCpuAffinity=True,
+):
     """
     Executes an external command, optionally via sudo.
     """
 
-    command = cmdutils.wrap_command(command, with_ioclass=ioclass,
-                                    ioclassdata=ioclassdata, with_nice=nice,
-                                    with_setsid=setsid, with_sudo=sudo,
-                                    reset_cpu_affinity=resetCpuAffinity)
+    command = cmdutils.wrap_command(
+        command,
+        with_ioclass=ioclass,
+        ioclassdata=ioclassdata,
+        with_nice=nice,
+        with_setsid=setsid,
+        with_sudo=sudo,
+        reset_cpu_affinity=resetCpuAffinity,
+    )
 
     # Unsubscriptable objects (e.g. generators) need conversion
     if not callable(getattr(command, '__getitem__', None)):
@@ -214,11 +254,17 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     execCmdLogger.debug(command_log_line(printable, cwd=cwd))
 
     p = subprocess.Popen(
-        command, close_fds=True, cwd=cwd, env=env,
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        command,
+        close_fds=True,
+        cwd=cwd,
+        env=env,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
     with terminating(p):
-        (out, err) = p.communicate(data)
+        out, err = p.communicate(data)
 
     if out is None:
         # Prevent splitlines() from barfing later on
@@ -248,8 +294,9 @@ class PrivilegedPopen(subprocess.Popen):
         try:
             run(args, sudo=True, reset_cpu_affinity=False)
         except cmdutils.Error as e:
-            log.warning("Error sending signal to child process %d: %s",
-                        self.pid, e.err)
+            log.warning(
+                "Error sending signal to child process %d: %s", self.pid, e.err
+            )
 
 
 class TerminatingFailure(Exception):

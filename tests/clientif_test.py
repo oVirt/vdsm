@@ -29,9 +29,11 @@ from virt import vmfakelib as fake
 INEXISTENT_PATH = '/no/such/path'
 FAKE_ISOFS_PATH = '/fake/path/to/isofs'
 FAKE_FLOPPY_PATH = '/fake/path/to/floppy'
-ISOFS_PATH = '/rhev/data-center/mnt/A.B.C.D:_ovirt_iso/XXX' \
-             '/images/11111111-1111-1111-1111-111111111111/' \
-             'Fedora-Live-Desktop-x86_64-19.iso'
+ISOFS_PATH = (
+    '/rhev/data-center/mnt/A.B.C.D:_ovirt_iso/XXX'
+    '/images/11111111-1111-1111-1111-111111111111/'
+    'Fedora-Live-Desktop-x86_64-19.iso'
+)
 
 
 class FakeClientIF(clientIF.clientIF):
@@ -77,7 +79,7 @@ def fakeDrive():
         'path': ISOFS_PATH,
         'device': 'cdrom',
         'shared': 'false',
-        'type': 'disk'
+        'type': 'disk',
     }
 
 
@@ -90,7 +92,7 @@ def fakePayloadDrive():
             'file': {
                 'openstack/latest/meta_data.json': '',
                 'openstack/latest/user_data': '',
-            }
+            },
         }
     }
     return drive
@@ -124,9 +126,9 @@ class ClientIFTests(TestCaseBase):
 
     def testBadDrive(self):
         assert not os.path.exists(INEXISTENT_PATH)
-        self.assertRaises(VolumeError,
-                          self.cif.prepareVolumePath,
-                          INEXISTENT_PATH)
+        self.assertRaises(
+            VolumeError, self.cif.prepareVolumePath, INEXISTENT_PATH
+        )
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
     def testCDRomFromPayload(self):
@@ -139,9 +141,7 @@ class ClientIFTests(TestCaseBase):
     def testNoPayloadFileKey(self):
         payloadDrive = fakePayloadDrive()
         del payloadDrive['specParams']['vmPayload']['file']
-        self.assertRaises(KeyError,
-                          self.cif.prepareVolumePath,
-                          payloadDrive)
+        self.assertRaises(KeyError, self.cif.prepareVolumePath, payloadDrive)
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
     def testNoPayloadVolIdKey(self):
@@ -166,9 +166,7 @@ class ClientIFTests(TestCaseBase):
         drive = fakeDrive()
         del drive['specParams']
         del drive['path']
-        self.assertRaises(VolumeError,
-                          self.cif.prepareVolumePath,
-                          drive)
+        self.assertRaises(VolumeError, self.cif.prepareVolumePath, drive)
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
     def testCDRomEmpty(self):
@@ -191,9 +189,7 @@ class ClientIFTests(TestCaseBase):
     def testDriveWithoutDeviceKey(self):
         drive = fakeDrive()
         del drive['device']
-        self.assertRaises(KeyError,
-                          self.cif.prepareVolumePath,
-                          drive)
+        self.assertRaises(KeyError, self.cif.prepareVolumePath, drive)
 
     def testDriveWithUnsupportedDeviceKey(self):
         drive = fakeDrive()
@@ -209,29 +205,30 @@ class ClientIFTests(TestCaseBase):
                     guid: False,
                 },
             }
+
         self.cif.irs.getDeviceVisibility = _not_visible
-        self.assertRaisesRegex(
-            VolumeError,
-            'Drive ^[a-z]*$ not visible')
+        self.assertRaisesRegex(VolumeError, 'Drive ^[a-z]*$ not visible')
 
     def test_lun_drive_not_appropriatable(self):
         def _not_appropriatable(self, guid, vmid):
             # any error is actually fine
             return response.error('unexpected')
+
         self.cif.irs.appropriateDevice = _not_appropriatable
         self.assertRaisesRegex(
-            VolumeError,
-            'Cannot appropriate drive ^[a-z]*$')
+            VolumeError, 'Cannot appropriate drive ^[a-z]*$'
+        )
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
     def testSuperVdsmFailure(self):
         def fail(*args, **kwargs):
             raise RuntimeError('Injected fail')
+
         sv = clientIF.supervdsm.getProxy()
         sv.mkIsoFs = fail
-        self.assertRaises(RuntimeError,
-                          self.cif.prepareVolumePath,
-                          fakePayloadDrive())
+        self.assertRaises(
+            RuntimeError, self.cif.prepareVolumePath, fakePayloadDrive()
+        )
 
 
 class getVMsTests(TestCaseBase):
@@ -282,13 +279,13 @@ class TestPrepareNetworkDrive(TestCaseBase):
         volinfo = {
             "path": "v/sd/images/img/vol_id",
             "protocol": "gluster",
-            "hosts": ["host_one", "host_two"]
+            "hosts": ["host_one", "host_two"],
         }
         res = {"info": volinfo}
 
         volume_chain = [
             {"volumeID": "11111111-1111-1111-1111-111111111111"},
-            {"volumeID": "22222222-2222-2222-2222-222222222222"}
+            {"volumeID": "22222222-2222-2222-2222-222222222222"},
         ]
         drive = fakeDrive()
         drive['volumeChain'] = volume_chain
@@ -300,12 +297,12 @@ class TestPrepareNetworkDrive(TestCaseBase):
         expected_chain = [
             {
                 "volumeID": "11111111-1111-1111-1111-111111111111",
-                "path": "v/sd/images/img/11111111-1111-1111-1111-111111111111"
+                "path": "v/sd/images/img/11111111-1111-1111-1111-111111111111",
             },
             {
                 "volumeID": "22222222-2222-2222-2222-222222222222",
-                "path": "v/sd/images/img/22222222-2222-2222-2222-222222222222"
-            }
+                "path": "v/sd/images/img/22222222-2222-2222-2222-222222222222",
+            },
         ]
 
         self.assertEqual(actual, expected)
@@ -336,15 +333,20 @@ class NotSoFakeClientIF(clientIF.clientIF):
         log = logging.getLogger('test.ClientIF')
         scheduler = None
         fake_start = mock.Mock()
-        with MonkeyPatchScope([
+        with MonkeyPatchScope(
+            [
                 (clientIF, '_glusterEnabled', False),
                 (clientIF, 'secret', {}),
                 (clientIF, 'MomClient', lambda *args: mock.Mock()),
                 (clientIF, 'QemuGuestAgentPoller', lambda *args: fake_start),
                 (clientIF, 'Listener', lambda *args: mock.Mock()),
-                (clientIF.concurrent, 'thread',
-                 lambda *args, **kwargs: fake_start),
-        ]):
+                (
+                    clientIF.concurrent,
+                    'thread',
+                    lambda *args, **kwargs: fake_start,
+                ),
+            ]
+        ):
             super(NotSoFakeClientIF, self).__init__(irs, log, scheduler)
 
     def _createAcceptor(self, host, port):
@@ -375,13 +377,15 @@ class TestExternalVMTracking(TestCaseBase):
     def setUp(self):
         self.cif = NotSoFakeClientIF()
         self.dom_class = collections.namedtuple('Dom', 'UUIDString')
-        self._dispatch_events([
-            ('1', libvirt.VIR_DOMAIN_EVENT_DEFINED),
-            ('2', libvirt.VIR_DOMAIN_EVENT_DEFINED),
-            ('2', libvirt.VIR_DOMAIN_EVENT_DEFINED),
-            ('3', libvirt.VIR_DOMAIN_EVENT_UNDEFINED),
-            ('1', libvirt.VIR_DOMAIN_EVENT_STARTED),
-        ])
+        self._dispatch_events(
+            [
+                ('1', libvirt.VIR_DOMAIN_EVENT_DEFINED),
+                ('2', libvirt.VIR_DOMAIN_EVENT_DEFINED),
+                ('2', libvirt.VIR_DOMAIN_EVENT_DEFINED),
+                ('3', libvirt.VIR_DOMAIN_EVENT_UNDEFINED),
+                ('1', libvirt.VIR_DOMAIN_EVENT_STARTED),
+            ]
+        )
 
     def _dispatch_events(self, vm_events):
         for vm_id, event in vm_events:
@@ -393,7 +397,8 @@ class TestExternalVMTracking(TestCaseBase):
         dom = self.dom_class(UUIDString=lambda: vmid)
         self.assertEqual(self.cif.getVMs(), {})
         eventid, v = self.cif.lookup_vm_from_event(
-            dom, libvirt.VIR_DOMAIN_EVENT_ID_REBOOT, 0, 0)
+            dom, libvirt.VIR_DOMAIN_EVENT_ID_REBOOT, 0, 0
+        )
         self.assertIs(v, None)
         self.assertNotIn(vmid, self.cif.pop_unknown_vm_ids())
 
@@ -405,42 +410,37 @@ class TestExternalVMTracking(TestCaseBase):
         self.assertEqual(cif.getVMs(), {})
 
         cif.dispatchLibvirtEvents(
-            None, dom, 0, 0, libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE)
+            None, dom, 0, 0, libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE
+        )
 
         for level, fmt, args in cif.log.messages:
             self.assertNotEqual(level, logging.ERROR)
 
     def test_external_vms_lookup(self):
-        self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()),
-                         ['1', '2'])
+        self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), ['1', '2'])
         self.assertEqual(self.cif.pop_unknown_vm_ids(), [])
 
     @MonkeyPatch(libvirtconnection, 'get', lambda: FakeConnection(['2', '3']))
     def test_external_vm_ids_removal(self):
-        with MonkeyPatchScope([
-                (clientIF, 'Vm', FakeVm)
-        ]):
+        with MonkeyPatchScope([(clientIF, 'Vm', FakeVm)]):
             recovery.lookup_external_vms(self.cif)
         self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), [])
         self.assertEqual(sorted(self.cif.vmContainer.keys()), ['2'])
 
     @MonkeyPatch(
-        libvirtconnection, 'get',
-        lambda: FakeConnection(['2', '3'], error=libvirt.VIR_ERR_ERROR)
+        libvirtconnection,
+        'get',
+        lambda: FakeConnection(['2', '3'], error=libvirt.VIR_ERR_ERROR),
     )
     def test_external_vm_ids_errors(self):
-        with MonkeyPatchScope([
-                (clientIF, 'Vm', None)
-        ]):
+        with MonkeyPatchScope([(clientIF, 'Vm', None)]):
             recovery.lookup_external_vms(self.cif)
         self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), ['1'])
         self.assertEqual(sorted(self.cif.vmContainer.keys()), [])
 
     @MonkeyPatch(libvirtconnection, 'get', lambda: FakeConnection(['2', '3']))
     def test_external_vm_recovery_errors(self):
-        with MonkeyPatchScope([
-                (clientIF, 'Vm', FakeVm)
-        ]):
+        with MonkeyPatchScope([(clientIF, 'Vm', FakeVm)]):
             recovery.lookup_external_vms(self.cif)
         self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), [])
         self.assertEqual(sorted(self.cif.vmContainer.keys()), ['2'])

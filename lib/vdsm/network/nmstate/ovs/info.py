@@ -19,7 +19,6 @@ from ..schema import InterfaceType
 from ..schema import OvsBridgeSchema
 from ..schema import Route
 
-
 EMPTY_INFO = {
     NetInfoIfaceSchema.IPv4.PRIMARY_ADDR: '',
     NetInfoIfaceSchema.IPv4.ADRRS: [],

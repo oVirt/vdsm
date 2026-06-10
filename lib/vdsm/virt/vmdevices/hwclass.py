@@ -18,4 +18,8 @@ TO_REFRESH = (
     NIC,  # needed by many network-related hooks (vmfex, ovn)
 )
 
-HOTPLUGGABLE = (DISK, NIC, LEASE,)
+HOTPLUGGABLE = (
+    DISK,
+    NIC,
+    LEASE,
+)

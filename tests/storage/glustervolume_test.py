@@ -38,8 +38,10 @@ class GlusterVolume(glusterVolume.GlusterVolume):
         return "sd_id"
 
     def getVolumePath(self):
-        return "/rhev/data-center/mnt/glusterSD/host.example.com:_volume/" \
-               "sd_id/images/img_id/vol_id"
+        return (
+            "/rhev/data-center/mnt/glusterSD/host.example.com:_volume/"
+            "sd_id/images/img_id/vol_id"
+        )
 
 
 class TestVolumeInfo(VdsmTestCase):
@@ -50,8 +52,12 @@ class TestVolumeInfo(VdsmTestCase):
 
         svdsm = FakeSuperVdsm(gluster_volume_info)
 
-        with MonkeyPatchScope([(glusterVolume, 'sdCache', sdcache),
-                               (glusterVolume, 'svdsm', svdsm)]):
+        with MonkeyPatchScope(
+            [
+                (glusterVolume, 'sdCache', sdcache),
+                (glusterVolume, 'svdsm', svdsm),
+            ]
+        ):
             yield
 
     def test_no_data(self):
@@ -60,12 +66,8 @@ class TestVolumeInfo(VdsmTestCase):
             "path": "volume/sd_id/images/img_id/vol_id",
             "protocol": "gluster",
             "hosts": [
-                {
-                    "name": "host.example.com",
-                    "transport": "tcp",
-                    "port": "0"
-                }
-            ]
+                {"name": "host.example.com", "transport": "tcp", "port": "0"}
+            ],
         }
         self.check(None, expected)
 
@@ -75,9 +77,9 @@ class TestVolumeInfo(VdsmTestCase):
                 "bricks": [
                     "host1.example.com:/rhgs/volume",
                     "host2.example.com:/rhgs/volume",
-                    "host3.example.com:/rhgs/volume"
+                    "host3.example.com:/rhgs/volume",
                 ],
-                "transportType": ["TCP"]
+                "transportType": ["TCP"],
             }
         }
 
@@ -86,27 +88,11 @@ class TestVolumeInfo(VdsmTestCase):
             "path": "volume/sd_id/images/img_id/vol_id",
             "protocol": "gluster",
             "hosts": [
-                {
-                    "name": "host.example.com",
-                    "transport": "tcp",
-                    "port": "0"
-                },
-                {
-                    "name": "host1.example.com",
-                    "transport": "tcp",
-                    "port": "0"
-                },
-                {
-                    "name": "host2.example.com",
-                    "transport": "tcp",
-                    "port": "0"
-                },
-                {
-                    "name": "host3.example.com",
-                    "transport": "tcp",
-                    "port": "0"
-                }
-            ]
+                {"name": "host.example.com", "transport": "tcp", "port": "0"},
+                {"name": "host1.example.com", "transport": "tcp", "port": "0"},
+                {"name": "host2.example.com", "transport": "tcp", "port": "0"},
+                {"name": "host3.example.com", "transport": "tcp", "port": "0"},
+            ],
         }
 
         self.check(gluster_volume_info, expected)
@@ -120,9 +106,9 @@ class TestVolumeInfo(VdsmTestCase):
                 "bricks": [
                     "host.example.com:/rhgs/volume",
                     "host2.example.com:/rhgs/volume",
-                    "host3.example.com:/rhgs/volume"
+                    "host3.example.com:/rhgs/volume",
                 ],
-                "transportType": ["TCP"]
+                "transportType": ["TCP"],
             }
         }
 
@@ -131,22 +117,10 @@ class TestVolumeInfo(VdsmTestCase):
             "path": "volume/sd_id/images/img_id/vol_id",
             "protocol": "gluster",
             "hosts": [
-                {
-                    "name": "host.example.com",
-                    "transport": "tcp",
-                    "port": "0"
-                },
-                {
-                    "name": "host2.example.com",
-                    "transport": "tcp",
-                    "port": "0"
-                },
-                {
-                    "name": "host3.example.com",
-                    "transport": "tcp",
-                    "port": "0"
-                }
-            ]
+                {"name": "host.example.com", "transport": "tcp", "port": "0"},
+                {"name": "host2.example.com", "transport": "tcp", "port": "0"},
+                {"name": "host3.example.com", "transport": "tcp", "port": "0"},
+            ],
         }
 
         self.check(gluster_volume_info, expected)
@@ -157,9 +131,9 @@ class TestVolumeInfo(VdsmTestCase):
                 "bricks": [
                     "host.example.com:/rhgs/volume",
                     "host2.example.com:/rhgs/volume",
-                    "host3.example.com:/rhgs/volume"
+                    "host3.example.com:/rhgs/volume",
                 ],
-                "transportType": ["RDMA"]
+                "transportType": ["RDMA"],
             }
         }
 
@@ -168,22 +142,18 @@ class TestVolumeInfo(VdsmTestCase):
             "path": "volume/sd_id/images/img_id/vol_id",
             "protocol": "gluster",
             "hosts": [
-                {
-                    "name": "host.example.com",
-                    "transport": "rdma",
-                    "port": "0"
-                },
+                {"name": "host.example.com", "transport": "rdma", "port": "0"},
                 {
                     "name": "host2.example.com",
                     "transport": "rdma",
-                    "port": "0"
+                    "port": "0",
                 },
                 {
                     "name": "host3.example.com",
                     "transport": "rdma",
-                    "port": "0"
-                }
-            ]
+                    "port": "0",
+                },
+            ],
         }
 
         self.check(gluster_volume_info, expected)

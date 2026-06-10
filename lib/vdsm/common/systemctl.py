@@ -92,5 +92,7 @@ def _parse_properties(out):
         return []
 
     # Some matches - parse the lines.
-    return [dict(pair.split("=", 1) for pair in unit.split("\n"))
-            for unit in out.split("\n\n")]
+    return [
+        dict(pair.split("=", 1) for pair in unit.split("\n"))
+        for unit in out.split("\n\n")
+    ]

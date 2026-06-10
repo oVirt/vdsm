@@ -12,28 +12,39 @@ from vdsm.common.units import KiB
 from . import exception as ge
 from . import gluster_mgmt_api
 
-
 log = logging.getLogger("Gluster")
-_lvsCommandPath = cmdutils.CommandPath("lvs",
-                                       "/sbin/lvs",
-                                       "/usr/sbin/lvs",)
-_pvsCommandPath = cmdutils.CommandPath("pvs",
-                                       "/sbin/pvs",
-                                       "/usr/sbin/pvs",)
-_vdoCommandPath = cmdutils.CommandPath("vdo",
-                                       "/bin/vdo",
-                                       "/usr/bin/vdo",)
+_lvsCommandPath = cmdutils.CommandPath(
+    "lvs",
+    "/sbin/lvs",
+    "/usr/sbin/lvs",
+)
+_pvsCommandPath = cmdutils.CommandPath(
+    "pvs",
+    "/sbin/pvs",
+    "/usr/sbin/pvs",
+)
+_vdoCommandPath = cmdutils.CommandPath(
+    "vdo",
+    "/bin/vdo",
+    "/usr/bin/vdo",
+)
 
 
 @gluster_mgmt_api
 def logicalVolumeList():
     try:
-        out = commands.run([_lvsCommandPath.cmd,
-                            "--reportformat", "json",
-                            "--units", "b",
-                            "--nosuffix",
-                            "-o",
-                            "lv_size,data_percent,lv_name,vg_name,pool_lv"])
+        out = commands.run(
+            [
+                _lvsCommandPath.cmd,
+                "--reportformat",
+                "json",
+                "--units",
+                "b",
+                "--nosuffix",
+                "-o",
+                "lv_size,data_percent,lv_name,vg_name,pool_lv",
+            ]
+        )
     except cmdutils.Error as e:
         raise ge.GlusterCmdExecFailedException(e.rc, e.err)
     volumes = []
@@ -53,10 +64,18 @@ def logicalVolumeList():
 @gluster_mgmt_api
 def physicalVolumeList():
     try:
-        out = commands.run([_pvsCommandPath.cmd,
-                            "--reportformat", "json",
-                            "--units", "b", "--nosuffix",
-                            "-o", "pv_name,vg_name"])
+        out = commands.run(
+            [
+                _pvsCommandPath.cmd,
+                "--reportformat",
+                "json",
+                "--units",
+                "b",
+                "--nosuffix",
+                "-o",
+                "pv_name,vg_name",
+            ]
+        )
     except cmdutils.Error as e:
         raise ge.GlusterCmdExecFailedException(e.rc, e.err)
     return json.loads(out)["report"][0]["pv"]
@@ -90,10 +109,10 @@ def _process_vdo_statistics(data):
             entry["name"] = name
             entry["size"] = stats["1K-blocks"] * KiB
             entry["free"] = stats["1K-blocks available"] * KiB
-            entry["logicalBytesUsed"] = (stats["logical blocks used"]
-                                         * blockSize)
-            entry["physicalBytesUsed"] = (stats["data blocks used"]
-                                          * blockSize)
+            entry["logicalBytesUsed"] = (
+                stats["logical blocks used"] * blockSize
+            )
+            entry["physicalBytesUsed"] = stats["data blocks used"] * blockSize
     except KeyError as e:
         log.error("Missing or invalid values in vdo data,skipping. %s", e)
         # Returning an empty object so as not to add to the device list

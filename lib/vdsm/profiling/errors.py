@@ -7,4 +7,4 @@ This module provides exceptions for the profiling package.
 
 
 class UsageError(Exception):
-    """ Raised when profiler is used incorrectly """
+    """Raised when profiler is used incorrectly"""

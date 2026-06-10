@@ -19,7 +19,8 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 FAKE_VIRTSYSPREP = utils.LibguestfsCommand(
-    os.path.abspath('fake-virt-sysprep'))
+    os.path.abspath('fake-virt-sysprep')
+)
 TEARDOWN_ERROR_IMAGE_ID = make_uuid()
 
 
@@ -32,8 +33,9 @@ class FakeIRS(object):
         self._image_path_base = image_path_base
 
     @recorded
-    def prepareImage(self, domainId, poolId, imageId, volumeId,
-                     allowIllegal=False):
+    def prepareImage(
+        self, domainId, poolId, imageId, volumeId, allowIllegal=False
+    ):
         imagepath = _vol_path(self._image_path_base, domainId, poolId, imageId)
         with io.open(imagepath, 'w'):
             pass
@@ -45,8 +47,9 @@ class FakeIRS(object):
             return response.error('teardownError')
 
         imagepath = _vol_path(self._image_path_base, domainId, poolId, imageId)
-        resultpath = _vol_path(self._image_path_base, domainId, poolId,
-                               imageId, ext='.res')
+        resultpath = _vol_path(
+            self._image_path_base, domainId, poolId, imageId, ext='.res'
+        )
         os.rename(imagepath, resultpath)
         return response.success()
 
@@ -81,19 +84,23 @@ class SealJobTest(VdsmTestCase):
         ]
 
         expected = [
-            ('prepareImage', (sd_id, sp_id, img0_id, vol0_id),
-             {'allowIllegal': True}),
-            ('prepareImage', (sd_id, sp_id, img1_id, vol1_id),
-             {'allowIllegal': True}),
+            (
+                'prepareImage',
+                (sd_id, sp_id, img0_id, vol0_id),
+                {'allowIllegal': True},
+            ),
+            (
+                'prepareImage',
+                (sd_id, sp_id, img1_id, vol1_id),
+                {'allowIllegal': True},
+            ),
             ('teardownImage', (sd_id, sp_id, img1_id), {}),
             ('teardownImage', (sd_id, sp_id, img0_id), {}),
         ]
         with namedTemporaryDir() as base:
             irs = FakeIRS(base)
 
-            with MonkeyPatchScope([
-                (utils, '_COMMANDS_LOG_DIR', base)
-            ]):
+            with MonkeyPatchScope([(utils, '_COMMANDS_LOG_DIR', base)]):
                 job = seal.Job(BLANK_UUID, job_id, sp_id, images, irs)
                 job.autodelete = False
                 job.run()
@@ -102,8 +109,9 @@ class SealJobTest(VdsmTestCase):
             assert expected == irs.__calls__
 
             for image in images:
-                resultpath = _vol_path(base, image['sd_id'], sp_id,
-                                       image['img_id'], ext='.res')
+                resultpath = _vol_path(
+                    base, image['sd_id'], sp_id, image['img_id'], ext='.res'
+                )
                 with open(resultpath) as f:
                     data = f.read()
                     assert data == 'fake-virt-sysprep was here'
@@ -123,10 +131,16 @@ class SealJobTest(VdsmTestCase):
         ]
 
         expected = [
-            ('prepareImage', (sd_id, sp_id, img0_id, vol0_id),
-             {'allowIllegal': True}),
-            ('prepareImage', (sd_id, sp_id, img1_id, vol1_id),
-             {'allowIllegal': True}),
+            (
+                'prepareImage',
+                (sd_id, sp_id, img0_id, vol0_id),
+                {'allowIllegal': True},
+            ),
+            (
+                'prepareImage',
+                (sd_id, sp_id, img1_id, vol1_id),
+                {'allowIllegal': True},
+            ),
             ('teardownImage', (sd_id, sp_id, img1_id), {}),
             ('teardownImage', (sd_id, sp_id, img0_id), {}),
         ]
@@ -134,9 +148,7 @@ class SealJobTest(VdsmTestCase):
         with namedTemporaryDir() as base:
             irs = FakeIRS(base)
 
-            with MonkeyPatchScope([
-                (utils, '_COMMANDS_LOG_DIR', base)
-            ]):
+            with MonkeyPatchScope([(utils, '_COMMANDS_LOG_DIR', base)]):
                 job = seal.Job(BLANK_UUID, job_id, sp_id, images, irs)
                 job.autodelete = False
                 job.run()

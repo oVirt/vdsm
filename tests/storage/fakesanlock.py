@@ -44,10 +44,12 @@ class FakeSanlock(object):
 
     # Tuples with supported alignment and sector size.
     # Copied from python/sanlock.c
-    ALIGN_SIZE = (sc.ALIGNMENT_1M,
-                  sc.ALIGNMENT_2M,
-                  sc.ALIGNMENT_4M,
-                  sc.ALIGNMENT_8M)
+    ALIGN_SIZE = (
+        sc.ALIGNMENT_1M,
+        sc.ALIGNMENT_2M,
+        sc.ALIGNMENT_4M,
+        sc.ALIGNMENT_8M,
+    )
     SECTOR_SIZE = (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K)
 
     RES_LVER = 1
@@ -69,7 +71,8 @@ class FakeSanlock(object):
         self.process_socket = None
 
     def check_align_and_sector(
-            self, align, sector, resource=None, check_sector=True):
+        self, align, sector, resource=None, check_sector=True
+    ):
         """
         Check that alignment and sector size contain valid values.
         This means that the values are in ALIGN_SIZE/SECTOR_SIZE tuple
@@ -115,8 +118,9 @@ class FakeSanlock(object):
             raise self._error(errno.EINVAL, error)
 
     @maybefail
-    def add_lockspace(self, lockspace, host_id, path, offset=0, iotimeout=0,
-                      wait=True):
+    def add_lockspace(
+        self, lockspace, host_id, path, offset=0, iotimeout=0, wait=True
+    ):
         """
         Add a lockspace, acquiring a host_id in it. If wait is False the
         function will return immediatly and the status can be checked
@@ -138,9 +142,11 @@ class FakeSanlock(object):
         if host:
             generation = host["generation"] + 1
 
-        host = {"id": host_id,
-                "generation": generation,
-                "flags": sanlock.HOST_LIVE}
+        host = {
+            "id": host_id,
+            "generation": generation,
+            "flags": sanlock.HOST_LIVE,
+        }
         self.hosts[host_id] = host
 
         # Mark the locksapce as not ready, so callers of inq_lockspace will
@@ -162,8 +168,9 @@ class FakeSanlock(object):
             ls["complete"] = complete
 
     @maybefail
-    def rem_lockspace(self, lockspace, host_id, path, offset=0,
-                      unused=False, wait=True):
+    def rem_lockspace(
+        self, lockspace, host_id, path, offset=0, unused=False, wait=True
+    ):
         """
         Remove a lockspace, releasing the acquired host_id. If wait is
         False the function will return immediately and the status can be
@@ -226,9 +233,16 @@ class FakeSanlock(object):
         return "host_id" in ls
 
     @maybefail
-    def write_resource(self, lockspace, resource, disks, max_hosts=0,
-                       num_hosts=0, align=ALIGN_SIZE[0],
-                       sector=SECTOR_SIZE[0]):
+    def write_resource(
+        self,
+        lockspace,
+        resource,
+        disks,
+        max_hosts=0,
+        num_hosts=0,
+        align=ALIGN_SIZE[0],
+        sector=SECTOR_SIZE[0],
+    ):
         # Validate lockspace and resource names are given as bytes.
         self._validate_bytes(lockspace)
         self._validate_bytes(resource)
@@ -254,14 +268,17 @@ class FakeSanlock(object):
 
     @maybefail
     def read_resource(
-            self, path, offset=0, align=ALIGN_SIZE[0], sector=SECTOR_SIZE[0]):
+        self, path, offset=0, align=ALIGN_SIZE[0], sector=SECTOR_SIZE[0]
+    ):
         key = (path, offset)
         if key not in self.resources:
             raise self._error(
-                self.SANLK_LEADER_MAGIC, "Sanlock resource read failure")
+                self.SANLK_LEADER_MAGIC, "Sanlock resource read failure"
+            )
 
         self.check_align_and_sector(
-            align, sector, resource=self.resources[key])
+            align, sector, resource=self.resources[key]
+        )
 
         res = self.resources[key].copy()
 
@@ -277,14 +294,24 @@ class FakeSanlock(object):
         """
         # This check is not done by real sanlock, but it is important to detect
         # wrong usage of the library.
-        assert (self.process_socket is None or
-                self.process_socket.fileno() == -1)
+        assert (
+            self.process_socket is None or self.process_socket.fileno() == -1
+        )
 
         self.process_socket = socket.socket(socket.AF_UNIX)
         return self.process_socket.fileno()
 
-    def acquire(self, lockspace, resource, disks, slkfd=None, pid=None,
-                shared=False, version=None, lvb=False):
+    def acquire(
+        self,
+        lockspace,
+        resource,
+        disks,
+        slkfd=None,
+        pid=None,
+        shared=False,
+        version=None,
+        lvb=False,
+    ):
         """
         Acquire a resource lease for the current process (using the
         slkfd argument to specify the sanlock file descriptor) or for an
@@ -400,8 +427,13 @@ class FakeSanlock(object):
         return result
 
     def read_resource_owners(
-            self, lockspace, resource, disks, align=ALIGN_SIZE[0],
-            sector=SECTOR_SIZE[0]):
+        self,
+        lockspace,
+        resource,
+        disks,
+        align=ALIGN_SIZE[0],
+        sector=SECTOR_SIZE[0],
+    ):
         error = "Unable to read resource owners"
 
         # Validate lockspace and resource name are given as bytes.
@@ -430,10 +462,7 @@ class FakeSanlock(object):
 
         # The actual sanlock also returns timestamp and host flags but we do
         # not use these fields in the tested code so they are not added
-        return [{
-            "host_id": res["host_id"],
-            "generation": res["generation"]
-        }]
+        return [{"host_id": res["host_id"], "generation": res["generation"]}]
 
     def get_hosts(self, lockspace, host_id=0):
         error = "Sanlock get hosts failure"
@@ -445,9 +474,16 @@ class FakeSanlock(object):
 
         return [self.hosts[host_id]]
 
-    def write_lockspace(self, lockspace, path, offset=0, max_hosts=0,
-                        iotimeout=0, align=ALIGN_SIZE[0],
-                        sector=SECTOR_SIZE[0]):
+    def write_lockspace(
+        self,
+        lockspace,
+        path,
+        offset=0,
+        max_hosts=0,
+        iotimeout=0,
+        align=ALIGN_SIZE[0],
+        sector=SECTOR_SIZE[0],
+    ):
         """
         Initialize a device to be used as sanlock lock space.
         In our case, we just create empty dictionary for a lockspace.
@@ -468,7 +504,8 @@ class FakeSanlock(object):
         self.spaces[lockspace] = ls
 
     def dump_leases(
-            self, path, offset=0, size=None, block_size=None, alignment=None):
+        self, path, offset=0, size=None, block_size=None, alignment=None
+    ):
         dump = []
 
         for (rpath, roffset), rinfo in self.resources.items():
@@ -480,7 +517,7 @@ class FakeSanlock(object):
                     'timestamp': 0,
                     'own': 0,
                     'gen': 0,
-                    'lver': 0
+                    'lver': 0,
                 }
                 dump.append(rec)
 
@@ -488,7 +525,8 @@ class FakeSanlock(object):
         return iter(dump)
 
     def dump_lockspace(
-            self, path, offset=0, size=None, block_size=None, alignment=None):
+        self, path, offset=0, size=None, block_size=None, alignment=None
+    ):
         dump = []
 
         for lsname, lsinfo in self.spaces.items():
@@ -501,7 +539,7 @@ class FakeSanlock(object):
                     'resource': lsinfo.get('host_id', 0),
                     'timestamp': 0,
                     'own': 0,
-                    'gen': 0
+                    'gen': 0,
                 }
                 dump.append(rec)
 
@@ -538,8 +576,8 @@ class FakeSanlock(object):
 
         if size < 1 or size > 4096:
             raise ValueError(
-                "Invalid size %d, must be in range: 0 < size <= 4096",
-                size)
+                "Invalid size %d, must be in range: 0 < size <= 4096", size
+            )
 
         # Do we have a lockspace?
         try:

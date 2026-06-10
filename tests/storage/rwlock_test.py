@@ -253,12 +253,16 @@ class TestRWLockStress(VdsmTestCase):
         print("writers: %d readers: %d" % (writers, readers))
 
         avg_writes, med_writes, min_writes, max_writes = stats(writes)
-        print("writes  avg=%.2f med=%d min=%d max=%d"
-              % (avg_writes, med_writes, min_writes, max_writes))
+        print(
+            "writes  avg=%.2f med=%d min=%d max=%d"
+            % (avg_writes, med_writes, min_writes, max_writes)
+        )
 
         avg_reads, med_reads, min_reads, max_reads = stats(reads)
-        print("reads   avg=%.2f med=%d min=%d max=%d"
-              % (avg_reads, med_reads, min_reads, max_reads))
+        print(
+            "reads   avg=%.2f med=%d min=%d max=%d"
+            % (avg_reads, med_reads, min_reads, max_reads)
+        )
 
     @pytest.mark.stress
     @permutations([(1,), (2,), (4,), (8,), (16,), (32,), (64,), (128,)])
@@ -288,8 +292,10 @@ class TestRWLockStress(VdsmTestCase):
 
         print()
         avg_reads, med_reads, min_reads, max_reads = stats(reads)
-        print("reads   avg=%.2f med=%d min=%d max=%d"
-              % (avg_reads, med_reads, min_reads, max_reads))
+        print(
+            "reads   avg=%.2f med=%d min=%d max=%d"
+            % (avg_reads, med_reads, min_reads, max_reads)
+        )
 
 
 def stats(seq):

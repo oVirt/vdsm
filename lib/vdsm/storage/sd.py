@@ -83,14 +83,25 @@ POSIXFS_DOMAIN = 6
 GLUSTERFS_DOMAIN = 7
 
 BLOCK_DOMAIN_TYPES = [FCP_DOMAIN, ISCSI_DOMAIN]
-FILE_DOMAIN_TYPES = [NFS_DOMAIN, LOCALFS_DOMAIN, CIFS_DOMAIN, POSIXFS_DOMAIN,
-                     GLUSTERFS_DOMAIN]
+FILE_DOMAIN_TYPES = [
+    NFS_DOMAIN,
+    LOCALFS_DOMAIN,
+    CIFS_DOMAIN,
+    POSIXFS_DOMAIN,
+    GLUSTERFS_DOMAIN,
+]
 
 # use only upper case for values - see storageType()
-DOMAIN_TYPES = {UNKNOWN_DOMAIN: 'UNKNOWN', NFS_DOMAIN: 'NFS',
-                FCP_DOMAIN: 'FCP', ISCSI_DOMAIN: 'ISCSI',
-                LOCALFS_DOMAIN: 'LOCALFS', CIFS_DOMAIN: 'CIFS',
-                POSIXFS_DOMAIN: 'POSIXFS', GLUSTERFS_DOMAIN: 'GLUSTERFS'}
+DOMAIN_TYPES = {
+    UNKNOWN_DOMAIN: 'UNKNOWN',
+    NFS_DOMAIN: 'NFS',
+    FCP_DOMAIN: 'FCP',
+    ISCSI_DOMAIN: 'ISCSI',
+    LOCALFS_DOMAIN: 'LOCALFS',
+    CIFS_DOMAIN: 'CIFS',
+    POSIXFS_DOMAIN: 'POSIXFS',
+    GLUSTERFS_DOMAIN: 'GLUSTERFS',
+}
 
 # Storage Domains Statuses: keep them capitalize
 # DOM_UNINITIALIZED_STATUS = 'Uninitialized'
@@ -103,8 +114,12 @@ DOM_ATTACHED_STATUS = 'Attached'
 DOM_UNATTACHED_STATUS = 'Unattached'
 DOM_ACTIVE_STATUS = 'Active'
 
-DOMAIN_STATUSES = [DOM_UNKNOWN_STATUS, DOM_ATTACHED_STATUS,
-                   DOM_UNATTACHED_STATUS, DOM_ACTIVE_STATUS]
+DOMAIN_STATUSES = [
+    DOM_UNKNOWN_STATUS,
+    DOM_ATTACHED_STATUS,
+    DOM_UNATTACHED_STATUS,
+    DOM_ACTIVE_STATUS,
+]
 DEPRECATED_STATUSES = {DEPRECATED_DOM_INACTIVE_STATUS: DOM_ATTACHED_STATUS}
 
 # Domain Role
@@ -114,8 +129,11 @@ REGULAR_DOMAIN = 'Regular'
 DATA_DOMAIN = 1
 ISO_DOMAIN = 2
 BACKUP_DOMAIN = 3
-DOMAIN_CLASSES = {DATA_DOMAIN: 'Data', ISO_DOMAIN: 'Iso',
-                  BACKUP_DOMAIN: 'Backup'}
+DOMAIN_CLASSES = {
+    DATA_DOMAIN: 'Data',
+    ISO_DOMAIN: 'Iso',
+    BACKUP_DOMAIN: 'Backup',
+}
 
 # Metadata keys
 DMDK_VERSION = "VERSION"
@@ -139,11 +157,13 @@ DMDK_LEASE_RETRIES = 'LEASERETRIES'
 DMDK_LOGBLKSIZE = "LOGBLKSIZE"
 DMDK_PHYBLKSIZE = "PHYBLKSIZE"
 
-DEFAULT_LEASE_PARAMS = {DMDK_LOCK_POLICY: "ON",
-                        DMDK_LEASE_RETRIES: 3,
-                        DMDK_LEASE_TIME_SEC: 60,
-                        DMDK_LOCK_RENEWAL_INTERVAL_SEC: 5,
-                        DMDK_IO_OP_TIMEOUT_SEC: 10}
+DEFAULT_LEASE_PARAMS = {
+    DMDK_LOCK_POLICY: "ON",
+    DMDK_LEASE_RETRIES: 3,
+    DMDK_LEASE_TIME_SEC: 60,
+    DMDK_LOCK_RENEWAL_INTERVAL_SEC: 5,
+    DMDK_IO_OP_TIMEOUT_SEC: 10,
+}
 
 MASTER_FS_DIR = 'master'
 VMS_DIR = 'vms'
@@ -167,19 +187,21 @@ SDM_LEASE_SLOT = 1
 #  - 2..100  (Unassigned)
 RESERVED_LEASES = 100
 
-VolumeSize = namedtuple("VolumeSize", [
-    # The logical volume size in block storage and file size in file
-    # storage.
-    "apparentsize",
-
-    # The allocated size on storage. Same as apparentsize in block
-    # storage.
-    "truesize",
-])
+VolumeSize = namedtuple(
+    "VolumeSize",
+    [
+        # The logical volume size in block storage and file size in file
+        # storage.
+        "apparentsize",
+        # The allocated size on storage. Same as apparentsize in block
+        # storage.
+        "truesize",
+    ],
+)
 
 
 def getVolsOfImage(allVols, imgUUID):
-    """ Filter allVols dict for volumes related to imgUUID.
+    """Filter allVols dict for volumes related to imgUUID.
 
     Returns {volName: (([templateImage], imgUUID, [otherImg]), volPar)
     For a template volume will be more than one image entry.
@@ -187,8 +209,11 @@ def getVolsOfImage(allVols, imgUUID):
     allVols: The getAllVols() return dict.
     """
 
-    return dict((volName, vol) for volName, vol in allVols.items()
-                if imgUUID in vol.imgs)
+    return dict(
+        (volName, vol)
+        for volName, vol in allVols.items()
+        if imgUUID in vol.imgs
+    )
 
 
 def supportsUnicode(version):
@@ -197,14 +222,21 @@ def supportsUnicode(version):
 
 # This method has strange semantics, it's only here to keep with the old
 # behavior that someone might rely on.
-def packLeaseParams(lockRenewalIntervalSec, leaseTimeSec,
-                    ioOpTimeoutSec, leaseRetries):
-    if (lockRenewalIntervalSec and leaseTimeSec and
-            ioOpTimeoutSec and leaseRetries):
-        return {DMDK_LEASE_RETRIES: leaseRetries,
-                DMDK_LEASE_TIME_SEC: leaseTimeSec,
-                DMDK_LOCK_RENEWAL_INTERVAL_SEC: lockRenewalIntervalSec,
-                DMDK_IO_OP_TIMEOUT_SEC: ioOpTimeoutSec}
+def packLeaseParams(
+    lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec, leaseRetries
+):
+    if (
+        lockRenewalIntervalSec
+        and leaseTimeSec
+        and ioOpTimeoutSec
+        and leaseRetries
+    ):
+        return {
+            DMDK_LEASE_RETRIES: leaseRetries,
+            DMDK_LEASE_TIME_SEC: leaseTimeSec,
+            DMDK_LOCK_RENEWAL_INTERVAL_SEC: lockRenewalIntervalSec,
+            DMDK_IO_OP_TIMEOUT_SEC: ioOpTimeoutSec,
+        }
 
     return DEFAULT_LEASE_PARAMS
 
@@ -236,7 +268,7 @@ def type2name(domType):
 
 
 def name2type(name):
-    for (k, v) in DOMAIN_TYPES.items():
+    for k, v in DOMAIN_TYPES.items():
         if v == name.upper():
             return k
     raise KeyError(name)
@@ -247,7 +279,7 @@ def class2name(domClass):
 
 
 def name2class(name):
-    for (k, v) in DOMAIN_CLASSES.items():
+    for k, v in DOMAIN_CLASSES.items():
         if v == name:
             return k
     raise KeyError(name)
@@ -288,25 +320,35 @@ SD_MD_FIELDS = {
     DMDK_DESCRIPTION: (unicodeDecoder, unicodeEncoder),
     DMDK_CLASS: (name2class, class2name),
     # one day maybe uuid
-    DMDK_POOLS: (lambda s: s.split(",") if s else [],
-                 lambda poolUUIDs: ",".join(poolUUIDs)),
+    DMDK_POOLS: (
+        lambda s: s.split(",") if s else [],
+        lambda poolUUIDs: ",".join(poolUUIDs),
+    ),
     DMDK_LOCK_POLICY: (str, str),
     DMDK_LOCK_RENEWAL_INTERVAL_SEC: (
         lambda val: intOrDefault(
-            DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC], val),
-        intEncode),
+            DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC], val
+        ),
+        intEncode,
+    ),
     DMDK_LEASE_TIME_SEC: (
         lambda val: intOrDefault(
-            DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC], val),
-        intEncode),
+            DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC], val
+        ),
+        intEncode,
+    ),
     DMDK_IO_OP_TIMEOUT_SEC: (
         lambda val: intOrDefault(
-            DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC], val),
-        intEncode),
+            DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC], val
+        ),
+        intEncode,
+    ),
     DMDK_LEASE_RETRIES: (
         lambda val: intOrDefault(
-            DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES], val),
-        intEncode),
+            DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES], val
+        ),
+        intEncode,
+    ),
     DMDK_BLOCK_SIZE: (int, str),
     DMDK_ALIGNMENT: (int, str),
 }
@@ -339,13 +381,17 @@ class StorageDomainManifest(object):
         if version < 5:
             if self.alignment != sc.ALIGNMENT_1M:
                 raise se.MetaDataValidationError(
-                    "Storage domain version {} does not support alignment {}"
-                        .format(version, self.alignment))
+                    "Storage domain version {} does not support alignment {}".format(
+                        version, self.alignment
+                    )
+                )
 
             if self.block_size != sc.BLOCK_SIZE_512:
                 raise se.MetaDataValidationError(
-                    "Storage domain version {} does not support block size {}"
-                        .format(version, self.block_size))
+                    "Storage domain version {} does not support block size {}".format(
+                        version, self.block_size
+                    )
+                )
 
         self._domainLock = self._makeDomainLock()
 
@@ -494,8 +540,9 @@ class StorageDomainManifest(object):
         """
         Produce a type specific VolumeManifest object
         """
-        return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
-                                     volUUID)
+        return self.getVolumeClass()(
+            self.mountpoint, self.sdUUID, imgUUID, volUUID
+        )
 
     def isISO(self):
         return self.getMetaParam(DMDK_CLASS) == ISO_DOMAIN
@@ -549,9 +596,11 @@ class StorageDomainManifest(object):
         This lease is used by the SPM to protect metadata operations in the
         cluster.
         """
-        return clusterlock.Lease(SDM_LEASE_NAME,
-                                 self.getLeasesFilePath(),
-                                 SDM_LEASE_SLOT * self.alignment)
+        return clusterlock.Lease(
+            SDM_LEASE_NAME,
+            self.getLeasesFilePath(),
+            SDM_LEASE_SLOT * self.alignment,
+        )
 
     def acquireDomainLock(self, hostID):
         self.refresh()
@@ -559,7 +608,7 @@ class StorageDomainManifest(object):
             self.getMetaParam(DMDK_LOCK_RENEWAL_INTERVAL_SEC),
             self.getMetaParam(DMDK_LEASE_TIME_SEC),
             self.getMetaParam(DMDK_LEASE_RETRIES),
-            self.getMetaParam(DMDK_IO_OP_TIMEOUT_SEC)
+            self.getMetaParam(DMDK_IO_OP_TIMEOUT_SEC),
         )
         self._domainLock.acquire(hostID, self.getDomainLease())
 
@@ -614,8 +663,13 @@ class StorageDomainManifest(object):
             "block_size": self._block_size,
         }
 
-        return lockClass(self.sdUUID, self.getIdsFilePath(),
-                         self.getDomainLease(), *leaseParams, **kwargs)
+        return lockClass(
+            self.sdUUID,
+            self.getIdsFilePath(),
+            self.getDomainLease(),
+            *leaseParams,
+            **kwargs,
+        )
 
     def initDomainLock(self):
         """
@@ -630,9 +684,15 @@ class StorageDomainManifest(object):
     def refresh(self):
         pass
 
-    def validateCreateVolumeParams(self, volFormat, srcVolUUID, diskType=None,
-                                   preallocate=None, add_bitmaps=False,
-                                   bitmap=None):
+    def validateCreateVolumeParams(
+        self,
+        volFormat,
+        srcVolUUID,
+        diskType=None,
+        preallocate=None,
+        add_bitmaps=False,
+        bitmap=None,
+    ):
         """
         Validate create volume parameters
         """
@@ -653,13 +713,15 @@ class StorageDomainManifest(object):
             raise se.UnsupportedOperation(
                 "Cannot add bitmaps without a parent volume",
                 srcVolUUID=srcVolUUID,
-                add_bitmaps=add_bitmaps)
+                add_bitmaps=add_bitmaps,
+            )
 
         if bitmap and volFormat != sc.COW_FORMAT:
             raise se.UnsupportedOperation(
                 f"Creating bitmap requires volFormat={sc.COW_FORMAT}",
                 volFormat=volFormat,
-                bitmap=bitmap)
+                bitmap=bitmap,
+            )
 
         if (add_bitmaps or bitmap) and not self.supports_bitmaps_operations():
             raise se.UnsupportedOperation(
@@ -667,7 +729,8 @@ class StorageDomainManifest(object):
                 "version < 4",
                 domain_version=self.getVersion(),
                 add_bitmaps=add_bitmaps,
-                bitmap=bitmap)
+                bitmap=bitmap,
+            )
 
     def teardownVolume(self, imgUUID, volUUID):
         """
@@ -741,9 +804,8 @@ class StorageDomainManifest(object):
         path = self.external_leases_path()
         with self.external_leases_backend(self.sdUUID, path) as backend:
             vol = xlease.LeasesVolume(
-                backend,
-                alignment=self._alignment,
-                block_size=self._block_size)
+                backend, alignment=self._alignment, block_size=self._block_size
+            )
             with utils.closing(vol):
                 yield vol
 
@@ -753,9 +815,8 @@ class StorageDomainManifest(object):
         """
         lease_info = self.lease_info(lease_id)
         lease = clusterlock.Lease(
-            lease_info.resource,
-            lease_info.path,
-            lease_info.offset)
+            lease_info.resource, lease_info.path, lease_info.offset
+        )
         self._domainLock.acquire(host_id, lease, lvb=True)
 
     def release_external_lease(self, lease_id):
@@ -764,9 +825,8 @@ class StorageDomainManifest(object):
         """
         lease_info = self.lease_info(lease_id)
         lease = clusterlock.Lease(
-            lease_info.resource,
-            lease_info.path,
-            lease_info.offset)
+            lease_info.resource, lease_info.path, lease_info.offset
+        )
         self._domainLock.release(lease)
 
     def lease_info(self, lease_id):
@@ -795,9 +855,8 @@ class StorageDomainManifest(object):
         """
         lease_info = self.lease_info(lease_id)
         lease = clusterlock.Lease(
-            lease_info.resource,
-            lease_info.path,
-            lease_info.offset)
+            lease_info.resource, lease_info.path, lease_info.offset
+        )
 
         # Failing here will raise an exception, this expected as we cannot
         # tell anything about the status of the lease if we couldn't inspect
@@ -843,9 +902,8 @@ class StorageDomainManifest(object):
         """
         lease_info = self.lease_info(lease_id)
         lease = clusterlock.Lease(
-            lease_info.resource,
-            lease_info.path,
-            lease_info.offset)
+            lease_info.resource, lease_info.path, lease_info.offset
+        )
 
         self._domainLock.set_lvb(lease, info)
 
@@ -861,9 +919,8 @@ class StorageDomainManifest(object):
         """
         lease_info = self.lease_info(lease_id)
         lease = clusterlock.Lease(
-            lease_info.resource,
-            lease_info.path,
-            lease_info.offset)
+            lease_info.resource, lease_info.path, lease_info.offset
+        )
 
         return self._domainLock.get_lvb(lease)
 
@@ -886,44 +943,48 @@ class StorageDomainManifest(object):
 
         lease_info = self.lease_info(lease_id)
         lease = clusterlock.Lease(
-            lease_info.resource,
-            lease_info.path,
-            lease_info.offset)
+            lease_info.resource, lease_info.path, lease_info.offset
+        )
         self.acquire_external_lease(lease_id, host_id)
         try:
             current_metadata = self.get_lvb(lease_id)
-            self.log.info(
-                "Current lease %s metadata: %r", lease_id, metadata)
+            self.log.info("Current lease %s metadata: %r", lease_id, metadata)
 
             if current_metadata.get("type") != metadata.type:
                 raise se.UnsupportedOperation(
                     "job type doesn't match supported type",
                     expected=metadata.type,
-                    actual=current_metadata.get("type"))
+                    actual=current_metadata.get("type"),
+                )
 
             if current_metadata.get("job_id") != metadata.job_id:
                 raise se.UnsupportedOperation(
                     "job_id on lease doesn't match passed job_id",
                     exptected=metadata.job_id,
-                    actual=current_metadata.get("job_id"))
+                    actual=current_metadata.get("job_id"),
+                )
 
             if current_metadata.get("job_status") != metadata.job_status:
                 raise se.JobStatusMismatch(
-                    metadata.job_status, current_metadata.get("job_status"))
+                    metadata.job_status, current_metadata.get("job_status")
+                )
 
             if current_metadata.get("generation") != metadata.generation:
                 raise se.GenerationMismatch(
-                    metadata.generation, current_metadata.get("generation"))
+                    metadata.generation, current_metadata.get("generation")
+                )
 
             updated_metadata = current_metadata.copy()
             updated_metadata["modified"] = int(time.time())
             updated_metadata["host_hardware_id"] = host.uuid()
-            updated_metadata["generation"] = \
-                su.next_generation(metadata.generation)
+            updated_metadata["generation"] = su.next_generation(
+                metadata.generation
+            )
             updated_metadata["job_status"] = sc.JOB_STATUS_FENCED
 
             self.log.info(
-                "Writing data to lease %s: %r", lease_id, updated_metadata)
+                "Writing data to lease %s: %r", lease_id, updated_metadata
+            )
             self._domainLock.set_lvb(lease, updated_metadata)
         finally:
             self.release_external_lease(lease_id)
@@ -1100,8 +1161,16 @@ class StorageDomain(object):
         return self._manifest._makeDomainLock(domVersion)
 
     @classmethod
-    def create(cls, sdUUID, domainName, domClass, typeSpecificArg, version,
-               block_size=sc.BLOCK_SIZE_512, max_hosts=sc.HOSTS_4K_1M):
+    def create(
+        cls,
+        sdUUID,
+        domainName,
+        domClass,
+        typeSpecificArg,
+        version,
+        block_size=sc.BLOCK_SIZE_512,
+        max_hosts=sc.HOSTS_4K_1M,
+    ):
         """
         Create a storage domain. The initial status is unattached.
         The storage domain underlying storage must be visible (connected)
@@ -1158,51 +1227,97 @@ class StorageDomain(object):
         factories for it.
         """
         # Register image resource namespace
-        imageResourceFactory = \
-            resourceFactories.ImageResourceFactory(self.sdUUID)
-        imageResourcesNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE,
-                                                  self.sdUUID)
+        imageResourceFactory = resourceFactories.ImageResourceFactory(
+            self.sdUUID
+        )
+        imageResourcesNamespace = rm.getNamespace(
+            sc.IMAGE_NAMESPACE, self.sdUUID
+        )
         try:
             rm.registerNamespace(imageResourcesNamespace, imageResourceFactory)
         except rm.NamespaceRegistered:
-            self.log.debug("Resource namespace %s already registered",
-                           imageResourcesNamespace)
+            self.log.debug(
+                "Resource namespace %s already registered",
+                imageResourcesNamespace,
+            )
 
-        volumeResourcesNamespace = rm.getNamespace(sc.VOLUME_NAMESPACE,
-                                                   self.sdUUID)
+        volumeResourcesNamespace = rm.getNamespace(
+            sc.VOLUME_NAMESPACE, self.sdUUID
+        )
         try:
-            rm.registerNamespace(volumeResourcesNamespace,
-                                 rm.SimpleResourceFactory())
+            rm.registerNamespace(
+                volumeResourcesNamespace, rm.SimpleResourceFactory()
+            )
         except rm.NamespaceRegistered:
-            self.log.debug("Resource namespace %s already registered",
-                           volumeResourcesNamespace)
+            self.log.debug(
+                "Resource namespace %s already registered",
+                volumeResourcesNamespace,
+            )
 
     def produceVolume(self, imgUUID, volUUID):
         """
         Produce a type specific Volume object
         """
-        return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
-                                     volUUID)
+        return self.getVolumeClass()(
+            self.mountpoint, self.sdUUID, imgUUID, volUUID
+        )
 
-    def validateCreateVolumeParams(self, volFormat, srcVolUUID, diskType=None,
-                                   preallocate=None, add_bitmaps=False,
-                                   bitmap=None):
+    def validateCreateVolumeParams(
+        self,
+        volFormat,
+        srcVolUUID,
+        diskType=None,
+        preallocate=None,
+        add_bitmaps=False,
+        bitmap=None,
+    ):
         return self._manifest.validateCreateVolumeParams(
-            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
-            add_bitmaps=add_bitmaps, bitmap=bitmap)
+            volFormat,
+            srcVolUUID,
+            diskType=diskType,
+            preallocate=preallocate,
+            add_bitmaps=add_bitmaps,
+            bitmap=bitmap,
+        )
 
-    def createVolume(self, imgUUID, capacity, volFormat, preallocate, diskType,
-                     volUUID, desc, srcImgUUID, srcVolUUID,
-                     initial_size=None, add_bitmaps=False, legal=True,
-                     sequence=0, bitmap=None):
+    def createVolume(
+        self,
+        imgUUID,
+        capacity,
+        volFormat,
+        preallocate,
+        diskType,
+        volUUID,
+        desc,
+        srcImgUUID,
+        srcVolUUID,
+        initial_size=None,
+        add_bitmaps=False,
+        legal=True,
+        sequence=0,
+        bitmap=None,
+    ):
         """
         Create a new volume
         """
         return self.getVolumeClass().create(
-            self._getRepoPath(), self.sdUUID, imgUUID, capacity, volFormat,
-            preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-            initial_size=initial_size, add_bitmaps=add_bitmaps, legal=legal,
-            sequence=sequence, bitmap=bitmap)
+            self._getRepoPath(),
+            self.sdUUID,
+            imgUUID,
+            capacity,
+            volFormat,
+            preallocate,
+            diskType,
+            volUUID,
+            desc,
+            srcImgUUID,
+            srcVolUUID,
+            initial_size=initial_size,
+            add_bitmaps=add_bitmaps,
+            legal=legal,
+            sequence=sequence,
+            bitmap=bitmap,
+        )
 
     def getMDPath(self):
         return self._manifest.getMDPath()
@@ -1265,8 +1380,11 @@ class StorageDomain(object):
         self.invalidateMetadata()
         pools = self.getPools()
         if spUUID in pools:
-            self.log.warn("domain `%s` is already attached to pool `%s`",
-                          self.sdUUID, spUUID)
+            self.log.warn(
+                "domain `%s` is already attached to pool `%s`",
+                self.sdUUID,
+                spUUID,
+            )
             return
 
         if len(pools) > 0 and not self.isISO():
@@ -1276,8 +1394,9 @@ class StorageDomain(object):
         self.setMetaParam(DMDK_POOLS, pools)
 
     def detach(self, spUUID):
-        self.log.info('detaching storage domain %s from pool %s',
-                      self.sdUUID, spUUID)
+        self.log.info(
+            'detaching storage domain %s from pool %s', self.sdUUID, spUUID
+        )
         self.invalidateMetadata()
         pools = self.getPools()
         try:
@@ -1286,7 +1405,10 @@ class StorageDomain(object):
             self.log.error(
                 "Can't remove pool %s from domain %s pool list %s, "
                 "it does not exist",
-                spUUID, self.sdUUID, str(pools))
+                spUUID,
+                self.sdUUID,
+                str(pools),
+            )
             return
         # Make sure that ROLE is not MASTER_DOMAIN (just in case)
         with self._metadata.transaction():
@@ -1301,8 +1423,12 @@ class StorageDomain(object):
         self.setMetaParams(leaseParamPack)
 
     def getLeaseParams(self):
-        keys = [DMDK_LOCK_RENEWAL_INTERVAL_SEC, DMDK_LEASE_TIME_SEC,
-                DMDK_IO_OP_TIMEOUT_SEC, DMDK_LEASE_RETRIES]
+        keys = [
+            DMDK_LOCK_RENEWAL_INTERVAL_SEC,
+            DMDK_LEASE_TIME_SEC,
+            DMDK_IO_OP_TIMEOUT_SEC,
+            DMDK_LEASE_RETRIES,
+        ]
         params = {}
         for key in keys:
             params[key] = self.getMetaParam(key)
@@ -1312,8 +1438,7 @@ class StorageDomain(object):
         return os.path.join(self.domaindir, MASTER_FS_DIR)
 
     def validateMaster(self):
-        """Validate that the master storage domain is correct.
-        """
+        """Validate that the master storage domain is correct."""
         stat = {'mount': True, 'valid': True}
         if not self.isMaster():
             return stat
@@ -1396,8 +1521,11 @@ class StorageDomain(object):
         Activate a storage domain that is already a member in a storage pool.
         """
         if self.isBackup():
-            self.log.info("Storage Domain %s is of type backup, "
-                          "adding master directory", self.sdUUID)
+            self.log.info(
+                "Storage Domain %s is of type backup, "
+                "adding master directory",
+                self.sdUUID,
+            )
             self.mountMaster()
             self.createMasterTree()
 
@@ -1447,8 +1575,7 @@ class StorageDomain(object):
         return info
 
     def getStats(self):
-        """
-        """
+        """ """
         pass
 
     def validateMasterMount(self):
@@ -1507,8 +1634,10 @@ class StorageDomain(object):
         Relink all hardlinks of the template 'volUUID' in all VMs based on it.
         No need to relink template for block domains.
         """
-        self.log.debug("Skipping relink of template, domain %s is not file "
-                       "based", self.sdUUID)
+        self.log.debug(
+            "Skipping relink of template, domain %s is not file " "based",
+            self.sdUUID,
+        )
 
     def changeRole(self, newRole):
         # TODO: Move to a validator?
@@ -1584,8 +1713,12 @@ class StorageDomain(object):
 
     @classmethod
     def format_external_leases(
-            cls, lockspace, path, alignment=sc.ALIGNMENT_1M,
-            block_size=sc.BLOCK_SIZE_512):
+        cls,
+        lockspace,
+        path,
+        alignment=sc.ALIGNMENT_1M,
+        block_size=sc.BLOCK_SIZE_512,
+    ):
         """
         Format the special xleases volume.
 
@@ -1601,12 +1734,11 @@ class StorageDomain(object):
         Must be called only on the SPM.
         """
         with cls.manifestClass.external_leases_backend(
-                lockspace, path) as backend:
+            lockspace, path
+        ) as backend:
             xlease.format_index(
-                lockspace,
-                backend,
-                alignment=alignment,
-                block_size=block_size)
+                lockspace, backend, alignment=alignment, block_size=block_size
+            )
 
     @classmethod
     def is_block(cls):
@@ -1683,7 +1815,8 @@ class StorageDomain(object):
                     self.sdUUID,
                     backend,
                     alignment=self._manifest.alignment,
-                    block_size=self._manifest.block_size)
+                    block_size=self._manifest.block_size,
+                )
 
     def dump_external_leases(self):
         """
@@ -1703,11 +1836,17 @@ class StorageDomain(object):
         """
         image_dir = self.getImageDir(imgUUID)
         if not os.path.isdir(image_dir):
-            self.log.info("Create placeholder %s for image's volumes",
-                          image_dir)
+            self.log.info(
+                "Create placeholder %s for image's volumes", image_dir
+            )
             task_name = "create image rollback: " + imgUUID
-            recovery = task.Recovery(task_name, "sd", "StorageDomain",
-                                     "create_image_rollback", [image_dir])
+            recovery = task.Recovery(
+                task_name,
+                "sd",
+                "StorageDomain",
+                "create_image_rollback",
+                [image_dir],
+            )
             vars.task.pushRecovery(recovery)
             os.mkdir(image_dir)
         return image_dir
@@ -1723,9 +1862,11 @@ class StorageDomain(object):
                 cls.log.info("Removing image directory %r", image_dir)
                 fileUtils.cleanupdir(image_dir)
             else:
-                cls.log.error("create image rollback: Cannot remove dirty "
-                              "image (image_dir=%s)",
-                              image_dir)
+                cls.log.error(
+                    "create image rollback: Cannot remove dirty "
+                    "image (image_dir=%s)",
+                    image_dir,
+                )
 
     # Format conversion
 
@@ -1750,12 +1891,17 @@ class StorageDomain(object):
 
         if not (current_version == 4 and target_version == 5):
             raise RuntimeError(
-                "Cannot convert domain {} from version {} to version {}"
-                .format(self.sdUUID, current_version, target_version))
+                "Cannot convert domain {} from version {} to version {}".format(
+                    self.sdUUID, current_version, target_version
+                )
+            )
 
         self.log.info(
             "Converting domain %s metadata from version %s to version %s",
-            self.sdUUID, current_version, target_version)
+            self.sdUUID,
+            current_version,
+            target_version,
+        )
 
         with self._metadata.transaction():
             self._metadata[DMDK_VERSION] = target_version
@@ -1788,11 +1934,14 @@ class StorageDomain(object):
         """
         Dump lockspace records.
         """
-        return list(sanlock_direct.dump_lockspace(
-            self.getIdsFilePath(),
-            size=self.alignment,
-            block_size=self.block_size,
-            alignment=self.alignment))
+        return list(
+            sanlock_direct.dump_lockspace(
+                self.getIdsFilePath(),
+                size=self.alignment,
+                block_size=self.block_size,
+                alignment=self.alignment,
+            )
+        )
 
 
 class ExternalLease(guarded.AbstractLock):

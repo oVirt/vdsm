@@ -17,7 +17,7 @@ from vdsm.storage import directio
 from vdsm.storage import exception as se
 
 from . import loopback
-from . marks import requires_root
+from .marks import requires_root
 
 # Zeroing and discarding block device is instant, so we can use real lv size.
 FILE_SIZE = 128 * MiB
@@ -77,10 +77,9 @@ class TestZero:
 
     @requires_root
     @pytest.mark.root
-    @pytest.mark.parametrize("size", [
-        sc.BLOCK_SIZE_4K,
-        250 * sc.BLOCK_SIZE_4K
-    ])
+    @pytest.mark.parametrize(
+        "size", [sc.BLOCK_SIZE_4K, 250 * sc.BLOCK_SIZE_4K]
+    )
     def test_special_volumes(self, size, loop_device):
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:
@@ -142,7 +141,8 @@ class TestDiscard:
         # If the loop device backing file is on a file system that does not
         # support discard, discard is not supported.
         cp = subprocess.run(
-            ["blkdiscard", loop_device.path], stderr=subprocess.PIPE)
+            ["blkdiscard", loop_device.path], stderr=subprocess.PIPE
+        )
         if cp.returncode != 0:
             pytest.skip("blkdiscard not supported: %s" % cp.stderr)
 

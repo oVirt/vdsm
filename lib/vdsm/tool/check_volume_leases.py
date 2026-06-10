@@ -26,12 +26,15 @@ def main(*args):
     if not parsed_args.repair and not _confirm_check_leases():
         return
 
-    cli = client.connect(parsed_args.host, parsed_args.port,
-                         use_tls=parsed_args.use_ssl)
+    cli = client.connect(
+        parsed_args.host, parsed_args.port, use_tls=parsed_args.use_ssl
+    )
     with utils.closing(cli):
         print()
-        print("Checking active storage domains. This can take several "
-              "minutes, please wait.")
+        print(
+            "Checking active storage domains. This can take several "
+            "minutes, please wait."
+        )
         broken_leases = _get_leases_to_repair(cli)
         if not broken_leases:
             print()
@@ -47,10 +50,12 @@ def main(*args):
 
 
 def _confirm_check_leases():
-    return common.confirm("""\
+    return common.confirm(
+        """\
 WARNING: Make sure there are no running storage operations.
 
-Do you want to check volume leases? [yes,NO] """)
+Do you want to check volume leases? [yes,NO] """
+    )
 
 
 def _confirm_repair_leases():
@@ -58,17 +63,26 @@ def _confirm_repair_leases():
 
 
 def _parse_args(args):
-    parser = argparse.ArgumentParser("This tool is used to check volume "
-                                     "lease, and to optionally repair the "
-                                     "ones that need to be repaired")
-    parser.add_argument('--repair', help="repair broken volume leases",
-                        action="store_true")
-    parser.add_argument('-u', '--unsecured', action='store_false',
-                        dest='use_ssl', default=True,
-                        help="use unsecured connection")
+    parser = argparse.ArgumentParser(
+        "This tool is used to check volume "
+        "lease, and to optionally repair the "
+        "ones that need to be repaired"
+    )
+    parser.add_argument(
+        '--repair', help="repair broken volume leases", action="store_true"
+    )
+    parser.add_argument(
+        '-u',
+        '--unsecured',
+        action='store_false',
+        dest='use_ssl',
+        default=True,
+        help="use unsecured connection",
+    )
     parser.add_argument('-H', '--host', default='localhost')
     parser.add_argument(
-        '-p', '--port', default=config.getint('addresses', 'management_port'))
+        '-p', '--port', default=config.getint('addresses', 'management_port')
+    )
 
     return parser.parse_args(args=args[1:])
 
@@ -92,7 +106,7 @@ def _get_leases_to_repair(cli):
             "Please make sure the host is active before running the tool."
         )
 
-    sp_uuid, = pools
+    (sp_uuid,) = pools
     broken_leases = {}
     for sd_uuid in cli.Host.getStorageDomains(storagepoolID=sp_uuid):
         sd_broken_leases = _get_domain_broken_leases(cli, sp_uuid, sd_uuid)
@@ -105,20 +119,25 @@ def _get_leases_to_repair(cli):
 def _get_domain_broken_leases(cli, sp_uuid, sd_uuid):
     broken_leases = defaultdict(dict)
     for img_uuid in cli.StorageDomain.getImages(storagedomainID=sd_uuid):
-        vols_uuids = cli.StorageDomain.getVolumes(storagepoolID=sp_uuid,
-                                                  storagedomainID=sd_uuid,
-                                                  imageID=img_uuid)
+        vols_uuids = cli.StorageDomain.getVolumes(
+            storagepoolID=sp_uuid, storagedomainID=sd_uuid, imageID=img_uuid
+        )
         for vol_uuid in vols_uuids:
             try:
-                info = cli.Volume.getInfo(storagepoolID=sp_uuid,
-                                          storagedomainID=sd_uuid,
-                                          imageID=img_uuid,
-                                          volumeID=vol_uuid)
+                info = cli.Volume.getInfo(
+                    storagepoolID=sp_uuid,
+                    storagedomainID=sd_uuid,
+                    imageID=img_uuid,
+                    volumeID=vol_uuid,
+                )
             except client.Error as e:
                 print()
-                print("Error: failed to get volume info: {} (domain: {}, "
-                      "image: {}, volume: {}"
-                      .format(e, sd_uuid, img_uuid, vol_uuid))
+                print(
+                    "Error: failed to get volume info: {} (domain: {}, "
+                    "image: {}, volume: {}".format(
+                        e, sd_uuid, img_uuid, vol_uuid
+                    )
+                )
                 continue
 
             if 'lease' not in info:
@@ -163,10 +182,14 @@ def _repair(broken_leases):
                     sanlock.write_resource(
                         sd_uuid,
                         vol_uuid,
-                        [(vol_lease['path'], vol_lease['offset'])])
+                        [(vol_lease['path'], vol_lease['offset'])],
+                    )
                     repaired += 1
                 except sanlock.SanlockException as e:
-                    print("Failed to repair lease of volume {}/{}. Error {}"
-                          .format(vol_lease['image'], vol_lease['volume'], e))
+                    print(
+                        "Failed to repair lease of volume {}/{}. Error {}".format(
+                            vol_lease['image'], vol_lease['volume'], e
+                        )
+                    )
 
     print("Repaired ({}/{}) volume leases.".format(repaired, total))

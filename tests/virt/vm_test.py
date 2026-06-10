@@ -64,13 +64,13 @@ _VM_PARAMS = {
     'display': 'qxl',
     'displayIp': '127.0.0.1',
     'vmType': 'kvm',
-    'memSize': 1024
+    'memSize': 1024,
 }
 
 
 _TICKET_PARAMS = {
     'userName': 'admin',
-    'userId': 'fdfc627c-d875-11e0-90f0-83df133b58cc'
+    'userId': 'fdfc627c-d875-11e0-90f0-83df133b58cc',
 }
 
 
@@ -80,22 +80,36 @@ class TestVm(XMLTestCase):
     def __init__(self, *args, **kwargs):
         super(TestVm, self).__init__(*args, **kwargs)
         self.channelListener = None
-        self.conf = {'vmName': 'testVm',
-                     'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
-                     'smp': '8', 'maxVCpus': '160',
-                     'memSize': '1024', 'memGuaranteedSize': '512'}
+        self.conf = {
+            'vmName': 'testVm',
+            'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
+            'smp': '8',
+            'maxVCpus': '160',
+            'memSize': '1024',
+            'memGuaranteedSize': '512',
+        }
 
     def testIoTuneException(self):
         SERIAL = '54-a672-23e5b495a9ea'
-        devConf = {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
-                   'name': 'vda', 'format': 'cow', 'device': 'disk',
-                   'path': '/tmp/disk1.img', 'type': 'disk',
-                   'readonly': 'False', 'shared': 'True', 'serial': SERIAL}
+        devConf = {
+            'index': '0',
+            'propagateErrors': 'on',
+            'iface': 'virtio',
+            'name': 'vda',
+            'format': 'cow',
+            'device': 'disk',
+            'path': '/tmp/disk1.img',
+            'type': 'disk',
+            'readonly': 'False',
+            'shared': 'True',
+            'serial': SERIAL,
+        }
         tuneConfs = [
             {'read_iops_sec': 1000, 'total_iops_sec': 2000},
             {'read_bytes_sec': -5},
             {'aaa': 100},
-            {'read_iops_sec': 'aaa'}]
+            {'read_iops_sec': 'aaa'},
+        ]
 
         expectedExceptMsgs = [
             'A non-zero total value and non-zero read/write value for'
@@ -103,12 +117,13 @@ class TestVm(XMLTestCase):
             'parameter read_bytes_sec value should be equal or greater'
             ' than zero',
             'parameter aaa name is invalid',
-            'an integer is required for ioTune parameter read_iops_sec']
+            'an integer is required for ioTune parameter read_iops_sec',
+        ]
 
-        for (tuneConf, exceptionMsg) in \
-                zip(tuneConfs, expectedExceptMsgs):
-            drive = vmdevices.storage.Drive(self.log, diskType=DISK_TYPE.FILE,
-                                            **devConf)
+        for tuneConf, exceptionMsg in zip(tuneConfs, expectedExceptMsgs):
+            drive = vmdevices.storage.Drive(
+                self.log, diskType=DISK_TYPE.FILE, **devConf
+            )
 
             with pytest.raises(Exception) as cm:
                 drive.iotune = tuneConf
@@ -119,13 +134,13 @@ class TestVm(XMLTestCase):
         LIMIT = '50'
         with fake.VM(_VM_PARAMS) as testvm:
             dom = fake.Domain()
-            dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                            '<qos><vcpuLimit>%s</vcpuLimit></qos>' % (
-                                LIMIT
-                            ),
-                            xmlconstants.METADATA_VM_TUNE_PREFIX,
-                            xmlconstants.METADATA_VM_TUNE_URI,
-                            0)
+            dom.setMetadata(
+                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                '<qos><vcpuLimit>%s</vcpuLimit></qos>' % (LIMIT),
+                xmlconstants.METADATA_VM_TUNE_PREFIX,
+                xmlconstants.METADATA_VM_TUNE_URI,
+                0,
+            )
             testvm._dom = dom
             # it is bad practice to test private functions -and we know it.
             # But enduring the full VM startup is too cumbersome, and we
@@ -137,15 +152,18 @@ class TestVm(XMLTestCase):
     def testGetVmPolicySucceded(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain()
-            self.assertXMLEqual(xmlutils.tostring(testvm._getVmPolicy()),
-                                '<qos/>')
+            self.assertXMLEqual(
+                xmlutils.tostring(testvm._getVmPolicy()), '<qos/>'
+            )
 
     def testGetVmPolicyEmptyOnNoMetadata(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(
-                virtError=libvirt.VIR_ERR_NO_DOMAIN_METADATA)
-            self.assertXMLEqual(xmlutils.tostring(testvm._getVmPolicy()),
-                                '<qos/>')
+                virtError=libvirt.VIR_ERR_NO_DOMAIN_METADATA
+            )
+            self.assertXMLEqual(
+                xmlutils.tostring(testvm._getVmPolicy()), '<qos/>'
+            )
 
     def testGetVmPolicyFailOnNoDomain(self):
         with fake.VM() as testvm:
@@ -163,35 +181,47 @@ class TestVm(XMLTestCase):
                     {
                         "name": "test-device-by-name",
                         "maximum": {
-                            "total_bytes_sec": 200, "total_iops_sec": 201,
-                            "read_bytes_sec": 202, "read_iops_sec": 203,
-                            "write_bytes_sec": 204, "write_iops_sec": 205
+                            "total_bytes_sec": 200,
+                            "total_iops_sec": 201,
+                            "read_bytes_sec": 202,
+                            "read_iops_sec": 203,
+                            "write_bytes_sec": 204,
+                            "write_iops_sec": 205,
                         },
                         "guaranteed": {
-                            "total_bytes_sec": 100, "total_iops_sec": 101,
-                            "read_bytes_sec": 102, "read_iops_sec": 103,
-                            "write_bytes_sec": 104, "write_iops_sec": 105
-                        }
+                            "total_bytes_sec": 100,
+                            "total_iops_sec": 101,
+                            "read_bytes_sec": 102,
+                            "read_iops_sec": 103,
+                            "write_bytes_sec": 104,
+                            "write_iops_sec": 105,
+                        },
                     },
                     {
                         "path": "test-device-by-path",
                         "maximum": {
-                            "total_bytes_sec": 400, "total_iops_sec": 401,
-                            "read_bytes_sec": 402, "read_iops_sec": 403,
-                            "write_bytes_sec": 404, "write_iops_sec": 405
+                            "total_bytes_sec": 400,
+                            "total_iops_sec": 401,
+                            "read_bytes_sec": 402,
+                            "read_iops_sec": 403,
+                            "write_bytes_sec": 404,
+                            "write_iops_sec": 405,
                         },
                         "guaranteed": {
-                            "total_bytes_sec": 300, "total_iops_sec": 301,
-                            "read_bytes_sec": 302, "read_iops_sec": -1,
-                            "write_bytes_sec": 304, "write_iops_sec": 305
-                        }
-                    }
-                ]
+                            "total_bytes_sec": 300,
+                            "total_iops_sec": 301,
+                            "read_bytes_sec": 302,
+                            "read_iops_sec": -1,
+                            "write_bytes_sec": 304,
+                            "write_iops_sec": 305,
+                        },
+                    },
+                ],
             }
 
             machine.updateVmPolicy(policy)
 
-            expected_xml = (u"""
+            expected_xml = u"""
             <qos>
                 <vcpuLimit>50</vcpuLimit>
                 <ioTune>
@@ -232,7 +262,7 @@ class TestVm(XMLTestCase):
                     </device>
                 </ioTune>
             </qos>
-            """)
+            """
 
             self.assertXMLEqual(expected_xml, dom._metadata)
 
@@ -256,15 +286,21 @@ class TestVm(XMLTestCase):
                 "name": "test-device-by-name",
                 "path": "test-path",
                 "maximum": {
-                    "total_bytes_sec": 200, "total_iops_sec": 201,
-                    "read_bytes_sec": 202, "read_iops_sec": 203,
-                    "write_bytes_sec": 204, "write_iops_sec": 205
+                    "total_bytes_sec": 200,
+                    "total_iops_sec": 201,
+                    "read_bytes_sec": 202,
+                    "read_iops_sec": 203,
+                    "write_bytes_sec": 204,
+                    "write_iops_sec": 205,
                 },
                 "guaranteed": {
-                    "total_bytes_sec": 100, "total_iops_sec": 101,
-                    "read_bytes_sec": 102, "read_iops_sec": 103,
-                    "write_bytes_sec": 104, "write_iops_sec": 105
-                }
+                    "total_bytes_sec": 100,
+                    "total_iops_sec": 101,
+                    "read_bytes_sec": 102,
+                    "read_iops_sec": 103,
+                    "write_bytes_sec": 104,
+                    "write_iops_sec": 105,
+                },
             }
 
             dom = io_tune_to_dom(ioTuneValues)
@@ -280,44 +316,60 @@ class TestVm(XMLTestCase):
             ioTuneValues1 = {
                 "path": "test-path",
                 "maximum": {
-                    "total_bytes_sec": 0, "total_iops_sec": 0,
+                    "total_bytes_sec": 0,
+                    "total_iops_sec": 0,
                     "read_bytes_sec": 0,
-                    "write_bytes_sec": 999, "write_iops_sec": 0
+                    "write_bytes_sec": 999,
+                    "write_iops_sec": 0,
                 },
                 "guaranteed": {
-                    "total_bytes_sec": 999, "total_iops_sec": 0,
-                    "read_bytes_sec": 0, "read_iops_sec": 0,
-                    "write_bytes_sec": 0, "write_iops_sec": 0
-                }
+                    "total_bytes_sec": 999,
+                    "total_iops_sec": 0,
+                    "read_bytes_sec": 0,
+                    "read_iops_sec": 0,
+                    "write_bytes_sec": 0,
+                    "write_iops_sec": 0,
+                },
             }
 
             ioTuneValues2 = {
                 "name": "test-device-by-name",
                 "maximum": {
-                    "total_bytes_sec": 200, "total_iops_sec": 201,
-                    "read_bytes_sec": 202, "read_iops_sec": 203,
-                    "write_iops_sec": 205
+                    "total_bytes_sec": 200,
+                    "total_iops_sec": 201,
+                    "read_bytes_sec": 202,
+                    "read_iops_sec": 203,
+                    "write_iops_sec": 205,
                 },
                 "guaranteed": {
-                    "total_bytes_sec": -1, "total_iops_sec": 101,
-                    "read_bytes_sec": 102, "read_iops_sec": 103,
-                    "write_bytes_sec": 104, "write_iops_sec": 105
-                }
+                    "total_bytes_sec": -1,
+                    "total_iops_sec": 101,
+                    "read_bytes_sec": 102,
+                    "read_iops_sec": 103,
+                    "write_bytes_sec": 104,
+                    "write_iops_sec": 105,
+                },
             }
 
             ioTuneExpectedValues = {
                 "name": "test-device-by-name",
                 "path": "test-path",
                 "maximum": {
-                    "total_bytes_sec": 200, "total_iops_sec": 201,
-                    "read_bytes_sec": 202, "read_iops_sec": 203,
-                    "write_bytes_sec": 999, "write_iops_sec": 205
+                    "total_bytes_sec": 200,
+                    "total_iops_sec": 201,
+                    "read_bytes_sec": 202,
+                    "read_iops_sec": 203,
+                    "write_bytes_sec": 999,
+                    "write_iops_sec": 205,
                 },
                 "guaranteed": {
-                    "total_bytes_sec": -1, "total_iops_sec": 101,
-                    "read_bytes_sec": 102, "read_iops_sec": 103,
-                    "write_bytes_sec": 104, "write_iops_sec": 105
-                }
+                    "total_bytes_sec": -1,
+                    "total_iops_sec": 101,
+                    "read_bytes_sec": 102,
+                    "read_iops_sec": 103,
+                    "write_bytes_sec": 104,
+                    "write_iops_sec": 105,
+                },
             }
 
             ioTuneMerged = io_tune_merge(ioTuneValues1, ioTuneValues2)
@@ -353,35 +405,47 @@ class TestVm(XMLTestCase):
                     {
                         "name": "test-device-by-name",
                         "maximum": {
-                            "total_bytes_sec": 200, "total_iops_sec": 201,
-                            "read_bytes_sec": 202, "read_iops_sec": 203,
-                            "write_bytes_sec": 204, "write_iops_sec": 205
+                            "total_bytes_sec": 200,
+                            "total_iops_sec": 201,
+                            "read_bytes_sec": 202,
+                            "read_iops_sec": 203,
+                            "write_bytes_sec": 204,
+                            "write_iops_sec": 205,
                         },
                         "guaranteed": {
-                            "total_bytes_sec": 100, "total_iops_sec": 101,
-                            "read_bytes_sec": 102, "read_iops_sec": 103,
-                            "write_bytes_sec": 104, "write_iops_sec": 105
-                        }
+                            "total_bytes_sec": 100,
+                            "total_iops_sec": 101,
+                            "read_bytes_sec": 102,
+                            "read_iops_sec": 103,
+                            "write_bytes_sec": 104,
+                            "write_iops_sec": 105,
+                        },
                     },
                     {
                         "path": "test-device-by-path",
                         "maximum": {
-                            "total_bytes_sec": 400, "total_iops_sec": 401,
-                            "read_bytes_sec": 402, "read_iops_sec": 403,
-                            "write_bytes_sec": 404, "write_iops_sec": 405
+                            "total_bytes_sec": 400,
+                            "total_iops_sec": 401,
+                            "read_bytes_sec": 402,
+                            "read_iops_sec": 403,
+                            "write_bytes_sec": 404,
+                            "write_iops_sec": 405,
                         },
                         "guaranteed": {
-                            "total_bytes_sec": 300, "total_iops_sec": 301,
-                            "read_bytes_sec": 302, "read_iops_sec": 303,
-                            "write_bytes_sec": 304, "write_iops_sec": 305
-                        }
-                    }
-                ]
+                            "total_bytes_sec": 300,
+                            "total_iops_sec": 301,
+                            "read_bytes_sec": 302,
+                            "read_iops_sec": 303,
+                            "write_bytes_sec": 304,
+                            "write_iops_sec": 305,
+                        },
+                    },
+                ],
             }
 
             machine.updateVmPolicy(policy)
 
-            expected_xml = (u"""
+            expected_xml = u"""
             <qos>
                 <vcpuLimit>50</vcpuLimit>
                 <ioTune>
@@ -428,7 +492,7 @@ class TestVm(XMLTestCase):
                     </device>
                 </ioTune>
             </qos>
-            """)
+            """
 
             self.assertXMLEqual(expected_xml, dom._metadata)
 
@@ -457,14 +521,14 @@ class TestVm(XMLTestCase):
 
             tunables = machine.io_tune_policy()
             expected = [
-                {'name': u'test-device-by-name',
-                 'maximum': {
-                     u'total_bytes_sec': 9999
-                 }},
-                {'name': u'other-device',
-                 'guaranteed': {
-                     u'total_bytes_sec': 9999
-                 }}
+                {
+                    'name': u'test-device-by-name',
+                    'maximum': {u'total_bytes_sec': 9999},
+                },
+                {
+                    'name': u'other-device',
+                    'guaranteed': {u'total_bytes_sec': 9999},
+                },
             ]
             assert tunables == expected
 
@@ -479,14 +543,16 @@ class TestVm(XMLTestCase):
             assert tunables == []
 
     @brokentest("the test expects overwrite, the code incrementally updates")
-    @permutations([
-        # old_iotune
-        [{}],
-        [{"ioTune": {}}],
-        [{"ioTune": {"total_bytes_sec": 9999}}],
-        [{"ioTune": {"total_iops_sec": 9999}}],
-        [{"ioTune": {"total_bytes_sec": 9999, "total_iops_sec": 9999}}],
-    ])
+    @permutations(
+        [
+            # old_iotune
+            [{}],
+            [{"ioTune": {}}],
+            [{"ioTune": {"total_bytes_sec": 9999}}],
+            [{"ioTune": {"total_iops_sec": 9999}}],
+            [{"ioTune": {"total_bytes_sec": 9999, "total_iops_sec": 9999}}],
+        ]
+    )
     def testSetIoTune(self, old_iotune):
 
         drives = [
@@ -498,7 +564,7 @@ class TestVm(XMLTestCase):
                 type=hwclass.DISK,
                 iface="ide",
                 specParams=old_iotune,
-                diskType=DISK_TYPE.BLOCK
+                diskType=DISK_TYPE.BLOCK,
             )
         ]
 
@@ -510,7 +576,7 @@ class TestVm(XMLTestCase):
         new_iotune = {
             "write_bytes_sec": 1,
             "total_bytes_sec": 0,
-            "read_bytes_sec": 2
+            "read_bytes_sec": 2,
         }
 
         tunables = [
@@ -529,8 +595,14 @@ class TestVm(XMLTestCase):
                 <source dev="/dev/dummy"/>
                 <target bus="ide" dev="hda"/>
                 <iotune>%s</iotune>
-            </disk>""" % ("\n".join(["<%s>%s</%s>" % (k, v, k)
-                                     for k, v in sorted(new_iotune.items())]))
+            </disk>""" % (
+            "\n".join(
+                [
+                    "<%s>%s</%s>" % (k, v, k)
+                    for k, v in sorted(new_iotune.items())
+                ]
+            )
+        )
 
         with fake.VM() as machine:
             dom = fake.Domain()
@@ -580,7 +652,7 @@ class TestVm(XMLTestCase):
                 type=hwclass.DISK,
                 iface="ide",
                 diskType=DISK_TYPE.BLOCK,
-            )
+            ),
         ]
 
         with fake.VM() as machine:
@@ -621,10 +693,12 @@ class TestVm(XMLTestCase):
 '''
         with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             out_dom_xml = testvm._correctGraphicsConfiguration(
-                _load_xml('vm_restore_spice_before.xml'))
+                _load_xml('vm_restore_spice_before.xml')
+            )
 
-        self.assertXMLEqual(out_dom_xml,
-                            _load_xml('vm_restore_spice_after.xml'))
+        self.assertXMLEqual(
+            out_dom_xml, _load_xml('vm_restore_spice_after.xml')
+        )
 
     @MonkeyPatch(os, 'unlink', lambda _: None)
     def test_release_vm_succeeds(self):
@@ -711,22 +785,24 @@ class TestVm(XMLTestCase):
         # we add a serial console device to the minimal XML,
         # because this is the simplest way to trigger the
         # flow that broke in rhbz#1590063
-        devices = [{
-            u'device': u'console',
-            u'specParams': {
-                u'consoleType': u'serial',
-                u'enableSocket': u'true'
-            },
-            u'type': u'console',
-            u'deviceId': u'd0fac53d-68cf-4cbb-8c9d-5f18625f04e7',
-            u'alias': u'serial0'
-        }]
+        devices = [
+            {
+                u'device': u'console',
+                u'specParams': {
+                    u'consoleType': u'serial',
+                    u'enableSocket': u'true',
+                },
+                u'type': u'console',
+                u'deviceId': u'd0fac53d-68cf-4cbb-8c9d-5f18625f04e7',
+                u'alias': u'serial0',
+            }
+        ]
 
         with fake.VM(
-                params={},
-                devices=devices,
-                create_device_objects=True,
-                arch=cpuarch.X86_64
+            params={},
+            devices=devices,
+            create_device_objects=True,
+            arch=cpuarch.X86_64,
         ) as testvm:
             testvm._dom = FakeLeaseDomain()
             testvm.cif = FakeLeaseClientIF(expected_conf)
@@ -841,8 +917,9 @@ class TestVmDeviceHandling(TestCaseBase):
             assert devices[2].state == fake.SETUP
 
     def test_device_setup_fail_first(self):
-        devices = ([fake.Device('device_0', fail_setup=ExpectedError)] +
-                   [fake.Device('device_{}'.format(i)) for i in range(1, 3)])
+        devices = [fake.Device('device_0', fail_setup=ExpectedError)] + [
+            fake.Device('device_{}'.format(i)) for i in range(1, 3)
+        ]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
             testvm._devices['general'] = devices
@@ -853,9 +930,11 @@ class TestVmDeviceHandling(TestCaseBase):
             assert devices[2].state == fake.CREATED
 
     def test_device_setup_fail_second(self):
-        devices = [fake.Device('device_0'),
-                   fake.Device('device_1', fail_setup=ExpectedError),
-                   fake.Device('device_2')]
+        devices = [
+            fake.Device('device_0'),
+            fake.Device('device_1', fail_setup=ExpectedError),
+            fake.Device('device_2'),
+        ]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
             testvm._devices['general'] = devices
@@ -866,8 +945,11 @@ class TestVmDeviceHandling(TestCaseBase):
             assert devices[2].state == fake.CREATED
 
     def test_device_setup_fail_third(self):
-        devices = [fake.Device('device_0'), fake.Device('device_1'),
-                   fake.Device('device_2', fail_setup=ExpectedError)]
+        devices = [
+            fake.Device('device_0'),
+            fake.Device('device_1'),
+            fake.Device('device_2', fail_setup=ExpectedError),
+        ]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
             testvm._devices['general'] = devices
@@ -878,11 +960,15 @@ class TestVmDeviceHandling(TestCaseBase):
             assert devices[2].state == fake.SETUP
 
     def test_device_setup_correct_exception(self):
-        devices = [fake.Device('device_0', fail_teardown=UnexpectedError),
-                   fake.Device('device_1',
-                               fail_setup=ExpectedError,
-                               fail_teardown=UnexpectedError),
-                   fake.Device('device_2', fail_setup=UnexpectedError)]
+        devices = [
+            fake.Device('device_0', fail_teardown=UnexpectedError),
+            fake.Device(
+                'device_1',
+                fail_setup=ExpectedError,
+                fail_teardown=UnexpectedError,
+            ),
+            fake.Device('device_2', fail_setup=UnexpectedError),
+        ]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
             testvm._devices['general'] = devices
@@ -904,9 +990,10 @@ class TestVmDeviceHandling(TestCaseBase):
             assert devices[2].state == fake.TEARDOWN
 
     def test_device_teardown_fail_all(self):
-        devices = [fake.Device('device_{}'.format(i),
-                               fail_teardown=UnexpectedError)
-                   for i in range(3)]
+        devices = [
+            fake.Device('device_{}'.format(i), fail_teardown=UnexpectedError)
+            for i in range(3)
+        ]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
             testvm._devices['general'] = devices
@@ -916,55 +1003,81 @@ class TestVmDeviceHandling(TestCaseBase):
             assert devices[1].state == fake.TEARDOWN
             assert devices[2].state == fake.TEARDOWN
 
-    @permutations([
-        [[], '0'],
-        [[0], '1'],
-        [[1, 2], '0'],
-        [[0, 2], '1'],
-        [[0, 1], '2'],
-    ])
+    @permutations(
+        [
+            [[], '0'],
+            [[0], '1'],
+            [[1, 2], '0'],
+            [[0, 2], '1'],
+            [[0, 1], '2'],
+        ]
+    )
     def test_getNextIndex(self, used, expected):
         with fake.VM(self.conf) as testvm:
             # TODO: get rid of mangling
             assert testvm._Vm__getNextIndex(used) == expected
 
-    @permutations([
-        ['', ''],
-        ['123', '123'],
-        ['ide', 'ide'],
-        ['sata', 'sd'],
-        ['scsi', 'sd'],
-    ])
+    @permutations(
+        [
+            ['', ''],
+            ['123', '123'],
+            ['ide', 'ide'],
+            ['sata', 'sd'],
+            ['scsi', 'sd'],
+        ]
+    )
     def test_indiceForIface(self, iface, expected):
         with fake.VM(self.conf) as testvm:
             assert testvm._indiceForIface(iface) == expected
 
-    @permutations([
-        # We have to make sure that 'sd' key exists otherwise even defaultdict
-        # will KeyError on access.
-        [{'sd': []}, {'iface': 'sata'}, {'sd': [0]}],
-        [{'sd': [0]}, {'iface': 'sata'}, {'sd': [0, 1]}],
-        [{'sd': [1]}, {'iface': 'sata'}, {'sd': [1, 0]}],
-        [{'sd': [0, 2]}, {'iface': 'sata'}, {'sd': [0, 2, 1]}],
-        [{'sd': [], 'other': [0]}, {'iface': 'sata'},
-         {'other': [0], 'sd': [0]}],
-        [{'sd': [0]}, {'iface': 'scsi'}, {'sd': [0, 1]}],
-    ])
+    @permutations(
+        [
+            # We have to make sure that 'sd' key exists otherwise even defaultdict
+            # will KeyError on access.
+            [{'sd': []}, {'iface': 'sata'}, {'sd': [0]}],
+            [{'sd': [0]}, {'iface': 'sata'}, {'sd': [0, 1]}],
+            [{'sd': [1]}, {'iface': 'sata'}, {'sd': [1, 0]}],
+            [{'sd': [0, 2]}, {'iface': 'sata'}, {'sd': [0, 2, 1]}],
+            [
+                {'sd': [], 'other': [0]},
+                {'iface': 'sata'},
+                {'other': [0], 'sd': [0]},
+            ],
+            [{'sd': [0]}, {'iface': 'scsi'}, {'sd': [0, 1]}],
+        ]
+    )
     def test_updateDriveIndex(self, used, drv, expected):
         with fake.VM(self.conf) as testvm:
             testvm._usedIndices = used
             testvm.updateDriveIndex(drv)
             assert testvm._usedIndices == expected
 
-    @permutations([
-        [[{'iface': 'scsi', 'index': '1'}, {'iface': 'sata'}],
-         [{'iface': 'scsi', 'index': '1'}, {'iface': 'sata', 'index': '0'}]],
-        [[{'iface': 'scsi'}, {'iface': 'ide'}],
-         [{'iface': 'scsi', 'index': '0'}, {'iface': 'ide', 'index': '0'}]],
-        [[{'iface': 'scsi'}, {'iface': 'sata'}, {'iface': 'ide'}],
-         [{'iface': 'scsi', 'index': '0'}, {'iface': 'sata', 'index': '1'},
-          {'iface': 'ide', 'index': '0'}]],
-    ])
+    @permutations(
+        [
+            [
+                [{'iface': 'scsi', 'index': '1'}, {'iface': 'sata'}],
+                [
+                    {'iface': 'scsi', 'index': '1'},
+                    {'iface': 'sata', 'index': '0'},
+                ],
+            ],
+            [
+                [{'iface': 'scsi'}, {'iface': 'ide'}],
+                [
+                    {'iface': 'scsi', 'index': '0'},
+                    {'iface': 'ide', 'index': '0'},
+                ],
+            ],
+            [
+                [{'iface': 'scsi'}, {'iface': 'sata'}, {'iface': 'ide'}],
+                [
+                    {'iface': 'scsi', 'index': '0'},
+                    {'iface': 'sata', 'index': '1'},
+                    {'iface': 'ide', 'index': '0'},
+                ],
+            ],
+        ]
+    )
     def test_normalizeDrivesIndices(self, drives, expected):
         with fake.VM(self.conf) as testvm:
             assert testvm.normalizeDrivesIndices(drives) == expected
@@ -975,8 +1088,11 @@ class TestVmDeviceHandling(TestCaseBase):
             assert sum([len(v) for v in devices.values()]) == 2
 
 
-VM_EXITS = tuple(product((define.NORMAL, define.ERROR),
-                 list(vmexitreason.exitReasons.keys())))
+VM_EXITS = tuple(
+    product(
+        (define.NORMAL, define.ERROR), list(vmexitreason.exitReasons.keys())
+    )
+)
 
 
 @expandPermutations
@@ -992,8 +1108,9 @@ class TestVmExit(TestCaseBase):
             testvm.setDownStatus(exitCode, exitReason)
             stats = testvm.getStats()
             assert stats['exitReason'] == exitReason
-            assert stats['exitMessage'] == \
-                vmexitreason.exitReasons.get(exitReason)
+            assert stats['exitMessage'] == vmexitreason.exitReasons.get(
+                exitReason
+            )
 
     @permutations(VM_EXITS)
     def testExitReasonExplicitMessage(self, exitCode, exitReason):
@@ -1010,59 +1127,81 @@ class TestVmExit(TestCaseBase):
             assert stats['exitMessage'] == msg
 
 
-_VM_PARAMS = {'displayPort': -1, 'displaySecurePort': -1,
-              'display': 'qxl', 'displayIp': '127.0.0.1',
-              'vmType': 'kvm', 'memSize': 1024}
+_VM_PARAMS = {
+    'displayPort': -1,
+    'displaySecurePort': -1,
+    'display': 'qxl',
+    'displayIp': '127.0.0.1',
+    'vmType': 'kvm',
+    'memSize': 1024,
+}
 
 
 class TestVmStats(TestCaseBase):
 
     def testGetNicStats(self):
-        GBPS = 10 ** 9 // 8
+        GBPS = 10**9 // 8
         MAC = '52:54:00:59:F5:3F'
         pretime = vdsm.common.time.monotonic_time()
         with fake.VM(_VM_PARAMS) as testvm:
             res = vmstats._nic_traffic(
-                testvm, fake.Nic(
-                    name='vnettest', model='virtio', mac_addr=MAC
-                ),
-                start_sample={'net.0.rx.bytes': 2 ** 64 - 15 * GBPS,
-                              'net.0.rx.pkts': 1,
-                              'net.0.rx.errs': 2,
-                              'net.0.rx.drop': 3,
-                              'net.0.tx.bytes': 0,
-                              'net.0.tx.pkts': 4,
-                              'net.0.tx.errs': 5,
-                              'net.0.tx.drop': 6},
+                testvm,
+                fake.Nic(name='vnettest', model='virtio', mac_addr=MAC),
+                start_sample={
+                    'net.0.rx.bytes': 2**64 - 15 * GBPS,
+                    'net.0.rx.pkts': 1,
+                    'net.0.rx.errs': 2,
+                    'net.0.rx.drop': 3,
+                    'net.0.tx.bytes': 0,
+                    'net.0.tx.pkts': 4,
+                    'net.0.tx.errs': 5,
+                    'net.0.tx.drop': 6,
+                },
                 start_index=0,
-                end_sample={'net.0.rx.bytes': 0,
-                            'net.0.rx.pkts': 7,
-                            'net.0.rx.errs': 8,
-                            'net.0.rx.drop': 9,
-                            'net.0.tx.bytes': 5 * GBPS,
-                            'net.0.tx.pkts': 10,
-                            'net.0.tx.errs': 11,
-                            'net.0.tx.drop': 12},
-                end_index=0)
+                end_sample={
+                    'net.0.rx.bytes': 0,
+                    'net.0.rx.pkts': 7,
+                    'net.0.rx.errs': 8,
+                    'net.0.rx.drop': 9,
+                    'net.0.tx.bytes': 5 * GBPS,
+                    'net.0.tx.pkts': 10,
+                    'net.0.tx.errs': 11,
+                    'net.0.tx.drop': 12,
+                },
+                end_index=0,
+            )
         posttime = vdsm.common.time.monotonic_time()
         assert 'sampleTime' in res
-        assert pretime <= res['sampleTime'] <= posttime, \
-            'sampleTime not in [%s..%s]' % (pretime, posttime)
+        assert (
+            pretime <= res['sampleTime'] <= posttime
+        ), 'sampleTime not in [%s..%s]' % (pretime, posttime)
         del res['sampleTime']
         assert res == {
-            'rxErrors': '8', 'rxDropped': '9',
-            'txErrors': '11', 'txDropped': '12',
-            'macAddr': MAC, 'name': 'vnettest',
-            'speed': '1000', 'state': 'unknown',
-            'rx': '0', 'tx': '625000000',
+            'rxErrors': '8',
+            'rxDropped': '9',
+            'txErrors': '11',
+            'txDropped': '12',
+            'macAddr': MAC,
+            'name': 'vnettest',
+            'speed': '1000',
+            'state': 'unknown',
+            'rx': '0',
+            'tx': '625000000',
         }
 
     def testMultipleGraphicDeviceStats(self):
         device_types = ['spice', 'vnc']
-        devices = '\n'.join(['''
+        devices = '\n'.join(
+            [
+                '''
 <graphics type="{type_}" port="-1">
   <listen type="network" network="vdsm-ovirtmgmt"/>
-</graphics>'''.format(type_=t) for t in device_types])
+</graphics>'''.format(
+                    type_=t
+                )
+                for t in device_types
+            ]
+        )
         with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             res = testvm.getStats()
             assert res['displayInfo']
@@ -1076,8 +1215,9 @@ class TestVmStats(TestCaseBase):
             testvm.guestAgent.diskMappingHash += 1
             assert res['hash'] != testvm.getStats()['hash']
 
-    @MonkeyPatch(vm, 'config',
-                 make_config([('vars', 'vm_command_timeout', '10')]))
+    @MonkeyPatch(
+        vm, 'config', make_config([('vars', 'vm_command_timeout', '10')])
+    )
     def testMonitorTimeoutResponsive(self):
         with fake.VM(_VM_PARAMS) as testvm:
             assert not testvm.isMigrating()
@@ -1085,8 +1225,9 @@ class TestVmStats(TestCaseBase):
             testvm._setUnresponsiveIfTimeout(stats, 1)  # any value < timeout
             assert stats['monitorResponse'] == '0'
 
-    @MonkeyPatch(vm, 'config',
-                 make_config([('vars', 'vm_command_timeout', '1')]))
+    @MonkeyPatch(
+        vm, 'config', make_config([('vars', 'vm_command_timeout', '1')])
+    )
     def testMonitorTimeoutUnresponsive(self):
         with fake.VM(_VM_PARAMS) as testvm:
             assert testvm._monitorResponse == 0
@@ -1095,8 +1236,9 @@ class TestVmStats(TestCaseBase):
             testvm._setUnresponsiveIfTimeout(stats, 10)  # any value > timeout
             assert stats['monitorResponse'] == '-1'
 
-    @MonkeyPatch(vm, 'config',
-                 make_config([('vars', 'vm_command_timeout', '10')]))
+    @MonkeyPatch(
+        vm, 'config', make_config([('vars', 'vm_command_timeout', '10')])
+    )
     def testMonitorTimeoutOnAlreadyUnresponsive(self):
         with fake.VM(_VM_PARAMS) as testvm:
             self._monitorResponse = -1
@@ -1113,16 +1255,22 @@ class TestLibVirtCallbacks(TestCaseBase):
     def test_onIOErrorPause(self):
         with fake.VM(_VM_PARAMS, runCpu=True) as testvm:
             assert testvm._guestCpuRunning
-            testvm.onIOError('fakedev', self.FAKE_ERROR,
-                             libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE)
+            testvm.onIOError(
+                'fakedev',
+                self.FAKE_ERROR,
+                libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE,
+            )
             assert not testvm._guestCpuRunning
             assert testvm._pause_code == self.FAKE_ERROR
 
     def test_onIOErrorReport(self):
         with fake.VM(_VM_PARAMS, runCpu=True) as testvm:
             assert testvm._guestCpuRunning
-            testvm.onIOError('fakedev', self.FAKE_ERROR,
-                             libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
+            testvm.onIOError(
+                'fakedev',
+                self.FAKE_ERROR,
+                libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT,
+            )
             assert testvm._guestCpuRunning
             assert testvm._pause_code != self.FAKE_ERROR
 
@@ -1130,15 +1278,20 @@ class TestLibVirtCallbacks(TestCaseBase):
         """action not explicitely handled, must be skipped"""
         with fake.VM(_VM_PARAMS, runCpu=True) as testvm:
             assert testvm._guestCpuRunning
-            testvm.onIOError('fakedev', self.FAKE_ERROR,
-                             libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
+            testvm.onIOError(
+                'fakedev',
+                self.FAKE_ERROR,
+                libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE,
+            )
             assert testvm._guestCpuRunning
             assert testvm._pause_code is None  # no error recorded
 
-    @permutations([
-        ['net1', set()],
-        ['missing', set(('net1',))],
-    ])
+    @permutations(
+        [
+            ['net1', set()],
+            ['missing', set(('net1',))],
+        ]
+    )
     def test_onDeviceRemoved(self, alias, kept_aliases):
         devices = '''
 <interface type='bridge'>
@@ -1152,12 +1305,21 @@ class TestLibVirtCallbacks(TestCaseBase):
              function='0x0'/>
 </interface>
 '''
-        with fake.VM(_VM_PARAMS, xmldevices=devices,
-                     create_device_objects=True) as testvm:
+        with fake.VM(
+            _VM_PARAMS, xmldevices=devices, create_device_objects=True
+        ) as testvm:
             testvm._updateDomainDescriptor = lambda *args: None
             testvm.onDeviceRemoved(alias)
-            assert set([d.alias for group in testvm._devices.values()
-                        for d in group]) == kept_aliases
+            assert (
+                set(
+                    [
+                        d.alias
+                        for group in testvm._devices.values()
+                        for d in group
+                    ]
+                )
+                == kept_aliases
+            )
 
 
 class TestVmStatusTransitions(TestCaseBase):
@@ -1168,8 +1330,8 @@ class TestVmStatusTransitions(TestCaseBase):
 
             def _asyncEvent():
                 testvm.onLibvirtLifecycleEvent(
-                    libvirt.VIR_DOMAIN_EVENT_SUSPENDED,
-                    -1, -1)
+                    libvirt.VIR_DOMAIN_EVENT_SUSPENDED, -1, -1
+                )
 
             t = threading.Thread(target=_asyncEvent)
             t.daemon = True
@@ -1179,8 +1341,9 @@ class TestVmStatusTransitions(TestCaseBase):
                 time.sleep(0.5)
                 # pause the main thread to let the event one run
 
-            with MonkeyPatchScope([(testvm, '_underlyingPause',
-                                    _fireAsyncEvent)]):
+            with MonkeyPatchScope(
+                [(testvm, '_underlyingPause', _fireAsyncEvent)]
+            ):
                 assert testvm.status()['status'] == vmstatus.UP
                 testvm.pause(vmstatus.SAVING_STATE)
                 assert testvm.status()['status'] == vmstatus.SAVING_STATE
@@ -1195,15 +1358,17 @@ class TestVmBalloon(TestCaseBase):
         if specificErr is None:
             assert res['status']['code'] != 0
         else:
-            assert res['status']['code'] == \
-                define.errCode[specificErr]['status']['code']
+            assert (
+                res['status']['code']
+                == define.errCode[specificErr]['status']['code']
+            )
 
     def testSucceed(self):
         devices = '<memballoon model="virtio" alias="balloon"/>'
         with fake.VM(
             params={'memSize': 128 * 1024},
             xmldevices=devices,
-            create_device_objects=True
+            create_device_objects=True,
         ) as testvm:
             testvm._dom = fake.Domain()
             target = 256 * 1024
@@ -1212,28 +1377,19 @@ class TestVmBalloon(TestCaseBase):
 
     def testVmWithoutDom(self):
         devices = '<memballoon model="virtio" alias="balloon"/>'
-        with fake.VM(
-            xmldevices=devices,
-            create_device_objects=True
-        ) as testvm:
+        with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             with pytest.raises(exception.BalloonError):
                 testvm.setBalloonTarget(128)
 
     def testTargetValueNotInteger(self):
         devices = '<memballoon model="virtio" alias="balloon"/>'
-        with fake.VM(
-            xmldevices=devices,
-            create_device_objects=True
-        ) as testvm:
+        with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             with pytest.raises(exception.BalloonError):
                 testvm.setBalloonTarget('foobar')
 
     def testLibvirtFailure(self):
         devices = '<memballoon model="virtio" alias="balloon"/>'
-        with fake.VM(
-            xmldevices=devices,
-            create_device_objects=True
-        ) as testvm:
+        with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             testvm._dom = fake.Domain(virtError=libvirt.VIR_ERR_INTERNAL_ERROR)
             # we don't care about the error code as long as is != NO_DOMAIN
             with pytest.raises(exception.BalloonError):
@@ -1248,7 +1404,7 @@ class TestVmBalloon(TestCaseBase):
         with fake.VM(
             params={'memSize': 128 * 1024},
             xmldevices=devices,
-            create_device_objects=True
+            create_device_objects=True,
         ) as testvm:
             testvm._dom = fake.Domain()
             target = 256 * 1024
@@ -1260,7 +1416,7 @@ class TestVmBalloon(TestCaseBase):
         with fake.VM(
             params={'memSize': 128 * 1024},
             xmldevices=devices,
-            create_device_objects=True
+            create_device_objects=True,
         ) as testvm:
             testvm._dom = fake.Domain()
             target = 256 * 1024
@@ -1329,7 +1485,8 @@ class FreezingGuestAgentUnresponsiveTests(TestCaseBase):
     def setUp(self):
         self.dom = fake.Domain(
             virtError=libvirt.VIR_ERR_AGENT_UNRESPONSIVE,
-            errorMessage="fake error")
+            errorMessage="fake error",
+        )
         self.vm = FakeVm(self.dom)
 
     def test_freeze(self):
@@ -1347,8 +1504,8 @@ class FreezingUnsupportedTests(TestCaseBase):
 
     def setUp(self):
         self.dom = fake.Domain(
-            virtError=libvirt.VIR_ERR_NO_SUPPORT,
-            errorMessage="fake error")
+            virtError=libvirt.VIR_ERR_NO_SUPPORT, errorMessage="fake error"
+        )
         self.vm = FakeVm(self.dom)
 
     def test_freeze(self):
@@ -1364,8 +1521,8 @@ class FreezingUnexpectedErrorTests(TestCaseBase):
 
     def setUp(self):
         self.dom = fake.Domain(
-            virtError=libvirt.VIR_ERR_INTERNAL_ERROR,
-            errorMessage="fake error")
+            virtError=libvirt.VIR_ERR_INTERNAL_ERROR, errorMessage="fake error"
+        )
         self.vm = FakeVm(self.dom)
 
     def test_freeze(self):
@@ -1434,29 +1591,59 @@ class FakePersistentVm(object):
 @expandPermutations
 class TestVmPersistency(TestCaseBase):
 
-    @permutations([
-        ((('123', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),
-          ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),),
-         ['123', '456'],),
-        ((('123', 'bar', libvirt.VIR_DOMAIN_CRASHED),
-          ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),),
-         ['123', '456'],),
-        ((('123', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
-          ('456', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),),
-         ['123'],),
-        ((('123', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
-          ('456', 'bar', libvirt.VIR_DOMAIN_RUNNING),),
-         ['123'],),
-        ((('123', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),
-          ('456', 'foo', libvirt.VIR_DOMAIN_RUNNING),),
-         None,),
-        ((('123', 'bar', libvirt.VIR_DOMAIN_RUNNING),
-          ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),),
-         None,),
-        ((('456', 'bar', libvirt.VIR_DOMAIN_RUNNING),
-          ('789', 'baz', libvirt.VIR_DOMAIN_SHUTOFF),),
-         [],),
-    ])
+    @permutations(
+        [
+            (
+                (
+                    ('123', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),
+                    ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
+                ),
+                ['123', '456'],
+            ),
+            (
+                (
+                    ('123', 'bar', libvirt.VIR_DOMAIN_CRASHED),
+                    ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
+                ),
+                ['123', '456'],
+            ),
+            (
+                (
+                    ('123', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
+                    ('456', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),
+                ),
+                ['123'],
+            ),
+            (
+                (
+                    ('123', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
+                    ('456', 'bar', libvirt.VIR_DOMAIN_RUNNING),
+                ),
+                ['123'],
+            ),
+            (
+                (
+                    ('123', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),
+                    ('456', 'foo', libvirt.VIR_DOMAIN_RUNNING),
+                ),
+                None,
+            ),
+            (
+                (
+                    ('123', 'bar', libvirt.VIR_DOMAIN_RUNNING),
+                    ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
+                ),
+                None,
+            ),
+            (
+                (
+                    ('456', 'bar', libvirt.VIR_DOMAIN_RUNNING),
+                    ('789', 'baz', libvirt.VIR_DOMAIN_SHUTOFF),
+                ),
+                [],
+            ),
+        ]
+    )
     def test_domain_cleanup(self, domain_specs, result):
         undefined = []
         domains = [FakePersistentDomain(undefined, *s) for s in domain_specs]
@@ -1478,7 +1665,7 @@ class BlockIoTuneTests(TestCaseBase):
             'write_bytes_sec': 1000,
             'total_iops_sec': 0,
             'write_iops_sec': 0,
-            'read_iops_sec': 0
+            'read_iops_sec': 0,
         }
         self.iotune_high = {
             'total_bytes_sec': 0,
@@ -1486,7 +1673,7 @@ class BlockIoTuneTests(TestCaseBase):
             'write_bytes_sec': 2000,
             'total_iops_sec': 0,
             'write_iops_sec': 0,
-            'read_iops_sec': 0
+            'read_iops_sec': 0,
         }
         self.iotune_wrong = {
             'total_bytes_sec': 'XXX',
@@ -1494,7 +1681,7 @@ class BlockIoTuneTests(TestCaseBase):
             'write_bytes_sec': 1000,
             'total_iops_sec': 0,
             'write_iops_sec': 0,
-            'read_iops_sec': 0
+            'read_iops_sec': 0,
         }
 
         self.drive = FakeBlockIoTuneDrive('vda', path='/fake/path/vda')
@@ -1510,17 +1697,23 @@ class BlockIoTuneTests(TestCaseBase):
 
             res = testvm.io_tune_values()
             assert res
-            assert self.dom.__calls__ == \
-                [('blockIoTune',
+            assert self.dom.__calls__ == [
+                (
+                    'blockIoTune',
                     (self.drive.name, libvirt.VIR_DOMAIN_AFFECT_LIVE),
-                    {})]
+                    {},
+                )
+            ]
 
             res = testvm.io_tune_values()
             assert res
-            assert self.dom.__calls__ == \
-                [('blockIoTune',
+            assert self.dom.__calls__ == [
+                (
+                    'blockIoTune',
                     (self.drive.name, libvirt.VIR_DOMAIN_AFFECT_LIVE),
-                    {})]
+                    {},
+                )
+            ]
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
     def test_set_updates_cache(self):
@@ -1528,9 +1721,7 @@ class BlockIoTuneTests(TestCaseBase):
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
 
-            tunables = [
-                {"name": self.drive.name, "ioTune": self.iotune_high}
-            ]
+            tunables = [{"name": self.drive.name, "ioTune": self.iotune_high}]
 
             res = testvm.io_tune_values()
             self.assert_iotune_in_response(res, self.iotune_low)
@@ -1550,9 +1741,7 @@ class BlockIoTuneTests(TestCaseBase):
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
 
-            tunables = [
-                {"name": self.drive.name, "ioTune": self.iotune_high}
-            ]
+            tunables = [{"name": self.drive.name, "ioTune": self.iotune_high}]
 
             testvm.setIoTune(tunables)
 
@@ -1577,12 +1766,10 @@ class BlockIoTuneTests(TestCaseBase):
 
             self.dom.callback = _interleaved_update
             self.assert_iotune_in_response(
-                testvm.io_tune_values(),
-                self.iotune_low
+                testvm.io_tune_values(), self.iotune_low
             )
 
-            assert self.dom.iotunes == \
-                {self.drive.name: self.iotune_high}
+            assert self.dom.iotunes == {self.drive.name: self.iotune_high}
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
     def test_set_iotune_invalid(self):
@@ -1590,15 +1777,14 @@ class BlockIoTuneTests(TestCaseBase):
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
 
-            tunables = [
-                {"name": self.drive.name, "ioTune": self.iotune_wrong}
-            ]
+            tunables = [{"name": self.drive.name, "ioTune": self.iotune_wrong}]
 
             with pytest.raises(exception.UpdateIOTuneError):
                 testvm.setIoTune(tunables)
 
-    @MonkeyPatch(utils, 'config',
-                 make_config([('sanlock', 'io_timeout', '1')]))
+    @MonkeyPatch(
+        utils, 'config', make_config([('sanlock', 'io_timeout', '1')])
+    )
     def test_exit_with_error_on_resume(self):
         with fake.VM() as testvm:
             pretime = vdsm.common.time.monotonic_time() - 30.0
@@ -1613,56 +1799,78 @@ class BlockIoTuneTests(TestCaseBase):
             testvm.onLibvirtLifecycleEvent(
                 libvirt.VIR_DOMAIN_EVENT_STOPPED,
                 libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN,
-                None)
+                None,
+            )
 
             stats = testvm.getStats()
             assert stats['status'] == vmstatus.DOWN
             assert stats['exitCode'] == define.ERROR
-            assert stats['exitReason'] == \
-                vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT
+            assert (
+                stats['exitReason'] == vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT
+            )
 
-    _PAUSED_VMS = {'auto_resume':
-                   {'pause_time_offset': 81.0,
-                    'resume_behavior': vm.ResumeBehavior.AUTO_RESUME,
-                    'pause': True, 'pause_code': 'EIO',
-                    'expected_status': vmstatus.PAUSED},
-                   'leave_paused':
-                   {'pause_time_offset': 81.0,
-                    'resume_behavior': vm.ResumeBehavior.LEAVE_PAUSED,
-                    'pause': True, 'pause_code': 'EIO',
-                    'expected_status': vmstatus.PAUSED},
-                   'kill':
-                   {'pause_time_offset': 81.0,
-                    'resume_behavior': vm.ResumeBehavior.KILL,
-                    'pause': True, 'pause_code': 'EIO',
-                    'expected_status': vmstatus.DOWN},
-                   'paused':
-                   {'pause_time_offset': 81.0,
-                    'pause': True,
-                    'expected_status': vmstatus.PAUSED},
-                   'paused_now':
-                   {'pause_time_offset': 0.0,
-                    'resume_behavior': vm.ResumeBehavior.KILL,
-                    'pause': True, 'pause_code': 'EIO',
-                    'expected_status': vmstatus.PAUSED},
-                   'paused_later':
-                   {'pause_time_offset': 70.0,
-                    'resume_behavior': vm.ResumeBehavior.KILL,
-                    'pause': True, 'pause_code': 'EIO',
-                    'expected_status': vmstatus.PAUSED},
-                   'running':
-                   {'pause_time_offset': 81.0,
-                    'pause': False,
-                    'expected_status': vmstatus.WAIT_FOR_LAUNCH},
-                   }
+    _PAUSED_VMS = {
+        'auto_resume': {
+            'pause_time_offset': 81.0,
+            'resume_behavior': vm.ResumeBehavior.AUTO_RESUME,
+            'pause': True,
+            'pause_code': 'EIO',
+            'expected_status': vmstatus.PAUSED,
+        },
+        'leave_paused': {
+            'pause_time_offset': 81.0,
+            'resume_behavior': vm.ResumeBehavior.LEAVE_PAUSED,
+            'pause': True,
+            'pause_code': 'EIO',
+            'expected_status': vmstatus.PAUSED,
+        },
+        'kill': {
+            'pause_time_offset': 81.0,
+            'resume_behavior': vm.ResumeBehavior.KILL,
+            'pause': True,
+            'pause_code': 'EIO',
+            'expected_status': vmstatus.DOWN,
+        },
+        'paused': {
+            'pause_time_offset': 81.0,
+            'pause': True,
+            'expected_status': vmstatus.PAUSED,
+        },
+        'paused_now': {
+            'pause_time_offset': 0.0,
+            'resume_behavior': vm.ResumeBehavior.KILL,
+            'pause': True,
+            'pause_code': 'EIO',
+            'expected_status': vmstatus.PAUSED,
+        },
+        'paused_later': {
+            'pause_time_offset': 70.0,
+            'resume_behavior': vm.ResumeBehavior.KILL,
+            'pause': True,
+            'pause_code': 'EIO',
+            'expected_status': vmstatus.PAUSED,
+        },
+        'running': {
+            'pause_time_offset': 81.0,
+            'pause': False,
+            'expected_status': vmstatus.WAIT_FOR_LAUNCH,
+        },
+    }
 
     def test_kill_long_paused(self):
         cif = fake.ClientIF()
         test = functools.partial(self._kill_long_paused, cif)
         vm_params = []
         for vmid, params in self._PAUSED_VMS.items():
-            params = {name: value for name, value in params.items()
-                      if name in ('pause_time_offset', 'resume_behavior',)}
+            params = {
+                name: value
+                for name, value in params.items()
+                if name
+                in (
+                    'pause_time_offset',
+                    'resume_behavior',
+                )
+            }
             params['cif'] = cif
             params['vmid'] = vmid
             vm_params.append(params)
@@ -1682,9 +1890,13 @@ class BlockIoTuneTests(TestCaseBase):
         periodic._kill_long_paused_vms(cif)
         for vm_ in cif.getVMs().values():
             expected_status = spec[vm_.id]['expected_status']
-            assert vm_.lastStatus == expected_status, \
-                ("Wrong status of `%s': actual=%s, expected=%s" %
-                 (vm_.id, vm_.lastStatus, expected_status,))
+            assert (
+                vm_.lastStatus == expected_status
+            ), "Wrong status of `%s': actual=%s, expected=%s" % (
+                vm_.id,
+                vm_.lastStatus,
+                expected_status,
+            )
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
     def test_io_tune_policy_values(self):
@@ -1692,12 +1904,14 @@ class BlockIoTuneTests(TestCaseBase):
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
             assert testvm.io_tune_policy_values() == {
-                'current_values': [{
-                    'ioTune': self.iotune_low,
-                    'name': self.drive.name,
-                    'path': self.drive.path,
-                }],
-                'policy': []
+                'current_values': [
+                    {
+                        'ioTune': self.iotune_low,
+                        'name': self.drive.name,
+                        'path': self.drive.path,
+                    }
+                ],
+                'policy': [],
             }
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
@@ -1756,13 +1970,20 @@ class SyncGuestTimeTests(TestCaseBase):
         vm = self._make_vm()
         vm.syncGuestTime()
         assert vm._dom.__calls__ == [
-            ('setTime', (), {'time': {'seconds': 1234567890,
-                                      'nseconds': 125000000}})
+            (
+                'setTime',
+                (),
+                {'time': {'seconds': 1234567890, 'nseconds': 125000000}},
+            )
         ]
 
-    @permutations([[libvirt.VIR_ERR_AGENT_UNRESPONSIVE],
-                   [libvirt.VIR_ERR_NO_SUPPORT],
-                   [libvirt.VIR_ERR_INTERNAL_ERROR]])
+    @permutations(
+        [
+            [libvirt.VIR_ERR_AGENT_UNRESPONSIVE],
+            [libvirt.VIR_ERR_NO_SUPPORT],
+            [libvirt.VIR_ERR_INTERNAL_ERROR],
+        ]
+    )
     def test_swallow_expected_errors(self, virt_error):
         vm = self._make_vm(virt_error=virt_error)
         with self.assertNotRaises():
@@ -1837,10 +2058,12 @@ class MetadataTests(TestCaseBase):
     @contextmanager
     def test_vm(self, test_xml=None):
         with namedTemporaryDir() as tmp_dir:
-            with MonkeyPatchScope([
-                (constants, 'P_VDSM_RUN', tmp_dir),
-                (libvirtconnection, 'get', fake.Connection),
-            ]):
+            with MonkeyPatchScope(
+                [
+                    (constants, 'P_VDSM_RUN', tmp_dir),
+                    (libvirtconnection, 'get', fake.Connection),
+                ]
+            ):
                 params = {
                     'vmId': 'TESTING',
                     'vmName': 'nTESTING',
@@ -1855,34 +2078,76 @@ class MetadataTests(TestCaseBase):
 
     def test_custom_properties(self):
         with self.test_vm() as testvm:
-            assert testvm._custom == \
-                {
-                    'vmId': 'TESTING',
-                    'custom':
-                    {
-                        'foo': 'bar',
-                        'fizz': 'buzz',
-                    },
-                }
+            assert testvm._custom == {
+                'vmId': 'TESTING',
+                'custom': {
+                    'foo': 'bar',
+                    'fizz': 'buzz',
+                },
+            }
 
-    @permutations([
-        (3, 6, True,),
-        (4, 1, True,),
-        (4, 2, True,),
-        (4, 3, False,),
-        (5, 1, False,),
-    ])
+    @permutations(
+        [
+            (
+                3,
+                6,
+                True,
+            ),
+            (
+                4,
+                1,
+                True,
+            ),
+            (
+                4,
+                2,
+                True,
+            ),
+            (
+                4,
+                3,
+                False,
+            ),
+            (
+                5,
+                1,
+                False,
+            ),
+        ]
+    )
     def test_min_cluster_version(self, major, minor, result):
         with self.test_vm(test_xml=self._TEST_XML_CLUSTER_VERSION) as testvm:
             assert testvm.min_cluster_version(major, minor) == result
 
-    @permutations([
-        (3, 6, False,),
-        (4, 1, False,),
-        (4, 2, False,),
-        (4, 3, False,),
-        (5, 1, False,),
-    ])
+    @permutations(
+        [
+            (
+                3,
+                6,
+                False,
+            ),
+            (
+                4,
+                1,
+                False,
+            ),
+            (
+                4,
+                2,
+                False,
+            ),
+            (
+                4,
+                3,
+                False,
+            ),
+            (
+                5,
+                1,
+                False,
+            ),
+        ]
+    )
     def test_void_cluster_version(self, major, minor, result):
         with self.test_vm(test_xml=self._TEST_XML) as testvm:
             assert testvm.min_cluster_version(major, minor) == result
@@ -1895,11 +2160,13 @@ class MetadataTests(TestCaseBase):
         with self.test_vm(test_xml=self._TEST_XML_LAUNCH_PAUSED) as testvm:
             assert testvm._launch_paused
 
-    @permutations([
-        (_TEST_XML, cpumanagement.CPU_POLICY_NONE),
-        (_TEST_XML_IMPLIED_PIN, cpumanagement.CPU_POLICY_MANUAL),
-        (_TEST_XML_DEDICATED, cpumanagement.CPU_POLICY_DEDICATED),
-    ])
+    @permutations(
+        [
+            (_TEST_XML, cpumanagement.CPU_POLICY_NONE),
+            (_TEST_XML_IMPLIED_PIN, cpumanagement.CPU_POLICY_MANUAL),
+            (_TEST_XML_DEDICATED, cpumanagement.CPU_POLICY_DEDICATED),
+        ]
+    )
     def test_cpu_policy(self, xml, expected):
         with self.test_vm(test_xml=xml) as testvm:
             assert testvm.cpu_policy() == expected
@@ -1914,21 +2181,29 @@ class TestQgaContext(TestCaseBase):
     def test_default_timeout(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain()
-            assert testvm._dom._agent_timeout == \
-                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
+            assert (
+                testvm._dom._agent_timeout
+                == libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
+            )
             with testvm.qga_context():
-                assert testvm._dom._agent_timeout == \
-                    libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
-            assert testvm._dom._agent_timeout == \
-                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
+                assert (
+                    testvm._dom._agent_timeout
+                    == libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
+                )
+            assert (
+                testvm._dom._agent_timeout
+                == libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
+            )
 
     def test_reset_default_timeout(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain()
             with testvm.qga_context(10):
                 assert testvm._dom._agent_timeout == 10
-            assert testvm._dom._agent_timeout == \
-                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
+            assert (
+                testvm._dom._agent_timeout
+                == libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
+            )
 
     def test_libvirtError_not_handled(self):
         with fake.VM() as testvm:
@@ -1997,7 +2272,8 @@ class FakeLeaseClientIF(object):
 def _load_xml(name):
     test_path = os.path.realpath(__file__)
     data_path = os.path.join(
-        os.path.split(test_path)[0], '..', 'devices', 'data')
+        os.path.split(test_path)[0], '..', 'devices', 'data'
+    )
 
     with open(os.path.join(data_path, name), 'r') as f:
         return f.read()

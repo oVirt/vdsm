@@ -21,11 +21,13 @@ def restore_command(*args):
     """
     threading.current_thread().setName('restore-net')
     try:
-        logging.config.fileConfig('/etc/vdsm/svdsm.logger.conf',
-                                  disable_existing_loggers=False)
+        logging.config.fileConfig(
+            '/etc/vdsm/svdsm.logger.conf', disable_existing_loggers=False
+        )
     except:
-        logging.basicConfig(filename='/dev/stderr', filemode='w+',
-                            level=logging.DEBUG)
+        logging.basicConfig(
+            filename='/dev/stderr', filemode='w+', level=logging.DEBUG
+        )
         logging.error('Could not init proper logging', exc_info=True)
 
     if len(args) > 2:
@@ -88,20 +90,22 @@ def clear_networks(*args):
         metavar='EXCLUDED_NETWORK',
         nargs='*',
         default=[],
-        help='VDSM networks that should be kept'
+        help='VDSM networks that should be kept',
     )
     parser.add_argument(
         '-a',
         '--all',
         action='store_true',
-        help='set this flag in case no network should be kept'
+        help='set this flag in case no network should be kept',
     )
     arguments = parser.parse_args(args[1:])
 
     if not arguments.exclude_net and not arguments.all:
-        parser.error('Either --exclude-net with a network to be kept or '
-                     '--all is required as an argument. Use vdsm-tool '
-                     'list-nets to list configured networks.')
+        parser.error(
+            'Either --exclude-net with a network to be kept or '
+            '--all is required as an argument. Use vdsm-tool '
+            'list-nets to list configured networks.'
+        )
 
     caps = net_api.network_caps()
     networks_request = {

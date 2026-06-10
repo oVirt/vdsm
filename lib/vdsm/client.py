@@ -120,19 +120,28 @@ from yajsonrpc import stomp
 
 import yajsonrpc
 
-
 DEFAULT_PORT = 54321
 
 
 def connect(
-        host, port=DEFAULT_PORT, use_tls=True, timeout=60,
-        gluster_enabled=False, incoming_heartbeat=stomp.DEFAULT_INCOMING,
-        outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
-        nr_retries=stomp.NR_RETRIES):
+    host,
+    port=DEFAULT_PORT,
+    use_tls=True,
+    timeout=60,
+    gluster_enabled=False,
+    incoming_heartbeat=stomp.DEFAULT_INCOMING,
+    outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
+    nr_retries=stomp.NR_RETRIES,
+):
     try:
         client = stompclient.SimpleClient(
-            host, port, use_tls, incoming_heartbeat=incoming_heartbeat,
-            outgoing_heartbeat=outgoing_heartbeat, nr_retries=nr_retries)
+            host,
+            port,
+            use_tls,
+            incoming_heartbeat=incoming_heartbeat,
+            outgoing_heartbeat=outgoing_heartbeat,
+            nr_retries=nr_retries,
+        )
 
     except Exception as e:
         raise ConnectionError(host, port, use_tls, timeout, e)
@@ -149,6 +158,7 @@ class Error(Exception):
 
     TODO: depend on vdsm-common package when we have one.
     """
+
     msg = ""
 
     def __str__(self):
@@ -156,8 +166,10 @@ class Error(Exception):
 
 
 class ConnectionError(Error):
-    msg = ("Connection to {self.host}:{self.port} with use_tls={self.use_tls},"
-           " timeout={self.timeout} failed: {self.reason}")
+    msg = (
+        "Connection to {self.host}:{self.port} with use_tls={self.use_tls},"
+        " timeout={self.timeout} failed: {self.reason}"
+    )
 
     def __init__(self, host, port, use_tls, timeout, reason):
         self.host = host
@@ -175,8 +187,10 @@ class MissingSchemaError(Error):
 
 
 class TimeoutError(Error):
-    msg = ("Request {self.cmd} with args {self.params} timed out "
-           "after {self.timeout} seconds")
+    msg = (
+        "Request {self.cmd} with args {self.params} timed out "
+        "after {self.timeout} seconds"
+    )
 
     def __init__(self, cmd, params, timeout):
         self.cmd = cmd
@@ -185,7 +199,7 @@ class TimeoutError(Error):
 
 
 class ClientError(Error):
-    msg = ("Request {self.cmd} with args {self.params} failed: {self.reason}")
+    msg = "Request {self.cmd} with args {self.params} failed: {self.reason}"
 
     def __init__(self, cmd, params, reason):
         self.cmd = cmd
@@ -194,8 +208,10 @@ class ClientError(Error):
 
 
 class ServerError(Error):
-    msg = ("Command {self.cmd} with args {self.params} failed:\n"
-           "(code={self.code}, message={self.resp_msg})")
+    msg = (
+        "Command {self.cmd} with args {self.params} failed:\n"
+        "(code={self.code}, message={self.resp_msg})"
+    )
 
     def __init__(self, cmd, params, code, message):
         self.cmd = cmd
@@ -219,6 +235,7 @@ class _Client(object):
     A wrapper class for client class. Encapulates client run and responsible
     for closing client connection in the end of its run.
     """
+
     def __init__(self, client, default_timeout, gluster_enabled=False):
         self._client = client
         self._default_timeout = default_timeout
@@ -230,7 +247,8 @@ class _Client(object):
     def _init_schema(self, gluster_enabled):
         try:
             self._schema = vdsmapi.Schema.vdsm_api(
-                strict_mode=False, with_gluster=gluster_enabled)
+                strict_mode=False, with_gluster=gluster_enabled
+            )
             self._event_schema = vdsmapi.Schema.vdsm_events(strict_mode=False)
         except vdsmapi.SchemaNotFound as e:
             raise MissingSchemaError(e)
@@ -262,12 +280,12 @@ class _Client(object):
         method = namespace + "." + method_name
         timeout = kwargs.pop("_timeout", self._default_timeout)
 
-        req = yajsonrpc.JsonRpcRequest(
-            method, kwargs, reqId=str(uuid.uuid4()))
+        req = yajsonrpc.JsonRpcRequest(method, kwargs, reqId=str(uuid.uuid4()))
 
         try:
             responses = self._client.call(
-                req, timeout=timeout, flow_id=self._flow_id)
+                req, timeout=timeout, flow_id=self._flow_id
+            )
         except EnvironmentError as e:
             raise ClientError(method, kwargs, e)
 
@@ -280,8 +298,7 @@ class _Client(object):
 
         resp = responses[0]
         if resp.error:
-            raise ServerError(
-                method, kwargs, resp.error.code, str(resp.error))
+            raise ServerError(method, kwargs, resp.error.code, str(resp.error))
 
         return resp.result
 

@@ -52,8 +52,10 @@ class Patch(object):
 
     @staticmethod
     def _is_class_method(method):
-        return (inspect.ismethod(method) and
-                getattr(method, '__self__', None) is not None)
+        return (
+            inspect.ismethod(method)
+            and getattr(method, '__self__', None) is not None
+        )
 
     def apply(self):
         assert self.old == []
@@ -76,8 +78,9 @@ class Patch(object):
             module, name, that = self.old.pop()
             # Python 2 wrongly sets the function `that' as an instancemethod
             # instead of keeping it as staticmethod.
-            if inspect.isclass(module) and self._is_static_method(module,
-                                                                  name, that):
+            if inspect.isclass(module) and self._is_static_method(
+                module, name, that
+            ):
                 that = staticmethod(that)
 
             setattr(module, name, that)
@@ -127,7 +130,9 @@ def MonkeyPatch(module, name, that):
         def wrapper(*args, **kw):
             with MonkeyPatchScope([(module, name, that)]):
                 return f(*args, **kw)
+
         return wrapper
+
     return decorator
 
 
@@ -160,6 +165,7 @@ def MonkeyClass(module, name, that):
             self.__monkeystack__.append(patch)
             patch.apply()
             return func(self, *a, **kw)
+
         return setup
 
     def teardown_decorator(func):
@@ -168,6 +174,7 @@ def MonkeyClass(module, name, that):
             patch = self.__monkeystack__.pop()
             patch.revert()
             return func(self, *a, **kw)
+
         return teardown
 
     def wrapper(cls):

@@ -25,7 +25,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 
-
 MAX_HOST_ID = 250
 
 # Host status - currently only sanlock supports this, and the documentaion
@@ -63,7 +62,7 @@ LVB_SIZE = 512
 
 
 class Error(errors.Base):
-    """ Base class for clusterlock errors. """
+    """Base class for clusterlock errors."""
 
 
 class InvalidLeaseName(Error):
@@ -82,8 +81,10 @@ class InvalidLeaseName(Error):
     are out in the wild, and we must handle them.
     """
 
-    msg = ("Sanlock resource name {self.resource} does not match lease name "
-           "{self.lease}, this lease must be repaired.")
+    msg = (
+        "Sanlock resource name {self.resource} does not match lease name "
+        "{self.lease}, this lease must be repaired."
+    )
 
     def __init__(self, resource, lease):
         self.resource = resource
@@ -124,8 +125,17 @@ class SafeLease(object):
 
     supports_inquire = False
 
-    def __init__(self, sdUUID, idsPath, lease, lockRenewalIntervalSec,
-                 leaseTimeSec, leaseFailRetry, ioOpTimeoutSec, **kwargs):
+    def __init__(
+        self,
+        sdUUID,
+        idsPath,
+        lease,
+        lockRenewalIntervalSec,
+        leaseTimeSec,
+        leaseFailRetry,
+        ioOpTimeoutSec,
+        **kwargs
+    ):
         """
         Note: kwargs are not used. They were added to keep forward
               compatibility with more recent locks.
@@ -134,8 +144,12 @@ class SafeLease(object):
         self._sdUUID = sdUUID
         self._idsPath = idsPath
         self._lease = lease
-        self.setParams(lockRenewalIntervalSec, leaseTimeSec, leaseFailRetry,
-                       ioOpTimeoutSec)
+        self.setParams(
+            lockRenewalIntervalSec,
+            leaseTimeSec,
+            leaseFailRetry,
+            ioOpTimeoutSec,
+        )
 
     @property
     def supports_multiple_leases(self):
@@ -151,8 +165,13 @@ class SafeLease(object):
             self.log.warn("could not initialise spm lease (%s): %s", rc, out)
             raise se.ClusterLockInitError()
 
-    def setParams(self, lockRenewalIntervalSec, leaseTimeSec, leaseFailRetry,
-                  ioOpTimeoutSec):
+    def setParams(
+        self,
+        lockRenewalIntervalSec,
+        leaseTimeSec,
+        leaseFailRetry,
+        ioOpTimeoutSec,
+    ):
         self._lockRenewalIntervalSec = lockRenewalIntervalSec
         self._leaseTimeSec = leaseTimeSec
         self._leaseFailRetry = leaseFailRetry
@@ -162,12 +181,18 @@ class SafeLease(object):
         return 1000
 
     def acquireHostId(self, hostId, wait):
-        self.log.debug("Host id for domain %s successfully acquired (id: %s)",
-                       self._sdUUID, hostId)
+        self.log.debug(
+            "Host id for domain %s successfully acquired (id: %s)",
+            self._sdUUID,
+            hostId,
+        )
 
     def releaseHostId(self, hostId, wait, unused):
-        self.log.debug("Host id for domain %s released successfully (id: %s)",
-                       self._sdUUID, hostId)
+        self.log.debug(
+            "Host id for domain %s released successfully (id: %s)",
+            self._sdUUID,
+            hostId,
+        )
 
     def hasHostId(self, hostId):
         return True
@@ -181,23 +206,42 @@ class SafeLease(object):
         leaseTimeMs = self._leaseTimeSec * 1000
         ioOpTimeoutMs = self._ioOpTimeoutSec * 1000
         with self._lock:
-            self.log.debug("Acquiring cluster lock for domain %s" %
-                           self._sdUUID)
+            self.log.debug(
+                "Acquiring cluster lock for domain %s" % self._sdUUID
+            )
 
             lockUtil = self.getLockUtilFullPath()
-            acquireLockCommand = subprocess.list2cmdline([
-                lockUtil, "start", self._sdUUID, str(hostID),
-                str(self._lockRenewalIntervalSec), str(lease.path),
-                str(leaseTimeMs), str(ioOpTimeoutMs),
-                str(self._leaseFailRetry), str(os.getpid())
-            ])
+            acquireLockCommand = subprocess.list2cmdline(
+                [
+                    lockUtil,
+                    "start",
+                    self._sdUUID,
+                    str(hostID),
+                    str(self._lockRenewalIntervalSec),
+                    str(lease.path),
+                    str(leaseTimeMs),
+                    str(ioOpTimeoutMs),
+                    str(self._leaseFailRetry),
+                    str(os.getpid()),
+                ]
+            )
 
-            cmd = [constants.EXT_SU, misc.IOUSER, '-s', constants.EXT_SH, '-c',
-                   acquireLockCommand]
-            (rc, out, err) = misc.execCmd(cmd, cwd=self.lockUtilPath,
-                                          sudo=True,
-                                          ioclass=utils.IOCLASS.REALTIME,
-                                          ioclassdata=0, setsid=True)
+            cmd = [
+                constants.EXT_SU,
+                misc.IOUSER,
+                '-s',
+                constants.EXT_SH,
+                '-c',
+                acquireLockCommand,
+            ]
+            rc, out, err = misc.execCmd(
+                cmd,
+                cwd=self.lockUtilPath,
+                sudo=True,
+                ioclass=utils.IOCLASS.REALTIME,
+                ioclassdata=0,
+                setsid=True,
+            )
             if rc != 0:
                 raise se.AcquireLockFailure(self._sdUUID, rc, out, err)
             self.log.debug("Clustered lock acquired successfully")
@@ -214,19 +258,24 @@ class SafeLease(object):
         with self._lock:
             freeLockUtil = os.path.join(self.lockUtilPath, self.freeLockCmd)
             releaseLockCommand = [freeLockUtil, self._sdUUID]
-            self.log.info("Releasing cluster lock for domain %s" %
-                          self._sdUUID)
-            (rc, out, err) = misc.execCmd(releaseLockCommand, raw=True,
-                                          cwd=self.lockUtilPath)
+            self.log.info(
+                "Releasing cluster lock for domain %s" % self._sdUUID
+            )
+            rc, out, err = misc.execCmd(
+                releaseLockCommand, raw=True, cwd=self.lockUtilPath
+            )
             if rc != 0:
                 # TODO: should raise
-                self.log.error("Could not release cluster lock for domain %s "
-                               "(rc=%d, out=%s, err=%s)" %
-                               (self._sdUUID, rc, out, err))
+                self.log.error(
+                    "Could not release cluster lock for domain %s "
+                    "(rc=%d, out=%s, err=%s)" % (self._sdUUID, rc, out, err)
+                )
                 return
 
-            self.log.debug("Cluster lock for domain %s released successfully",
-                           self._sdUUID)
+            self.log.debug(
+                "Cluster lock for domain %s released successfully",
+                self._sdUUID,
+            )
 
 
 class SANLock(object):
@@ -285,9 +334,10 @@ class SANLock(object):
             except sanlock.SanlockException as e:
                 # See acquire() on why we must panic.
                 if cls._lease_count > 0 and e.errno == errno.EPIPE:
-                    panic("Sanlock process fd was closed while "
-                          "holding {} leases: {}"
-                          .format(cls._lease_count, e))
+                    panic(
+                        "Sanlock process fd was closed while "
+                        "holding {} leases: {}".format(cls._lease_count, e)
+                    )
 
                 raise se.SanlockInquireError(e.errno, str(e))
 
@@ -323,8 +373,12 @@ class SANLock(object):
         self.log.info(
             "Initializing sanlock for domain %s path=%s alignment=%s "
             "block_size=%s io_timeout=%s",
-            self._sdUUID, self._idsPath, self._alignment, self._block_size,
-            self._io_timeout)
+            self._sdUUID,
+            self._idsPath,
+            self._alignment,
+            self._block_size,
+            self._io_timeout,
+        )
 
         resource_name = lease.name.encode("utf-8")
         try:
@@ -333,17 +387,20 @@ class SANLock(object):
                 self._idsPath,
                 iotimeout=self._io_timeout,
                 align=self._alignment,
-                sector=self._block_size)
+                sector=self._block_size,
+            )
 
             sanlock.write_resource(
                 self._lockspace_name,
                 resource_name,
                 [(lease.path, lease.offset)],
                 align=self._alignment,
-                sector=self._block_size)
+                sector=self._block_size,
+            )
         except sanlock.SanlockException:
             self.log.exception(
-                "Cannot initialize lock for domain %s", self._sdUUID)
+                "Cannot initialize lock for domain %s", self._sdUUID
+            )
             raise se.ClusterLockInitError()
 
     def setParams(self, *args):
@@ -353,8 +410,12 @@ class SANLock(object):
         return MAX_HOST_ID
 
     def acquireHostId(self, hostId, wait):
-        self.log.info("Acquiring host id for domain %s (id=%s, wait=%s)",
-                      self._sdUUID, hostId, wait)
+        self.log.info(
+            "Acquiring host id for domain %s (id=%s, wait=%s)",
+            self._sdUUID,
+            hostId,
+            wait,
+        )
 
         # Ensure that future calls to acquire() will wait until host id is
         # acquired.
@@ -368,7 +429,8 @@ class SANLock(object):
                     hostId,
                     self._idsPath,
                     iotimeout=self._io_timeout,
-                    wait=wait)
+                    wait=wait,
+                )
             except sanlock.SanlockException as e:
                 if e.errno == errno.EINPROGRESS:
                     # if the request is not asynchronous wait for the ongoing
@@ -377,17 +439,21 @@ class SANLock(object):
                     # being acquired (async).
                     if wait:
                         if not sanlock.inq_lockspace(
-                                self._lockspace_name,
-                                hostId,
-                                self._idsPath,
-                                wait=True):
+                            self._lockspace_name,
+                            hostId,
+                            self._idsPath,
+                            wait=True,
+                        ):
                             raise se.AcquireHostIdFailure(self._sdUUID, e)
 
                         self._end_add_lockspace(hostId)
                         self._ready.set()
                 elif e.errno == errno.EEXIST:
-                    self.log.info("Host id %s for domain %s already acquired",
-                                  hostId, self._sdUUID)
+                    self.log.info(
+                        "Host id %s for domain %s already acquired",
+                        hostId,
+                        self._sdUUID,
+                    )
                     self._cancel_add_lockspace()
                     self._ready.set()
                 else:
@@ -422,35 +488,50 @@ class SANLock(object):
 
         self.log.info(
             "Host id %s for domain %s acquired in %d seconds",
-            hostId, self._sdUUID, elapsed)
+            hostId,
+            self._sdUUID,
+            elapsed,
+        )
 
     def releaseHostId(self, hostId, wait, unused):
-        self.log.info("Releasing host id for domain %s (id: %s)",
-                      self._sdUUID, hostId)
+        self.log.info(
+            "Releasing host id for domain %s (id: %s)", self._sdUUID, hostId
+        )
 
         # Ensure that future calls to acquire() will fail quickly.
         self._ready.valid = False
 
         with self._lock:
             try:
-                sanlock.rem_lockspace(self._lockspace_name, hostId,
-                                      self._idsPath, unused=unused,
-                                      wait=wait)
+                sanlock.rem_lockspace(
+                    self._lockspace_name,
+                    hostId,
+                    self._idsPath,
+                    unused=unused,
+                    wait=wait,
+                )
             except sanlock.SanlockException as e:
                 if e.errno != errno.ENOENT:
                     raise se.ReleaseHostIdFailure(self._sdUUID, e)
 
-        self.log.info("Host id for domain %s released successfully "
-                      "(id: %s)", self._sdUUID, hostId)
+        self.log.info(
+            "Host id for domain %s released successfully " "(id: %s)",
+            self._sdUUID,
+            hostId,
+        )
 
     def hasHostId(self, hostId):
         with self._lock:
             try:
                 has_host_id = sanlock.inq_lockspace(
-                    self._lockspace_name, hostId, self._idsPath)
+                    self._lockspace_name, hostId, self._idsPath
+                )
             except sanlock.SanlockException:
-                self.log.debug("Unable to inquire sanlock lockspace "
-                               "status, returning False", exc_info=True)
+                self.log.debug(
+                    "Unable to inquire sanlock lockspace "
+                    "status, returning False",
+                    exc_info=True,
+                )
                 return False
 
             if has_host_id:
@@ -461,8 +542,11 @@ class SANLock(object):
                 if self._ready.valid and self._ready.is_set():
                     # Host id was released by sanlock. This happens after
                     # renewal failure when storage is inaccessible.
-                    self.log.warning("Host id %s for domain %s was released",
-                                     hostId, self._sdUUID)
+                    self.log.warning(
+                        "Host id %s for domain %s was released",
+                        hostId,
+                        self._sdUUID,
+                    )
                 self._ready.clear()
 
         return has_host_id
@@ -471,8 +555,12 @@ class SANLock(object):
         try:
             hosts = sanlock.get_hosts(self._lockspace_name, hostId)
         except sanlock.SanlockException as e:
-            self.log.debug("Unable to get host %d status in lockspace %s: %s",
-                           hostId, self._sdUUID, e)
+            self.log.debug(
+                "Unable to get host %d status in lockspace %s: %s",
+                hostId,
+                self._sdUUID,
+                e,
+            )
             return HOST_STATUS_UNAVAILABLE
         else:
             status = hosts[0]['flags']
@@ -484,10 +572,12 @@ class SANLock(object):
     def acquire(self, hostId, lease, lvb=False):
         if lvb and not supports_lvb:
             raise se.UnsupportedOperation(
-                "This sanlock version does not support LVB")
+                "This sanlock version does not support LVB"
+            )
 
-        self.log.info("Acquiring %s for host id %s, lvb=%s",
-                      lease, hostId, lvb)
+        self.log.info(
+            "Acquiring %s for host id %s, lvb=%s", lease, hostId, lvb
+        )
 
         # If host id was acquired by this thread, this will return immediately.
         # If host is id being acquired asynchronically by the domain monitor,
@@ -499,7 +589,8 @@ class SANLock(object):
         if not self._ready.wait(self.ACQUIRE_HOST_ID_TIMEOUT):
             raise se.AcquireHostIdFailure(
                 "Timeout acquiring host id, cannot acquire %s (id=%s)"
-                % (lease, hostId))
+                % (lease, hostId)
+            )
 
         with self._lock, SANLock._process_lock:
             while True:
@@ -508,11 +599,15 @@ class SANLock(object):
                         SANLock._process_fd = sanlock.register()
                     except sanlock.SanlockException as e:
                         raise se.AcquireLockFailure(
-                            self._sdUUID, e.errno,
-                            "Cannot register to sanlock", str(e))
+                            self._sdUUID,
+                            e.errno,
+                            "Cannot register to sanlock",
+                            str(e),
+                        )
 
-                    self.log.info("Using sanlock process fd %d",
-                                  SANLock._process_fd)
+                    self.log.info(
+                        "Using sanlock process fd %d", SANLock._process_fd
+                    )
 
                 # TODO: remove once sanlock 3.8.3 is available on centos.
                 extra_args = {"lvb": lvb} if supports_lvb else {}
@@ -523,12 +618,16 @@ class SANLock(object):
                         lease.name.encode("utf-8"),
                         [(lease.path, lease.offset)],
                         slkfd=SANLock._process_fd,
-                        **extra_args)
+                        **extra_args
+                    )
                 except sanlock.SanlockException as e:
                     if e.errno != errno.EPIPE:
                         raise se.AcquireLockFailure(
-                            self._sdUUID, e.errno,
-                            "Cannot acquire %s" % (lease,), str(e))
+                            self._sdUUID,
+                            e.errno,
+                            "Cannot acquire %s" % (lease,),
+                            str(e),
+                        )
 
                     # If we hold leases, we just lost them, since sanlock is
                     # releasing all process leases when the process fd is
@@ -536,9 +635,12 @@ class SANLock(object):
                     # processes run by vdsm will be killed, and vdsm will lose
                     # the SPM role.
                     if SANLock._lease_count > 0:
-                        panic("Sanlock process fd was closed while "
-                              "holding {} leases: {}"
-                              .format(SANLock._lease_count, e))
+                        panic(
+                            "Sanlock process fd was closed while "
+                            "holding {} leases: {}".format(
+                                SANLock._lease_count, e
+                            )
+                        )
 
                     self.log.warning("Sanlock process fd was closed: %s", e)
                     SANLock._process_fd = None
@@ -554,7 +656,8 @@ class SANLock(object):
             lease.path,
             lease.offset,
             align=self._alignment,
-            sector=self._block_size)
+            sector=self._block_size,
+        )
 
         resource_name = lease.name.encode("utf-8")
         if resource["resource"] != resource_name:
@@ -565,11 +668,14 @@ class SANLock(object):
             resource_name,
             [(lease.path, lease.offset)],
             align=self._alignment,
-            sector=self._block_size)
+            sector=self._block_size,
+        )
 
         if len(owners) > 1:
-            self.log.error("Cluster lock is reported to have more than "
-                           "one owner: %s", owners)
+            self.log.error(
+                "Cluster lock is reported to have more than " "one owner: %s",
+                owners,
+            )
             raise RuntimeError("Multiple owners for %s" % (lease,))
 
         elif not owners:
@@ -591,9 +697,12 @@ class SANLock(object):
                 # breaks the "Remove DC" flow in engine, so we assume
                 # the lease is currently held by the host
                 # See: https://bugzilla.redhat.com/1613838
-                self.log.debug("host %s status in not available yet, "
-                               "it may hold the lease %s",
-                               host_id, lease)
+                self.log.debug(
+                    "host %s status in not available yet, "
+                    "it may hold the lease %s",
+                    host_id,
+                    lease,
+                )
                 return resource_version, host_id
             else:
                 raise
@@ -604,17 +713,23 @@ class SANLock(object):
             # The lease is considered free by sanlock because
             # the host reconnected to the storage but it no
             # longer has the lease
-            self.log.debug("host %r generation %r does not match resource "
-                           "generation %r, lease %s is free", host_id,
-                           host, resource_owner["generation"], lease)
+            self.log.debug(
+                "host %r generation %r does not match resource "
+                "generation %r, lease %s is free",
+                host_id,
+                host,
+                resource_owner["generation"],
+                lease,
+            )
             return resource_version, None
 
         if host_status in (HOST_STATUS_DEAD, HOST_STATUS_FREE):
             # These are the only states that mean the host cannot hold
             # this lease. Any other state means the host either holding the
             # lease or could be holding the lease.
-            self.log.debug("host %s cannot hold %s is effectively free",
-                           host, lease)
+            self.log.debug(
+                "host %s cannot hold %s is effectively free", host, lease
+            )
             return resource_version, None
 
         return resource_version, host_id
@@ -628,13 +743,15 @@ class SANLock(object):
                     self._lockspace_name,
                     lease.name.encode("utf-8"),
                     [(lease.path, lease.offset)],
-                    slkfd=SANLock._process_fd)
+                    slkfd=SANLock._process_fd,
+                )
             except sanlock.SanlockException as e:
                 # See acquire() on why we must panic.
                 if SANLock._lease_count > 0 and e.errno == errno.EPIPE:
-                    panic("Sanlock process fd was closed while "
-                          "holding {} leases: {}"
-                          .format(SANLock._lease_count, e))
+                    panic(
+                        "Sanlock process fd was closed while "
+                        "holding {} leases: {}".format(SANLock._lease_count, e)
+                    )
 
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
@@ -659,7 +776,8 @@ class SANLock(object):
                 self._lockspace_name,
                 lease.name.encode("utf-8"),
                 [(lease.path, lease.offset)],
-                data)
+                data,
+            )
         except sanlock.SanlockException as e:
             raise se.SanlockLVBError(e)
 
@@ -671,7 +789,8 @@ class SANLock(object):
                 self._lockspace_name,
                 lease.name.encode("utf-8"),
                 [(lease.path, lease.offset)],
-                size=LVB_SIZE)
+                size=LVB_SIZE,
+            )
         except sanlock.SanlockException as e:
             raise se.SanlockLVBError(e)
 
@@ -727,22 +846,28 @@ class LocalLock(object):
             currentHostId, lockFile = self._getLease()
 
             if currentHostId is not None and currentHostId != hostId:
-                self.log.error("Different host id already acquired (id: %s)",
-                               currentHostId)
+                self.log.error(
+                    "Different host id already acquired (id: %s)",
+                    currentHostId,
+                )
                 raise se.AcquireHostIdFailure(self._sdUUID)
 
             self._globalLockMap[self._sdUUID] = (hostId, lockFile)
 
-        self.log.debug("Host id for domain %s successfully acquired (id: %s)",
-                       self._sdUUID, hostId)
+        self.log.debug(
+            "Host id for domain %s successfully acquired (id: %s)",
+            self._sdUUID,
+            hostId,
+        )
 
     def releaseHostId(self, hostId, wait, unused):
         with self._globalLockMapSync:
             currentHostId, lockFile = self._getLease()
 
             if currentHostId is not None and currentHostId != hostId:
-                self.log.error("Different host id acquired (id: %s)",
-                               currentHostId)
+                self.log.error(
+                    "Different host id acquired (id: %s)", currentHostId
+                )
                 raise se.ReleaseHostIdFailure(self._sdUUID)
 
             if lockFile is not None:
@@ -751,8 +876,11 @@ class LocalLock(object):
 
             del self._globalLockMap[self._sdUUID]
 
-        self.log.debug("Host id for domain %s released successfully (id: %s)",
-                       self._sdUUID, hostId)
+        self.log.debug(
+            "Host id for domain %s released successfully (id: %s)",
+            self._sdUUID,
+            hostId,
+        )
 
     def hasHostId(self, hostId):
         with self._globalLockMapSync:
@@ -766,15 +894,19 @@ class LocalLock(object):
         if lease != self._lease:
             raise MultipleLeasesNotSupported("acquire", lease)
         with self._globalLockMapSync:
-            self.log.info("Acquiring local lock for domain %s (id: %s)",
-                          self._sdUUID, hostId)
+            self.log.info(
+                "Acquiring local lock for domain %s (id: %s)",
+                self._sdUUID,
+                hostId,
+            )
 
             hostId, lockFile = self._getLease()
 
             if lockFile:
                 try:
-                    osutils.uninterruptible(fcntl.fcntl, lockFile,
-                                            fcntl.F_GETFD)
+                    osutils.uninterruptible(
+                        fcntl.fcntl, lockFile, fcntl.F_GETFD
+                    )
                 except IOError as e:
                     # We found a stale file descriptor, removing.
                     del self._globalLockMap[self._sdUUID]
@@ -783,28 +915,40 @@ class LocalLock(object):
                     if e.errno != errno.EBADF:
                         raise
                 else:
-                    self.log.debug("Local lock already acquired for domain "
-                                   "%s (id: %s)", self._sdUUID, hostId)
+                    self.log.debug(
+                        "Local lock already acquired for domain "
+                        "%s (id: %s)",
+                        self._sdUUID,
+                        hostId,
+                    )
                     return  # success, the lock was already acquired
 
-            lockFile = osutils.uninterruptible(os.open, self._idsPath,
-                                               os.O_RDONLY)
+            lockFile = osutils.uninterruptible(
+                os.open, self._idsPath, os.O_RDONLY
+            )
 
             try:
-                osutils.uninterruptible(fcntl.flock, lockFile,
-                                        fcntl.LOCK_EX | fcntl.LOCK_NB)
+                osutils.uninterruptible(
+                    fcntl.flock, lockFile, fcntl.LOCK_EX | fcntl.LOCK_NB
+                )
             except IOError as e:
                 osutils.close_fd(lockFile)
                 if e.errno in (errno.EACCES, errno.EAGAIN):
                     raise se.AcquireLockFailure(
-                        self._sdUUID, e.errno, "Cannot acquire local lock",
-                        str(e))
+                        self._sdUUID,
+                        e.errno,
+                        "Cannot acquire local lock",
+                        str(e),
+                    )
                 raise
             else:
                 self._globalLockMap[self._sdUUID] = (hostId, lockFile)
 
-        self.log.debug("Local lock for domain %s successfully acquired "
-                       "(id: %s)", self._sdUUID, hostId)
+        self.log.debug(
+            "Local lock for domain %s successfully acquired " "(id: %s)",
+            self._sdUUID,
+            hostId,
+        )
 
     def inspect(self, lease):
         if lease != self._lease:
@@ -822,15 +966,17 @@ class LocalLock(object):
             hostId, lockFile = self._getLease()
 
             if not lockFile:
-                self.log.debug("Local lock already released for domain %s",
-                               self._sdUUID)
+                self.log.debug(
+                    "Local lock already released for domain %s", self._sdUUID
+                )
                 return
 
             osutils.close_fd(lockFile)
             self._globalLockMap[self._sdUUID] = (hostId, None)
 
-            self.log.debug("Local lock for domain %s successfully released",
-                           self._sdUUID)
+            self.log.debug(
+                "Local lock for domain %s successfully released", self._sdUUID
+            )
 
 
 def alignment(block_size, max_hosts):

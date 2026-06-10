@@ -43,9 +43,11 @@ class Job(base.Job):
             raise Error(self._vol_info.vol_id, "volume is shared")
         sd = sdCache.produce_manifest(self._vol_info.sd_id)
         if not sd.supports_qcow2_compat(self._qcow2_attr.compat):
-            raise Error(self._vol_info.vol_id,
-                        "storage domain %s does not support compat %s" %
-                        (self._vol_info.sd_id, self._qcow2_attr.compat))
+            raise Error(
+                self._vol_info.vol_id,
+                "storage domain %s does not support compat %s"
+                % (self._vol_info.sd_id, self._qcow2_attr.compat),
+            )
 
     def _run(self):
         with guarded.context(self._vol_info.locks):

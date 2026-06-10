@@ -40,9 +40,11 @@ log = logging.getLogger("test")
 def volume_data(volume_id=None):
     if volume_id is None:
         volume_id = 'd772f1c6-3ebb-43c3-a42e-73fcd8255a5f'
-    return dict(poolID=SPUUID,
-                domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
-                volumeID=volume_id)
+    return dict(
+        poolID=SPUUID,
+        domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
+        volumeID=volume_id,
+    )
 
 
 def extend_message(size=128 * MiB):
@@ -57,7 +59,8 @@ def extend_message(size=128 * MiB):
         b"\xbb\x3e\xc6\xf1\x72\xd7\x30\x30"
         b"\x30\x30\x30\x30\x30\x30%08x\x30"
         b"\x30\x30\x30\x30\x30\x30\x30\x30"
-        b"\x30\x30") % size
+        b"\x30\x30"
+    ) % size
     return message
 
 
@@ -72,8 +75,9 @@ def mboxfiles(tmpdir):
 
 
 def read_mbox(mboxfiles):
-    with io.open(mboxfiles.inbox, 'rb') as inf, \
-            io.open(mboxfiles.outbox, 'rb') as outf:
+    with io.open(mboxfiles.inbox, 'rb') as inf, io.open(
+        mboxfiles.outbox, 'rb'
+    ) as outf:
         return inf.read(), outf.read()
 
 
@@ -85,7 +89,8 @@ def make_hsm_mailbox(mboxfiles, host_id):
         inbox=mboxfiles.outbox,
         outbox=mboxfiles.inbox,
         monitorInterval=MONITOR_INTERVAL,
-        eventInterval=EVENT_INTERVAL)
+        eventInterval=EVENT_INTERVAL,
+    )
     try:
         yield mailbox
     finally:
@@ -102,7 +107,8 @@ def make_spm_mailbox(mboxfiles):
         inbox=mboxfiles.inbox,
         outbox=mboxfiles.outbox,
         monitorInterval=MONITOR_INTERVAL,
-        eventInterval=EVENT_INTERVAL)
+        eventInterval=EVENT_INTERVAL,
+    )
     mailbox.start()
     try:
         yield mailbox
@@ -117,6 +123,7 @@ class FakeSPMMailer(object):
     Fake SPM mailer class for sending reply message when
     pool extend volume request handling is done.
     """
+
     def __init__(self):
         self.msg_id = None
         self.msg = None
@@ -131,6 +138,7 @@ class FakePool(object):
     Fake storage pool class implementing the extend volume interface used by
     storage mailbox code.
     """
+
     spUUID = SPUUID
 
     def __init__(self, mailer):
@@ -141,7 +149,7 @@ class FakePool(object):
         self.volume_data = {
             'domainID': sdUUID,
             'volumeID': volUUID,
-            'size': newSize
+            'size': newSize,
         }
 
 
@@ -150,17 +158,20 @@ class TestSPMMailMonitor:
     def test_thread_leak(self, mboxfiles):
         thread_count = len(threading.enumerate())
         mailer = sm.SPM_MailMonitor(
-            SPUUID, 100,
+            SPUUID,
+            100,
             inbox=mboxfiles.inbox,
             outbox=mboxfiles.outbox,
             monitorInterval=MONITOR_INTERVAL,
-            eventInterval=EVENT_INTERVAL)
+            eventInterval=EVENT_INTERVAL,
+        )
         mailer.start()
         try:
             mailer.stop()
         finally:
-            assert mailer.wait(timeout=MAILER_TIMEOUT), \
-                'mailer.wait: Timeout expired'
+            assert mailer.wait(
+                timeout=MAILER_TIMEOUT
+            ), 'mailer.wait: Timeout expired'
         assert thread_count == len(threading.enumerate())
 
     def test_clear_outbox(self, mboxfiles):
@@ -254,7 +265,8 @@ class TestCommunicate:
         msg_end = msg_offset + sm.MESSAGE_SIZE
         assert outbox[msg_offset:msg_end] == extend_message(SIZE)
         assert outbox[msg_end:] == b'\0' * (
-            sm.MAILBOX_SIZE * MAX_HOSTS - sm.MESSAGE_SIZE - msg_offset)
+            sm.MAILBOX_SIZE * MAX_HOSTS - sm.MESSAGE_SIZE - msg_offset
+        )
 
     def test_fill_slots(self, mboxfiles, monkeypatch):
 
@@ -264,7 +276,7 @@ class TestCommunicate:
         def mbox_cmd_hook(*args, **kwargs):
             data = kwargs.get('data')
             if data and all(
-                data[i:i + 1] != b"\0"
+                data[i : i + 1] != b"\0"
                 for i in range(0, sm.MESSAGES_PER_MAILBOX, sm.MESSAGE_SIZE)
             ):
                 filled.set()
@@ -279,8 +291,9 @@ class TestCommunicate:
             assert filled.wait(MAILER_TIMEOUT * 2)
 
     @pytest.mark.parametrize("delay", [0, 0.05])
-    @pytest.mark.parametrize("messages", [
-        1, 2, 4, 8, 16, 32, sm.MESSAGES_PER_MAILBOX])
+    @pytest.mark.parametrize(
+        "messages", [1, 2, 4, 8, 16, 32, sm.MESSAGES_PER_MAILBOX]
+    )
     def test_roundtrip_events_enabled(self, mboxfiles, delay, messages):
         """
         Test roundtrip latency.
@@ -318,7 +331,12 @@ class TestCommunicate:
 
         log.info(
             "stats: messages=%d delay=%.3f best=%.3f average=%.3f worst=%.3f",
-            messages, delay, best, average, worst)
+            messages,
+            delay,
+            best,
+            average,
+            worst,
+        )
 
         # This is the slowest run when running locally:
         # stats: messages=63 delay=0.000 best=0.269 average=0.429 worst=0.505
@@ -343,7 +361,12 @@ class TestCommunicate:
 
         log.info(
             "stats: messages=%d delay=%.3f best=%.3f average=%.3f worst=%.3f",
-            messages, delay, best, average, worst)
+            messages,
+            delay,
+            best,
+            average,
+            worst,
+        )
 
         # Running locally takes:
         # stats: messages=8 delay=0.050 best=0.847 average=1.064 worst=1.243
@@ -357,7 +380,8 @@ class TestCommunicate:
             with make_spm_mailbox(mboxfiles) as spm_mm:
                 pool = FakePool(spm_mm)
                 spm_callback = partial(
-                    sm.SPM_Extend_Message.processRequest, pool)
+                    sm.SPM_Extend_Message.processRequest, pool
+                )
                 spm_mm.registerMessageType(sm.EXTEND_CODE, spm_callback)
 
                 done = threading.Event()
@@ -370,8 +394,11 @@ class TestCommunicate:
                     assert vol_id not in end, "Duplicate request"
 
                     end[vol_id] = time.monotonic()
-                    log.info("got extension reply for volume %s, elapsed %s",
-                             vol_id, end[vol_id] - start[vol_id])
+                    log.info(
+                        "got extension reply for volume %s, elapsed %s",
+                        vol_id,
+                        end[vol_id] - start[vol_id],
+                    )
                     if len(end) == messages:
                         log.info("done gathering all replies")
                         done.set()
@@ -379,12 +406,16 @@ class TestCommunicate:
                 for _ in range(messages):
                     vol_id = make_uuid()
                     start[vol_id] = time.monotonic()
-                    log.info("requesting to extend volume %s (delay=%.3f)",
-                             vol_id, delay)
+                    log.info(
+                        "requesting to extend volume %s (delay=%.3f)",
+                        vol_id,
+                        delay,
+                    )
                     hsm_mb.sendExtendMsg(
                         volume_data(vol_id),
                         2 * GiB,
-                        callbackFunction=reply_msg_callback)
+                        callbackFunction=reply_msg_callback,
+                    )
                     time.sleep(delay)
 
                 log.info("waiting for all replies")
@@ -431,14 +462,15 @@ class TestExtendMessage:
         pool = FakePool(spm_mailer)
 
         ret = sm.SPM_Extend_Message.processRequest(
-            pool=pool, msgID=MSG_ID, payload=extend_message(SIZE))
+            pool=pool, msgID=MSG_ID, payload=extend_message(SIZE)
+        )
 
         assert ret == {'status': {'code': 0, 'message': 'Done'}}
         vol_data = volume_data()
         assert pool.volume_data == {
             'volumeID': vol_data['volumeID'],
             'domainID': vol_data['domainID'],
-            'size': SIZE
+            'size': SIZE,
         }
         assert spm_mailer.msg_id == MSG_ID
         assert spm_mailer.msg.payload == extend_message(SIZE)
@@ -470,38 +502,42 @@ class TestValidation:
 
 class TestChecksum:
 
-    @pytest.mark.parametrize("data,result,packed_result", [
-        pytest.param(
-            sm.EMPTYMAILBOX,
-            0,
-            b"\x00\x00\x00\x00",
-            id="empty"),
-        pytest.param(
-            sm.CLEAN_MESSAGE * sm.MESSAGES_PER_MAILBOX + b"\0" * 62,
-            4032,
-            b"\xc0\x0f\x00\x00",
-            id="clean notifications"),
-        pytest.param(
-            b"\xff" * 4092,
-            1043460,
-            b"\x04\xec\x0f\x00",
-            id="maximum value"),
-        pytest.param(
-            bytes(bytearray(i % 256 for i in range(4092))),
-            521226,
-            b"\x0a\xf4\x07\x00",
-            id="range pattern"),
-        pytest.param(
-            extend_message() + b"\0" * 4028,
-            6455,
-            b"\x37\x19\x00\x00",
-            id="extend message pad tail"),
-        pytest.param(
-            b"\0" * 4028 + extend_message(),
-            6455,
-            b"\x37\x19\x00\x00",
-            id="extend message pad head")
-    ])
+    @pytest.mark.parametrize(
+        "data,result,packed_result",
+        [
+            pytest.param(sm.EMPTYMAILBOX, 0, b"\x00\x00\x00\x00", id="empty"),
+            pytest.param(
+                sm.CLEAN_MESSAGE * sm.MESSAGES_PER_MAILBOX + b"\0" * 62,
+                4032,
+                b"\xc0\x0f\x00\x00",
+                id="clean notifications",
+            ),
+            pytest.param(
+                b"\xff" * 4092,
+                1043460,
+                b"\x04\xec\x0f\x00",
+                id="maximum value",
+            ),
+            pytest.param(
+                bytes(bytearray(i % 256 for i in range(4092))),
+                521226,
+                b"\x0a\xf4\x07\x00",
+                id="range pattern",
+            ),
+            pytest.param(
+                extend_message() + b"\0" * 4028,
+                6455,
+                b"\x37\x19\x00\x00",
+                id="extend message pad tail",
+            ),
+            pytest.param(
+                b"\0" * 4028 + extend_message(),
+                6455,
+                b"\x37\x19\x00\x00",
+                id="extend message pad head",
+            ),
+        ],
+    )
     def test_sanity(self, data, result, packed_result):
         assert sm.checksum(data) == result
         assert sm.packed_checksum(data) == packed_result
@@ -509,12 +545,15 @@ class TestChecksum:
 
 class TestWaitTimeout:
 
-    @pytest.mark.parametrize("monitor_interval, expected_timeout", [
-        (2, 3.0),     # production config
-        (3, 4.5),     # production config
-        (0.1, 0.15),  # testing config
-        (0.2, 0.3),   # testing config
-    ])
+    @pytest.mark.parametrize(
+        "monitor_interval, expected_timeout",
+        [
+            (2, 3.0),  # production config
+            (3, 4.5),  # production config
+            (0.1, 0.15),  # testing config
+            (0.2, 0.3),  # testing config
+        ],
+    )
     def test_config(self, monitor_interval, expected_timeout):
         actual_timeout = sm.wait_timeout(monitor_interval)
         assert actual_timeout == pytest.approx(expected_timeout)
@@ -522,20 +561,26 @@ class TestWaitTimeout:
 
 # Note: packed values were generated by historic version of
 # mailbox.pack_uuid(), to ensure that we keep the packed format.
-@pytest.mark.parametrize("value,packed", [
-    pytest.param(
-        "00000000-0000-4000-8000-000000000000",
-        b"\x00\x00\x00\x00\x00\x00\x00\x80\x00@\x00\x00\x00\x00\x00\x00",
-        id="smallest"),
-    pytest.param(
-        "ffffffff-ffff-4fff-bfff-ffffffffffff",
-        b"\xff\xff\xff\xff\xff\xff\xff\xbf\xffO\xff\xff\xff\xff\xff\xff",
-        id="highest"),
-    pytest.param(
-        "00010203-0405-4607-8001-020304050607",
-        b"\x07\x06\x05\x04\x03\x02\x01\x80\x07F\x05\x04\x03\x02\x01\x00",
-        id="some"),
-])
+@pytest.mark.parametrize(
+    "value,packed",
+    [
+        pytest.param(
+            "00000000-0000-4000-8000-000000000000",
+            b"\x00\x00\x00\x00\x00\x00\x00\x80\x00@\x00\x00\x00\x00\x00\x00",
+            id="smallest",
+        ),
+        pytest.param(
+            "ffffffff-ffff-4fff-bfff-ffffffffffff",
+            b"\xff\xff\xff\xff\xff\xff\xff\xbf\xffO\xff\xff\xff\xff\xff\xff",
+            id="highest",
+        ),
+        pytest.param(
+            "00010203-0405-4607-8001-020304050607",
+            b"\x07\x06\x05\x04\x03\x02\x01\x80\x07F\x05\x04\x03\x02\x01\x00",
+            id="some",
+        ),
+    ],
+)
 def test_pack_uuid(value, packed):
     assert sm.pack_uuid(value) == packed
     assert sm.unpack_uuid(packed) == value

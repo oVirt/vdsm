@@ -58,9 +58,13 @@ def test_read_bad_chain_raises(tmpdir):
     op = qemuimg.create(base_qcow2, "1m", qemuimg.FORMAT.QCOW2)
     op.run()
     top = str(tmpdir.join("top.qcow2"))
-    op = qemuimg.create(top, "1m", qemuimg.FORMAT.QCOW2,
-                        backing=base_qcow2,
-                        backingFormat=qemuimg.FORMAT.QCOW2)
+    op = qemuimg.create(
+        top,
+        "1m",
+        qemuimg.FORMAT.QCOW2,
+        backing=base_qcow2,
+        backingFormat=qemuimg.FORMAT.QCOW2,
+    )
     op.run()
 
     # Create a broken chain using unsafe rebase with the wrong backing
@@ -68,22 +72,28 @@ def test_read_bad_chain_raises(tmpdir):
     base_raw = str(tmpdir.join("base.raw"))
     op = qemuimg.create(base_raw, "1m", qemuimg.FORMAT.RAW)
     op.run()
-    operation = qemuimg.rebase(top,
-                               backing=base_raw,
-                               format=qemuimg.FORMAT.QCOW2,
-                               backingFormat=qemuimg.FORMAT.QCOW2,
-                               unsafe=True)
+    operation = qemuimg.rebase(
+        top,
+        backing=base_raw,
+        format=qemuimg.FORMAT.QCOW2,
+        backingFormat=qemuimg.FORMAT.QCOW2,
+        unsafe=True,
+    )
     operation.run()
     with pytest.raises(cmdutils.Error):
         qemuio.verify_pattern(top, qemuimg.FORMAT.QCOW2)
 
 
-@pytest.mark.parametrize("fmt", [
-    pytest.param(
-        qemuimg.FORMAT.RAW,
-        marks=pytest.mark.xfail(reason="Always times out", run=False)),
-    qemuimg.FORMAT.QCOW2
-])
+@pytest.mark.parametrize(
+    "fmt",
+    [
+        pytest.param(
+            qemuimg.FORMAT.RAW,
+            marks=pytest.mark.xfail(reason="Always times out", run=False),
+        ),
+        qemuimg.FORMAT.QCOW2,
+    ],
+)
 def test_open_write_mode(tmpdir, fmt):
     image = str(tmpdir.join("disk." + fmt))
     op = qemuimg.create(image, "1m", fmt)

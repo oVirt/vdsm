@@ -5,7 +5,7 @@ import pytest
 
 from vdsm.storage import iscsiadm
 
-from . marks import requires_root
+from .marks import requires_root
 
 
 @requires_root

@@ -41,17 +41,26 @@ DEFAULT_SIZE = MiB
 
 
 @contextmanager
-def make_env(storage_type, fmt, chain_length=1,
-             size=DEFAULT_SIZE, sd_version=5, qcow2_compat='1.1'):
+def make_env(
+    storage_type,
+    fmt,
+    chain_length=1,
+    size=DEFAULT_SIZE,
+    sd_version=5,
+    qcow2_compat='1.1',
+):
     with fake_env(storage_type, sd_version=sd_version) as env:
         rm = FakeResourceManager()
-        with MonkeyPatchScope([
-            (guarded, 'context', fake_guarded_context()),
-            (volume_info, 'sdCache', env.sdcache),
-            (blockVolume, 'rm', rm),
-        ]):
-            env.chain = make_qemu_chain(env, size, fmt, chain_length,
-                                        qcow2_compat=qcow2_compat)
+        with MonkeyPatchScope(
+            [
+                (guarded, 'context', fake_guarded_context()),
+                (volume_info, 'sdCache', env.sdcache),
+                (blockVolume, 'rm', rm),
+            ]
+        ):
+            env.chain = make_qemu_chain(
+                env, size, fmt, chain_length, qcow2_compat=qcow2_compat
+            )
             yield env
 
 
@@ -63,9 +72,13 @@ def test_add_bitmap(fake_scheduler, env_type):
     with make_env(env_type, sc.name2type('cow')) as env:
         env_vol = env.chain[0]
         generation = env_vol.getMetaParam(sc.GENERATION)
-        vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                   img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
-                   generation=generation)
+        vol = dict(
+            endpoint_type='div',
+            sd_id=env_vol.sdUUID,
+            img_id=env_vol.imgUUID,
+            vol_id=env_vol.volUUID,
+            generation=generation,
+        )
 
         job = add_bitmap.Job(job_id, 0, vol, bitmap)
         job.run()
@@ -91,9 +104,13 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
     with make_env(env_type, sc.name2type('raw')) as env:
         env_vol = env.chain[0]
         generation = env_vol.getMetaParam(sc.GENERATION)
-        vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                   img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
-                   generation=generation)
+        vol = dict(
+            endpoint_type='div',
+            sd_id=env_vol.sdUUID,
+            img_id=env_vol.imgUUID,
+            vol_id=env_vol.volUUID,
+            generation=generation,
+        )
 
         job = add_bitmap.Job(job_id, 0, vol, bitmap)
         job.run()
@@ -112,9 +129,13 @@ def test_qemu_bitmap_add_failure(fake_scheduler, monkeypatch, env_type):
     with make_env(env_type, sc.name2type('cow')) as env:
         env_vol = env.chain[0]
         generation = env_vol.getMetaParam(sc.GENERATION)
-        vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                   img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
-                   generation=generation)
+        vol = dict(
+            endpoint_type='div',
+            sd_id=env_vol.sdUUID,
+            img_id=env_vol.imgUUID,
+            vol_id=env_vol.volUUID,
+            generation=generation,
+        )
 
         job = add_bitmap.Job(job_id, 0, vol, "bitmap")
         job.run()
@@ -136,9 +157,13 @@ def test_bitmap_already_exists(fake_scheduler, env_type):
         op.run()
 
         generation = env_vol.getMetaParam(sc.GENERATION)
-        vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                   img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
-                   generation=generation)
+        vol = dict(
+            endpoint_type='div',
+            sd_id=env_vol.sdUUID,
+            img_id=env_vol.imgUUID,
+            vol_id=env_vol.volUUID,
+            generation=generation,
+        )
 
         job = add_bitmap.Job(job_id, 0, vol, bitmap)
         job.run()

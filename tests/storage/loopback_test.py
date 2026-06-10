@@ -13,8 +13,8 @@ from vdsm.storage import multipath
 import testing
 
 from . import loopback
-from . marks import requires_root
-from . marks import requires_loopback_sector_size
+from .marks import requires_root
+from .marks import requires_loopback_sector_size
 
 
 BEFORE = b"a" * 10
@@ -23,18 +23,25 @@ AFTER = b"b" * 10
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.parametrize("sector_size", [
-    None,
-    pytest.param(sc.BLOCK_SIZE_512, marks=requires_loopback_sector_size),
-    pytest.param(sc.BLOCK_SIZE_4K, marks=[
-        requires_loopback_sector_size,
-        pytest.mark.xfail(
-            testing.on_ovirt_ci() or testing.on_travis_ci(),
-            reason="fails randomly to create loop device with 4k sector "
-                   "size, only in CI - needs investigation",
-            strict=False),
-    ]),
-])
+@pytest.mark.parametrize(
+    "sector_size",
+    [
+        None,
+        pytest.param(sc.BLOCK_SIZE_512, marks=requires_loopback_sector_size),
+        pytest.param(
+            sc.BLOCK_SIZE_4K,
+            marks=[
+                requires_loopback_sector_size,
+                pytest.mark.xfail(
+                    testing.on_ovirt_ci() or testing.on_travis_ci(),
+                    reason="fails randomly to create loop device with 4k sector "
+                    "size, only in CI - needs investigation",
+                    strict=False,
+                ),
+            ],
+        ),
+    ],
+)
 def test_with_device(tmpdir, sector_size):
     filename = str(tmpdir.join("file"))
     prepare_backing_file(filename)

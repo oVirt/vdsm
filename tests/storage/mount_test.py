@@ -19,7 +19,7 @@ from testlib import expandPermutations, permutations
 from testValidation import broken_on_ci
 import monkeypatch
 
-from . marks import requires_root
+from .marks import requires_root
 
 FLOPPY_SIZE = 4 * MiB
 MKFS_EXEC = '/usr/sbin/mkfs.ext2'
@@ -56,14 +56,17 @@ class TestMountEquality(VdsmTestCase):
     def test_eq_subclass(self):
         class Subclass(mount.Mount):
             pass
+
         m1 = mount.Mount("spec", "file")
         m2 = Subclass("spec", "file")
         self.assertFalse(m1 == m2, "%s should not equal %s" % (m1, m2))
 
-    @permutations([
-        ("spec", "spec", "file1", "file2"),
-        ("spec1", "spec2", "file", "file"),
-    ])
+    @permutations(
+        [
+            ("spec", "spec", "file1", "file2"),
+            ("spec1", "spec2", "file", "file"),
+        ]
+    )
     def test_eq_different(self, spec1, spec2, file1, file2):
         m1 = mount.Mount(spec1, file1)
         m2 = mount.Mount(spec2, file2)
@@ -86,14 +89,17 @@ class TestMountHash(VdsmTestCase):
     def test_subclass_different_hash(self):
         class Subclass(mount.Mount):
             pass
+
         m1 = mount.Mount("spec", "file")
         m2 = Subclass("spec", "file")
         self.assertNotEqual(hash(m1), hash(m2))
 
-    @permutations([
-        ("spec", "spec", "file1", "file2"),
-        ("spec1", "spec2", "file", "file"),
-    ])
+    @permutations(
+        [
+            ("spec", "spec", "file1", "file2"),
+            ("spec1", "spec2", "file", "file"),
+        ]
+    )
     def test_not_equal_different_hash(self, spec1, spec2, file1, file2):
         m1 = mount.Mount(spec1, file1)
         m2 = mount.Mount(spec2, file2)
@@ -141,19 +147,18 @@ class TestMount(VdsmTestCase):
             with loop_mount(m):
                 self.assertTrue(m.isMounted())
 
-    @permutations([
-        # Only fs_spec matches
-        ("server:/path", "/mnt/server:_other__path", False),
-
-        # Only fs_file matches
-        ("server:/other_path", "/mnt/server:_path", False),
-
-        # Both fs_spec and fs_file don't match
-        ("server:/other_path", "/mnt/server:_other__path", False),
-
-        # Both match
-        ("server:/path", "/mnt/server:_path", True),
-    ])
+    @permutations(
+        [
+            # Only fs_spec matches
+            ("server:/path", "/mnt/server:_other__path", False),
+            # Only fs_file matches
+            ("server:/other_path", "/mnt/server:_path", False),
+            # Both fs_spec and fs_file don't match
+            ("server:/other_path", "/mnt/server:_other__path", False),
+            # Both match
+            ("server:/path", "/mnt/server:_path", True),
+        ]
+    )
     def test_is_mounted(self, fs_spec, fs_file, equality):
         """
         Verifies that both fs_spec and fs_file match the mounted target.
@@ -162,15 +167,16 @@ class TestMount(VdsmTestCase):
             mnt = mount.Mount(fs_spec, fs_file)
             self.assertEqual(mnt.isMounted(), equality)
 
-    @permutations([
-        # NFS4 using fsid=0 - kernel display mount as server://path instead of
-        # normalized server:/path
-        ("server://a/b /mnt/server:_a_b nfs defaults 0 0",),
-
-        # Not seen yet, but it should work now
-        ("server:/a//b /mnt/server:_a_b nfs defaults 0 0",),
-        ("server:/a/b// /mnt/server:_a_b nfs defaults 0 0",),
-    ])
+    @permutations(
+        [
+            # NFS4 using fsid=0 - kernel display mount as server://path instead of
+            # normalized server:/path
+            ("server://a/b /mnt/server:_a_b nfs defaults 0 0",),
+            # Not seen yet, but it should work now
+            ("server:/a//b /mnt/server:_a_b nfs defaults 0 0",),
+            ("server:/a/b// /mnt/server:_a_b nfs defaults 0 0",),
+        ]
+    )
     def test_is_mounted_normalize_kernel_mounts(self, mount_line):
         with fake_mounts([mount_line]):
             mnt = mount.Mount("server:/a/b", "/mnt/server:_a_b")
@@ -183,15 +189,19 @@ class TestMount(VdsmTestCase):
             link_to_file = os.path.join(dir, "link_to_file")
             os.symlink(file, link_to_file)
             mountpoint = "/mnt/mountpoint"
-            with fake_mounts(["%s %s nfs defaults 0 0" %
-                              (link_to_file, mountpoint)]):
+            with fake_mounts(
+                ["%s %s nfs defaults 0 0" % (link_to_file, mountpoint)]
+            ):
                 mnt = mount.Mount(link_to_file, mountpoint)
                 self.assertTrue(mnt.isMounted())
 
     def test_is_mounted_gluster_with_rdma(self):
         with fake_mounts(
-                ["server:/volume.rdma /mnt/server:volume fuse.glusterfs "
-                 "defaults 0 0"]):
+            [
+                "server:/volume.rdma /mnt/server:volume fuse.glusterfs "
+                "defaults 0 0"
+            ]
+        ):
             mnt = mount.Mount("server:/volume", "/mnt/server:volume")
             self.assertTrue(mnt.isMounted())
 
@@ -210,46 +220,65 @@ def fake_mounts(mount_lines):
     """
     data = "".join(line + "\n" for line in mount_lines)
     with temporaryPath(data=data.encode("utf-8")) as fake_mounts:
-        with monkeypatch.MonkeyPatchScope([
-            (mount, '_PROC_MOUNTS_PATH', fake_mounts),
-        ]):
+        with monkeypatch.MonkeyPatchScope(
+            [
+                (mount, '_PROC_MOUNTS_PATH', fake_mounts),
+            ]
+        ):
             yield
 
 
 class TestRemoteSdIsMounted(VdsmTestCase):
 
     def test_is_mounted(self):
-        with fake_mounts(["server:/path "
-                          "/rhev/data-center/mnt/server:_path "
-                          "nfs4 defaults 0 0"]):
-            self.assertTrue(mount.isMounted(
-                            "/rhev/data-center/mnt/server:_path"))
+        with fake_mounts(
+            [
+                "server:/path "
+                "/rhev/data-center/mnt/server:_path "
+                "nfs4 defaults 0 0"
+            ]
+        ):
+            self.assertTrue(
+                mount.isMounted("/rhev/data-center/mnt/server:_path")
+            )
 
     def test_is_mounted_deleted(self):
-        with fake_mounts([u"server:/path "
-                          u"/rhev/data-center/mnt/server:_path\\040(deleted) "
-                          u"nfs4 defaults 0 0"]):
-            self.assertTrue(mount.isMounted(
-                            "/rhev/data-center/mnt/server:_path"))
+        with fake_mounts(
+            [
+                u"server:/path "
+                u"/rhev/data-center/mnt/server:_path\\040(deleted) "
+                u"nfs4 defaults 0 0"
+            ]
+        ):
+            self.assertTrue(
+                mount.isMounted("/rhev/data-center/mnt/server:_path")
+            )
 
     def test_path_with_spaces(self):
         with fake_mounts(
-                [u"server:/a\\040b /mnt/server:_a\\040b nfs4 opts 0 0"]):
+            [u"server:/a\\040b /mnt/server:_a\\040b nfs4 opts 0 0"]
+        ):
             self.assertTrue(mount.isMounted("/mnt/server:_a b"))
             self.assertFalse(mount.isMounted(u"/mnt/server:_a\\040b"))
 
     def test_path_with_backslash(self):
         with fake_mounts(
-                [u"server:/a\\134040b /mnt/server:_a\\134040b nfs4 opts 0 0"]):
+            [u"server:/a\\134040b /mnt/server:_a\\134040b nfs4 opts 0 0"]
+        ):
             self.assertTrue(mount.isMounted(u"/mnt/server:_a\\040b"))
             self.assertFalse(mount.isMounted(u"/mnt/server:_a\\134040b"))
 
     def test_is_not_mounted(self):
-        with fake_mounts(["server:/path "
-                          "/rhev/data-center/mnt/server:_path "
-                          "nfs4 defaults 0 0"]):
-            self.assertFalse(mount.isMounted(
-                             "/rhev/data-center/mnt/server:_other_path"))
+        with fake_mounts(
+            [
+                "server:/path "
+                "/rhev/data-center/mnt/server:_path "
+                "nfs4 defaults 0 0"
+            ]
+        ):
+            self.assertFalse(
+                mount.isMounted("/rhev/data-center/mnt/server:_other_path")
+            )
 
 
 @expandPermutations
@@ -259,19 +288,23 @@ class TestIsMountedTiming(VdsmTestCase):
     @permutations([[1], [50], [100], [1000]])
     def test_is_mounted(self, count):
         server = "foobar.baz.qux.com:/var/lib/exports/%04d"
-        mountpoint = ("/rhev/data-center/mnt/foobar.baz.qux.com:_var_lib"
-                      "_exports_%04d")
-        options = ("rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,"
-                   "soft,nosharecache,proto=tcp,timeo=600,retrans=6,sec=sys,"
-                   "mountaddr=10.35.0.102,mountvers=3,mountport=892,"
-                   "mountproto=udp,local_lock=none,addr=10.35.0.102")
+        mountpoint = (
+            "/rhev/data-center/mnt/foobar.baz.qux.com:_var_lib" "_exports_%04d"
+        )
+        options = (
+            "rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,"
+            "soft,nosharecache,proto=tcp,timeo=600,retrans=6,sec=sys,"
+            "mountaddr=10.35.0.102,mountvers=3,mountport=892,"
+            "mountproto=udp,local_lock=none,addr=10.35.0.102"
+        )
         version = "nfs"
         freq = "0"
         passno = "0"
         lines = []
         for i in range(count):
-            line = " ".join((server % i, mountpoint % i, options, version,
-                             freq, passno))
+            line = " ".join(
+                (server % i, mountpoint % i, options, version, freq, passno)
+            )
             lines.append(line)
         with fake_mounts(lines):
             start = time.time()

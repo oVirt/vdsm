@@ -11,13 +11,14 @@ from vdsm.storage import localFsSD
 from vdsm.storage import nfsSD
 
 sanlock = pytest.importorskip(
-    modname='sanlock',
-    reason="sanlock is not available")
+    modname='sanlock', reason="sanlock is not available"
+)
 
 
 def test_supported_block_size_new_sanlock(monkeypatch):
     monkeypatch.setattr(
-        sanlock, "SECTOR_SIZE", (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K))
+        sanlock, "SECTOR_SIZE", (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K)
+    )
     assert backends.supported_block_size() == {
         "FCP": blockSD.BlockStorageDomain.supported_block_size,
         "GLUSTERFS": glusterSD.GlusterStorageDomain.supported_block_size,

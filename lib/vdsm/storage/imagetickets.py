@@ -26,7 +26,8 @@ class UnixHTTPConnection(http.client.HTTPConnection):
         self.path = path
         extra = {}
         http.client.HTTPConnection.__init__(
-            self, "localhost", timeout=timeout, **extra)
+            self, "localhost", timeout=timeout, **extra
+        )
 
     def connect(self):
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -73,8 +74,9 @@ def remove_ticket(uuid):
 
 
 def _request(method, uuid, body=None):
-    log.debug("Sending request method=%r, ticket=%r, body=%r",
-              method, uuid, body)
+    log.debug(
+        "Sending request method=%r, ticket=%r, body=%r", method, uuid, body
+    )
     if body is not None:
         body = body.encode("utf8")
     con = UnixHTTPConnection(DAEMON_SOCK)
@@ -83,9 +85,11 @@ def _request(method, uuid, body=None):
             con.request(method, "/tickets/%s" % uuid, body=body)
             res = con.getresponse()
         except (http.client.HTTPException, EnvironmentError) as e:
-            raise se.ImageTicketsError("Error communicating with "
-                                       "ovirt-imageio-daemon: "
-                                       "{error}".format(error=e))
+            raise se.ImageTicketsError(
+                "Error communicating with "
+                "ovirt-imageio-daemon: "
+                "{error}".format(error=e)
+            )
 
         content = _read_content(res)
         if res.status >= 300:
@@ -107,6 +111,8 @@ def _read_content(response):
         # See https://tools.ietf.org/html/rfc7230#section-3.3.2
         return response.read()
     except EnvironmentError as e:
-        error_info = {"explanation": "Error reading response",
-                      "detail": str(e)}
+        error_info = {
+            "explanation": "Error reading response",
+            "detail": str(e),
+        }
         raise se.ImageDaemonError(response.status, response.reason, error_info)

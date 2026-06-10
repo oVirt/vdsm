@@ -70,9 +70,11 @@ class Headers(object):
     HEARTBEAT = "heart-beat"
 
 
-COMMANDS = tuple(getattr(Command, command)
-                 for command in dir(Command)
-                 if not command.startswith('_'))
+COMMANDS = tuple(
+    getattr(Command, command)
+    for command in dir(Command)
+    if not command.startswith('_')
+)
 
 
 class AckMode(object):
@@ -144,7 +146,8 @@ class Frame(object):
 def decode_value(s):
     if not isinstance(s, bytes):
         raise ValueError(
-            "Unable to decode non-binary value: {!r}".format(repr(s)))
+            "Unable to decode non-binary value: {!r}".format(repr(s))
+        )
 
     # Make sure to leave this check before decoding as ':' can appear in the
     # value after decoding using \c
@@ -158,8 +161,8 @@ def decode_value(s):
         )
     except KeyError as e:
         raise ValueError(
-            "'{}' contains invalid escape sequence '\\{}'".format(
-                s, e.args[0]))
+            "'{}' contains invalid escape sequence '\\{}'".format(s, e.args[0])
+        )
 
     return s.decode("utf-8")
 
@@ -173,7 +176,8 @@ def encode_value(s):
         s = str(s).encode("utf-8")
     elif not isinstance(s, bytes):
         raise ValueError(
-            "Unable to encode non-string value: {!r}".format(repr(s)))
+            "Unable to encode non-string value: {!r}".format(repr(s))
+        )
 
     return _RE_ENCODE_CHARS.sub(lambda m: _EC_ENCODE_MAP[m.group(0)], s)
 
@@ -188,7 +192,8 @@ class Parser(object):
         self._states = {
             self._STATE_CMD: self._parse_command,
             self._STATE_HEADER: self._parse_header,
-            self._STATE_BODY: self._parse_body}
+            self._STATE_BODY: self._parse_body,
+        }
         self._frames = deque()
         self._change_state(self._STATE_CMD)
         self._content_length = -1
@@ -291,7 +296,7 @@ class Parser(object):
             raise RuntimeError("Frame doesn't end with NULL byte")
 
         self._flush()
-        self._write_buffer(buf[cl + 1:])
+        self._write_buffer(buf[cl + 1 :])
         body = buf[:cl]
 
         self._tmp_frame.body = body
@@ -344,8 +349,15 @@ class AsyncDispatcher(object):
     - StompAdapterImpl - responsible for server side
     - AsyncClient - responsible for client side
     """
-    def __init__(self, connection, frame_handler, bufferSize=4096,
-                 clock=time.monotonic_time, count=0):
+
+    def __init__(
+        self,
+        connection,
+        frame_handler,
+        bufferSize=4096,
+        clock=time.monotonic_time,
+        count=0,
+    ):
         self._frame_handler = frame_handler
         self.connection = connection
         self._bufferSize = bufferSize
@@ -450,19 +462,19 @@ class AsyncDispatcher(object):
     def _outgoing_heartbeat_expiration_interval(self):
         if self._outgoing_heartbeat_in_milis == 0:
             return DEFAULT_INTERVAL
-        since_last_update = (self._clock() - self._lastOutgoingTimeStamp)
+        since_last_update = self._clock() - self._lastOutgoingTimeStamp
         return (self._outgoing_heartbeat_in_milis / 1000.0) - since_last_update
 
     def _incoming_heartbeat_expiration_interval(self):
         if self._incoming_heartbeat_in_milis == 0:
             return DEFAULT_INTERVAL
-        since_last_update = (self._clock() - self._lastIncomingTimeStamp)
+        since_last_update = self._clock() - self._lastIncomingTimeStamp
         return (self._incoming_heartbeat_in_milis / 1000.0) - since_last_update
 
     def _reconnect_expiration_interval(self):
         if not self._on_timeout or self._reconnect_interval == 0:
             return DEFAULT_INTERVAL
-        since_last_update = (self._clock() - self._lastReconnectTimeStamp)
+        since_last_update = self._clock() - self._lastReconnectTimeStamp
         return self._reconnect_interval - since_last_update
 
     def next_check_interval(self):
@@ -471,8 +483,10 @@ class AsyncDispatcher(object):
                 self.handle_timeout()
             return self._reconnect_interval
 
-        if self._reconnect_expiration_interval() <= 0 or \
-                self._incoming_heartbeat_expiration_interval() <= 0:
+        if (
+            self._reconnect_expiration_interval() <= 0
+            or self._incoming_heartbeat_expiration_interval() <= 0
+        ):
             self.handle_timeout()
 
         return max(self._outgoing_heartbeat_expiration_interval(), 0)
@@ -511,7 +525,7 @@ class AsyncDispatcher(object):
         if self._outbuf is not None:
             return True
 
-        if (self.next_check_interval() == 0):
+        if self.next_check_interval() == 0:
             self._frame_handler.queue_frame(_heartbeat_frame)
             return True
 
@@ -547,6 +561,7 @@ class Subscription(object):
     content of the message. Currently there are 2 handlers:
     JsonRpcClient and JsonRpcServer.
     """
+
     def set_message_handler(self, handler):
         self._message_handler = handler
 
@@ -587,13 +602,17 @@ class StompConnection(object):
 
     def initiate_connection(self, sock):
         self._dispatcher = self._reactor.create_dispatcher(
-            sock, AsyncDispatcher(self, self._async_client))
+            sock, AsyncDispatcher(self, self._async_client)
+        )
         self._client_host = self._dispatcher.addr[0]
         self._client_port = self._dispatcher.addr[1]
 
     def _create_ssl_context(self):
-        return SSLContext(key_file=pki.KEY_FILE, cert_file=pki.CERT_FILE,
-                          ca_certs=pki.CA_FILE)
+        return SSLContext(
+            key_file=pki.KEY_FILE,
+            cert_file=pki.CERT_FILE,
+            ca_certs=pki.CA_FILE,
+        )
 
     def send_raw(self, msg):
         self._async_client.queue_frame(msg)
@@ -611,8 +630,10 @@ class StompConnection(object):
 
     def reconnect(self, count, on_timeout):
         self._dispatcher = self._reactor.reconnect(
-            (self._client_host, self._client_port), self._sslctx,
-            AsyncDispatcher(self, self._async_client, count=count))
+            (self._client_host, self._client_port),
+            self._sslctx,
+            AsyncDispatcher(self, self._async_client, count=count),
+        )
 
     def set_heartbeat(self, outgoing, incoming):
         self._dispatcher.set_heartbeat(outgoing, incoming)
@@ -631,10 +652,12 @@ class StompConnection(object):
 
     def handleMessage(self, data, flow_id):
         if self._messageHandler is not None:
-            context = api.Context(flow_id, self._client_host,
-                                  self._client_port)
-            self._messageHandler((self._server, self.get_local_address(),
-                                  context, data))
+            context = api.Context(
+                flow_id, self._client_host, self._client_port
+            )
+            self._messageHandler(
+                (self._server, self.get_local_address(), context, data)
+            )
 
     def is_closed(self):
         return not self._dispatcher.connected

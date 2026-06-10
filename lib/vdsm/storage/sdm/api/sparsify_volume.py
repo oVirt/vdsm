@@ -10,7 +10,7 @@ from . import base
 
 
 class SparsifyException(VdsmException):
-    ''' Base class for sparsify exceptions '''
+    '''Base class for sparsify exceptions'''
 
 
 class VolumeIsNotLeafException(SparsifyException):

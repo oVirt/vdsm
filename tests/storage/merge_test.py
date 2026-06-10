@@ -37,10 +37,12 @@ from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 
-CONFIG = make_config([
-    ('irs', 'volume_utilization_chunk_mb', '1024'),
-    ('irs', 'volume_utilizzation_precent', '50'),
-])
+CONFIG = make_config(
+    [
+        ('irs', 'volume_utilization_chunk_mb', '1024'),
+        ('irs', 'volume_utilizzation_precent', '50'),
+    ]
+)
 
 Volume = namedtuple("Volume", "format,virtual,physical,leaf")
 Expected = namedtuple("Expected", "virtual,physical")
@@ -65,32 +67,50 @@ def make_env(env_type, base, top):
             mp.setattr(blockVolume, 'rm', FakeResourceManager())
             mp.setattr(blockVolume, 'sdCache', env.sdcache)
             mp.setattr(
-                image.Image, 'getChain',
-                lambda self, sdUUID, imgUUID:
-                    [env.subchain.base_vol, env.subchain.top_vol])
+                image.Image,
+                'getChain',
+                lambda self, sdUUID, imgUUID: [
+                    env.subchain.base_vol,
+                    env.subchain.top_vol,
+                ],
+            )
 
             env.make_volume(
-                base.virtual * GiB, img_id, base_id,
+                base.virtual * GiB,
+                img_id,
+                base_id,
                 vol_format=sc.name2type(base.format),
                 prealloc=prealloc,
-                vol_type=sc.INTERNAL_VOL)
+                vol_type=sc.INTERNAL_VOL,
+            )
 
             env.make_volume(
-                top.virtual * GiB, img_id, top_id,
+                top.virtual * GiB,
+                img_id,
+                top_id,
                 parent_vol_id=base_id,
                 vol_format=sc.COW_FORMAT,
-                vol_type=sc.LEAF_VOL if top.leaf else sc.INTERNAL_VOL)
+                vol_type=sc.LEAF_VOL if top.leaf else sc.INTERNAL_VOL,
+            )
 
             env.subchain = merge.SubchainInfo(
-                dict(sd_id=env.sd_manifest.sdUUID, img_id=img_id,
-                     base_id=base_id, top_id=top_id), 0)
+                dict(
+                    sd_id=env.sd_manifest.sdUUID,
+                    img_id=img_id,
+                    base_id=base_id,
+                    top_id=top_id,
+                ),
+                0,
+            )
 
             if env_type == 'block':
                 # Simulate allocation by adjusting the LV sizes
-                env.lvm.extendLV(env.sd_manifest.sdUUID, base_id,
-                                 base.physical * GiB // MiB)
-                env.lvm.extendLV(env.sd_manifest.sdUUID, top_id,
-                                 top.physical * GiB // MiB)
+                env.lvm.extendLV(
+                    env.sd_manifest.sdUUID, base_id, base.physical * GiB // MiB
+                )
+                env.lvm.extendLV(
+                    env.sd_manifest.sdUUID, top_id, top.physical * GiB // MiB
+                )
 
             yield env
 
@@ -105,8 +125,9 @@ class TestSubchainInfo:
 
     # TODO: use one make_env for all tests?
     @contextmanager
-    def make_env(self, sd_type='file', format='raw', chain_len=2,
-                 shared=False):
+    def make_env(
+        self, sd_type='file', format='raw', chain_len=2, shared=False
+    ):
         size = MiB
         base_fmt = sc.name2type(format)
         with fake_env(sd_type) as env:
@@ -128,11 +149,13 @@ class TestSubchainInfo:
         with self.make_env() as env:
             base_vol = env.chain[0]
             top_vol = env.chain[1]
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
 
             subchain = merge.SubchainInfo(subchain_info, 0)
             # Next subchain.validate() should pass without exceptions
@@ -141,11 +164,13 @@ class TestSubchainInfo:
     def test_validate_base_is_not_in_chain(self):
         with self.make_env() as env:
             top_vol = env.chain[1]
-            subchain_info = dict(sd_id=top_vol.sdUUID,
-                                 img_id=top_vol.imgUUID,
-                                 base_id=make_uuid(),
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=top_vol.sdUUID,
+                img_id=top_vol.imgUUID,
+                base_id=make_uuid(),
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
 
             subchain = merge.SubchainInfo(subchain_info, 0)
             with pytest.raises(se.VolumeIsNotInChain):
@@ -154,11 +179,13 @@ class TestSubchainInfo:
     def test_validate_top_is_not_in_chain(self):
         with self.make_env() as env:
             base_vol = env.chain[0]
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=make_uuid(),
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=make_uuid(),
+                base_generation=0,
+            )
 
             subchain = merge.SubchainInfo(subchain_info, 0)
             with pytest.raises(se.VolumeIsNotInChain):
@@ -168,11 +195,13 @@ class TestSubchainInfo:
         with self.make_env(chain_len=3) as env:
             base_vol = env.chain[0]
             top_vol = env.chain[2]
-            subchain_info = dict(sd_id=top_vol.sdUUID,
-                                 img_id=top_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=top_vol.sdUUID,
+                img_id=top_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
 
             subchain = merge.SubchainInfo(subchain_info, 0)
             with pytest.raises(se.WrongParentVolume):
@@ -184,11 +213,13 @@ class TestSubchainInfo:
             base_vol = env.chain[0]
             top_vol = env.chain[1]
             env.chain[shared_vol].setShared()
-            subchain_info = dict(sd_id=top_vol.sdUUID,
-                                 img_id=top_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=top_vol.sdUUID,
+                img_id=top_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
 
             subchain = merge.SubchainInfo(subchain_info, 0)
             with pytest.raises(se.SharedVolumeNonWritable):
@@ -197,42 +228,51 @@ class TestSubchainInfo:
 
 class TestPrepareMerge:
 
-    @pytest.mark.parametrize("base, top, expected", [
-        # Active merge, no capacity update, no allocation update
-        (
-            Volume(format='raw', virtual=1, physical=1, leaf=False),
-            Volume(format='cow', virtual=1, physical=1, leaf=True),
-            Expected(virtual=1024, physical=1024),
-        ),
-        # Active merge, no capacity update, increase LV size adding one chunk
-        # of free space.
-        (
-            Volume(format='cow', virtual=10, physical=2, leaf=False),
-            Volume(format='cow', virtual=10, physical=2, leaf=True),
-            Expected(virtual=10240, physical=3200),
-        ),
-        # Internal merge, no capacity update, no LV extend.
-        (
-            Volume(format='cow', virtual=10, physical=2, leaf=False),
-            Volume(format='cow', virtual=10, physical=2, leaf=False),
-            Expected(virtual=10240, physical=2176),
-        ),
-        # Active merge, update capacity and increase LV size adding one chunk
-        # of free space.
-        (
-            Volume(format='cow', virtual=3, physical=1, leaf=False),
-            Volume(format='cow', virtual=5, physical=1, leaf=True),
-            Expected(virtual=5120, physical=3200),
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "base, top, expected",
+        [
+            # Active merge, no capacity update, no allocation update
+            (
+                Volume(format='raw', virtual=1, physical=1, leaf=False),
+                Volume(format='cow', virtual=1, physical=1, leaf=True),
+                Expected(virtual=1024, physical=1024),
+            ),
+            # Active merge, no capacity update, increase LV size adding one chunk
+            # of free space.
+            (
+                Volume(format='cow', virtual=10, physical=2, leaf=False),
+                Volume(format='cow', virtual=10, physical=2, leaf=True),
+                Expected(virtual=10240, physical=3200),
+            ),
+            # Internal merge, no capacity update, no LV extend.
+            (
+                Volume(format='cow', virtual=10, physical=2, leaf=False),
+                Volume(format='cow', virtual=10, physical=2, leaf=False),
+                Expected(virtual=10240, physical=2176),
+            ),
+            # Active merge, update capacity and increase LV size adding one chunk
+            # of free space.
+            (
+                Volume(format='cow', virtual=3, physical=1, leaf=False),
+                Volume(format='cow', virtual=5, physical=1, leaf=True),
+                Expected(virtual=5120, physical=3200),
+            ),
+        ],
+    )
     def test_block_cow(self, monkeypatch, base, top, expected):
         with make_env('block', base, top) as env:
             base_vol = env.subchain.base_vol
             top_vol = env.subchain.top_vol
 
-            def fake_measure(image, format=None, output_format=None,
-                             backing=True, is_block=False, base=None,
-                             unsafe=False):
+            def fake_measure(
+                image,
+                format=None,
+                output_format=None,
+                backing=True,
+                is_block=False,
+                base=None,
+                unsafe=False,
+            ):
                 # Make sure we are called with the right arguments.
                 assert image == top_vol.getVolumePath()
                 assert format == qemuimg.FORMAT.QCOW2
@@ -253,18 +293,22 @@ class TestPrepareMerge:
             assert sc.LEGAL_VOL == base_vol.getLegality()
             assert expected.virtual * MiB == base_vol.getCapacity()
             new_size = env.sd_manifest.getVSize(
-                base_vol.imgUUID, base_vol.volUUID)
+                base_vol.imgUUID, base_vol.volUUID
+            )
             assert expected.physical * MiB == new_size
 
     @pytest.mark.xfail(reason="cannot create a domain object in the tests")
-    @pytest.mark.parametrize("base, top, expected", [
-        # Update capacity and fully allocate LV
-        (
-            Volume(format='raw', virtual=1, physical=1, leaf=False),
-            Volume(format='cow', virtual=2, physical=1, leaf=True),
-            Expected(virtual=2, physical=2),
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "base, top, expected",
+        [
+            # Update capacity and fully allocate LV
+            (
+                Volume(format='raw', virtual=1, physical=1, leaf=False),
+                Volume(format='cow', virtual=2, physical=1, leaf=True),
+                Expected(virtual=2, physical=2),
+            ),
+        ],
+    )
     def test_block_raw(self, base, top, expected):
         with make_env('block', base, top) as env:
             merge.prepare(env.subchain)
@@ -272,23 +316,27 @@ class TestPrepareMerge:
             base_vol = env.subchain.base_vol
             assert sc.LEGAL_VOL == base_vol.getLegality()
             new_base_size = base_vol.getCapacity()
-            new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
-                                                      base_vol.volUUID)
+            new_base_alloc = env.sd_manifest.getVSize(
+                base_vol.imgUUID, base_vol.volUUID
+            )
             assert expected.virtual * GiB == new_base_size
             assert expected.physical * GiB == new_base_alloc
 
-    @pytest.mark.parametrize("base, top, expected", [
-        (
-            Volume(format='cow', virtual=1, physical=0, leaf=False),
-            Volume(format='cow', virtual=1, physical=0, leaf=True),
-            Expected(virtual=1, physical=0),
-        ),
-        (
-            Volume(format='cow', virtual=1, physical=0, leaf=False),
-            Volume(format='cow', virtual=2, physical=0, leaf=True),
-            Expected(virtual=2, physical=0),
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "base, top, expected",
+        [
+            (
+                Volume(format='cow', virtual=1, physical=0, leaf=False),
+                Volume(format='cow', virtual=1, physical=0, leaf=True),
+                Expected(virtual=1, physical=0),
+            ),
+            (
+                Volume(format='cow', virtual=1, physical=0, leaf=False),
+                Volume(format='cow', virtual=2, physical=0, leaf=True),
+                Expected(virtual=2, physical=0),
+            ),
+        ],
+    )
     def test_file_cow(self, base, top, expected):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
@@ -298,13 +346,16 @@ class TestPrepareMerge:
             assert expected.virtual * GiB == new_base_size
 
     @pytest.mark.xfail(reason="cannot create a domain object in the tests")
-    @pytest.mark.parametrize("base, top, expected", [
-        (
-            Volume(format='raw', virtual=1, physical=0, leaf=False),
-            Volume(format='cow', virtual=2, physical=0, leaf=True),
-            Expected(virtual=2, physical=0),
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "base, top, expected",
+        [
+            (
+                Volume(format='raw', virtual=1, physical=0, leaf=False),
+                Volume(format='cow', virtual=2, physical=0, leaf=True),
+                Expected(virtual=2, physical=0),
+            ),
+        ],
+    )
     def test_file_raw(self, base, top, expected):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
@@ -318,8 +369,12 @@ class TestPrepareMerge:
         return [
             rm.Lock(sc.STORAGE, subchain.sd_id, rm.SHARED),
             rm.Lock(img_ns, subchain.img_id, rm.EXCLUSIVE),
-            volume.VolumeLease(subchain.host_id, subchain.sd_id,
-                               subchain.img_id, subchain.base_id)
+            volume.VolumeLease(
+                subchain.host_id,
+                subchain.sd_id,
+                subchain.img_id,
+                subchain.base_id,
+            ),
         ]
 
     # TODO: Once BZ 1411103 is fixed, add unit tests for preparing the chain
@@ -343,11 +398,12 @@ class TestFinalizeMerge:
     # TODO: use one make_env for all tests?
     @contextmanager
     def make_env(
-            self,
-            sd_type='block',
-            format='raw',
-            prealloc=sc.SPARSE_VOL,
-            chain_len=2):
+        self,
+        sd_type='block',
+        format='raw',
+        prealloc=sc.SPARSE_VOL,
+        chain_len=2,
+    ):
         size = 10 * GiB
         base_fmt = sc.name2type(format)
         with fake_env(sd_type) as env:
@@ -358,10 +414,13 @@ class TestFinalizeMerge:
                 mp.setattr(image, 'Image', FakeImage)
 
                 env.chain = make_qemu_chain(
-                    env, size, base_fmt, chain_len, prealloc=prealloc)
+                    env, size, base_fmt, chain_len, prealloc=prealloc
+                )
 
-                volumes = {(vol.imgUUID, vol.volUUID): FakeVolume()
-                           for vol in env.chain}
+                volumes = {
+                    (vol.imgUUID, vol.volUUID): FakeVolume()
+                    for vol in env.chain
+                }
                 env.sdcache.domains[env.sd_manifest.sdUUID].volumes = volumes
 
                 def fake_chain(self, sdUUID, imgUUID, volUUID=None):
@@ -378,21 +437,26 @@ class TestFinalizeMerge:
     # 2. Test a c hain of more than 2 volumes and verify that top's parent is
     #    prepared
 
-    @pytest.mark.parametrize("sd_type, chain_len, base_index, top_index", [
-        pytest.param('file', 2, 0, 1),
-        pytest.param('block', 2, 0, 1),
-        pytest.param('file', 4, 1, 2),
-        pytest.param('block', 4, 1, 2),
-    ])
+    @pytest.mark.parametrize(
+        "sd_type, chain_len, base_index, top_index",
+        [
+            pytest.param('file', 2, 0, 1),
+            pytest.param('block', 2, 0, 1),
+            pytest.param('file', 4, 1, 2),
+            pytest.param('block', 4, 1, 2),
+        ],
+    )
     def test_finalize(self, sd_type, chain_len, base_index, top_index):
         with self.make_env(sd_type=sd_type, chain_len=chain_len) as env:
             base_vol = env.chain[base_index]
             top_vol = env.chain[top_index]
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             merge.finalize(subchain)
@@ -402,7 +466,8 @@ class TestFinalizeMerge:
                 child_vol = env.chain[top_index + 1]
                 info = qemuimg.info(child_vol.volumePath)
                 backing_file = volume.getBackingVolumePath(
-                    subchain.img_id, subchain.base_id)
+                    subchain.img_id, subchain.base_id
+                )
                 assert info['backing-filename'] == backing_file
 
             # verify syncVolumeChain arguments
@@ -423,11 +488,13 @@ class TestFinalizeMerge:
             else:
                 top_vol.setLegality(sc.ILLEGAL_VOL)
 
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             with pytest.raises(se.prepareIllegalVolumeError):
@@ -437,11 +504,13 @@ class TestFinalizeMerge:
         with self.make_env(sd_type='file', chain_len=4) as env:
             base_vol = env.chain[1]
             top_vol = env.chain[2]
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             with MonkeyPatch().context() as mp:
@@ -457,11 +526,13 @@ class TestFinalizeMerge:
         with self.make_env(sd_type='block', chain_len=4) as env:
             base_vol = env.chain[1]
             top_vol = env.chain[2]
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             def setLegality(self, legality):
@@ -470,6 +541,7 @@ class TestFinalizeMerge:
                 self.setMetaParam(sc.LEGALITY, legality)
 
             with MonkeyPatch().context() as mp:
+
                 def failing_rebase(*args, **kw):
                     return operation.Command("/usr/bin/false")
 
@@ -485,18 +557,21 @@ class TestFinalizeMerge:
             base_vol = env.chain[1]
             top_vol = env.chain[2]
             assert not top_vol.isLeaf()
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             merge.finalize(subchain)
 
             fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
-            fake_base_vol = fake_sd.produceVolume(subchain.img_id,
-                                                  subchain.base_id)
+            fake_base_vol = fake_sd.produceVolume(
+                subchain.img_id, subchain.base_id
+            )
 
             assert fake_base_vol.__calls__ == [
                 ('reduce', (base_vol.optimal_size(),), {}),
@@ -507,49 +582,56 @@ class TestFinalizeMerge:
             base_vol = env.chain[1]
             top_vol = env.chain[2]
             assert top_vol.isLeaf()
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             merge.finalize(subchain)
 
             fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
-            fake_base_vol = fake_sd.produceVolume(subchain.img_id,
-                                                  subchain.base_id)
+            fake_base_vol = fake_sd.produceVolume(
+                subchain.img_id, subchain.base_id
+            )
             # Chunked leaf volumes add one chunk of free space as condition
             # to reduce, so the VM will not pause quickly when it is started.
             # Consequently, cold merges will not call reduce.
             assert getattr(fake_base_vol, "__calls__", []) == []
 
-    @pytest.mark.parametrize("sd_type, format, prealloc", [
-        # Not chunked, reduce not called
-        pytest.param('file', 'cow', sc.SPARSE_VOL),
-        # Preallocated, reduce not called
-        pytest.param('block', 'cow', sc.PREALLOCATED_VOL),
-    ])
+    @pytest.mark.parametrize(
+        "sd_type, format, prealloc",
+        [
+            # Not chunked, reduce not called
+            pytest.param('file', 'cow', sc.SPARSE_VOL),
+            # Preallocated, reduce not called
+            pytest.param('block', 'cow', sc.PREALLOCATED_VOL),
+        ],
+    )
     def test_reduce_skipped(self, sd_type, format, prealloc):
         with self.make_env(
-                sd_type=sd_type,
-                format=format,
-                prealloc=prealloc,
-                chain_len=4) as env:
+            sd_type=sd_type, format=format, prealloc=prealloc, chain_len=4
+        ) as env:
             base_vol = env.chain[1]
             top_vol = env.chain[2]
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             merge.finalize(subchain)
 
             fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
-            fake_base_vol = fake_sd.produceVolume(subchain.img_id,
-                                                  subchain.base_id)
+            fake_base_vol = fake_sd.produceVolume(
+                subchain.img_id, subchain.base_id
+            )
 
             calls = getattr(fake_base_vol, "__calls__", {})
             # Verify that 'calls' is empty which means that 'reduce' wasn't
@@ -560,18 +642,22 @@ class TestFinalizeMerge:
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
             base_vol = env.chain[0]
             top_vol = env.chain[1]
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
-            fake_base_vol = fake_sd.produceVolume(subchain.img_id,
-                                                  subchain.base_id)
+            fake_base_vol = fake_sd.produceVolume(
+                subchain.img_id, subchain.base_id
+            )
             fake_base_vol.errors["reduce"] = se.LogicalVolumeExtendError(
-                "cmd", 5, ["out"], ["err"])
+                "cmd", 5, ["out"], ["err"]
+            )
 
             with pytest.raises(se.LogicalVolumeExtendError):
                 merge.finalize(subchain)
@@ -586,23 +672,26 @@ class TestFinalizeMerge:
             # We write data to the base and will read it from the child volume
             # to verify that the chain is valid after qemu-rebase.
             offset = 0
-            pattern = 0xf0
+            pattern = 0xF0
             length = KiB
             qemuio.write_pattern(
                 base_vol.volumePath,
                 sc.fmt2str(base_vol.getFormat()),
                 offset=offset,
                 len=length,
-                pattern=pattern)
+                pattern=pattern,
+            )
 
             top_vol = env.chain[1]
             child_vol = env.chain[2]
 
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             merge.finalize(subchain)
@@ -612,7 +701,8 @@ class TestFinalizeMerge:
                 sc.fmt2str(child_vol.getFormat()),
                 offset=offset,
                 len=length,
-                pattern=pattern)
+                pattern=pattern,
+            )
 
     def check_sync_volume_chain(self, subchain, removed_vol_id):
         sync = image.Image.syncVolumeChain

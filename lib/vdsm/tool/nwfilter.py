@@ -53,8 +53,7 @@ class NwFilter(object):
 
     def build_xml(self):
         return self.get_xml_template().format(
-            name=self.filterName,
-            uuid_xml=self._get_uuid_xml()
+            name=self.filterName, uuid_xml=self._get_uuid_xml()
         )
 
     def define(self):

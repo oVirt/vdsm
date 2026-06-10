@@ -17,7 +17,8 @@ OWNER_DIR_PERMISSIONS = 0o750
 
 
 def create_disk(
-        owner_name, disk_name, size=None, backing=None, backing_format=None):
+    owner_name, disk_name, size=None, backing=None, backing_format=None
+):
     """
     Create a transient disk, optionally based on another disk.
 
@@ -49,7 +50,8 @@ def create_disk(
             format=qemuimg.FORMAT.QCOW2,
             qcow2Compat='1.1',
             backing=backing,
-            backingFormat=backing_format)
+            backingFormat=backing_format,
+        )
         operation.run()
         os.chmod(path, sc.FILE_VOLUME_PERMISSIONS)
     except:

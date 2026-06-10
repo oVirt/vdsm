@@ -23,12 +23,14 @@ class ServerTests(VdsmTestCase):
 
     def test_full_pool(self):
         def thread_factory(callable):
-            raise exception.ResourceExhausted("Too many tasks",
-                                              resource="test", current_tasks=0)
+            raise exception.ResourceExhausted(
+                "Too many tasks", resource="test", current_tasks=0
+            )
 
         ctx = FakeContext()
         request = JsonRpcRequest.decode(
-            '{"jsonrpc":"2.0","method":"Host.stats","params":{},"id":"943"}')
+            '{"jsonrpc":"2.0","method":"Host.stats","params":{},"id":"943"}'
+        )
 
         server = JsonRpcServer(None, 0, None, threadFactory=thread_factory)
         server._runRequest(ctx, request)
@@ -41,6 +43,11 @@ class ServerTests(VdsmTestCase):
 
         # not deterministic order in a dict so we need to parse
         reason = json.loads(msg[22:].replace("'", '"'))
-        self.assertEqual({"reason": "Too many tasks",
-                          "resource": "test",
-                          "current_tasks": 0}, reason)
+        self.assertEqual(
+            {
+                "reason": "Too many tasks",
+                "resource": "test",
+                "current_tasks": 0,
+            },
+            reason,
+        )

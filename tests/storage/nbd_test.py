@@ -45,8 +45,8 @@ from vdsm.storage import qemuimg
 from vdsm.storage import transientdisk
 
 from . import qemuio
-from . marks import broken_on_ci
-from . storagetestlib import fake_env, make_qemu_chain
+from .marks import broken_on_ci
+from .storagetestlib import fake_env, make_qemu_chain
 
 # TODO: Move to actual code when we support preallocated qcow2 images.
 PREALLOCATION = {
@@ -67,11 +67,13 @@ def is_root():
 
 requires_privileges = pytest.mark.skipif(
     not (is_root() or have_supervdsm()),
-    reason="requires root or running supervdsm")
+    reason="requires root or running supervdsm",
+)
 
 
 broken_on_ci = broken_on_ci.with_args(
-    reason="requires systemd daemon able to run services")
+    reason="requires systemd daemon able to run services"
+)
 
 
 @pytest.fixture
@@ -85,7 +87,8 @@ def nbd_env(monkeypatch):
     data_center = "/var/tmp/vdsm/data-center"
 
     monkeypatch.setattr(
-        transientdisk, "P_TRANSIENT_DISKS", "/var/tmp/vdsm/transient-disks")
+        transientdisk, "P_TRANSIENT_DISKS", "/var/tmp/vdsm/transient-disks"
+    )
 
     with fake_env("file", data_center=data_center) as env:
         # When using XFS, the minimal allocation for qcow2 images is 1MiB. Lets
@@ -101,12 +104,15 @@ def nbd_env(monkeypatch):
         # Create source image with some data. Using qcow2 format to make it
         # easier to test with different file systems.
         op = qemuimg.create(
-            env.src, size=env.virtual_size, format="qcow2", qcow2Compat="1.1")
+            env.src, size=env.virtual_size, format="qcow2", qcow2Compat="1.1"
+        )
         op.run()
         qemuio.write_pattern(
-            env.src, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xf0)
+            env.src, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xF0
+        )
         qemuio.write_pattern(
-            env.src, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf1)
+            env.src, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xF1
+        )
 
         yield env
 
@@ -168,15 +174,15 @@ def test_detect_zeroes_discard(nbd_env, format):
 
     # Entire image should be zero extent. For qcow2 image, qemu-nbd writes zero
     # clusters. For raw image, qemu-nbd deallocates the entire image.
-    base_alloc = [(e.length, e.zero)
-                  for e in extents["base:allocation"]]
+    base_alloc = [(e.length, e.zero) for e in extents["base:allocation"]]
     assert base_alloc == [(nbd_env.virtual_size, True)]
 
     if format != "raw":
         # Entire image should be allocated. For qcow2 image, zero
         # clusters are always allocated.
-        alloc_depth = [(e.length, e.hole)
-                       for e in extents["qemu:allocation-depth"]]
+        alloc_depth = [
+            (e.length, e.hole) for e in extents["qemu:allocation-depth"]
+        ]
         assert alloc_depth == [(nbd_env.virtual_size, False)]
 
 
@@ -212,14 +218,14 @@ def test_detect_zeroes_no_discard(nbd_env, format):
     log.debug("image extents: %s", extents)
 
     # Entire image should be zero extent.
-    base_alloc = [(e.length, e.zero)
-                  for e in extents["base:allocation"]]
+    base_alloc = [(e.length, e.zero) for e in extents["base:allocation"]]
     assert base_alloc == [(nbd_env.virtual_size, True)]
 
     if format != "raw":
         # qemu-nbd allocated entire image in both cases.
-        alloc_depth = [(e.length, e.hole)
-                       for e in extents["qemu:allocation-depth"]]
+        alloc_depth = [
+            (e.length, e.hole) for e in extents["qemu:allocation-depth"]
+        ]
         assert alloc_depth == [(nbd_env.virtual_size, False)]
 
 
@@ -251,14 +257,14 @@ def test_detect_zeroes_disabled(nbd_env, format):
     log.debug("image extents: %s", extents)
 
     # Entire image should be data extent.
-    base_alloc = [(e.length, e.zero)
-                  for e in extents["base:allocation"]]
+    base_alloc = [(e.length, e.zero) for e in extents["base:allocation"]]
     assert base_alloc == [(nbd_env.virtual_size, False)]
 
     if format != "raw":
         # Entire image should be allocated.
-        alloc_depth = [(e.length, e.hole)
-                       for e in extents["qemu:allocation-depth"]]
+        alloc_depth = [
+            (e.length, e.hole) for e in extents["qemu:allocation-depth"]
+        ]
         assert alloc_depth == [(nbd_env.virtual_size, False)]
 
 
@@ -275,7 +281,8 @@ def test_readonly(nbd_env, format, allocation):
         srcFormat="qcow2",
         dstFormat=format,
         dstQcow2Compat="1.1",
-        preallocation=PREALLOCATION.get(format))
+        preallocation=PREALLOCATION.get(format),
+    )
     op.run()
 
     config = {
@@ -302,19 +309,25 @@ def test_readonly(nbd_env, format, allocation):
 
 @broken_on_ci
 @requires_privileges
-@pytest.mark.parametrize("backing_chain", [
-    pytest.param(True, id="true"),
-    pytest.param(None, id="default"),
-])
+@pytest.mark.parametrize(
+    "backing_chain",
+    [
+        pytest.param(True, id="true"),
+        pytest.param(None, id="default"),
+    ],
+)
 def test_backing_chain(nbd_env, backing_chain):
     base, top = make_qemu_chain(
-        nbd_env, nbd_env.virtual_size, sc.COW_FORMAT, 2, qcow2_compat='1.1')
+        nbd_env, nbd_env.virtual_size, sc.COW_FORMAT, 2, qcow2_compat='1.1'
+    )
 
     # Fill volumes with data.
     qemuio.write_pattern(
-        base.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xf0)
+        base.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xF0
+    )
     qemuio.write_pattern(
-        top.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf1)
+        top.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xF1
+    )
 
     config = {
         "sd_id": top.sdUUID,
@@ -336,13 +349,16 @@ def test_backing_chain(nbd_env, backing_chain):
 @requires_privileges
 def test_no_backing_chain(nbd_env):
     base, top = make_qemu_chain(
-        nbd_env, nbd_env.virtual_size, sc.COW_FORMAT, 2, qcow2_compat='1.1')
+        nbd_env, nbd_env.virtual_size, sc.COW_FORMAT, 2, qcow2_compat='1.1'
+    )
 
     # Fill volumes with data.
     qemuio.write_pattern(
-        base.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xf0)
+        base.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xF0
+    )
     qemuio.write_pattern(
-        top.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf1)
+        top.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xF1
+    )
 
     # Download base volume.
 
@@ -382,10 +398,13 @@ def test_no_backing_chain(nbd_env):
 @broken_on_ci
 @requires_privileges
 @pytest.mark.parametrize("format", ["qcow2", "raw"])
-@pytest.mark.parametrize("backing_chain", [
-    pytest.param(True, id="backing_chain"),
-    pytest.param(False, id="no_backing_chain"),
-])
+@pytest.mark.parametrize(
+    "backing_chain",
+    [
+        pytest.param(True, id="backing_chain"),
+        pytest.param(False, id="no_backing_chain"),
+    ],
+)
 def test_allocation_depth(nbd_env, format, backing_chain):
     # Check that qemu-nbd exposes the "qemu:allocation-depth" meta
     # context for qcow2 format.
@@ -460,19 +479,22 @@ def test_bitmap_single_volume(nbd_env):
 
     # Write first cluster - this cluster is not recorded in any bitmap.
     qemuio.write_pattern(
-        vol.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xf1)
+        vol.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xF1
+    )
 
     # Add bitmap 1 and write second cluster.
     bitmap1 = str(uuid.uuid4())
     qemuimg.bitmap_add(vol.volumePath, bitmap1).run()
     qemuio.write_pattern(
-        vol.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf2)
+        vol.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xF2
+    )
 
     # Add bitmap 2 and write third cluster.
     bitmap2 = str(uuid.uuid4())
     qemuimg.bitmap_add(vol.volumePath, bitmap2).run()
     qemuio.write_pattern(
-        vol.volumePath, "qcow2", offset=3 * MiB, len=64 * KiB, pattern=0xf3)
+        vol.volumePath, "qcow2", offset=3 * MiB, len=64 * KiB, pattern=0xF3
+    )
 
     # Test bitmap 1 - recording changes since bitmap 1 was added.
 
@@ -488,8 +510,9 @@ def test_bitmap_single_volume(nbd_env):
         with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
             extents = c.extents(0, nbd_env.virtual_size)
 
-            dirty_extents = [(e.length, e.dirty)
-                             for e in extents[c.dirty_bitmap]]
+            dirty_extents = [
+                (e.length, e.dirty) for e in extents[c.dirty_bitmap]
+            ]
 
             assert dirty_extents == [
                 (2 * MiB, False),
@@ -516,8 +539,9 @@ def test_bitmap_single_volume(nbd_env):
         with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
             extents = c.extents(0, nbd_env.virtual_size)
 
-            dirty_extents = [(e.length, e.dirty)
-                             for e in extents[c.dirty_bitmap]]
+            dirty_extents = [
+                (e.length, e.dirty) for e in extents[c.dirty_bitmap]
+            ]
 
             assert dirty_extents == [
                 (3 * MiB, False),
@@ -535,7 +559,8 @@ def test_bitmap_backing_chain(nbd_env):
 
     # Write first cluster to vol1 - this cluster is not recorded in any bitmap.
     qemuio.write_pattern(
-        vol1.volumePath, "raw", offset=1 * MiB, len=64 * KiB, pattern=0xf1)
+        vol1.volumePath, "raw", offset=1 * MiB, len=64 * KiB, pattern=0xF1
+    )
 
     # Simulate a snapshot - bitmap1 is created empty in vol2.
     vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
@@ -544,7 +569,8 @@ def test_bitmap_backing_chain(nbd_env):
 
     # Write second cluster in vol2 - this cluster is recorded only in bitmap 1.
     qemuio.write_pattern(
-        vol2.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf2)
+        vol2.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xF2
+    )
 
     # Simulate another snapshot - bitmap1 is created empty in vol3.
     vol3 = create_volume(nbd_env, "qcow2", "sparse", parent=vol2)
@@ -556,7 +582,8 @@ def test_bitmap_backing_chain(nbd_env):
 
     # Write third cluster in vol3. This cluster is recorded in both bitmaps.
     qemuio.write_pattern(
-        vol3.volumePath, "qcow2", offset=3 * MiB, len=64 * KiB, pattern=0xf3)
+        vol3.volumePath, "qcow2", offset=3 * MiB, len=64 * KiB, pattern=0xF3
+    )
 
     # Test bitmap 1 - recording changes since bitmap 1 was added.
 
@@ -572,8 +599,9 @@ def test_bitmap_backing_chain(nbd_env):
         with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
             extents = c.extents(0, nbd_env.virtual_size)
 
-            dirty_extents = [(e.length, e.dirty)
-                             for e in extents[c.dirty_bitmap]]
+            dirty_extents = [
+                (e.length, e.dirty) for e in extents[c.dirty_bitmap]
+            ]
 
             assert dirty_extents == [
                 (2 * MiB, False),
@@ -600,8 +628,9 @@ def test_bitmap_backing_chain(nbd_env):
         with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
             extents = c.extents(0, nbd_env.virtual_size)
 
-            dirty_extents = [(e.length, e.dirty)
-                             for e in extents[c.dirty_bitmap]]
+            dirty_extents = [
+                (e.length, e.dirty) for e in extents[c.dirty_bitmap]
+            ]
 
             assert dirty_extents == [
                 (3 * MiB, False),
@@ -876,17 +905,15 @@ def nbd_server(config):
 
 def upload_to_nbd(filename, nbd_url):
     op = qemuimg.convert(
-        filename,
-        nbd_url,
-        srcFormat="qcow2",
-        create=False,
-        target_is_zero=True)
+        filename, nbd_url, srcFormat="qcow2", create=False, target_is_zero=True
+    )
     op.run()
 
 
 def download_from_nbd(nbd_url, filename):
     op = qemuimg.convert(
-        nbd_url, filename, dstFormat="qcow2", dstQcow2Compat="1.1")
+        nbd_url, filename, dstFormat="qcow2", dstQcow2Compat="1.1"
+    )
     op.run()
 
 
@@ -912,6 +939,7 @@ def create_volume(env, format, allocation, parent=None):
         parent_vol_id=parent_vol_id,
         vol_format=sc.str2fmt(format),
         prealloc=sc.name2type(allocation),
-        qcow2_compat="1.1")
+        qcow2_compat="1.1",
+    )
 
     return env.sd_manifest.produceVolume(img_id, vol_id)

@@ -68,11 +68,14 @@ _OVF_ORIGIN_OVIRT = 3
 # OVF Specification:
 # https://www.iso.org/obp/ui/#iso:std:iso-iec:17203:ed-1:v1:en
 _OVF_NS = 'http://schemas.dmtf.org/ovf/envelope/1'
-_RASD_NS = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/' \
-           'CIM_ResourceAllocationSettingData'
+_RASD_NS = (
+    'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/'
+    'CIM_ResourceAllocationSettingData'
+)
 
-ImportProgress = namedtuple('ImportProgress',
-                            ['current_disk', 'disk_count', 'description'])
+ImportProgress = namedtuple(
+    'ImportProgress', ['current_disk', 'disk_count', 'description']
+)
 DiskProgress = namedtuple('DiskProgress', ['progress'])
 
 
@@ -84,6 +87,7 @@ class STATUS:
     FAILED: error during import process
     DONE: convert process successfully finished
     '''
+
     STARTING = 'starting'
     COPYING_DISK = 'copying_disk'
     ABORTED = 'aborted'
@@ -92,53 +96,59 @@ class STATUS:
 
 
 class V2VError(Exception):
-    ''' Base class for v2v errors '''
+    '''Base class for v2v errors'''
+
     err_name = 'unexpected'  # TODO: use more specific error
 
 
 class ClientError(Exception):
-    ''' Base class for client error '''
+    '''Base class for client error'''
+
     err_name = 'unexpected'
 
 
 class InvalidVMConfiguration(ValueError):
-    ''' Unexpected error while parsing libvirt domain xml '''
+    '''Unexpected error while parsing libvirt domain xml'''
 
 
 class OutputParserError(V2VError):
-    ''' Error while parsing virt-v2v output '''
+    '''Error while parsing virt-v2v output'''
 
 
 class JobExistsError(ClientError):
-    ''' Job already exists in _jobs collection '''
+    '''Job already exists in _jobs collection'''
+
     err_name = 'JobExistsError'
 
 
 class VolumeError(ClientError):
-    ''' Error preparing volume '''
+    '''Error preparing volume'''
 
 
 class NoSuchJob(ClientError):
-    ''' Job not exists in _jobs collection '''
+    '''Job not exists in _jobs collection'''
+
     err_name = 'NoSuchJob'
 
 
 class JobNotDone(ClientError):
-    ''' Import process still in progress '''
+    '''Import process still in progress'''
+
     err_name = 'JobNotDone'
 
 
 class NoSuchOvf(V2VError):
-    ''' Ovf path is not exists in /run/vdsm/v2v/ '''
+    '''Ovf path is not exists in /run/vdsm/v2v/'''
+
     err_name = 'V2VNoSuchOvf'
 
 
 class V2VProcessError(V2VError):
-    ''' virt-v2v process had error in execution '''
+    '''virt-v2v process had error in execution'''
 
 
 class InvalidInputError(ClientError):
-    ''' Invalid input received '''
+    '''Invalid input received'''
 
 
 def get_external_vms(uri, username, password, vm_names=None):
@@ -149,13 +159,17 @@ def get_external_vms(uri, username, password, vm_names=None):
             vm_names = frozenset(vm_names)
 
     try:
-        conn = libvirtconnection.open_connection(uri=uri,
-                                                 username=username,
-                                                 passwd=password)
+        conn = libvirtconnection.open_connection(
+            uri=uri, username=username, passwd=password
+        )
     except libvirt.libvirtError as e:
         logging.exception('error connecting to hypervisor')
-        return {'status': {'code': errCode['V2VConnection']['status']['code'],
-                           'message': str(e)}}
+        return {
+            'status': {
+                'code': errCode['V2VConnection']['status']['code'],
+                'message': str(e),
+            }
+        }
 
     with closing(conn):
         vms = []
@@ -169,9 +183,9 @@ def get_external_vms(uri, username, password, vm_names=None):
 
 def get_external_vm_names(uri, username, password):
     try:
-        conn = libvirtconnection.open_connection(uri=uri,
-                                                 username=username,
-                                                 passwd=password)
+        conn = libvirtconnection.open_connection(
+            uri=uri, username=username, passwd=password
+        )
     except libvirt.libvirtError as e:
         logging.exception('error connecting to hypervisor')
         return response.error('V2VConnection', str(e))
@@ -185,12 +199,13 @@ def convert_external_vm(uri, username, password, vminfo, job_id, irs):
     if uri.startswith(_XEN_SSH_PROTOCOL):
         command = XenCommand(uri, vminfo, job_id, irs)
     elif uri.startswith(_VMWARE_PROTOCOL):
-        command = LibvirtCommand(uri, username, password, vminfo, job_id,
-                                 irs)
+        command = LibvirtCommand(uri, username, password, vminfo, job_id, irs)
     elif uri.startswith(_KVM_PROTOCOL):
         if ovirt_imageio is None:
-            raise V2VError('Unsupported protocol KVM, ovirt_imageio '
-                           'package is needed for importing KVM images')
+            raise V2VError(
+                'Unsupported protocol KVM, ovirt_imageio '
+                'package is needed for importing KVM images'
+            )
         command = KVMCommand(uri, username, password, vminfo, job_id, irs)
     else:
         raise ClientError('Unknown protocol for Libvirt uri: %s', uri)
@@ -269,7 +284,7 @@ def get_jobs_status():
         ret[job_id] = {
             'status': job.status,
             'description': job.description,
-            'progress': job.progress
+            'progress': job.progress,
         }
     return ret
 
@@ -325,6 +340,7 @@ class SSHAgent(object):
     for more information please refer to the virt-v2v man page:
     http://libguestfs.org/virt-v2v.1.html
     """
+
     def __init__(self):
         self._auth = None
         self._agent_pid = None
@@ -333,9 +349,10 @@ class SSHAgent(object):
     def __enter__(self):
         rc, out, err = execCmd([_SSH_AGENT.cmd], raw=True)
         if rc != 0:
-            raise V2VError('Error init ssh-agent, exit code: %r'
-                           ', out: %r, err: %r' %
-                           (rc, out, err))
+            raise V2VError(
+                'Error init ssh-agent, exit code: %r'
+                ', out: %r, err: %r' % (rc, out, err)
+            )
 
         m = self._ssh_auth_re.match(out)
         # looking for: SSH_AUTH_SOCK=/tmp/ssh-VEE74ObhTWBT/agent.29917
@@ -353,26 +370,30 @@ class SSHAgent(object):
             # 2 = no agnet
             if rc != 2:
                 self._kill_agent()
-            raise V2VError('Error init ssh-add, exit code: %r'
-                           ', out: %r, err: %r' %
-                           (rc, out, err))
+            raise V2VError(
+                'Error init ssh-add, exit code: %r'
+                ', out: %r, err: %r' % (rc, out, err)
+            )
 
     def __exit__(self, *args):
         rc, out, err = execCmd([_SSH_ADD.cmd, '-d'], env=self._auth)
         if rc != 0:
-            logging.error('Error deleting ssh-add, exit code: %r'
-                          ', out: %r, err: %r' %
-                          (rc, out, err))
+            logging.error(
+                'Error deleting ssh-add, exit code: %r'
+                ', out: %r, err: %r' % (rc, out, err)
+            )
 
         self._kill_agent()
 
     def _kill_agent(self):
-        rc, out, err = execCmd([_SSH_AGENT.cmd, '-k'],
-                               env={'SSH_AGENT_PID': self._agent_pid})
+        rc, out, err = execCmd(
+            [_SSH_AGENT.cmd, '-k'], env={'SSH_AGENT_PID': self._agent_pid}
+        )
         if rc != 0:
-            logging.error('Error killing ssh-agent (PID=%r), exit code: %r'
-                          ', out: %r, err: %r' %
-                          (self._agent_pid, rc, out, err))
+            logging.error(
+                'Error killing ssh-agent (PID=%r), exit code: %r'
+                ', out: %r, err: %r' % (self._agent_pid, rc, out, err)
+            )
 
     @property
     def auth(self):
@@ -392,18 +413,21 @@ class V2VCommand(object):
         if 'qcow2_compat' in vminfo:
             qcow2_compat = vminfo['qcow2_compat']
             if qcow2_compat not in _QCOW2_COMPAT_SUPPORTED:
-                logging.error('Invalid QCOW2 compat version %r' %
-                              qcow2_compat)
-                raise ValueError('Invalid QCOW2 compat version %r' %
-                                 qcow2_compat)
+                logging.error('Invalid QCOW2 compat version %r' % qcow2_compat)
+                raise ValueError(
+                    'Invalid QCOW2 compat version %r' % qcow2_compat
+                )
             if 'vdsm-compat-option' in self._v2v_caps:
                 self._base_command.extend(
-                    ['-oo', 'vdsm-compat=%s' % qcow2_compat])
+                    ['-oo', 'vdsm-compat=%s' % qcow2_compat]
+                )
             elif qcow2_compat != '0.10':
                 # Note: qcow2 is only a suggestion from the engine
                 # if virt-v2v doesn't support it we fall back to default
-                logging.info('virt-v2v not supporting qcow2 compat version: '
-                             '%r', qcow2_compat)
+                logging.info(
+                    'virt-v2v not supporting qcow2 compat version: ' '%r',
+                    qcow2_compat,
+                )
 
     def execute(self):
         raise NotImplementedError("Subclass must implement this")
@@ -413,20 +437,25 @@ class V2VCommand(object):
 
     def _start_helper(self):
         timestamp = time.strftime('%Y%m%dT%H%M%S')
-        log = os.path.join(_LOG_DIR,
-                           "import-%s-%s.log" % (self._vmid, timestamp))
+        log = os.path.join(
+            _LOG_DIR, "import-%s-%s.log" % (self._vmid, timestamp)
+        )
         logging.info("Storing import log at: %r", log)
-        v2v = _simple_exec_cmd(self._command(),
-                               nice=NICENESS.HIGH,
-                               ioclass=IOCLASS.IDLE,
-                               env=self._environment(),
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT)
-        tee = _simple_exec_cmd(['tee', log],
-                               nice=NICENESS.HIGH,
-                               ioclass=IOCLASS.IDLE,
-                               stdin=v2v.stdout,
-                               stdout=subprocess.PIPE)
+        v2v = _simple_exec_cmd(
+            self._command(),
+            nice=NICENESS.HIGH,
+            ioclass=IOCLASS.IDLE,
+            env=self._environment(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        tee = _simple_exec_cmd(
+            ['tee', log],
+            nice=NICENESS.HIGH,
+            ioclass=IOCLASS.IDLE,
+            stdin=v2v.stdout,
+            stdout=subprocess.PIPE,
+        )
 
         return PipelineProc(v2v, tee)
 
@@ -443,8 +472,9 @@ class V2VCommand(object):
                 parameters.append('-oo')
                 parameters.append('vdsm-vol-uuid=%s' % disk['volumeID'])
             except KeyError as e:
-                raise InvalidInputError('Job %r missing required property: %s'
-                                        % (self._vmid, e))
+                raise InvalidInputError(
+                    'Job %r missing required property: %s' % (self._vmid, e)
+                )
         return parameters
 
     @contextmanager
@@ -457,21 +487,27 @@ class V2VCommand(object):
 
     def _prepare_volumes(self):
         if len(self._vminfo['disks']) < 1:
-            raise InvalidInputError('Job %r cannot import vm with no disk',
-                                    self._vmid)
+            raise InvalidInputError(
+                'Job %r cannot import vm with no disk', self._vmid
+            )
 
         for disk in self._vminfo['disks']:
-            drive = {'poolID': self._vminfo['poolID'],
-                     'domainID': self._vminfo['domainID'],
-                     'volumeID': disk['volumeID'],
-                     'imageID': disk['imageID']}
-            res = self._irs.prepareImage(drive['domainID'],
-                                         drive['poolID'],
-                                         drive['imageID'],
-                                         drive['volumeID'])
+            drive = {
+                'poolID': self._vminfo['poolID'],
+                'domainID': self._vminfo['domainID'],
+                'volumeID': disk['volumeID'],
+                'imageID': disk['imageID'],
+            }
+            res = self._irs.prepareImage(
+                drive['domainID'],
+                drive['poolID'],
+                drive['imageID'],
+                drive['volumeID'],
+            )
             if res['status']['code']:
-                raise VolumeError('Job %r bad volume specification: %s' %
-                                  (self._vmid, drive))
+                raise VolumeError(
+                    'Job %r bad volume specification: %s' % (self._vmid, drive)
+                )
 
             drive['path'] = res['path']
             self._prepared_volumes.append(drive)
@@ -479,12 +515,13 @@ class V2VCommand(object):
     def _teardown_volumes(self):
         for drive in self._prepared_volumes:
             try:
-                self._irs.teardownImage(drive['domainID'],
-                                        drive['poolID'],
-                                        drive['imageID'])
+                self._irs.teardownImage(
+                    drive['domainID'], drive['poolID'], drive['imageID']
+                )
             except Exception as e:
-                logging.error('Job %r error tearing down drive: %s',
-                              self._vmid, e)
+                logging.error(
+                    'Job %r error tearing down drive: %s', self._vmid, e
+                )
 
     def _get_storage_domain_path(self, path):
         '''
@@ -522,15 +559,20 @@ class V2VCommand(object):
             try:
                 os.remove(self._passwd_file)
             except Exception:
-                logging.exception("Job %r error removing passwd file: %s",
-                                  self._vmid, self._passwd_file)
+                logging.exception(
+                    "Job %r error removing passwd file: %s",
+                    self._vmid,
+                    self._passwd_file,
+                )
 
     def _query_v2v_caps(self):
         self._v2v_caps = frozenset()
-        p = _simple_exec_cmd([_VIRT_V2V.cmd, '--machine-readable'],
-                             env=os.environ.copy(),
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = _simple_exec_cmd(
+            [_VIRT_V2V.cmd, '--machine-readable'],
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         with terminating(p):
             try:
                 out, err = p.communicate()
@@ -539,8 +581,9 @@ class V2VCommand(object):
                 raise
         if p.returncode != 0:
             raise V2VProcessError(
-                'virt-v2v exited with code: %d, stderr: %r' %
-                (p.returncode, err))
+                'virt-v2v exited with code: %d, stderr: %r'
+                % (p.returncode, err)
+            )
 
         self._v2v_caps = frozenset(out.decode('utf8').splitlines())
         logging.debug("Detected virt-v2v capabilities: %r", self._v2v_caps)
@@ -555,20 +598,35 @@ class LibvirtCommand(V2VCommand):
 
     def _command(self):
         cmd = self._base_command
-        cmd.extend(['-ic', self._uri,
-                    '-o', 'vdsm',
-                    '-of', self._get_disk_format(),
-                    '-oa', self._vminfo.get('allocation', 'sparse').lower()])
+        cmd.extend(
+            [
+                '-ic',
+                self._uri,
+                '-o',
+                'vdsm',
+                '-of',
+                self._get_disk_format(),
+                '-oa',
+                self._vminfo.get('allocation', 'sparse').lower(),
+            ]
+        )
         cmd.extend(self._disk_parameters())
-        cmd.extend(['--ip',
-                    self._passwd_file,
-                    '-oo', 'vdsm-vm-uuid=%s' % self._vmid,
-                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
-                    '--machine-readable',
-                    '-os',
-                    self._get_storage_domain_path(
-                        self._prepared_volumes[0]['path']),
-                    self._vminfo['vmName']])
+        cmd.extend(
+            [
+                '--ip',
+                self._passwd_file,
+                '-oo',
+                'vdsm-vm-uuid=%s' % self._vmid,
+                '-oo',
+                'vdsm-ovf-output=%s' % _V2V_DIR,
+                '--machine-readable',
+                '-os',
+                self._get_storage_domain_path(
+                    self._prepared_volumes[0]['path']
+                ),
+                self._vminfo['vmName'],
+            ]
+        )
         return cmd
 
     @contextmanager
@@ -584,16 +642,28 @@ class OvaCommand(V2VCommand):
 
     def _command(self):
         cmd = self._base_command
-        cmd.extend(['-i', 'ova', self._ova_path,
-                    '-o', 'vdsm',
-                    '-of', self._get_disk_format(),
-                    '-oa', self._vminfo.get('allocation', 'sparse').lower(),
-                    '-oo', 'vdsm-vm-uuid=%s' % self._vmid,
-                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
-                    '--machine-readable',
-                    '-os',
-                    self._get_storage_domain_path(
-                        self._prepared_volumes[0]['path'])])
+        cmd.extend(
+            [
+                '-i',
+                'ova',
+                self._ova_path,
+                '-o',
+                'vdsm',
+                '-of',
+                self._get_disk_format(),
+                '-oa',
+                self._vminfo.get('allocation', 'sparse').lower(),
+                '-oo',
+                'vdsm-vm-uuid=%s' % self._vmid,
+                '-oo',
+                'vdsm-ovf-output=%s' % _V2V_DIR,
+                '--machine-readable',
+                '-os',
+                self._get_storage_domain_path(
+                    self._prepared_volumes[0]['path']
+                ),
+            ]
+        )
         cmd.extend(self._disk_parameters())
         return cmd
 
@@ -613,6 +683,7 @@ class XenCommand(V2VCommand):
     - host must be in ~/.ssh/known_hosts (done automatically
       by ssh to the host before importing vm)
     """
+
     def __init__(self, uri, vminfo, job_id, irs):
         super(XenCommand, self).__init__(vminfo, job_id, irs)
         self._uri = uri
@@ -620,18 +691,33 @@ class XenCommand(V2VCommand):
 
     def _command(self):
         cmd = self._base_command
-        cmd.extend(['-ic', self._uri,
-                    '-o', 'vdsm',
-                    '-of', self._get_disk_format(),
-                    '-oa', self._vminfo.get('allocation', 'sparse').lower()])
+        cmd.extend(
+            [
+                '-ic',
+                self._uri,
+                '-o',
+                'vdsm',
+                '-of',
+                self._get_disk_format(),
+                '-oa',
+                self._vminfo.get('allocation', 'sparse').lower(),
+            ]
+        )
         cmd.extend(self._disk_parameters())
-        cmd.extend(['-oo', 'vdsm-vm-uuid=%s' % self._vmid,
-                    '-oo', 'vdsm-ovf-output=%s' % _V2V_DIR,
-                    '--machine-readable',
-                    '-os',
-                    self._get_storage_domain_path(
-                        self._prepared_volumes[0]['path']),
-                    self._vminfo['vmName']])
+        cmd.extend(
+            [
+                '-oo',
+                'vdsm-vm-uuid=%s' % self._vmid,
+                '-oo',
+                'vdsm-ovf-output=%s' % _V2V_DIR,
+                '--machine-readable',
+                '-os',
+                self._get_storage_domain_path(
+                    self._prepared_volumes[0]['path']
+                ),
+                self._vminfo['vmName'],
+            ]
+        )
         return cmd
 
     @contextmanager
@@ -653,14 +739,17 @@ class KVMCommand(V2VCommand):
         self._password = password
 
     def _command(self):
-        cmd = [EXT_KVM_2_OVIRT,
-               '--uri', self._uri,
-               '--bufsize',
-               str(config.getint('v2v', 'kvm2ovirt_buffer_size'))]
+        cmd = [
+            EXT_KVM_2_OVIRT,
+            '--uri',
+            self._uri,
+            '--bufsize',
+            str(config.getint('v2v', 'kvm2ovirt_buffer_size')),
+        ]
         if self._username is not None:
-            cmd.extend([
-                '--username', self._username,
-                '--ip', self._passwd_file])
+            cmd.extend(
+                ['--username', self._username, '--ip', self._passwd_file]
+            )
         src, fmt = self._source_images()
         cmd.append('--source')
         cmd.extend(src)
@@ -681,9 +770,9 @@ class KVMCommand(V2VCommand):
             yield self._start_helper()
 
     def _source_images(self):
-        con = libvirtconnection.open_connection(uri=self._uri,
-                                                username=self._username,
-                                                passwd=self._password)
+        con = libvirtconnection.open_connection(
+            uri=self._uri, username=self._username, passwd=self._password
+        )
 
         with closing(con):
             vm = con.lookupByName(self._vminfo['vmName'])
@@ -847,8 +936,9 @@ class ImportVm(object):
                     if self._proc is not None:
                         self._abort()
                 except Exception as e:
-                    logging.exception('Job %r, error trying to abort: %r',
-                                      self._id, e)
+                    logging.exception(
+                        'Job %r, error trying to abort: %r', self._id, e
+                    )
 
     def _import(self):
         logging.info('Job %r starting import', self._id)
@@ -858,14 +948,14 @@ class ImportVm(object):
             self._wait_for_process()
 
             if self._proc.returncode != 0:
-                raise V2VProcessError('Job %r process failed exit-code: %r' %
-                                      (self._id,
-                                       self._proc.returncode))
+                raise V2VProcessError(
+                    'Job %r process failed exit-code: %r'
+                    % (self._id, self._proc.returncode)
+                )
 
             if self._status != STATUS.ABORTED:
                 self._status = STATUS.DONE
-                logging.info('Job %r finished import successfully',
-                             self._id)
+                logging.info('Job %r finished import successfully', self._id)
 
     def _wait_for_process(self):
         if self._proc.returncode is not None:
@@ -874,14 +964,20 @@ class ImportVm(object):
         self._proc.wait()
 
     def _watch_process_output(self):
-        out = io.BufferedReader(io.FileIO(self._proc.stdout.fileno(),
-                                mode='rb', closefd=False), BUFFSIZE)
+        out = io.BufferedReader(
+            io.FileIO(self._proc.stdout.fileno(), mode='rb', closefd=False),
+            BUFFSIZE,
+        )
         parser = OutputParser()
         for event in parser.parse(out):
             if isinstance(event, ImportProgress):
                 self._status = STATUS.COPYING_DISK
-                logging.info("Job %r copying disk %d/%d",
-                             self._id, event.current_disk, event.disk_count)
+                logging.info(
+                    "Job %r copying disk %d/%d",
+                    self._id,
+                    event.current_disk,
+                    event.disk_count,
+                )
                 self._disk_progress = 0
                 self._current_disk = event.current_disk
                 self._disk_count = event.disk_count
@@ -889,11 +985,17 @@ class ImportVm(object):
             elif isinstance(event, DiskProgress):
                 self._disk_progress = event.progress
                 if event.progress % 10 == 0:
-                    logging.info("Job %r copy disk %d progress %d/100",
-                                 self._id, self._current_disk, event.progress)
+                    logging.info(
+                        "Job %r copy disk %d progress %d/100",
+                        self._id,
+                        self._current_disk,
+                        event.progress,
+                    )
             else:
-                raise RuntimeError("Job %r got unexpected parser event: %s" %
-                                   (self._id, event))
+                raise RuntimeError(
+                    "Job %r got unexpected parser event: %s"
+                    % (self._id, event)
+                )
 
     def abort(self):
         self._status = STATUS.ABORTED
@@ -905,7 +1007,8 @@ class ImportVm(object):
         if self._proc is None:
             logging.warning(
                 'Ignoring request to abort job %r; the job failed to start',
-                self._id)
+                self._id,
+            )
             return
         if self._proc.returncode is None:
             logging.debug('Job %r killing virt-v2v process', self._id)
@@ -914,11 +1017,9 @@ class ImportVm(object):
             except OSError as e:
                 if e.errno != errno.ESRCH:
                     raise
-                logging.debug('Job %r virt-v2v process not running',
-                              self._id)
+                logging.debug('Job %r virt-v2v process not running', self._id)
             else:
-                logging.debug('Job %r virt-v2v process was killed',
-                              self._id)
+                logging.debug('Job %r virt-v2v process was killed', self._id)
             finally:
                 self._proc.wait()
 
@@ -931,8 +1032,11 @@ class OutputParser(object):
         for line in stream:
             if b'Copying disk' in line:
                 description, current_disk, disk_count = self._parse_line(line)
-                yield ImportProgress(int(current_disk), int(disk_count),
-                                     description.decode('utf-8'))
+                yield ImportProgress(
+                    int(current_disk),
+                    int(disk_count),
+                    description.decode('utf-8'),
+                )
                 for chunk in self._iter_progress(stream):
                     progress = self._parse_progress(chunk)
                     if progress is not None:
@@ -943,8 +1047,9 @@ class OutputParser(object):
     def _parse_line(self, line):
         m = self.COPY_DISK_RE.match(line)
         if m is None:
-            raise OutputParserError('unexpected format in "Copying disk"'
-                                    ', line: %r' % line)
+            raise OutputParserError(
+                'unexpected format in "Copying disk"' ', line: %r' % line
+            )
         return m.group(1), m.group(2), m.group(3)
 
     def _iter_progress(self, stream):
@@ -966,8 +1071,9 @@ class OutputParser(object):
         try:
             return int(value)
         except ValueError:
-            raise OutputParserError('error parsing progress regex: %r'
-                                    % m.groups)
+            raise OutputParserError(
+                'error parsing progress regex: %r' % m.groups
+            )
 
 
 def _mem_to_mib(size, unit):
@@ -983,8 +1089,9 @@ def _mem_to_mib(size, unit):
     elif lunit in ('tib', 't'):
         return size * 1024 * 1024
     else:
-        raise InvalidVMConfiguration("Invalid currentMemory unit attribute:"
-                                     " %r" % unit)
+        raise InvalidVMConfiguration(
+            "Invalid currentMemory unit attribute:" " %r" % unit
+        )
 
 
 def _list_domains(conn):
@@ -1026,8 +1133,7 @@ def _add_vm(conn, vms, vm):
     try:
         xml = vm.XMLDesc()
     except libvirt.libvirtError as e:
-        logging.error("error getting domain xml for vm %r: %s",
-                      vm.name(), e)
+        logging.error("error getting domain xml for vm %r: %s", vm.name(), e)
         return
     try:
         root = ET.fromstring(xml)
@@ -1056,8 +1162,9 @@ def _add_vm(conn, vms, vm):
     if disk_info is not None:
         vms.append(params)
     else:
-        logging.warning('Cannot add VM %s due to disk storage error',
-                        vm.name())
+        logging.warning(
+            'Cannot add VM %s due to disk storage error', vm.name()
+        )
 
 
 def _block_disk_supported(conn, root):
@@ -1067,8 +1174,9 @@ def _block_disk_supported(conn, root):
     '''
     if conn.getType() == 'Xen':
         block_disks = root.findall('.//disk[@type="block"]')
-        block_disks = [d for d in block_disks
-                       if d.attrib.get('device', None) == "disk"]
+        block_disks = [
+            d for d in block_disks if d.attrib.get('device', None) == "disk"
+        ]
         return len(block_disks) == 0
 
     return True
@@ -1116,8 +1224,9 @@ def _add_general_info(root, params):
         try:
             size = int(e.text)
         except ValueError:
-            raise InvalidVMConfiguration("Invalid 'currentMemory' value: %r"
-                                         % e.text)
+            raise InvalidVMConfiguration(
+                "Invalid 'currentMemory' value: %r" % e.text
+            )
         unit = e.get('unit', 'KiB')
         params['memSize'] = _mem_to_mib(size, unit)
 
@@ -1170,9 +1279,7 @@ def _get_disk_info(conn, disk, vm):
         except libvirt.libvirtError:
             logging.exception("Error getting disk size")
             return None
-        out.update({
-            'capacity': str(capacity),
-            'allocation': str(alloc)})
+        out.update({'capacity': str(capacity), 'allocation': str(alloc)})
         return out
     return {}
 
@@ -1229,8 +1336,9 @@ def _add_disks(root, params):
             try:
                 d["format"] = _convert_disk_format(driver.get('type'))
             except KeyError:
-                logging.warning("Disk %s has unsupported format: %r", d,
-                                format)
+                logging.warning(
+                    "Disk %s has unsupported format: %r", d, format
+                )
         params['disks'].append(d)
 
 
@@ -1285,15 +1393,16 @@ def _vm_has_snapshot(vm):
     try:
         return vm.hasCurrentSnapshot() == 1
     except libvirt.libvirtError:
-        logging.exception('Error checking if snapshot exist for vm: %s.',
-                          vm.name())
+        logging.exception(
+            'Error checking if snapshot exist for vm: %s.', vm.name()
+        )
         return False
 
 
 def _read_ovf_from_ova(ova_path):
     """
-       virt-v2v support ova in tar, zip formats as well as
-       extracted directory
+    virt-v2v support ova in tar, zip formats as well as
+    extracted directory
     """
     if os.path.isdir(ova_path):
         return _read_ovf_from_ova_dir(ova_path)
@@ -1301,8 +1410,9 @@ def _read_ovf_from_ova(ova_path):
         return _read_ovf_from_zip_ova(ova_path)
     elif tarfile.is_tarfile(ova_path):
         return _read_ovf_from_tar_ova(ova_path)
-    raise ClientError('Unknown ova format, supported formats:'
-                      ' tar, zip or a directory')
+    raise ClientError(
+        'Unknown ova format, supported formats:' ' tar, zip or a directory'
+    )
 
 
 def _find_ovf(entries):
@@ -1348,15 +1458,21 @@ def _add_general_ovf_info(vm, node, ns, ova_path):
     else:
         vm['vmName'] = os.path.splitext(os.path.basename(ova_path))[0]
 
-    memSize = node.find('.//ovf:Item[rasd:ResourceType="%d"]/'
-                        'rasd:VirtualQuantity' % _OVF_RESOURCE_MEMORY, ns)
+    memSize = node.find(
+        './/ovf:Item[rasd:ResourceType="%d"]/'
+        'rasd:VirtualQuantity' % _OVF_RESOURCE_MEMORY,
+        ns,
+    )
     if memSize is not None:
         vm['memSize'] = int(memSize.text)
     else:
         raise V2VError('Error parsing ovf information: no memory size')
 
-    smp = node.find('.//ovf:Item[rasd:ResourceType="%d"]/'
-                    'rasd:VirtualQuantity' % _OVF_RESOURCE_CPU, ns)
+    smp = node.find(
+        './/ovf:Item[rasd:ResourceType="%d"]/'
+        'rasd:VirtualQuantity' % _OVF_RESOURCE_CPU,
+        ns,
+    )
     if smp is not None:
         vm['smp'] = int(smp.text)
     else:
@@ -1388,20 +1504,17 @@ def _parse_allocation_units(units):
     number = r'[+]?[0-9]+'  # we support only positive integers
     exponent = r'[+]?[0-9]+'  # we support only positive integers
     modifier1 = r'(?P<m1>{op}{sp}(?P<m1_num>{num}))'.format(
-        op=operator,
-        num=number,
-        sp=sp)
-    modifier2 = \
-        r'(?P<m2>{op}{sp}' \
+        op=operator, num=number, sp=sp
+    )
+    modifier2 = (
+        r'(?P<m2>{op}{sp}'
         r'(?P<m2_base>[0-9]+){sp}\^{sp}(?P<m2_exp>{exp}))'.format(
-            op=operator,
-            exp=exponent,
-            sp=sp)
+            op=operator, exp=exponent, sp=sp
+        )
+    )
     r = r'^{base_unit}({sp}{mod1})?({sp}{mod2})?$'.format(
-        base_unit=base_unit,
-        mod1=modifier1,
-        mod2=modifier2,
-        sp=sp)
+        base_unit=base_unit, mod1=modifier1, mod2=modifier2, sp=sp
+    )
 
     m = re.match(r, units, re.MULTILINE)
     if m is None:
@@ -1433,8 +1546,9 @@ def _add_disks_ovf_info(vm, node, ns):
             capacity *= _parse_allocation_units(units)
         disk['capacity'] = str(capacity)
         fileref = d.attrib.get('{%s}fileRef' % _OVF_NS)
-        alias = node.find('.//ovf:References/ovf:File[@ovf:id="%s"]' %
-                          fileref, ns)
+        alias = node.find(
+            './/ovf:References/ovf:File[@ovf:id="%s"]' % fileref, ns
+        )
         if alias is not None:
             disk['alias'] = alias.attrib.get('{%s}href' % _OVF_NS)
             populated_size = d.attrib.get('{%s}populatedSize' % _OVF_NS, None)
@@ -1447,15 +1561,17 @@ def _add_disks_ovf_info(vm, node, ns):
 
 def _add_networks_ovf_info(vm, node, ns):
     vm['networks'] = []
-    for n in node.findall('.//ovf:Item[rasd:ResourceType="%d"]'
-                          % _OVF_RESOURCE_NETWORK, ns):
+    for n in node.findall(
+        './/ovf:Item[rasd:ResourceType="%d"]' % _OVF_RESOURCE_NETWORK, ns
+    ):
         net = {}
         dev = n.find('./rasd:ElementName', ns)
         if dev is not None:
             net['dev'] = dev.text
         else:
-            raise V2VError('Error parsing ovf information: '
-                           'network element name')
+            raise V2VError(
+                'Error parsing ovf information: ' 'network element name'
+            )
 
         model = n.find('./rasd:ResourceSubType', ns)
         if model is not None:
@@ -1472,17 +1588,35 @@ def _add_networks_ovf_info(vm, node, ns):
         vm['networks'].append(net)
 
 
-def _simple_exec_cmd(command, env=None, nice=None, ioclass=None,
-                     stdin=None, stdout=None, stderr=None):
+def _simple_exec_cmd(
+    command,
+    env=None,
+    nice=None,
+    ioclass=None,
+    stdin=None,
+    stdout=None,
+    stderr=None,
+):
 
-    command = wrap_command(command, with_ioclass=ioclass,
-                           ioclassdata=None, with_nice=nice,
-                           with_setsid=False, with_sudo=False,
-                           reset_cpu_affinity=True)
+    command = wrap_command(
+        command,
+        with_ioclass=ioclass,
+        ioclassdata=None,
+        with_nice=nice,
+        with_setsid=False,
+        with_sudo=False,
+        reset_cpu_affinity=True,
+    )
 
     logging.debug(cmdutils.command_log_line(command, cwd=None))
 
     p = subprocess.Popen(
-        command, close_fds=True, cwd=None, env=env,
-        stdin=stdin, stdout=stdout, stderr=stderr)
+        command,
+        close_fds=True,
+        cwd=None,
+        env=env,
+        stdin=stdin,
+        stdout=stdout,
+        stderr=stderr,
+    )
     return p

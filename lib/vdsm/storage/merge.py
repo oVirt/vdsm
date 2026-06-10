@@ -38,8 +38,9 @@ class SubchainInfo(properties.Owner):
     img_id = properties.UUID(required=True)
     top_id = properties.UUID(required=True)
     base_id = properties.UUID(required=True)
-    base_generation = properties.Integer(required=False, minval=0,
-                                         maxval=sc.MAX_GENERATION)
+    base_generation = properties.Integer(
+        required=False, minval=0, maxval=sc.MAX_GENERATION
+    )
 
     def __init__(self, params, host_id):
         self.sd_id = params.get('sd_id')
@@ -56,16 +57,14 @@ class SubchainInfo(properties.Owner):
     def base_vol(self):
         if self._base_vol is None:
             dom = sdCache.produce_manifest(self.sd_id)
-            self._base_vol = dom.produceVolume(self.img_id,
-                                               self.base_id)
+            self._base_vol = dom.produceVolume(self.img_id, self.base_id)
         return self._base_vol
 
     @property
     def top_vol(self):
         if self._top_vol is None:
             dom = sdCache.produce_manifest(self.sd_id)
-            self._top_vol = dom.produceVolume(self.img_id,
-                                              self.top_id)
+            self._top_vol = dom.produceVolume(self.img_id, self.top_id)
         return self._top_vol
 
     @property
@@ -83,7 +82,8 @@ class SubchainInfo(properties.Owner):
             if template is not None:
                 if not template.isShared():
                     raise se.UnexpectedVolumeState(
-                        template.volUUID, "Shared", "Not Shared")
+                        template.volUUID, "Shared", "Not Shared"
+                    )
                 chain.insert(0, template)
             self._chain = [vol.volUUID for vol in chain]
         return self._chain
@@ -91,25 +91,26 @@ class SubchainInfo(properties.Owner):
     @property
     def locks(self):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
-        ret = [rm.Lock(sc.STORAGE, self.sd_id, rm.SHARED),
-               rm.Lock(img_ns, self.img_id, rm.EXCLUSIVE)]
+        ret = [
+            rm.Lock(sc.STORAGE, self.sd_id, rm.SHARED),
+            rm.Lock(img_ns, self.img_id, rm.EXCLUSIVE),
+        ]
         dom = sdCache.produce_manifest(self.sd_id)
         if dom.hasVolumeLeases():
             # We take only the base lease since no other volumes are modified
-            ret.append(volume.VolumeLease(self.host_id, self.sd_id,
-                                          self.img_id, self.base_id))
+            ret.append(
+                volume.VolumeLease(
+                    self.host_id, self.sd_id, self.img_id, self.base_id
+                )
+            )
         return ret
 
     def validate(self):
         if self.base_id not in self.chain:
-            raise se.VolumeIsNotInChain(self.sd_id,
-                                        self.img_id,
-                                        self.base_id)
+            raise se.VolumeIsNotInChain(self.sd_id, self.img_id, self.base_id)
 
         if self.top_id not in self.chain:
-            raise se.VolumeIsNotInChain(self.sd_id,
-                                        self.img_id,
-                                        self.top_id)
+            raise se.VolumeIsNotInChain(self.sd_id, self.img_id, self.top_id)
 
         # Validate that top volume is the parent of the base.
         if self.top_vol.getParent() != self.base_id:
@@ -122,13 +123,14 @@ class SubchainInfo(properties.Owner):
             raise se.SharedVolumeNonWritable(self.top_vol)
 
     def volume_operation(self):
-        return self.base_vol.operation(requested_gen=self.base_generation,
-                                       set_illegal=False)
+        return self.base_vol.operation(
+            requested_gen=self.base_generation, set_illegal=False
+        )
 
     @contextmanager
     def prepare(self):
         top_index = self.chain.index(self.top_id)
-        chain_to_prepare = self.chain[:top_index + 1]
+        chain_to_prepare = self.chain[: top_index + 1]
         dom = sdCache.produce_manifest(self.sd_id)
         for vol_id in chain_to_prepare:
             vol = dom.produceVolume(self.img_id, vol_id)
@@ -142,8 +144,10 @@ class SubchainInfo(properties.Owner):
             self.top_vol.teardown(self.sd_id, self.top_id)
 
     def __repr__(self):
-        return ("<SubchainInfo sd_id=%s, img_id=%s, top_id=%s, base_id=%s "
-                "base_generation=%s at 0x%x>") % (
+        return (
+            "<SubchainInfo sd_id=%s, img_id=%s, top_id=%s, base_id=%s "
+            "base_generation=%s at 0x%x>"
+        ) % (
             self.sd_id,
             self.img_id,
             self.top_id,
@@ -163,13 +167,13 @@ def prepare(subchain):
             # As there is not a reliable way to calculate the size of
             # these bitmaps, and they are invalid and can never be used
             # for incremental backup, we prune them before the commit.
-            bitmaps.prune_bitmaps(subchain.base_vol.getVolumePath(),
-                                  subchain.top_vol.getVolumePath())
+            bitmaps.prune_bitmaps(
+                subchain.base_vol.getVolumePath(),
+                subchain.top_vol.getVolumePath(),
+            )
 
-            _update_base_capacity(subchain.base_vol,
-                                  subchain.top_vol)
-            _extend_base_allocation(subchain.base_vol,
-                                    subchain.top_vol)
+            _update_base_capacity(subchain.base_vol, subchain.top_vol)
+            _extend_base_allocation(subchain.base_vol, subchain.top_vol)
 
 
 def _update_base_capacity(base_vol, top_vol):
@@ -180,15 +184,21 @@ def _update_base_capacity(base_vol, top_vol):
         return
 
     if base_vol.getFormat() == sc.RAW_FORMAT:
-        log.info("Updating base capacity, extending size of raw base "
-                 "volume to %d", top_capacity)
+        log.info(
+            "Updating base capacity, extending size of raw base "
+            "volume to %d",
+            top_capacity,
+        )
         # extendSize can run on only SPM so only StorageDomain implement it.
         dom = sdCache.produce(base_vol.sdUUID)
         vol = dom.produceVolume(base_vol.imgUUID, base_vol.volUUID)
         vol.extendSize(top_capacity)
     else:
-        log.info("Updating base capacity, setting size in metadata to "
-                 "%d for cow base volume", top_capacity)
+        log.info(
+            "Updating base capacity, setting size in metadata to "
+            "%d for cow base volume",
+            top_capacity,
+        )
         base_vol.setCapacity(top_capacity)
 
 
@@ -198,14 +208,16 @@ def _extend_base_allocation(base_vol, top_vol):
 
     # Measure the subchain from top to base. This gives us the required
     # allocation for merging top into base.
-    log.debug("Measuring sub chain top=%r base=%r",
-              top_vol.volUUID, base_vol.volUUID)
+    log.debug(
+        "Measuring sub chain top=%r base=%r", top_vol.volUUID, base_vol.volUUID
+    )
     measure = qemuimg.measure(
         top_vol.getVolumePath(),
         format=qemuimg.FORMAT.QCOW2,
         output_format=qemuimg.FORMAT.QCOW2,
         is_block=True,
-        base=base_vol.getVolumePath())
+        base=base_vol.getVolumePath(),
+    )
     log.debug("Measure result: %s", measure)
 
     # When merging we always copy the bitmaps from the top to base. Measure
@@ -216,7 +228,8 @@ def _extend_base_allocation(base_vol, top_vol):
     # If the top volume is leaf, the base volume will become leaf after the
     # merge, so it needs more space.
     optimal_size = base_vol.optimal_cow_size(
-        required_size, base_vol.getCapacity(), top_vol.isLeaf())
+        required_size, base_vol.getCapacity(), top_vol.isLeaf()
+    )
 
     # Extend the volume.
     dom = sdCache.produce(base_vol.sdUUID)
@@ -270,14 +283,19 @@ def finalize(subchain):
                 # If the top volume is leaf, the base volume will become a leaf
                 # after the top volume is deleted.
                 optimal_size = subchain.base_vol.optimal_size(
-                    as_leaf=subchain.top_vol.isLeaf())
+                    as_leaf=subchain.top_vol.isLeaf()
+                )
                 actual_size = subchain.base_vol.getVolumeSize()
 
         # Optimal size must be computed while the image is prepared, but
         # reducing with the volume still active will issue a warning from LVM.
         # Thus, reduce after having teardown the volume.
-        if (optimal_size is not None and actual_size is not None and
-                subchain.base_vol.can_reduce() and optimal_size < actual_size):
+        if (
+            optimal_size is not None
+            and actual_size is not None
+            and subchain.base_vol.can_reduce()
+            and optimal_size < actual_size
+        ):
             _shrink_base_volume(subchain, optimal_size)
 
 
@@ -316,22 +334,24 @@ def _update_vdsm_metadata(dom, subchain):
     orig_top_id = subchain.chain[-1]
     new_chain = subchain.chain[:]
     new_chain.remove(subchain.top_id)
-    log.info("Updating Vdsm metadata, syncing new chain: %s",
-             new_chain)
+    log.info("Updating Vdsm metadata, syncing new chain: %s", new_chain)
     repoPath = dom.getRepoPath()
     image_repo = image.Image(repoPath)
-    image_repo.syncVolumeChain(subchain.sd_id, subchain.img_id, orig_top_id,
-                               new_chain)
+    image_repo.syncVolumeChain(
+        subchain.sd_id, subchain.img_id, orig_top_id, new_chain
+    )
 
 
 def _rebase_operation(base, child):
     backing = volume.getBackingVolumePath(base.imgUUID, base.volUUID)
     backing_format = sc.fmt2str(base.getFormat())
-    operation = qemuimg.rebase(image=child.volumePath,
-                               backing=backing,
-                               format=qemuimg.FORMAT.QCOW2,
-                               backingFormat=backing_format,
-                               unsafe=True)
+    operation = qemuimg.rebase(
+        image=child.volumePath,
+        backing=backing,
+        format=qemuimg.FORMAT.QCOW2,
+        backingFormat=backing_format,
+        unsafe=True,
+    )
     return operation
 
 

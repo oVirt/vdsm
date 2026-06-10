@@ -38,8 +38,9 @@ class TestDirectioChecker:
 
     def test_path_missing(self):
         self.checks = 1
-        checker = check.DirectioChecker(self.loop, "/no/such/path",
-                                        self.complete)
+        checker = check.DirectioChecker(
+            self.loop, "/no/such/path", self.complete
+        )
         checker.start()
         self.loop.run_forever()
         pprint.pprint(self.results)
@@ -51,7 +52,8 @@ class TestDirectioChecker:
         fds_before = set(os.listdir("/proc/self/fd"))
         self.checks = 10
         checker = check.DirectioChecker(
-            self.loop, "/no/such/path", self.complete, interval=0.1)
+            self.loop, "/no/such/path", self.complete, interval=0.1
+        )
         checker.start()
         self.loop.run_forever()
         pprint.pprint(self.results)
@@ -75,7 +77,8 @@ class TestDirectioChecker:
         self.checks = 10
         with temporaryPath(data=b"blah") as path:
             checker = check.DirectioChecker(
-                self.loop, path, self.complete, interval=0.1)
+                self.loop, path, self.complete, interval=0.1
+            )
             checker.start()
             self.loop.run_forever()
             pprint.pprint(self.results)
@@ -107,19 +110,20 @@ class TestDirectioChecker:
                 result.delay()
 
     @pytest.mark.slow
-    @pytest.mark.parametrize('interval, delay, expected', [
-        (0.20, 0.10, 0.20),
-        (0.10, 0.12, 0.20),
-    ])
+    @pytest.mark.parametrize(
+        'interval, delay, expected',
+        [
+            (0.20, 0.10, 0.20),
+            (0.10, 0.12, 0.20),
+        ],
+    )
     def test_interval(self, fake_dd, interval, delay, expected):
         self.checks = 5
         clock_res = 0.01
         fake_dd.configure(delay=delay)
         checker = check.DirectioChecker(
-            self.loop,
-            "/path",
-            self.complete,
-            interval=interval)
+            self.loop, "/path", self.complete, interval=interval
+        )
 
         checker.start()
         self.loop.run_forever()
@@ -145,10 +149,8 @@ class TestDirectioChecker:
 
         fake_dd.configure(delay=0.4)
         checker = check.DirectioChecker(
-            self.loop,
-            "/path",
-            complete,
-            interval=0.3)
+            self.loop, "/path", complete, interval=0.3
+        )
         checker.start()
         self.loop.run_forever()
 
@@ -174,10 +176,8 @@ class TestDirectioChecker:
 
         fake_dd.configure(delay=0.6)
         checker = check.DirectioChecker(
-            self.loop,
-            "/path",
-            complete,
-            interval=0.2)
+            self.loop, "/path", complete, interval=0.2
+        )
         checker.start()
         self.loop.run_forever()
 
@@ -349,8 +349,9 @@ class TestDirectioCheckerTimings:
         self.checkers = checkers
         start = time.time()
         for i in range(checkers):
-            checker = check.DirectioChecker(self.loop, "/no/such/path",
-                                            self.complete)
+            checker = check.DirectioChecker(
+                self.loop, "/no/such/path", self.complete
+            )
             checker.start()
         self.loop.run_forever()
         elapsed = time.time() - start
@@ -414,29 +415,31 @@ class TestCheckService:
         assert not self.service.is_checking("/path")
 
 
-@pytest.mark.parametrize('err, seconds', [
-    (b"1\n2\n1 byte (1 B) copied, 1 s, 1 B/s\n",
-     1.0),
-    (b"1\n2\n1024 bytes (1 kB) copied, 1 s, 1 kB/s\n",
-     1.0),
-    (b"1\n2\n1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s\n",
-     1.5),
-    (b"1\n2\n1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s\n",
-     1000.5),
-    (b"1\n2\n479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s\n",
-     5.6832e-05),
-    (b"1\n2\n512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s\n",
-     1.0),
-    (b"1\n2\n524288 bytes (512e3 B) copied, 1 s, 512e3 B/s\n",
-     1.0),
-    (b"1\n2\n517 bytes (517 B) copied, 0 s, Infinity B/s\n",
-     0.0),
-    (b"1\n2\n4096 bytes (4.1 kB, 4.0 KiB) copied, "
-     b"0.00887814 s, 461 kB/s\n",
-     0.00887814),
-    (b"1\n2\n30 bytes copied, 0.00156704 s, 19.1 kB/s",
-     0.00156704),
-])
+@pytest.mark.parametrize(
+    'err, seconds',
+    [
+        (b"1\n2\n1 byte (1 B) copied, 1 s, 1 B/s\n", 1.0),
+        (b"1\n2\n1024 bytes (1 kB) copied, 1 s, 1 kB/s\n", 1.0),
+        (b"1\n2\n1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s\n", 1.5),
+        (
+            b"1\n2\n1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s\n",
+            1000.5,
+        ),
+        (
+            b"1\n2\n479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s\n",
+            5.6832e-05,
+        ),
+        (b"1\n2\n512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s\n", 1.0),
+        (b"1\n2\n524288 bytes (512e3 B) copied, 1 s, 512e3 B/s\n", 1.0),
+        (b"1\n2\n517 bytes (517 B) copied, 0 s, Infinity B/s\n", 0.0),
+        (
+            b"1\n2\n4096 bytes (4.1 kB, 4.0 KiB) copied, "
+            b"0.00887814 s, 461 kB/s\n",
+            0.00887814,
+        ),
+        (b"1\n2\n30 bytes copied, 0.00156704 s, 19.1 kB/s", 0.00156704),
+    ],
+)
 def test_check_result_success(err, seconds):
     result = check.CheckResult("/path", 0, err, 0, 0)
     assert result.delay() == seconds
@@ -452,14 +455,17 @@ def test_check_result_non_zero_exit_code():
     assert reason in str(ctx.value)
 
 
-@pytest.mark.parametrize('err', [
-    b"",
-    b"1\n2\n\n",
-    b"1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",
-    b"1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",
-    b"1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",
-    b"1\n2\n1024 bytes (1 kB) copied, e3- s, 1 kB/s\n",
-])
+@pytest.mark.parametrize(
+    'err',
+    [
+        b"",
+        b"1\n2\n\n",
+        b"1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",
+        b"1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",
+        b"1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",
+        b"1\n2\n1024 bytes (1 kB) copied, e3- s, 1 kB/s\n",
+    ],
+)
 def test_unexpected_output(err):
     result = check.CheckResult("/path", 0, err, 0, 0)
     with pytest.raises(exception.MiscFileReadException):

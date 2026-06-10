@@ -19,6 +19,7 @@ from vdsm.common import supervdsm
 # For debian systems we can use python-apt if available
 try:
     import apt
+
     python_apt = True
 except ImportError:
     python_apt = False
@@ -32,14 +33,16 @@ except ImportError:
 try:
     from vdsm.gluster.api import GLUSTER_RPM_PACKAGES
     from vdsm.gluster.api import GLUSTER_DEB_PACKAGES
+
     glusterEnabled = True
 except ImportError:
     glusterEnabled = False
 
 
 KernelFlags = namedtuple('KernelFlags', 'version, realtime')
-NestedVirtualization = namedtuple('NestedVirtualization',
-                                  'enabled, kvm_module')
+NestedVirtualization = namedtuple(
+    'NestedVirtualization', 'enabled, kvm_module'
+)
 _FINDMNT = "findmnt"
 
 
@@ -65,8 +68,7 @@ def kdump_status():
         with open('/sys/kernel/kexec_crash_loaded', 'r') as f:
             status = int(f.read().strip('\n'))
     except EnvironmentError:
-        logging.info(
-            'Failed to open kexec_crash_loaded, status is unknown')
+        logging.info('Failed to open kexec_crash_loaded, status is unknown')
 
     if status == KdumpStatus.ENABLED:
         # check if fence_kdump is configured
@@ -129,8 +131,10 @@ def _next_gen_node():
     """
     ts = rpm.TransactionSet()
     for pkg in ts.dbMatch():
-        if (pkg['name'] == 'redhat-release-virtualization-host' or
-                pkg['name'] == 'ovirt-release-host-node'):
+        if (
+            pkg['name'] == 'redhat-release-virtualization-host'
+            or pkg['name'] == 'ovirt-release-host-node'
+        ):
             return True
 
     return False
@@ -216,8 +220,12 @@ def version():
     except:
         logging.error('failed to find version/release', exc_info=True)
 
-    return dict(release=release_name, version=version,
-                name=osname, pretty_name=pretty_name)
+    return dict(
+        release=release_name,
+        version=version,
+        name=osname,
+        pretty_name=pretty_name,
+    )
 
 
 def selinux_status():
@@ -230,8 +238,12 @@ def selinux_status():
 def package_versions():
     pkgs = {'kernel': runtime_kernel_flags().version}
 
-    if _release_name() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA,
-                           OSName.RHEL,):
+    if _release_name() in (
+        OSName.RHEVH,
+        OSName.OVIRT,
+        OSName.FEDORA,
+        OSName.RHEL,
+    ):
         KEY_PACKAGES = {
             'glusterfs-cli': ('glusterfs-cli',),
             'librbd1': ('librbd1',),
@@ -255,11 +267,15 @@ def package_versions():
 
             for pkg, names in KEY_PACKAGES.items():
                 try:
-                    mi = next(itertools.chain(
-                        *[ts.dbMatch('name', name) for name in names]))
+                    mi = next(
+                        itertools.chain(
+                            *[ts.dbMatch('name', name) for name in names]
+                        )
+                    )
                 except StopIteration:
-                    logging.debug("rpm package %s not found",
-                                  KEY_PACKAGES[pkg])
+                    logging.debug(
+                        "rpm package %s not found", KEY_PACKAGES[pkg]
+                    )
                 else:
                     pkgs[pkg] = {
                         'version': mi['version'],
@@ -330,14 +346,15 @@ def nested_virtualization():
                     return NestedVirtualization(True, kvm_module)
         except IOError as e:
             if e.errno != errno.ENOENT:
-                logging.exception('Error checking %s nested virtualization',
-                                  kvm_module)
+                logging.exception(
+                    'Error checking %s nested virtualization', kvm_module
+                )
             else:
-                logging.debug('%s nested virtualization not detected',
-                              kvm_module)
+                logging.debug(
+                    '%s nested virtualization not detected', kvm_module
+                )
 
-    logging.debug('Could not determine status of nested '
-                  'virtualization')
+    logging.debug('Could not determine status of nested ' 'virtualization')
     return NestedVirtualization(False, None)
 
 

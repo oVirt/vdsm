@@ -11,7 +11,6 @@ from vdsm.common import cpuarch
 from vdsm.common import supervdsm
 from vdsm.config import config
 
-
 _PATH = '/sys/kernel/mm/hugepages'
 _VM = '/proc/sys/vm/'
 
@@ -42,9 +41,11 @@ def supported(path=_PATH):
     return list(state(path).keys())
 
 
-def alloc(count, size=None,
-          path='/sys/kernel/mm/hugepages/hugepages-{}kB/nr_hugepages'
-          ):
+def alloc(
+    count,
+    size=None,
+    path='/sys/kernel/mm/hugepages/hugepages-{}kB/nr_hugepages',
+):
     """Thread *unsafe* function to allocate hugepages.
 
     The default size depends on the architecture:
@@ -63,9 +64,11 @@ def alloc(count, size=None,
     return _alloc(count, size, path)
 
 
-def dealloc(count, size=None,
-            path='/sys/kernel/mm/hugepages/hugepages-{}kB/nr_hugepages'
-            ):
+def dealloc(
+    count,
+    size=None,
+    path='/sys/kernel/mm/hugepages/hugepages-{}kB/nr_hugepages',
+):
     """Thread *unsafe* function to deallocate hugepages.
 
     The default size depends on the architecture:
@@ -123,9 +126,13 @@ def state(path=_PATH):
     sizes = collections.defaultdict(dict)
     for size in os.listdir(path):
         for key in (
-                'free_hugepages', 'nr_hugepages',
-                'nr_hugepages_mempolicy', 'nr_overcommit_hugepages',
-                'resv_hugepages', 'surplus_hugepages'):
+            'free_hugepages',
+            'nr_hugepages',
+            'nr_hugepages_mempolicy',
+            'nr_overcommit_hugepages',
+            'resv_hugepages',
+            'surplus_hugepages',
+        ):
             size_in_kb = _size_from_dir(size)
             with open(os.path.join(path, size, key)) as f:
                 sizes[size_in_kb][key] = int(f.read())
@@ -136,8 +143,9 @@ def state(path=_PATH):
             # hugepages) therefore we floor it at 0 (making the interval [0,
             # sys.nr_hugepages]).
             sizes[size_in_kb]['vm.free_hugepages'] = max(
-                int(sizes[size_in_kb]['free_hugepages']) -
-                _reserved_hugepages(key), 0
+                int(sizes[size_in_kb]['free_hugepages'])
+                - _reserved_hugepages(key),
+                0,
             )
 
     return sizes
@@ -179,7 +187,7 @@ def calculate_required_allocation(cif, vm_hugepages, vm_hugepagesz):
         # In this case, some of the hugepages may not be deallocated later.
         # That is not a problem because we're only adjusting to user's
         # configuration.
-        nr_hugepages - all_vm_hugepages - _reserved_hugepages(vm_hugepagesz)
+        nr_hugepages - all_vm_hugepages - _reserved_hugepages(vm_hugepagesz),
     )
 
     # >= 0
@@ -220,18 +228,27 @@ def calculate_required_deallocation(vm_hugepages, vm_hugepagesz):
         # while making sure we don't touch reserved or preallocated ones. That
         # is done since some of the pages initially allocated by VDSM could be
         # moved to reserved pages.
-        nr_hugepages - max(_reserved_hugepages(vm_hugepagesz),
-                           _preallocated_hugepages(vm_hugepagesz))
+        nr_hugepages
+        - max(
+            _reserved_hugepages(vm_hugepagesz),
+            _preallocated_hugepages(vm_hugepagesz),
+        ),
     )
 
     return to_deallocate
 
 
 def _all_vm_hugepages(cif, vm_hugepages, vm_hugepagesz):
-    return sum(
-        [vm.nr_hugepages for vm in cif.getVMs().values() if
-         vm.hugepagesz == vm_hugepagesz]
-    ) - vm_hugepages
+    return (
+        sum(
+            [
+                vm.nr_hugepages
+                for vm in cif.getVMs().values()
+                if vm.hugepagesz == vm_hugepagesz
+            ]
+        )
+        - vm_hugepages
+    )
 
 
 def _preallocated_hugepages(vm_hugepagesz):
@@ -239,13 +256,10 @@ def _preallocated_hugepages(vm_hugepagesz):
     if 'hugepagesz' not in kernel_args:
         hugepagesz = DEFAULT_HUGEPAGESIZE[cpuarch.real()]
     else:
-        hugepagesz = _cmdline_hugepagesz_to_kb(
-            kernel_args['hugepagesz']
-        )
+        hugepagesz = _cmdline_hugepagesz_to_kb(kernel_args['hugepagesz'])
 
     preallocated_hugepages = 0
-    if ('hugepages' in kernel_args and
-            hugepagesz == vm_hugepagesz):
+    if 'hugepages' in kernel_args and hugepagesz == vm_hugepagesz:
         preallocated_hugepages = int(kernel_args['hugepages'])
 
     return preallocated_hugepages
@@ -255,9 +269,10 @@ def _reserved_hugepages(hugepagesz):
     reserved_hugepages = 0
     if config.getboolean('performance', 'use_preallocated_hugepages'):
         reserved_hugepages = (
-            config.getint('performance', 'reserved_hugepage_count') if
-            config.get('performance', 'reserved_hugepage_size') ==
-            str(hugepagesz) else 0
+            config.getint('performance', 'reserved_hugepage_count')
+            if config.get('performance', 'reserved_hugepage_size')
+            == str(hugepagesz)
+            else 0
         )
 
     return reserved_hugepages

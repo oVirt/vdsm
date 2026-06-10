@@ -24,6 +24,7 @@ def _update_unknown_device_info(vm):
     :type vm: `class:Vm` instance
 
     """
+
     def isKnownDevice(alias):
         for dev in vm.conf['devices']:
             if dev.get('alias') == alias:
@@ -41,10 +42,12 @@ def _update_unknown_device_info(vm):
             # In general case we assume that device has attribute 'type',
             # if it hasn't dom_attribute returns ''.
             device = vmxml.attr(x, 'type')
-            newDev = {'type': vmxml.tag(x),
-                      'alias': alias,
-                      'device': device,
-                      'address': address}
+            newDev = {
+                'type': vmxml.tag(x),
+                'alias': alias,
+                'device': device,
+                'address': address,
+            }
             vm.conf['devices'].append(newDev)
 
 
@@ -132,13 +135,13 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log, noerror=False):
     log.debug('Initializing device classes from domain XML')
     dev_map = empty_dev_map()
     for dev_type, dev_class, dev_elem in _device_elements(dom_desc, log):
-        dev_meta = _get_metadata_from_elem_xml(vmid, md_desc,
-                                               dev_class, dev_elem)
+        dev_meta = _get_metadata_from_elem_xml(
+            vmid, md_desc, dev_class, dev_elem
+        )
         try:
             dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
         except NotImplementedError:
-            log.debug('Cannot initialize %s device: not implemented',
-                      dev_type)
+            log.debug('Cannot initialize %s device: not implemented', dev_type)
         except Exception:
             if noerror:
                 log.exception("Device initialization from XML failed")
@@ -239,11 +242,13 @@ def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):
             log.debug('skipping non-storage device: %r', dev_elem.tag)
             continue
 
-        dev_meta = _get_metadata_from_elem_xml(vmid, md_desc,
-                                               dev_class, dev_elem)
+        dev_meta = _get_metadata_from_elem_xml(
+            vmid, md_desc, dev_class, dev_elem
+        )
         params.append(storagexml.parse(dev_elem, dev_meta))
-    log.debug('Extracted %d storage devices params from domain XML',
-              len(params))
+    log.debug(
+        'Extracted %d storage devices params from domain XML', len(params)
+    )
     return params
 
 
@@ -303,12 +308,16 @@ def update_guest_disk_mapping(md_desc, disk_devices, guest_disk_mapping, log):
             guid = getattr(d, "GUID", None)
             disk_serial = getattr(d, "serial", None)
             image_id = storage.image_id(d.path)
-            if image_id and image_id[:20] in serial or \
-                    guid and guid[:20] in serial or \
-                    disk_serial and disk_serial[:20] in serial:
+            if (
+                image_id
+                and image_id[:20] in serial
+                or guid
+                and guid[:20] in serial
+                or disk_serial
+                and disk_serial[:20] in serial
+            ):
                 d.guestName = value['name']
-                log.debug("Guest name of drive %s: %s",
-                          image_id, d.guestName)
+                log.debug("Guest name of drive %s: %s", image_id, d.guestName)
                 attrs, data = storagexml.get_metadata(d)
                 with md_desc.device(**attrs) as dev:
                     dev.update(data)
@@ -317,5 +326,6 @@ def update_guest_disk_mapping(md_desc, disk_devices, guest_disk_mapping, log):
             if serial[20:]:
                 # Silently skip devices that don't appear to have a serial
                 # number, such as CD-ROMs devices.
-                log.warning("Unidentified guest drive %s: %s",
-                            serial, value['name'])
+                log.warning(
+                    "Unidentified guest drive %s: %s", serial, value['name']
+                )

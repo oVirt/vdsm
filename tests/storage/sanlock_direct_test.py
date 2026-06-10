@@ -23,11 +23,9 @@ Storage = namedtuple("Storage", "path, block_size, alignment")
 @pytest.fixture(
     params=[
         pytest.param(
-            (BACKENDS["file-512"], sc.ALIGNMENT_1M),
-            id="file-512-1m"),
-        pytest.param(
-            (BACKENDS["file-4k"], sc.ALIGNMENT_2M),
-            id="file-4k-2m"),
+            (BACKENDS["file-512"], sc.ALIGNMENT_1M), id="file-512-1m"
+        ),
+        pytest.param((BACKENDS["file-4k"], sc.ALIGNMENT_2M), id="file-4k-2m"),
     ]
 )
 def storage(request):
@@ -48,7 +46,8 @@ def test_dump_leases(storage):
         offset=0,
         size=None,
         block_size=block_size,
-        alignment=align)
+        alignment=align,
+    )
     assert list(dump) == []
 
     # Add resources.
@@ -56,22 +55,26 @@ def test_dump_leases(storage):
     _write_resource("LS", "RS1", storage.path, 1 * align, block_size, align)
     _write_resource("LS", "RS2", storage.path, 2 * align, block_size, align)
 
-    expected = [{
-        "offset": i * storage.alignment,
-        "lockspace": "LS",
-        "resource": "RS{}".format(i),
-        "timestamp": 0,
-        "own": 0,
-        "gen": 0,
-        "lver": 0
-    } for i in range(3)]
+    expected = [
+        {
+            "offset": i * storage.alignment,
+            "lockspace": "LS",
+            "resource": "RS{}".format(i),
+            "timestamp": 0,
+            "own": 0,
+            "gen": 0,
+            "lver": 0,
+        }
+        for i in range(3)
+    ]
 
     dump = sanlock_direct.dump_leases(
         path=storage.path,
         offset=0,
         size=4 * align,
         block_size=block_size,
-        alignment=align)
+        alignment=align,
+    )
     assert list(dump) == expected
 
 
@@ -87,7 +90,8 @@ def test_dump_ids(storage):
         offset=0,
         size=None,
         block_size=block_size,
-        alignment=align)
+        alignment=align,
+    )
     assert list(dump) == []
 
     # Initialize lockspace.
@@ -95,12 +99,15 @@ def test_dump_ids(storage):
     # Add lockspace lease entry.
     _add_lockspace("LS", storage.path, 0, block_size, align)
 
-    dump = list(sanlock_direct.dump_lockspace(
-        path=storage.path,
-        offset=0,
-        size=None,
-        block_size=block_size,
-        alignment=align))
+    dump = list(
+        sanlock_direct.dump_lockspace(
+            path=storage.path,
+            offset=0,
+            size=None,
+            block_size=block_size,
+            alignment=align,
+        )
+    )
 
     assert len(dump) == 1
     rec = dump[0]
@@ -131,9 +138,8 @@ def test_dump_holes(storage):
 
     # Without specifiying size the dump stops at the hole at slot 0.
     dump = sanlock_direct.dump_leases(
-        path=storage.path,
-        block_size=block_size,
-        alignment=align)
+        path=storage.path, block_size=block_size, alignment=align
+    )
 
     assert list(dump) == []
 
@@ -142,7 +148,8 @@ def test_dump_holes(storage):
         path=storage.path,
         size=6 * align,
         block_size=block_size,
-        alignment=align)
+        alignment=align,
+    )
 
     resources = [(r["offset"], r["resource"]) for r in dump]
     assert resources == [
@@ -154,8 +161,10 @@ def test_dump_holes(storage):
 
 def _write_lockspace(ls_name, dev, offset, block_size, alignment):
     args = [
-        "-o", str(INIT_LOCKSPACE_TIMEOUT),
-        "-s", "{}:1:{}:{}".format(ls_name, dev, offset)
+        "-o",
+        str(INIT_LOCKSPACE_TIMEOUT),
+        "-s",
+        "{}:1:{}:{}".format(ls_name, dev, offset),
     ]
     _sanlock_direct("init", args, block_size, alignment)
 
@@ -172,10 +181,13 @@ def _write_resource(ls_name, rs_name, dev, offset, block_size, alignment):
 
 def _sanlock_direct(cmd, args, block_size, alignment):
     options = [
-        "-Z", str(block_size),
-        "-A", str(alignment // sc.ALIGNMENT_1M) + "M"
+        "-Z",
+        str(block_size),
+        "-A",
+        str(alignment // sc.ALIGNMENT_1M) + "M",
     ]
 
     with utils.stopwatch("sanlock direct {} {}".format(cmd, args)):
         commands.run(
-            [sanlock_direct.SANLOCK.cmd, "direct", cmd] + args + options)
+            [sanlock_direct.SANLOCK.cmd, "direct", cmd] + args + options
+        )

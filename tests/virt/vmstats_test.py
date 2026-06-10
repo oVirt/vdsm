@@ -242,16 +242,13 @@ class UtilsFunctionsTests(VmStatsTestCase):
 
     @permutations([['block', 'hdc'], ['net', 'vnet0']])
     def test_find_existing(self, group, name):
-        indexes = vmstats._find_bulk_stats_reverse_map(
-            self.bulk_stats, group)
-        self.assertNameIsAt(
-            self.bulk_stats, group, indexes[name], name)
+        indexes = vmstats._find_bulk_stats_reverse_map(self.bulk_stats, group)
+        self.assertNameIsAt(self.bulk_stats, group, indexes[name], name)
 
     @permutations([['block'], ['net']])
     def test_find_bogus(self, group):
         name = 'inexistent'
-        indexes = vmstats._find_bulk_stats_reverse_map(
-            self.bulk_stats, group)
+        indexes = vmstats._find_bulk_stats_reverse_map(self.bulk_stats, group)
         assert name not in indexes
 
     @permutations([['block', 'hdc'], ['net', 'vnet0']])
@@ -259,8 +256,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
         all_indexes = []
 
         for bulk_stats in self.samples:
-            indexes = vmstats._find_bulk_stats_reverse_map(
-                bulk_stats, group)
+            indexes = vmstats._find_bulk_stats_reverse_map(bulk_stats, group)
 
             self.assertNameIsAt(bulk_stats, group, indexes[name], name)
             all_indexes.append(indexes)
@@ -272,8 +268,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
         # seen using SR-IOV
 
         bulk_stats = next(iter(_FAKE_BULK_STATS_SRIOV.values()))
-        indexes = vmstats._find_bulk_stats_reverse_map(
-            bulk_stats[0], 'net')
+        indexes = vmstats._find_bulk_stats_reverse_map(bulk_stats[0], 'net')
         assert indexes
 
     def test_log_inexistent_key(self):
@@ -281,9 +276,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
         sample = {}
         vm = FakeVM()
         log = FakeLogger()
-        with MonkeyPatchScope(
-            [(vmstats, '_log', log)]
-        ):
+        with MonkeyPatchScope([(vmstats, '_log', log)]):
             with vmstats._skip_if_missing_stats(vm):
                 sample[KEY]
         assert len(log.messages) == 1
@@ -310,71 +303,96 @@ class NetworkStatsTests(VmStatsTestCase):
     )
 
     def test_nic_have_all_keys(self):
-        nic = FakeNic(name='vnet0', model='virtio',
-                      mac_addr='00:1a:4a:16:01:51',
-                      is_hostdevice=False)
+        nic = FakeNic(
+            name='vnet0',
+            model='virtio',
+            mac_addr='00:1a:4a:16:01:51',
+            is_hostdevice=False,
+        )
         testvm = FakeVM(nics=(nic,))
 
         stats = vmstats._nic_traffic(
-            testvm, nic,
-            self.bulk_stats, 0,
-            self.bulk_stats, 0,
+            testvm,
+            nic,
+            self.bulk_stats,
+            0,
+            self.bulk_stats,
+            0,
         )
 
         self.assertStatsHaveKeys(stats, self._EXPECTED_KEYS)
 
     def test_networks_have_all_keys(self):
         nics = (
-            FakeNic(name='vnet0', model='virtio',
-                    mac_addr='00:1a:4a:16:01:51',
-                    is_hostdevice=False),
+            FakeNic(
+                name='vnet0',
+                model='virtio',
+                mac_addr='00:1a:4a:16:01:51',
+                is_hostdevice=False,
+            ),
         )
         vm = FakeVM(nics=nics)
 
         stats = {}
-        vmstats.networks(vm, stats,
-                         self.bulk_stats, self.bulk_stats,
-                         self.interval)
-        self.assertRepeatedStatsHaveKeys(nics, stats['network'],
-                                         self._EXPECTED_KEYS)
+        vmstats.networks(
+            vm, stats, self.bulk_stats, self.bulk_stats, self.interval
+        )
+        self.assertRepeatedStatsHaveKeys(
+            nics, stats['network'], self._EXPECTED_KEYS
+        )
 
     def test_networks_good_interval(self):
         nics = (
-            FakeNic(name='vnet0', model='virtio',
-                    mac_addr='00:1a:4a:16:01:51',
-                    is_hostdevice=False),
+            FakeNic(
+                name='vnet0',
+                model='virtio',
+                mac_addr='00:1a:4a:16:01:51',
+                is_hostdevice=False,
+            ),
         )
         vm = FakeVM(nics=nics)
 
         stats = {}
-        assert vmstats.networks(
-            vm, stats, self.bulk_stats, self.bulk_stats, 1
-        )
+        assert vmstats.networks(vm, stats, self.bulk_stats, self.bulk_stats, 1)
 
     @permutations([[-42], [0]])
     def test_networks_bad_interval(self, interval):
         nics = (
-            FakeNic(name='vnet0', model='virtio',
-                    mac_addr='00:1a:4a:16:01:51',
-                    is_hostdevice=False),
+            FakeNic(
+                name='vnet0',
+                model='virtio',
+                mac_addr='00:1a:4a:16:01:51',
+                is_hostdevice=False,
+            ),
         )
         vm = FakeVM(nics=nics)
 
         stats = {}
-        assert vmstats.networks(
-            vm, stats, self.bulk_stats, self.bulk_stats, 0
-        ) is None
+        assert (
+            vmstats.networks(vm, stats, self.bulk_stats, self.bulk_stats, 0)
+            is None
+        )
 
-    @permutations([
-        ['net.0.rx.bytes'], ['net.0.rx.pkts'],
-        ['net.0.rx.errs'], ['net.0.rx.drop'], ['net.0.tx.bytes'],
-        ['net.0.tx.pkts'], ['net.0.tx.errs'], ['net.0.tx.drop'],
-    ])
+    @permutations(
+        [
+            ['net.0.rx.bytes'],
+            ['net.0.rx.pkts'],
+            ['net.0.rx.errs'],
+            ['net.0.rx.drop'],
+            ['net.0.tx.bytes'],
+            ['net.0.tx.pkts'],
+            ['net.0.tx.errs'],
+            ['net.0.tx.drop'],
+        ]
+    )
     def test_networks_missing_key(self, key):
         nics = (
-            FakeNic(name='vnet0', model='virtio',
-                    mac_addr='00:1a:4a:16:01:51',
-                    is_hostdevice=False),
+            FakeNic(
+                name='vnet0',
+                model='virtio',
+                mac_addr='00:1a:4a:16:01:51',
+                is_hostdevice=False,
+            ),
         )
         vm = FakeVM(nics=nics)
         vm.migrationPending = True
@@ -420,58 +438,80 @@ class DiskStatsTests(VmStatsTestCase):
         stats_after = copy.deepcopy(self.bulk_stats)
         _ensure_delta(stats_before, stats_after, 'block.0.rd.reqs', KiB)
         _ensure_delta(stats_before, stats_after, 'block.0.rd.bytes', 128 * KiB)
-        vmstats.disks(testvm, stats,
-                      stats_before, stats_after,
-                      interval)
-        self.assertRepeatedStatsHaveKeys(drives, stats['disks'],
-                                         self._EXPECTED_KEYS)
+        vmstats.disks(testvm, stats, stats_before, stats_after, interval)
+        self.assertRepeatedStatsHaveKeys(
+            drives, stats['disks'], self._EXPECTED_KEYS
+        )
 
     def test_interval_zero(self):
         interval = 0  # seconds
         # with zero interval, we won't have {read,write}Rate
-        expected_keys = tuple(k for k in self._EXPECTED_KEYS
-                              if k not in ('readRate', 'writeRate'))
+        expected_keys = tuple(
+            k
+            for k in self._EXPECTED_KEYS
+            if k not in ('readRate', 'writeRate')
+        )
         drives = (FakeDrive(name='hdc', size=700 * MiB),)
         testvm = FakeVM(drives=drives)
 
         stats = {}
-        self.assertNotRaises(vmstats.disks,
-                             testvm, stats,
-                             self.bulk_stats, self.bulk_stats,
-                             interval)
-        self.assertRepeatedStatsHaveKeys(drives,
-                                         stats['disks'],
-                                         expected_keys)
+        self.assertNotRaises(
+            vmstats.disks,
+            testvm,
+            stats,
+            self.bulk_stats,
+            self.bulk_stats,
+            interval,
+        )
+        self.assertRepeatedStatsHaveKeys(drives, stats['disks'], expected_keys)
 
     def test_disk_missing_rate(self):
         partial_stats = self._drop_stats(
-            ('block.0.rd.bytes', 'block.1.rd.bytes',
-             'block.0.wr.bytes', 'block.1.wr.bytes'))
+            (
+                'block.0.rd.bytes',
+                'block.1.rd.bytes',
+                'block.0.wr.bytes',
+                'block.1.wr.bytes',
+            )
+        )
 
         interval = 10  # seconds
         drives = (FakeDrive(name='hdc', size=700 * MiB),)
         testvm = FakeVM(drives=drives)
 
         stats = {}
-        self.assertNotRaises(vmstats.disks,
-                             testvm, stats,
-                             partial_stats, partial_stats,
-                             interval)
+        self.assertNotRaises(
+            vmstats.disks,
+            testvm,
+            stats,
+            partial_stats,
+            partial_stats,
+            interval,
+        )
 
     def test_disk_missing_latency(self):
         partial_stats = self._drop_stats(
-            ('block.0.rd.times', 'block.1.rd.times',
-             'block.0.wr.reqs', 'block.1.wr.reqs'))
+            (
+                'block.0.rd.times',
+                'block.1.rd.times',
+                'block.0.wr.reqs',
+                'block.1.wr.reqs',
+            )
+        )
 
         interval = 10  # seconds
         drives = (FakeDrive(name='hdc', size=700 * MiB),)
         testvm = FakeVM(drives=drives)
 
         stats = {}
-        self.assertNotRaises(vmstats.disks,
-                             testvm, stats,
-                             partial_stats, partial_stats,
-                             interval)
+        self.assertNotRaises(
+            vmstats.disks,
+            testvm,
+            stats,
+            partial_stats,
+            partial_stats,
+            interval,
+        )
 
     def test_iotune(self):
         iotune = {
@@ -480,7 +520,7 @@ class DiskStatsTests(VmStatsTestCase):
             'write_bytes_sec': 1000,
             'total_iops_sec': 0,
             'write_iops_sec': 0,
-            'read_iops_sec': 0
+            'read_iops_sec': 0,
         }
         drive = FakeDrive(name='sda', size=8 * GiB)
         drive.path = '/fake/path'
@@ -506,26 +546,27 @@ LAST_CPU_SAMPLE = {'cpu.user': 4760000000, 'cpu.system': 6500000000}
 class CpuStatsTests(VmStatsTestCase):
     # all data stolen from Vdsm and/or virsh -r domstats
 
-    INTERVAL = 15.  # seconds.
+    INTERVAL = 15.0  # seconds.
 
     # [first, last]
     # intentionally use only one sample, the other empty
-    @permutations([[{}, {}],
-                   [{}, FIRST_CPU_SAMPLE],
-                   [FIRST_CPU_SAMPLE, {}]])
+    @permutations([[{}, {}], [{}, FIRST_CPU_SAMPLE], [FIRST_CPU_SAMPLE, {}]])
     def test_empty_samples(self, first, last):
         stats = {}
         res = vmstats.cpu(stats, {}, {}, self.INTERVAL)
         assert stats == {
-            'cpuUsage': 0.0, 'cpuUser': 0.0, 'cpuSys': 0.0,
+            'cpuUsage': 0.0,
+            'cpuUser': 0.0,
+            'cpuSys': 0.0,
             'cpuActual': False,
         }
         assert res is None
 
     def test_only_cpu_user_system(self):
         stats = {}
-        res = vmstats.cpu(stats, FIRST_CPU_SAMPLE, LAST_CPU_SAMPLE,
-                          self.INTERVAL)
+        res = vmstats.cpu(
+            stats, FIRST_CPU_SAMPLE, LAST_CPU_SAMPLE, self.INTERVAL
+        )
         assert stats == {
             'cpuUser': 0.0,
             'cpuSys': 0.2,
@@ -540,8 +581,7 @@ class CpuStatsTests(VmStatsTestCase):
         first_sample.update(FIRST_CPU_SAMPLE)
         last_sample = {'cpu.time': 24478198023}
         last_sample.update(LAST_CPU_SAMPLE)
-        res = vmstats.cpu(stats, first_sample, last_sample,
-                          self.INTERVAL)
+        res = vmstats.cpu(stats, first_sample, last_sample, self.INTERVAL)
         assert stats == {
             'cpuUser': 0.6840879,
             'cpuSys': 0.2,
@@ -550,23 +590,27 @@ class CpuStatsTests(VmStatsTestCase):
         }
         assert res is not None
 
-    @permutations([
-        # interval
-        (-1,),
-        (0,),
-    ])
+    @permutations(
+        [
+            # interval
+            (-1,),
+            (0,),
+        ]
+    )
     def test_bad_interval(self, interval):
         stats = {}
         res = vmstats.cpu(stats, FIRST_CPU_SAMPLE, LAST_CPU_SAMPLE, interval)
         assert res is None
 
-    @permutations([
-        # sample, expected
-        (None, {}),
-        ({}, {}),
-        ({'vcpu.current': -1}, {}),
-        ({'vcpu.current': 4}, {'vcpuCount': 4}),
-    ])
+    @permutations(
+        [
+            # sample, expected
+            (None, {}),
+            ({}, {}),
+            ({'vcpu.current': -1}, {}),
+            ({'vcpu.current': 4}, {'vcpuCount': 4}),
+        ]
+    )
     def test_cpu_count(self, sample, expected):
         stats = {}
         self.assertNotRaises(vmstats.cpu_count, stats, sample)
@@ -578,16 +622,12 @@ class BalloonStatsTests(VmStatsTestCase):
     def test_missing_data(self):
         stats = {}
         vm = FakeVM()
-        self.assertNotRaises(
-            vmstats.balloon,
-            vm, stats, {}
-        )
+        self.assertNotRaises(vmstats.balloon, vm, stats, {})
         assert 'balloonInfo' in stats
         info = stats['balloonInfo']
         self.assertStatsHaveKeys(
             info,
-            ('balloon_max', 'balloon_min',
-             'balloon_cur', 'balloon_target')
+            ('balloon_max', 'balloon_min', 'balloon_cur', 'balloon_target'),
         )
 
     def test_balloon_current_default_zero(self):
@@ -600,9 +640,7 @@ class BalloonStatsTests(VmStatsTestCase):
         stats = {}
         vm = FakeVM()
         log = FakeLogger()
-        with MonkeyPatchScope(
-            [(vmstats, '_log', log)]
-        ):
+        with MonkeyPatchScope([(vmstats, '_log', log)]):
             vmstats.balloon(vm, stats, {})
         assert len(log.messages) == 1
         assert log.messages[0][0] == logging.WARNING
@@ -610,6 +648,7 @@ class BalloonStatsTests(VmStatsTestCase):
 
 
 # helpers
+
 
 def _ensure_delta(stats_before, stats_after, key, delta):
     """

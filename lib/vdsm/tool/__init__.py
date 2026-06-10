@@ -20,11 +20,12 @@ def requiresRoot(func):
         if os.geteuid() != 0:
             raise NotRootError()
         func(*args, **kwargs)
+
     return wrapper
 
 
 class UsageError(RuntimeError):
-    """ Raise on runtime when usage is invalid """
+    """Raise on runtime when usage is invalid"""
 
 
 class NotRootError(UsageError):
@@ -37,7 +38,8 @@ class ExtraArgsError(UsageError):
         if n == 0:
             message = "Command does not take extra arguments"
         else:
-            message = \
-                "Command takes exactly %d argument%s" % (n,
-                                                         's' if n != 1 else '')
+            message = "Command takes exactly %d argument%s" % (
+                n,
+                's' if n != 1 else '',
+            )
         super(ExtraArgsError, self).__init__(message)

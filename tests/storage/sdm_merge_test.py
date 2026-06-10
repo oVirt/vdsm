@@ -18,7 +18,7 @@ from storage.storagetestlib import (
     write_qemu_chain,
 )
 
-from . qemuio import verify_pattern
+from .qemuio import verify_pattern
 
 from testlib import expandPermutations, make_uuid, permutations
 from testlib import VdsmTestCase
@@ -56,39 +56,45 @@ class TestMergeSubchain(VdsmTestCase):
 
     @contextmanager
     def make_env(
-            self, sd_type, chain_len=2,
-            base_format=sc.RAW_FORMAT, qcow2_compat='0.10'):
+        self,
+        sd_type,
+        chain_len=2,
+        base_format=sc.RAW_FORMAT,
+        qcow2_compat='0.10',
+    ):
         size = MiB
         base_fmt = base_format
         with fake_env(sd_type) as env:
             rm = FakeResourceManager()
-            with MonkeyPatchScope([
-                (guarded, 'context', fake_guarded_context()),
-                (image, 'sdCache', env.sdcache),
-                (merge, 'sdCache', env.sdcache),
-                (blockVolume, 'rm', rm),
-                (image, 'Image', FakeImage),
-            ]):
+            with MonkeyPatchScope(
+                [
+                    (guarded, 'context', fake_guarded_context()),
+                    (image, 'sdCache', env.sdcache),
+                    (merge, 'sdCache', env.sdcache),
+                    (blockVolume, 'rm', rm),
+                    (image, 'Image', FakeImage),
+                ]
+            ):
                 env.chain = make_qemu_chain(
-                    env,
-                    size,
-                    base_fmt,
-                    chain_len,
-                    qcow2_compat=qcow2_compat)
+                    env, size, base_fmt, chain_len, qcow2_compat=qcow2_compat
+                )
 
                 def fake_chain(sdUUID, imgUUID, volUUID=None):
                     return env.chain
+
                 image.Image.getChain = fake_chain
 
                 yield env
 
-    @permutations([
-        # sd_type, chain_len, base_index, top_index
-        ('file', 2, 0, 1),
-        ('block', 2, 0, 1),
-        ('file', 3, 1, 2),
-        ('block', 3, 1, 2),
-    ])
+    @permutations(
+        [
+            # sd_type, chain_len, base_index, top_index
+            ('file', 2, 0, 1),
+            ('block', 2, 0, 1),
+            ('file', 3, 1, 2),
+            ('block', 3, 1, 2),
+        ]
+    )
     def test_merge_subchain(self, sd_type, chain_len, base_index, top_index):
         job_id = make_uuid()
         with self.make_env(sd_type=sd_type, chain_len=chain_len) as env:
@@ -96,11 +102,13 @@ class TestMergeSubchain(VdsmTestCase):
             base_vol = env.chain[base_index]
             top_vol = env.chain[top_index]
 
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
             job = api_merge.Job(job_id, subchain)
             job.run()
@@ -109,7 +117,7 @@ class TestMergeSubchain(VdsmTestCase):
             # Verify that the chain data was merged
             for i in range(base_index, top_index + 1):
                 offset = i * KiB
-                pattern = 0xf0 + i
+                pattern = 0xF0 + i
 
                 # We expect to read all data from top
                 verify_pattern(
@@ -117,7 +125,8 @@ class TestMergeSubchain(VdsmTestCase):
                     qemuimg.FORMAT.QCOW2,
                     offset=offset,
                     len=KiB,
-                    pattern=pattern)
+                    pattern=pattern,
+                )
 
                 # And base, since top was merged into base
                 verify_pattern(
@@ -125,19 +134,24 @@ class TestMergeSubchain(VdsmTestCase):
                     sc.fmt2str(base_vol.getFormat()),
                     offset=offset,
                     len=KiB,
-                    pattern=pattern)
+                    pattern=pattern,
+                )
 
-            self.assertEqual(sorted(self.expected_locks(base_vol)),
-                             sorted(guarded.context.locks))
+            self.assertEqual(
+                sorted(self.expected_locks(base_vol)),
+                sorted(guarded.context.locks),
+            )
 
             self.assertEqual(base_vol.getLegality(), sc.LEGAL_VOL)
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 1)
 
-    @permutations([
-        # volume
-        ('base',),
-        ('top',),
-    ])
+    @permutations(
+        [
+            # volume
+            ('base',),
+            ('top',),
+        ]
+    )
     def test_merge_illegal_volume(self, volume):
         job_id = make_uuid()
         with self.make_env(sd_type='block', chain_len=2) as env:
@@ -149,11 +163,13 @@ class TestMergeSubchain(VdsmTestCase):
             else:
                 top_vol.setLegality(sc.ILLEGAL_VOL)
 
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
             job = api_merge.Job(job_id, subchain)
             job.run()
@@ -169,7 +185,8 @@ class TestMergeSubchain(VdsmTestCase):
             rm.Lock(img_ns, base_vol.imgUUID, rm.EXCLUSIVE),
             # Volume lease
             volume.VolumeLease(
-                0, base_vol.sdUUID, base_vol.imgUUID, base_vol.volUUID)
+                0, base_vol.sdUUID, base_vol.imgUUID, base_vol.volUUID
+            ),
         ]
         return ret
 
@@ -182,11 +199,13 @@ class TestMergeSubchain(VdsmTestCase):
             base_vol = env.chain[base_index]
             base_vol.setLegality(sc.ILLEGAL_VOL)
             top_vol = env.chain[top_index]
-            subchain_info = dict(sd_id=top_vol.sdUUID,
-                                 img_id=top_vol.imgUUID,
-                                 base_id=base_vol.imgUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=top_vol.sdUUID,
+                img_id=top_vol.imgUUID,
+                base_id=base_vol.imgUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             def fail():
@@ -203,28 +222,37 @@ class TestMergeSubchain(VdsmTestCase):
             # Check that validate is called *before* attempting - verify that
             # the chain data was *not* merged
             offset = base_index * KiB
-            pattern = 0xf0 + base_index
-            verify_pattern(base_vol.volumePath, qemuimg.FORMAT.RAW,
-                           offset=offset, len=KiB, pattern=pattern)
+            pattern = 0xF0 + base_index
+            verify_pattern(
+                base_vol.volumePath,
+                qemuimg.FORMAT.RAW,
+                offset=offset,
+                len=KiB,
+                pattern=pattern,
+            )
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)
 
-    @permutations([
-        # sd_type, chain_len, base_index, top_index
-        ('file', 4, 0, 1),
-        ('block', 2, 0, 1),
-        ('file', 3, 1, 2),
-        ('block', 3, 1, 2),
-    ])
+    @permutations(
+        [
+            # sd_type, chain_len, base_index, top_index
+            ('file', 4, 0, 1),
+            ('block', 2, 0, 1),
+            ('file', 3, 1, 2),
+            ('block', 3, 1, 2),
+        ]
+    )
     def test_merge_subchain_with_bitmaps(
-            self, sd_type, chain_len, base_index, top_index):
+        self, sd_type, chain_len, base_index, top_index
+    ):
         job_id = make_uuid()
         bitmap1_name = 'bitmap1'
         bitmap2_name = 'bitmap2'
         with self.make_env(
-                sd_type=sd_type,
-                chain_len=chain_len,
-                base_format=sc.COW_FORMAT,
-                qcow2_compat='1.1') as env:
+            sd_type=sd_type,
+            chain_len=chain_len,
+            base_format=sc.COW_FORMAT,
+            qcow2_compat='1.1',
+        ) as env:
             base_vol = env.chain[base_index]
             top_vol = env.chain[top_index]
             # Add new bitmap to base_vol and top_vol
@@ -245,11 +273,13 @@ class TestMergeSubchain(VdsmTestCase):
             # Writing data to the chain to modify the bitmaps
             write_qemu_chain(env.chain)
 
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
+            subchain_info = dict(
+                sd_id=base_vol.sdUUID,
+                img_id=base_vol.imgUUID,
+                base_id=base_vol.volUUID,
+                top_id=top_vol.volUUID,
+                base_generation=0,
+            )
             subchain = merge.SubchainInfo(subchain_info, 0)
 
             job = api_merge.Job(job_id, subchain, merge_bitmaps=True)
@@ -265,12 +295,12 @@ class TestMergeSubchain(VdsmTestCase):
                 {
                     "flags": ["auto"],
                     "name": bitmap1_name,
-                    "granularity": 65536
+                    "granularity": 65536,
                 },
                 {
                     "flags": ["auto"],
                     "name": bitmap2_name,
-                    "granularity": 65536
+                    "granularity": 65536,
                 },
             ]
 

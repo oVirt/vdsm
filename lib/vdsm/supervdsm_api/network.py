@@ -3,15 +3,20 @@
 
 from . import expose
 
-from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
-                              change_numvfs, network_caps, network_stats,
-                              get_lldp_info, is_ovn_configured,
-                              is_dhcp_ip_monitored,
-                              add_dynamic_source_route_rules,
-                              remove_dhcp_monitoring)
+from vdsm.network.api import (
+    setSafeNetworkConfig,
+    setupNetworks,
+    change_numvfs,
+    network_caps,
+    network_stats,
+    get_lldp_info,
+    is_ovn_configured,
+    is_dhcp_ip_monitored,
+    add_dynamic_source_route_rules,
+    remove_dhcp_monitoring,
+)
 from vdsm.network.sysctl import set_rp_filter_loose, set_rp_filter_strict
 from vdsm.network.tc import setPortMirroring, unsetPortMirroring
-
 
 expose(setSafeNetworkConfig)
 expose(setupNetworks)

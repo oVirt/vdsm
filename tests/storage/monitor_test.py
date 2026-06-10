@@ -119,12 +119,14 @@ class FakeDomain(object):
     @maybefail
     def getStats(self):
         log.debug("Getting stats")
-        return {'disktotal': '100',
-                'diskfree': '50',
-                'mdavalid': True,
-                'mdathreshold': True,
-                'mdasize': 0,
-                'mdafree': 0}
+        return {
+            'disktotal': '100',
+            'diskfree': '50',
+            'mdavalid': True,
+            'mdathreshold': True,
+            'mdasize': 0,
+            'mdafree': 0,
+        }
 
     @maybefail
     def validateMaster(self):
@@ -198,17 +200,20 @@ class MonitorEnv(object):
 
 @contextmanager
 def monitor_env(shutdown=False, refresh=300):
-    config = make_config([
-        ("irs", "repo_stats_cache_refresh_timeout", str(refresh))
-    ])
-    with MonkeyPatchScope([
-        (monitor, "sdCache", FakeStorageDomainCache()),
-        (monitor, 'config', config),
-    ]):
+    config = make_config(
+        [("irs", "repo_stats_cache_refresh_timeout", str(refresh))]
+    )
+    with MonkeyPatchScope(
+        [
+            (monitor, "sdCache", FakeStorageDomainCache()),
+            (monitor, 'config', config),
+        ]
+    ):
         event = FakeEvent()
         checker = FakeCheckService()
-        thread = monitor.MonitorThread('uuid', 'host_id', MONITOR_INTERVAL,
-                                       event, checker)
+        thread = monitor.MonitorThread(
+            'uuid', 'host_id', MONITOR_INTERVAL, event, checker
+        )
         try:
             yield MonitorEnv(thread, event, checker)
         finally:
@@ -234,9 +239,7 @@ class FakeMonitorThread(object):
         pass
 
     def getStatus(self):
-        return monitor.Status(
-            monitor.PathStatus(),
-            monitor.DomainStatus())
+        return monitor.Status(monitor.PathStatus(), monitor.DomainStatus())
 
 
 class TestMonitorThreadIdle(VdsmTestCase):
@@ -439,18 +442,20 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertTrue(status.valid)
             self.assertEqual(env.event.received, [(('uuid', True), {})])
 
-    @permutations([
-        ("selftest", OSError),
-        ("selftest", UnexpectedError),
-        ("getStats", se.FileStorageDomainStaleNFSHandle),
-        # TODO: Uncomment when test is fixed to not check a type.
-        # ("getStats", se.StorageDomainAccessError("fake-sd-id")),
-        ("getStats", UnexpectedError),
-        ("validateMaster", OSError),
-        ("validateMaster", UnexpectedError),
-        ("getVersion", OSError),
-        ("getVersion", UnexpectedError),
-    ])
+    @permutations(
+        [
+            ("selftest", OSError),
+            ("selftest", UnexpectedError),
+            ("getStats", se.FileStorageDomainStaleNFSHandle),
+            # TODO: Uncomment when test is fixed to not check a type.
+            # ("getStats", se.StorageDomainAccessError("fake-sd-id")),
+            ("getStats", UnexpectedError),
+            ("validateMaster", OSError),
+            ("validateMaster", UnexpectedError),
+            ("getVersion", OSError),
+            ("getVersion", UnexpectedError),
+        ]
+    )
     def test_from_unknown_to_invalid_domain(self, method, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
@@ -484,25 +489,28 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertEqual(env.event.received, [])
 
             # When path fail, emit INVALID event
-            env.checker.complete(domain.getMonitoringPath(),
-                                 FakeCheckResult(exception))
+            env.checker.complete(
+                domain.getMonitoringPath(), FakeCheckResult(exception)
+            )
             status = env.thread.getStatus()
             self.assertTrue(status.actual)
             self.assertFalse(status.valid)
             self.assertIsInstance(status.error, exception)
             self.assertEqual(env.event.received, [(('uuid', False), {})])
 
-    @permutations([
-        ("selftest", OSError),
-        ("selftest", UnexpectedError),
-        ("getStats", se.FileStorageDomainStaleNFSHandle),
-        ("getStats", se.StorageDomainAccessError("fake-sd-id")),
-        ("getStats", UnexpectedError),
-        ("validateMaster", OSError),
-        ("validateMaster", UnexpectedError),
-        ("getVersion", OSError),
-        ("getVersion", UnexpectedError),
-    ])
+    @permutations(
+        [
+            ("selftest", OSError),
+            ("selftest", UnexpectedError),
+            ("getStats", se.FileStorageDomainStaleNFSHandle),
+            ("getStats", se.StorageDomainAccessError("fake-sd-id")),
+            ("getStats", UnexpectedError),
+            ("validateMaster", OSError),
+            ("validateMaster", UnexpectedError),
+            ("getVersion", OSError),
+            ("getVersion", UnexpectedError),
+        ]
+    )
     def test_from_invalid_to_valid_domain(self, method, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
@@ -539,8 +547,9 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
 
             # First cycle succeed, but path status fail, emit INVALID event
             env.wait_for_cycle()
-            env.checker.complete(domain.getMonitoringPath(),
-                                 FakeCheckResult(exception))
+            env.checker.complete(
+                domain.getMonitoringPath(), FakeCheckResult(exception)
+            )
             del env.event.received[0]
 
             # Both domain status and pass status succeed, emit VALID event
@@ -569,18 +578,20 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertTrue(status.valid)
             self.assertEqual(env.event.received, [])
 
-    @permutations([
-        ("selftest", OSError),
-        ("selftest", UnexpectedError),
-        ("getStats", se.FileStorageDomainStaleNFSHandle),
-        # TODO: Uncomment when test is fixed to not check a type.
-        # ("getStats", se.StorageDomainAccessError("fake-sd-id")),
-        ("getStats", UnexpectedError),
-        ("validateMaster", OSError),
-        ("validateMaster", UnexpectedError),
-        ("getVersion", OSError),
-        ("getVersion", UnexpectedError),
-    ])
+    @permutations(
+        [
+            ("selftest", OSError),
+            ("selftest", UnexpectedError),
+            ("getStats", se.FileStorageDomainStaleNFSHandle),
+            # TODO: Uncomment when test is fixed to not check a type.
+            # ("getStats", se.StorageDomainAccessError("fake-sd-id")),
+            ("getStats", UnexpectedError),
+            ("validateMaster", OSError),
+            ("validateMaster", UnexpectedError),
+            ("getVersion", OSError),
+            ("getVersion", UnexpectedError),
+        ]
+    )
     def test_from_valid_to_invalid_domain(self, method, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
@@ -617,8 +628,9 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             del env.event.received[0]
 
             env.wait_for_cycle()
-            env.checker.complete(domain.getMonitoringPath(),
-                                 FakeCheckResult(exception))
+            env.checker.complete(
+                domain.getMonitoringPath(), FakeCheckResult(exception)
+            )
             status = env.thread.getStatus()
             self.assertFalse(status.valid)
             self.assertIsInstance(status.error, exception)
@@ -883,22 +895,24 @@ class TestStatus(VdsmTestCase):
         self.assertEqual(status.error, path_status.error)
         self.assertFalse(status.valid)
 
-    @permutations([
-        ("valid", True),
-        ("error", None),
-        ("actual", True),
-        ("checkTime", 1234567),
-        ("readDelay", 0),
-        ("diskUtilization", (None, None)),
-        ("masterMounted", False),
-        ("masterValid", False),
-        ("hasHostId", False),
-        ("vgMdUtilization", (0, 0)),
-        ("vgMdHasEnoughFreeSpace", True),
-        ("vgMdFreeBelowThreashold", True),
-        ("isoPrefix", None),
-        ("version", -1),
-    ])
+    @permutations(
+        [
+            ("valid", True),
+            ("error", None),
+            ("actual", True),
+            ("checkTime", 1234567),
+            ("readDelay", 0),
+            ("diskUtilization", (None, None)),
+            ("masterMounted", False),
+            ("masterValid", False),
+            ("hasHostId", False),
+            ("vgMdUtilization", (0, 0)),
+            ("vgMdHasEnoughFreeSpace", True),
+            ("vgMdFreeBelowThreashold", True),
+            ("isoPrefix", None),
+            ("version", -1),
+        ]
+    )
     @MonkeyPatch(time, 'time', lambda: 1234567)
     def test_readonly_attributes(self, attr, value):
         status = monitor.Status(monitor.PathStatus(), monitor.DomainStatus())

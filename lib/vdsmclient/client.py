@@ -125,15 +125,17 @@ from vdsm.api import vdsmapi
 
 
 class UsageError(Exception):
-    """ Raised when usage is wrong """
+    """Raised when usage is wrong"""
 
 
 def main(args=None):
     preliminary_parser = argparse.ArgumentParser(add_help=False)
-    preliminary_parser.add_argument('--gluster-enabled',
-                                    dest="gluster_enabled",
-                                    action="store_true",
-                                    help="gluster enabled")
+    preliminary_parser.add_argument(
+        '--gluster-enabled',
+        dest="gluster_enabled",
+        action="store_true",
+        help="gluster enabled",
+    )
     preliminary_parser.set_defaults(gluster_enabled=False)
     known_args, extra = preliminary_parser.parse_known_args()
     schema = find_schema(known_args.gluster_enabled)
@@ -143,8 +145,10 @@ def main(args=None):
     args = parser.parse_args(extra)
     try:
         if args.method_args and args.file is not None:
-            raise UsageError("Conflicting command line parameters: %r and "
-                             "file option: %r" % (args.method_args, args.file))
+            raise UsageError(
+                "Conflicting command line parameters: %r and "
+                "file option: %r" % (args.method_args, args.file)
+            )
 
         namespace = args.namespace
         method = args.method
@@ -154,9 +158,13 @@ def main(args=None):
         else:
             request_params = parse_params(args.method_args)
 
-        cli = client.connect(args.host, port=args.port, use_tls=args.use_tls,
-                             timeout=args.timeout,
-                             gluster_enabled=known_args.gluster_enabled)
+        cli = client.connect(
+            args.host,
+            port=args.port,
+            use_tls=args.use_tls,
+            timeout=args.timeout,
+            gluster_enabled=known_args.gluster_enabled,
+        )
 
         with utils.closing(cli):
             with cli.flow(args.flow_id):
@@ -173,47 +181,88 @@ def add_command_arguments(namespaces, subparsers):
     for namespace in namespaces.keys():
         parser = subparsers.add_parser(namespace, help='')
         parser.set_defaults(namespace=namespace)
-        methods = parser.add_subparsers(title=namespace + ' methods',
-                                        metavar='method [arg=value]')
+        methods = parser.add_subparsers(
+            title=namespace + ' methods', metavar='method [arg=value]'
+        )
         for method in namespaces[namespace]:
             command = methods.add_parser(
                 method['name'],
                 help=method['description'],
-                formatter_class=argparse.RawTextHelpFormatter)
+                formatter_class=argparse.RawTextHelpFormatter,
+            )
             command.set_defaults(method=method['name'])
             method_args = '\n'.join(
-                ['{}: {}'.format(key, val)
-                 for key, val in method['args'].items()])
+                [
+                    '{}: {}'.format(key, val)
+                    for key, val in method['args'].items()
+                ]
+            )
             if method_args:
-                method_args += \
-                    '\n\n\nJSON representation:\n' + \
-                    method['args_dict']
-            command.add_argument('method_args', metavar='arg=value',
-                                 type=str, nargs='*',
-                                 help=method_args)
+                method_args += (
+                    '\n\n\nJSON representation:\n' + method['args_dict']
+                )
+            command.add_argument(
+                'method_args',
+                metavar='arg=value',
+                type=str,
+                nargs='*',
+                help=method_args,
+            )
 
 
 def option_parser(namespaces):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--host', dest="host", default="localhost",
-                        help="host address (default localhost)")
-    parser.add_argument('-p', '--port', dest="port", default=54321, type=int,
-                        help="port (default 54321)")
-    parser.add_argument('--insecure', dest="use_tls", action="store_false",
-                        help="insecure connection")
-    parser.add_argument('--flow-id', dest="flow_id", default=None, type=str,
-                        help=("flow id to be used for the call. This argument "
-                              "simplifies tracking a series of method calls - "
-                              "each will be annotated with provided value in "
-                              "the log files."))
+    parser.add_argument(
+        '-a',
+        '--host',
+        dest="host",
+        default="localhost",
+        help="host address (default localhost)",
+    )
+    parser.add_argument(
+        '-p',
+        '--port',
+        dest="port",
+        default=54321,
+        type=int,
+        help="port (default 54321)",
+    )
+    parser.add_argument(
+        '--insecure',
+        dest="use_tls",
+        action="store_false",
+        help="insecure connection",
+    )
+    parser.add_argument(
+        '--flow-id',
+        dest="flow_id",
+        default=None,
+        type=str,
+        help=(
+            "flow id to be used for the call. This argument "
+            "simplifies tracking a series of method calls - "
+            "each will be annotated with provided value in "
+            "the log files."
+        ),
+    )
     parser.set_defaults(use_tls=True)
-    parser.add_argument('--timeout', dest="timeout", default=60, type=float,
-                        help="timeout (default 60 seconds)")
-    parser.add_argument('-f', '--file', dest="file",
-                        help="read method parameters from json file. Set to"
-                        " '-' to read from standard input")
-    subparsers = parser.add_subparsers(title='Namespaces',
-                                       metavar='namespace method [arg=value]')
+    parser.add_argument(
+        '--timeout',
+        dest="timeout",
+        default=60,
+        type=float,
+        help="timeout (default 60 seconds)",
+    )
+    parser.add_argument(
+        '-f',
+        '--file',
+        dest="file",
+        help="read method parameters from json file. Set to"
+        " '-' to read from standard input",
+    )
+    subparsers = parser.add_subparsers(
+        title='Namespaces', metavar='namespace method [arg=value]'
+    )
     add_command_arguments(namespaces, subparsers)
     return parser
 
@@ -251,8 +300,9 @@ def parse_file(filename):
 
 def find_schema(gluster_enabled=False):
     try:
-        schema = vdsmapi.Schema.vdsm_api(strict_mode=False,
-                                         with_gluster=gluster_enabled)
+        schema = vdsmapi.Schema.vdsm_api(
+            strict_mode=False, with_gluster=gluster_enabled
+        )
     except vdsmapi.SchemaNotFound as e:
         raise client.MissingSchemaError(e)
     return schema

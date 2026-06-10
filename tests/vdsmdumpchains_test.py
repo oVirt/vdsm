@@ -3,9 +3,14 @@
 
 import pytest
 
-from vdsm.tool.dump_volume_chains import (_build_volume_chain, _BLANK_UUID,
-                                          OrphanVolumes, ChainLoopError,
-                                          NoBaseVolume, DuplicateParentError)
+from vdsm.tool.dump_volume_chains import (
+    _build_volume_chain,
+    _BLANK_UUID,
+    OrphanVolumes,
+    ChainLoopError,
+    NoBaseVolume,
+    DuplicateParentError,
+)
 
 
 def test_empty():
@@ -30,8 +35,9 @@ def test_simple_chain():
 
 def test_loop():
     with pytest.raises(ChainLoopError):
-        _build_volume_chain([
-            (_BLANK_UUID, 'a'), ('a', 'b'), ('b', 'c'), ('c', 'a')])
+        _build_volume_chain(
+            [(_BLANK_UUID, 'a'), ('a', 'b'), ('b', 'c'), ('c', 'a')]
+        )
 
 
 def test_no_base_volume():
@@ -41,5 +47,4 @@ def test_no_base_volume():
 
 def test_duplicate_parent():
     with pytest.raises(DuplicateParentError):
-        _build_volume_chain(
-            [(_BLANK_UUID, 'a'), ('a', 'b'), ('a', 'c')])
+        _build_volume_chain([(_BLANK_UUID, 'a'), ('a', 'b'), ('a', 'c')])

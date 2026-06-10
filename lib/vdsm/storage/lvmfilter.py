@@ -37,17 +37,14 @@ from vdsm.storage import lvmconf
 LSBLK = "/usr/bin/lsblk"
 PROC_DEVICES = "/proc/devices"
 SYS_BLOCK_DEVICE_PATTERN = "/sys/block/{}/device/subsystem"
-WWID_ATTRIBUTE = {
-    "scsi": "ID_SERIAL",
-    "nvme": "ID_WWN",
-    "ccw": "ID_UID"
-}
+WWID_ATTRIBUTE = {"scsi": "ID_SERIAL", "nvme": "ID_WWN", "ccw": "ID_UID"}
 
 log = logging.getLogger("lvmfilter")
 
 
 MountInfo = collections.namedtuple(
-    "MountInfo", "lv,mountpoint,vg_name,devices")
+    "MountInfo", "lv,mountpoint,vg_name,devices"
+)
 FilterItem = collections.namedtuple("FilterItem", "action,path")
 Advice = collections.namedtuple("Advice", "action,filter,wwids")
 
@@ -115,30 +112,34 @@ def find_lvm_mounts():
     """
     log.debug("Looking up mounted logical volumes")
 
-    out = _run([
-        LSBLK,
-        # Produce output in raw format.
-        "--raw",
-        # Do not print a header line.
-        "--noheadings",
-        # Print full device paths.
-        "--paths",
-        # Print dependencies in inverse order, for example:
-        # /dev/mapper/vg0-lv_root
-        # `-/dev/vda2
-        #   `-/dev/vda
-        # With this we can --include only device mapper top devices.
-        "--inverse",
-        # Include only device mapper devices. This includes both "lvm"
-        # and "mpath" devices. We will filter the results later to extract only
-        # the "lvm" devices.
-        "--include", dm_major_number(),
-        # Do not print holder devices or slaves, since we are interested only
-        # in lvm devices.
-        "--nodeps",
-        # Specify which output columns to print.
-        "--output", "type,name,mountpoint",
-    ])
+    out = _run(
+        [
+            LSBLK,
+            # Produce output in raw format.
+            "--raw",
+            # Do not print a header line.
+            "--noheadings",
+            # Print full device paths.
+            "--paths",
+            # Print dependencies in inverse order, for example:
+            # /dev/mapper/vg0-lv_root
+            # `-/dev/vda2
+            #   `-/dev/vda
+            # With this we can --include only device mapper top devices.
+            "--inverse",
+            # Include only device mapper devices. This includes both "lvm"
+            # and "mpath" devices. We will filter the results later to extract only
+            # the "lvm" devices.
+            "--include",
+            dm_major_number(),
+            # Do not print holder devices or slaves, since we are interested only
+            # in lvm devices.
+            "--nodeps",
+            # Specify which output columns to print.
+            "--output",
+            "type,name,mountpoint",
+        ]
+    )
 
     # Format is: devtype space name space [mountpoint]\n
     rows = [line.rstrip("\n").split(" ") for line in out.splitlines()]
@@ -223,7 +224,8 @@ def find_disks(devices):
         # Use full path names for devices.
         "--paths",
         # output device name and type.
-        "--output", "NAME,TYPE"
+        "--output",
+        "NAME,TYPE",
     ]
     cmd.extend(devices)
 
@@ -398,14 +400,16 @@ def parse_item(regex):
         raise InvalidFilter(
             regex,
             "regex must be preceded by 'a' to accept the path, or by 'r' "
-            "to reject the path")
+            "to reject the path",
+        )
 
     path = regex[1:]
     if path[0] != path[-1]:
         raise InvalidFilter(
             regex,
             "regex must be delimited by a vertical bar '|' (or any "
-            "character)")
+            "character)",
+        )
 
     path = path[1:-1]
     if not path:
@@ -433,21 +437,25 @@ def vg_info(lv_path):
     Returns list of devices used by lv lv_path.
     """
     log.debug("Looking up information for logical volume %r", lv_path)
-    out = _run([
-        constants.EXT_LVM,
-        "lvs",
-        "--noheadings",
-        "--readonly",
-        # If the host was already configured, the lvm filter hides the devices
-        # of the mounted master lv, and lvs will fail. Use a permissive filter
-        # to avoid this. Also, run lvs with devices file disabled. This allows
-        # us to avoid warnings that filter should be used while devices file is
-        # enabled. This can happen when lvm is configured to use devices file,
-        # but vdsm is configured to use filter.
-        "--config", 'devices {use_devicesfile = 0 filter=["a|.*|"]}',
-        "--options", "vg_name,vg_tags",
-        lv_path
-    ])
+    out = _run(
+        [
+            constants.EXT_LVM,
+            "lvs",
+            "--noheadings",
+            "--readonly",
+            # If the host was already configured, the lvm filter hides the devices
+            # of the mounted master lv, and lvs will fail. Use a permissive filter
+            # to avoid this. Also, run lvs with devices file disabled. This allows
+            # us to avoid warnings that filter should be used while devices file is
+            # enabled. This can happen when lvm is configured to use devices file,
+            # but vdsm is configured to use filter.
+            "--config",
+            'devices {use_devicesfile = 0 filter=["a|.*|"]}',
+            "--options",
+            "vg_name,vg_tags",
+            lv_path,
+        ]
+    )
     # Format is: space space vg_name space tag,tag... newline
     out = out.lstrip().rstrip("\n")
     vg_name, vg_tags = out.split(" ", 1)
@@ -460,21 +468,25 @@ def vg_devices(vg_name):
     Returns list of devices used by vg vg_name.
     """
     log.debug("Looking up volume group %r devices", vg_name)
-    out = _run([
-        constants.EXT_LVM,
-        "vgs",
-        "--noheadings",
-        "--readonly",
-        # If the host has an incorrect filter, some devices needed by the host
-        # may be hidden, preventing creating of a new correct filter. Also, run
-        # lvs with devices file disabled. This allows us to avoid warnings that
-        # filter should be used while devices file is enabled. This can happen
-        # when lvm is configured to use devices file, but vdsm is configured to
-        # use filter.
-        "--config", 'devices {use_devicesfile = 0 filter=["a|.*|"]}',
-        "--options", "pv_name",
-        vg_name
-    ])
+    out = _run(
+        [
+            constants.EXT_LVM,
+            "vgs",
+            "--noheadings",
+            "--readonly",
+            # If the host has an incorrect filter, some devices needed by the host
+            # may be hidden, preventing creating of a new correct filter. Also, run
+            # lvs with devices file disabled. This allows us to avoid warnings that
+            # filter should be used while devices file is enabled. This can happen
+            # when lvm is configured to use devices file, but vdsm is configured to
+            # use filter.
+            "--config",
+            'devices {use_devicesfile = 0 filter=["a|.*|"]}',
+            "--options",
+            "pv_name",
+            vg_name,
+        ]
+    )
     return sorted(line.strip() for line in out.splitlines())
 
 

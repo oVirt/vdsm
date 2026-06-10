@@ -5,6 +5,7 @@
 multipath module provides helper procedures for configuring multipath
 daemon and maintaining its state
 """
+
 import os
 import errno
 from glob import glob
@@ -39,13 +40,13 @@ POLL_INTERVAL = 1.0
 
 log = logging.getLogger("storage.multipath")
 
-_SCSI_ID = cmdutils.CommandPath("scsi_id",
-                                "/usr/lib/udev/scsi_id",    # Fedora, EL7
-                                "/lib/udev/scsi_id")        # Ubuntu
+_SCSI_ID = cmdutils.CommandPath(
+    "scsi_id", "/usr/lib/udev/scsi_id", "/lib/udev/scsi_id"  # Fedora, EL7
+)  # Ubuntu
 
-_MULTIPATHD = cmdutils.CommandPath("multipathd",
-                                   "/usr/sbin/multipathd",  # Fedora, EL7
-                                   "/sbin/multipathd")      # Ubuntu
+_MULTIPATHD = cmdutils.CommandPath(
+    "multipathd", "/usr/sbin/multipathd", "/sbin/multipathd"  # Fedora, EL7
+)  # Ubuntu
 
 # List of multipath devices that should never be handled by vdsm. The
 # main use case is to filter out the multipath devices the host is
@@ -53,11 +54,12 @@ _MULTIPATHD = cmdutils.CommandPath("multipathd",
 # must have a special rule to queue I/O when all paths have failed, and
 # accessing it in vdsm commands may hang vdsm.
 BLACKLIST = frozenset(
-    d.strip() for d in config.get("multipath", "blacklist").split(",") if d)
+    d.strip() for d in config.get("multipath", "blacklist").split(",") if d
+)
 
 
 class Error(Exception):
-    """ multipath operation failed """
+    """multipath operation failed"""
 
 
 def rescan():
@@ -113,12 +115,17 @@ def wait_until_ready():
         if time.monotonic() >= deadline:
             log.warning(
                 "Timeout waiting for multipathd (tries=%s, ready=%s)",
-                tries, ready)
+                tries,
+                ready,
+            )
             return
 
     log.info(
         "Waited %.2f seconds for multipathd (tries=%s, ready=%s)",
-        time.monotonic() - start, tries, ready)
+        time.monotonic() - start,
+        tries,
+        ready,
+    )
 
 
 def is_ready():
@@ -199,8 +206,9 @@ def show_config_local():
     Returns:
         str: Output of the multipathd show command.
     """
-    return commands.run(
-        [_MULTIPATHD.cmd, "show", "config", "local"]).decode('ascii')
+    return commands.run([_MULTIPATHD.cmd, "show", "config", "local"]).decode(
+        'ascii'
+    )
 
 
 def reconfigure():
@@ -221,7 +229,8 @@ def resize_devices():
     """
     log.info("Resizing multipath devices")
     with utils.stopwatch(
-            "Resizing multipath devices", level=logging.INFO, log=log):
+        "Resizing multipath devices", level=logging.INFO, log=log
+    ):
         for dmId, guid in getMPDevsIter():
             try:
                 _resize_if_needed(guid)
@@ -231,8 +240,9 @@ def resize_devices():
 
 def _resize_if_needed(guid):
     name = devicemapper.getDmId(guid)
-    slaves = [(slave, getDeviceSize(slave))
-              for slave in devicemapper.getSlaves(name)]
+    slaves = [
+        (slave, getDeviceSize(slave)) for slave in devicemapper.getSlaves(name)
+    ]
 
     if len(slaves) == 0:
         log.warning("Map %r has no slaves" % guid)
@@ -246,8 +256,12 @@ def _resize_if_needed(guid):
     if map_size == slave_size:
         return False
 
-    log.info("Resizing map %r (map_size=%d, slave_size=%d)",
-             guid, map_size, slave_size)
+    log.info(
+        "Resizing map %r (map_size=%d, slave_size=%d)",
+        guid,
+        map_size,
+        slave_size,
+    )
     resize_map(name)
     return True
 
@@ -266,10 +280,7 @@ def resize_map(name):
     cmd = [_MULTIPATHD.cmd, "resize", "map", name]
     with utils.stopwatch("Resized map %r" % name, log=log):
         p = commands.start(
-            cmd,
-            sudo=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            cmd, sudo=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         out, err = commands.communicate(p)
 
@@ -293,10 +304,12 @@ def deduceType(a, b):
 
 def getDeviceBlockSizes(dev):
     devName = os.path.basename(dev)
-    logical = read_int(os.path.join(SYS_BLOCK, devName,
-                                    QUEUE, "logical_block_size"))
-    physical = read_int(os.path.join(SYS_BLOCK, devName,
-                                     QUEUE, "physical_block_size"))
+    logical = read_int(
+        os.path.join(SYS_BLOCK, devName, QUEUE, "logical_block_size")
+    )
+    physical = read_int(
+        os.path.join(SYS_BLOCK, devName, QUEUE, "physical_block_size")
+    )
     return (logical, physical)
 
 
@@ -323,12 +336,14 @@ def get_scsi_serial(physdev):
         return supervdsm.getProxy().multipath_get_scsi_serial(physdev)
 
     blkdev = os.path.join("/dev", physdev)
-    cmd = [_SCSI_ID.cmd,
-           "--page=0x80",
-           "--whitelisted",
-           "--export",
-           "--replace-whitespace",
-           "--device=" + blkdev]
+    cmd = [
+        _SCSI_ID.cmd,
+        "--page=0x80",
+        "--whitelisted",
+        "--export",
+        "--replace-whitespace",
+        "--device=" + blkdev,
+    ]
 
     try:
         out = commands.run(cmd)
@@ -412,32 +427,46 @@ def pathListIter(filterGuids=()):
                 try:
                     devInfo["vendor"] = getVendor(slave)
                 except Exception:
-                    log.warn("Problem getting vendor from device `%s`",
-                             slave, exc_info=True)
+                    log.warn(
+                        "Problem getting vendor from device `%s`",
+                        slave,
+                        exc_info=True,
+                    )
 
             if not devInfo["product"]:
                 try:
                     devInfo["product"] = getModel(slave)
                 except Exception:
-                    log.warn("Problem getting model name from device `%s`",
-                             slave, exc_info=True)
+                    log.warn(
+                        "Problem getting model name from device `%s`",
+                        slave,
+                        exc_info=True,
+                    )
 
             if not devInfo["fwrev"]:
                 try:
                     devInfo["fwrev"] = getFwRev(slave)
                 except Exception:
-                    log.warn("Problem getting fwrev from device `%s`",
-                             slave, exc_info=True)
+                    log.warn(
+                        "Problem getting fwrev from device `%s`",
+                        slave,
+                        exc_info=True,
+                    )
 
-            if (not devInfo["logicalblocksize"] or
-                    not devInfo["physicalblocksize"]):
+            if (
+                not devInfo["logicalblocksize"]
+                or not devInfo["physicalblocksize"]
+            ):
                 try:
                     logBlkSize, phyBlkSize = getDeviceBlockSizes(slave)
                     devInfo["logicalblocksize"] = str(logBlkSize)
                     devInfo["physicalblocksize"] = str(phyBlkSize)
                 except Exception:
-                    log.warn("Problem getting blocksize from device `%s`",
-                             slave, exc_info=True)
+                    log.warn(
+                        "Problem getting blocksize from device `%s`",
+                        slave,
+                        exc_info=True,
+                    )
 
             pathInfo = {}
             pathInfo["physdev"] = slave
@@ -450,8 +479,11 @@ def pathListIter(filterGuids=()):
                     log.warn("Device has no hbtl: %s", slave)
                     pathInfo["lun"] = 0
                 else:
-                    log.error("Error: %s while trying to get hbtl of device: "
-                              "%s", e, slave)
+                    log.error(
+                        "Error: %s while trying to get hbtl of device: " "%s",
+                        e,
+                        slave,
+                    )
                     raise
             else:
                 pathInfo["lun"] = hbtl.lun
@@ -470,7 +502,7 @@ def pathListIter(filterGuids=()):
                         "port": str(sess.target.portal.port),
                         "iqn": sess.target.iqn,
                         "portal": str(sess.target.tpgt),
-                        "initiatorname": sess.iface.name
+                        "initiatorname": sess.iface.name,
                     }
 
                     # Note that credentials must be sent back in order for
@@ -488,8 +520,10 @@ def pathListIter(filterGuids=()):
 
             if devInfo["devtype"] == "":
                 devInfo["devtype"] = pathInfo["type"]
-            elif (devInfo["devtype"] != DEV_MIXED and
-                  devInfo["devtype"] != pathInfo["type"]):
+            elif (
+                devInfo["devtype"] != DEV_MIXED
+                and devInfo["devtype"] != pathInfo["type"]
+            ):
                 devInfo["devtype"] == DEV_MIXED
 
             devInfo["paths"].append(pathInfo)
@@ -497,9 +531,9 @@ def pathListIter(filterGuids=()):
         yield devInfo
 
 
-TOXIC_REGEX = re.compile(r"[%s]" % re.sub(r"[\-\\\]]",
-                         lambda m: "\\" + m.group(),
-                         TOXIC_CHARS))
+TOXIC_REGEX = re.compile(
+    r"[%s]" % re.sub(r"[\-\\\]]", lambda m: "\\" + m.group(), TOXIC_CHARS)
+)
 
 
 def getMPDevNamesIter():

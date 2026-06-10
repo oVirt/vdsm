@@ -33,7 +33,6 @@ _MdevDetail = collections.namedtuple('_MdevDetail', _MDEV_FIELDS)
 
 CAPABILITY_TO_XML_ATTR = collections.defaultdict(
     lambda: 'unknown',
-
     pci='pci',
     scsi='scsi',
     scsi_generic='scsi_generic',
@@ -44,7 +43,6 @@ _LIBVIRT_DEVICE_FLAGS = collections.defaultdict(
     # If the device is not found, let's just treat it like system device. Since
     # those are barely touched, we should be safe.
     lambda: libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SYSTEM,
-
     system=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SYSTEM,
     pci=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_PCI_DEV,
     usb_device=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_DEV,
@@ -81,14 +79,17 @@ class MdevPlacement:
     SEPARATE = 'separate'
 
 
-MdevProperties = namedtuple('MdevProperties', [
-    # Device type, such as "nvidia-22", string
-    'device_type',
-    # One of the MdevPlacement constants
-    'placement',
-    # Raw driver parameters to set, string or None
-    'driver_parameters'
-])
+MdevProperties = namedtuple(
+    'MdevProperties',
+    [
+        # Device type, such as "nvidia-22", string
+        'device_type',
+        # One of the MdevPlacement constants
+        'placement',
+        # Raw driver parameters to set, string or None
+        'driver_parameters',
+    ],
+)
 
 
 class NoIOMMUSupportException(Exception):
@@ -116,7 +117,8 @@ class _DeviceTreeCache(object):
     def get_by_parent(self, capability, parent_name):
         try:
             return self.devices[
-                self._parent_to_device_params[capability][parent_name]]
+                self._parent_to_device_params[capability][parent_name]
+            ]
         except KeyError:
             return None
 
@@ -129,8 +131,9 @@ class _DeviceTreeCache(object):
             except KeyError:
                 continue
 
-            self._parent_to_device_params[
-                device_params['capability']][parent] = device_name
+            self._parent_to_device_params[device_params['capability']][
+                parent
+            ] = device_name
 
     def _invalidate(self):
         self._parent_to_device_params = {}
@@ -144,8 +147,9 @@ def _data_processors_map():
     )
 
     for capability in _LIBVIRT_DEVICE_FLAGS:
-        data_processors_map[capability] = (_DATA_PROCESSORS['_ANY'] +
-                                           _DATA_PROCESSORS[capability])
+        data_processors_map[capability] = (
+            _DATA_PROCESSORS['_ANY'] + _DATA_PROCESSORS[capability]
+        )
     return data_processors_map
 
 
@@ -165,12 +169,15 @@ def _data_processor(target_bus='_ANY'):
     """
     Register function as a data processor for device processing code.
     """
+
     def processor(function):
         @functools.wraps(function)
         def wrapped(*args, **kwargs):
             return function(*args, **kwargs)
+
         _DATA_PROCESSORS[target_bus].append(wrapped)
         return wrapped
+
     return processor
 
 
@@ -204,10 +211,14 @@ def _pci_header_type(device_name):
     [1]https://bugzilla.redhat.com/show_bug.cgi?id=1317531
     """
     try:
-        with open('/sys/bus/pci/devices/{}/config'.format(
-                name_to_pci_path(device_name)), 'rb') as f:
-            f.seek(0x0e)
-            header_type = ord(f.read(1)) & 0x7f
+        with open(
+            '/sys/bus/pci/devices/{}/config'.format(
+                name_to_pci_path(device_name)
+            ),
+            'rb',
+        ) as f:
+            f.seek(0x0E)
+            header_type = ord(f.read(1)) & 0x7F
     except IOError:
         return PCIHeaderType.UNKNOWN
 
@@ -234,10 +245,14 @@ def scsi_address_to_adapter(scsi_address):
     """
     adapter = 'scsi_host{}'.format(scsi_address['host'])
 
-    return ({'unit': scsi_address['lun'],
-             'bus': scsi_address['bus'],
-             'target': scsi_address['target']},
-            adapter)
+    return (
+        {
+            'unit': scsi_address['lun'],
+            'bus': scsi_address['bus'],
+            'target': scsi_address['target'],
+        },
+        adapter,
+    )
 
 
 def pci_address_to_name(domain, bus, slot, function):
@@ -246,15 +261,17 @@ def pci_address_to_name(domain, bus, slot, function):
     libvirt's pci name: pci_${domain}_${bus}_${slot}_${function}.
     The first 2 characters are hex notation that is unwanted in the name.
     """
-    return 'pci_{0}_{1}_{2}_{3}'.format(domain[2:],
-                                        bus[2:],
-                                        slot[2:],
-                                        function[2:])
+    return 'pci_{0}_{1}_{2}_{3}'.format(
+        domain[2:], bus[2:], slot[2:], function[2:]
+    )
 
 
 def _sriov_totalvfs(device_name):
-    with open('/sys/bus/pci/devices/{0}/sriov_totalvfs'.format(
-            name_to_pci_path(device_name))) as f:
+    with open(
+        '/sys/bus/pci/devices/{0}/sriov_totalvfs'.format(
+            name_to_pci_path(device_name)
+        )
+    ) as f:
         return int(f.read())
 
 
@@ -264,15 +281,22 @@ def physical_function_net_name(pf_pci_name):
     the network interface name associated with it (e.g. enp2s0f0)
     """
     devices = list_by_caps()
-    libvirt_device_names = [name for name, device in devices.items() if
-                            device['params'].get('parent') == pf_pci_name and
-                            device['params'].get('capability') == 'net']
+    libvirt_device_names = [
+        name
+        for name, device in devices.items()
+        if device['params'].get('parent') == pf_pci_name
+        and device['params'].get('capability') == 'net'
+    ]
     if len(libvirt_device_names) > 1:
-        raise Exception('could not determine network name for %s. Possible'
-                        'devices: %s' % (pf_pci_name, libvirt_device_names))
+        raise Exception(
+            'could not determine network name for %s. Possible'
+            'devices: %s' % (pf_pci_name, libvirt_device_names)
+        )
     if not libvirt_device_names:
-        raise Exception('could not determine network name for %s. There are no'
-                        'devices with this parent.' % (pf_pci_name,))
+        raise Exception(
+            'could not determine network name for %s. There are no'
+            'devices with this parent.' % (pf_pci_name,)
+        )
 
     return libvirt_device_names[0].split('_')[1]
 
@@ -314,17 +338,20 @@ def _process_mdev_params(device_xml):
     for mdev_type in mdev.findall('type'):
         name = mdev_type.attrib['id']
         name_elem = mdev_type.find('name')
-        supported_types[name]['name'] = \
+        supported_types[name]['name'] = (
             name if name_elem is None else name_elem.text
+        )
         try:
-            supported_types[name]['available_instances'] = \
-                mdev_type.find('availableInstances').text
+            supported_types[name]['available_instances'] = mdev_type.find(
+                'availableInstances'
+            ).text
         except AttributeError:
             supported_types[name] = {}
             continue
         device_path = device_xml.find('./path').text
-        description_path = os.path.join(device_path, 'mdev_supported_types',
-                                        name, 'description')
+        description_path = os.path.join(
+            device_path, 'mdev_supported_types', name, 'description'
+        )
         # The presence of description file is optional and we also
         # shouldn't fail if it can't be read for any reason.
         try:
@@ -353,8 +380,9 @@ def _process_assignability(device_xml):
             is_assignable = 'false'
     if is_assignable is None:
         name = device_xml.find('name').text
-        is_assignable = str(_pci_header_type(name) ==
-                            PCIHeaderType.ENDPOINT).lower()
+        is_assignable = str(
+            _pci_header_type(name) == PCIHeaderType.ENDPOINT
+        ).lower()
 
     return {'is_assignable': is_assignable}
 
@@ -496,7 +524,7 @@ def _get_udev_block_mapping():
     """
     Read system udev path -> block path mapping
     """
-    mapping_command = ["lsscsi", "-g"],
+    mapping_command = (["lsscsi", "-g"],)
 
     try:
         output = commands.run(*mapping_command).decode('utf-8')
@@ -504,7 +532,8 @@ def _get_udev_block_mapping():
         return {m.split()[-1]: m.split()[-2] for m in lines}
     except Exception as e:
         logging.error(
-            "Could not read system udev path -> block path mapping: %s", e)
+            "Could not read system udev path -> block path mapping: %s", e
+        )
         return {}
 
 
@@ -528,8 +557,9 @@ def _process_device_params(device_xml):
 
 
 def _get_device_ref_and_params(device_name):
-    libvirt_device = libvirtconnection.get().\
-        nodeDeviceLookupByName(device_name)
+    libvirt_device = libvirtconnection.get().nodeDeviceLookupByName(
+        device_name
+    )
     params = _process_device_params(libvirt_device.XMLDesc())
 
     if params['capability'] != 'scsi':
@@ -560,8 +590,10 @@ def _get_devices_from_libvirt(flags=0):
     global _device_tree_cache
     global _device_address_to_name_cache
 
-    if (flags == 0 and
-            __device_tree_hash(libvirt_devices) == _last_alldevices_hash):
+    if (
+        flags == 0
+        and __device_tree_hash(libvirt_devices) == _last_alldevices_hash
+    ):
         return _device_tree_cache, _device_address_to_name_cache
 
     devices = _process_all_devices(libvirt_devices)
@@ -571,7 +603,8 @@ def _get_devices_from_libvirt(flags=0):
         for device_name, device_params in devices.items():
             if device_params['capability'] == 'scsi':
                 device_params.update(
-                    _process_scsi_device_params(device_name, cache))
+                    _process_scsi_device_params(device_name, cache)
+                )
 
             _update_address_to_name_map(
                 address_to_name, device_name, device_params
@@ -639,24 +672,32 @@ def _suitable_device_for_mdev_type(mdev_properties, log):
             if mdev_type != target_mdev_type:
                 # If different type is already allocated and the vendor doesn't
                 # support different types, skip the device.
-                if vendor == '0x10de' and \
-                   len(_mdev_type_devices(mdev_type, path)) > 0:
+                if (
+                    vendor == '0x10de'
+                    and len(_mdev_type_devices(mdev_type, path)) > 0
+                ):
                     target_device = None
-                    log.debug("Mdev type {} is different from already "
-                              "allocated type {}, skipping device {}"
-                              .format(target_mdev_type, mdev_type, device))
+                    log.debug(
+                        "Mdev type {} is different from already "
+                        "allocated type {}, skipping device {}".format(
+                            target_mdev_type, mdev_type, device
+                        )
+                    )
                     break
                 continue
             elif mdev_placement == MdevPlacement.SEPARATE:
                 if len(_mdev_type_devices(mdev_type, path)) > 0:
                     target_device = None
-                    log.debug("Mdev {} already used and separate "
-                              "placement requested, skipping".format(device))
+                    log.debug(
+                        "Mdev {} already used and separate "
+                        "placement requested, skipping".format(device)
+                    )
                     break
             # Make sure to cast to int as the value is read from sysfs.
-            if int(
-                    _mdev_type_details(mdev_type, path).available_instances
-            ) < 1:
+            if (
+                int(_mdev_type_details(mdev_type, path).available_instances)
+                < 1
+            ):
                 continue
 
             target_device = device
@@ -752,7 +793,10 @@ def list_nvdimms():
         if not dev_file:
             try:
                 dev_file = device['daxregion']['devices'][0]['chardev']
-            except (KeyError, IndexError,):
+            except (
+                KeyError,
+                IndexError,
+            ):
                 logging.warning("No NVDIMM device file: %s", device)
                 continue
         parameters = {
@@ -778,8 +822,7 @@ def detach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
     capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
-    if capability == 'pci' and conv.tobool(
-            device_params['is_assignable']):
+    if capability == 'pci' and conv.tobool(device_params['is_assignable']):
         libvirt_device.detachFlags(None)
     elif capability == 'scsi':
         if 'udev_path' not in device_params:
@@ -792,8 +835,7 @@ def reattach_detachable(device_name, pci_reattach=True):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
     capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
-    if capability == 'pci' and conv.tobool(
-            device_params['is_assignable']):
+    if capability == 'pci' and conv.tobool(device_params['is_assignable']):
         if pci_reattach:
             libvirt_device.reAttach()
     elif capability == 'scsi':
@@ -841,9 +883,7 @@ def _format_address(dev_type, address):
     if dev_type == 'pci':
         address = validate.normalize_pci_address(**address)
     ret = '_'.join(
-        '{}{}'.format(key, value) for key, value in sorted(
-            address.items(),
-            key=operator.itemgetter(0)
-        )
+        '{}{}'.format(key, value)
+        for key, value in sorted(address.items(), key=operator.itemgetter(0))
     )
     return '{}_{}'.format(dev_type, ret)

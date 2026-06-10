@@ -6,8 +6,13 @@
 from vdsm.common import conv
 from vdsm.common import hostdev
 from vdsm.common import validate
-from vdsm.common.hostdev import get_device_params, detach_detachable, \
-    pci_address_to_name, reattach_detachable, NoIOMMUSupportException
+from vdsm.common.hostdev import (
+    get_device_params,
+    detach_detachable,
+    pci_address_to_name,
+    reattach_detachable,
+    NoIOMMUSupportException,
+)
 from vdsm.network import api as net_api
 from vdsm.virt import libvirtnetwork
 from vdsm.virt import vmxml
@@ -32,11 +37,28 @@ class MissingNetwork(Exception):
 
 
 class Interface(core.Base):
-    __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
-                 'linkActive', 'portMirroring', 'filter', 'filterParameters',
-                 'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev', 'mtu',
-                 'numa_node', '_device_params', 'vm_custom', 'port_isolated',
-                 'teaming')
+    __slots__ = (
+        'nicModel',
+        'macAddr',
+        'network',
+        'bootOrder',
+        'address',
+        'linkActive',
+        'portMirroring',
+        'filter',
+        'filterParameters',
+        'sndbufParam',
+        'driver',
+        'name',
+        'vlanId',
+        'hostdev',
+        'mtu',
+        'numa_node',
+        '_device_params',
+        'vm_custom',
+        'port_isolated',
+        'teaming',
+    )
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
@@ -54,7 +76,8 @@ class Interface(core.Base):
             attrs['alias'] = self.alias
         data = core.get_metadata_values(self)
         core.update_metadata_from_object(
-            data, self, METADATA_KEYS + METADATA_NESTED_KEYS)
+            data, self, METADATA_KEYS + METADATA_NESTED_KEYS
+        )
         return attrs, data
 
     @classmethod
@@ -81,9 +104,7 @@ class Interface(core.Base):
                 params['linkActive'] = True
         vlan = vmxml.find_first(dev, 'vlan', None)
         if vlan is not None:
-            params['specParams']['vlanid'] = vmxml.find_attr(
-                vlan, 'tag', 'id'
-            )
+            params['specParams']['vlanid'] = vmxml.find_attr(vlan, 'tag', 'id')
         mtu = vmxml.find_first(dev, "mtu", None)
         if mtu is not None:
             params['mtu'] = int(vmxml.attr(mtu, 'size'))
@@ -117,9 +138,8 @@ class Interface(core.Base):
                 elem = vmxml.find_first(bandwidth, mode, None)
                 if elem is not None:
                     params['specParams'][mode] = elem.attrib.copy()
-        net = (
-            meta.get('network', None) or
-            vmxml.find_attr(dev, 'source', 'bridge')
+        net = meta.get('network', None) or vmxml.find_attr(
+            dev, 'source', 'bridge'
         )
         if net is None:
             raise MissingNetwork("no network to join")
@@ -167,7 +187,7 @@ class Interface(core.Base):
         try:
             self.driver['queues'] = self.custom['queues']
         except KeyError:
-            pass    # interface queues not specified
+            pass  # interface queues not specified
         else:
             if 'name' not in self.driver:
                 self.driver['name'] = 'vhost'
@@ -175,7 +195,7 @@ class Interface(core.Base):
         try:
             self.sndbufParam = self.vm_custom['sndbuf']
         except KeyError:
-            pass    # custom_sndbuf not specified
+            pass  # custom_sndbuf not specified
 
     def _getVHostSettings(self):
         VHOST_MAP = {'true': 'vhost', 'false': 'qemu'}
@@ -243,7 +263,8 @@ class Interface(core.Base):
             host_address = self._device_params['address']
             source = iface.appendChildWithArgs('source')
             source.appendChildWithArgs(
-                'address', type='pci',
+                'address',
+                type='pci',
                 **validate.normalize_pci_address(**host_address)
             )
 
@@ -264,9 +285,9 @@ class Interface(core.Base):
             _set_parameters_filter(filter, self.filterParameters)
 
         if hasattr(self, 'linkActive'):
-            iface.appendChildWithArgs('link', state='up'
-                                      if conv.tobool(self.linkActive)
-                                      else 'down')
+            iface.appendChildWithArgs(
+                'link', state='up' if conv.tobool(self.linkActive) else 'down'
+            )
 
         if hasattr(self, 'bootOrder'):
             iface.appendChildWithArgs('boot', order=self.bootOrder)
@@ -326,9 +347,11 @@ class Interface(core.Base):
                     # otherwise
                     reattach_detachable(self.hostdev)
             except NoIOMMUSupportException:
-                self.log.exception('Could not reattach device %s back to host '
-                                   'due to missing IOMMU support.',
-                                   self.hostdev)
+                self.log.exception(
+                    'Could not reattach device %s back to host '
+                    'due to missing IOMMU support.',
+                    self.hostdev,
+                )
 
     @property
     def _xpath(self):
@@ -347,7 +370,11 @@ class Interface(core.Base):
             xdrivers = vmxml.find_first(x, 'driver', None)
             if xdrivers is not None:
                 driver = core.parse_device_attrs(
-                    xdrivers, ('name', 'queues',)
+                    xdrivers,
+                    (
+                        'name',
+                        'queues',
+                    ),
                 )
             else:
                 driver = {}
@@ -374,15 +401,15 @@ class Interface(core.Base):
                 network = vmxml.attr(source, 'bridge')
                 if not network:
                     network = libvirtnetwork.netname_l2o(
-                        vmxml.attr(source, 'network'))
+                        vmxml.attr(source, 'network')
+                    )
 
             address = core.find_device_guest_address(x)
             teaming = vmxml.find_first(x, 'teaming', None) is not None
 
             for nic in device_conf:
-                if (
-                    nic.macAddr.lower() == mac.lower()
-                    and (not teaming or nic.alias == alias)
+                if nic.macAddr.lower() == mac.lower() and (
+                    not teaming or nic.alias == alias
                 ):
                     nic.name = name
                     nic.alias = alias
@@ -409,15 +436,17 @@ class Interface(core.Base):
                     knownDev = True
             # Add unknown nic device to vm's conf
             if not knownDev:
-                nicDev = {'type': hwclass.NIC,
-                          'device': devType,
-                          'macAddr': mac,
-                          'nicModel': model,
-                          'address': address,
-                          'alias': alias,
-                          'name': name,
-                          'linkActive': linkActive,
-                          'teaming': teaming}
+                nicDev = {
+                    'type': hwclass.NIC,
+                    'device': devType,
+                    'macAddr': mac,
+                    'nicModel': model,
+                    'address': address,
+                    'alias': alias,
+                    'name': name,
+                    'linkActive': linkActive,
+                    'teaming': teaming,
+                }
                 if network:
                     nicDev['network'] = network
                 vm.conf['devices'].append(nicDev)
@@ -426,12 +455,14 @@ class Interface(core.Base):
         return compat.interface_config(super(Interface, self).config())
 
     def __repr__(self):
-        s = ('<Interface name={name}, type={self.device}, mac={self.macAddr} '
-             'at {addr:#x}>')
+        s = (
+            '<Interface name={name}, type={self.device}, mac={self.macAddr} '
+            'at {addr:#x}>'
+        )
         # TODO: make name require argument
-        return s.format(self=self,
-                        name=getattr(self, 'name', None),
-                        addr=id(self))
+        return s.format(
+            self=self, name=getattr(self, 'name', None), addr=id(self)
+        )
 
     def update_params(self):
         params = {
@@ -475,8 +506,7 @@ def update_bandwidth_xml(iface, vnicXML, specParams=None):
     oldBandwidth = vmxml.find_first(vnicXML, 'bandwidth', None)
     if oldBandwidth is not None:
         vmxml.remove_child(vnicXML, oldBandwidth)
-    if (specParams and
-            ('inbound' in specParams or 'outbound' in specParams)):
+    if specParams and ('inbound' in specParams or 'outbound' in specParams):
         newBandwidth = iface.get_bandwidth_xml(specParams)
         vmxml.append_child(vnicXML, newBandwidth)
 
@@ -519,6 +549,4 @@ def _get_hostdev_params(dev):
         raise UnsupportedAddress(src_addr_type)
 
     addr = validate.normalize_pci_address(**src_addr)
-    return {
-        'hostdev': pci_address_to_name(**addr)
-    }
+    return {'hostdev': pci_address_to_name(**addr)}

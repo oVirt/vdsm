@@ -93,7 +93,8 @@ def test_acquire_process_fd_closed_recover(fake_sanlock, lock):
     # Acquire and release first lease to register socket with sanlock.
     lease1 = clusterlock.Lease("lease-1", "/leases", 100 * MiB)
     fake_sanlock.write_resource(
-        LS_NAME, lease1.name.encode("utf-8"), [(lease1.path, lease1.offset)])
+        LS_NAME, lease1.name.encode("utf-8"), [(lease1.path, lease1.offset)]
+    )
     lock.acquire(HOST_ID, lease1)
     lock.release(lease1)
 
@@ -105,7 +106,8 @@ def test_acquire_process_fd_closed_recover(fake_sanlock, lock):
 
     lease2 = clusterlock.Lease("lease-2", "/leases", 101 * MiB)
     fake_sanlock.write_resource(
-        LS_NAME, lease2.name.encode("utf-8"), [(lease2.path, lease2.offset)])
+        LS_NAME, lease2.name.encode("utf-8"), [(lease2.path, lease2.offset)]
+    )
 
     # Since we have no leases, recover from the failure by registering new
     # socket with sanlock and retrying the acquire() call.
@@ -124,7 +126,8 @@ def test_acquire_process_fd_closed_panic(fake_sanlock, lock):
     # Acquire the first lease.
     lease1 = clusterlock.Lease("lease-1", "/leases", 100 * MiB)
     fake_sanlock.write_resource(
-        LS_NAME, lease1.name.encode("utf-8"), [(lease1.path, lease1.offset)])
+        LS_NAME, lease1.name.encode("utf-8"), [(lease1.path, lease1.offset)]
+    )
     lock.acquire(HOST_ID, LEASE)
 
     # Simulate process fd closed on sanlock daemon side. The lease was released
@@ -134,7 +137,8 @@ def test_acquire_process_fd_closed_panic(fake_sanlock, lock):
 
     lease2 = clusterlock.Lease("lease-2", "/leases", 101 * MiB)
     fake_sanlock.write_resource(
-        LS_NAME, lease2.name.encode("utf-8"), [(lease2.path, lease2.offset)])
+        LS_NAME, lease2.name.encode("utf-8"), [(lease2.path, lease2.offset)]
+    )
 
     # Since we have a lease, panic!
     with pytest.raises(FakePanic):
@@ -268,13 +272,16 @@ def test_inspect(fake_sanlock, lock):
     assert owner == HOST_ID
 
 
-@pytest.mark.parametrize("status,expected_owner_id", [
-    (sanlock.HOST_LIVE, HOST_ID),
-    (sanlock.HOST_FAIL, HOST_ID),
-    (sanlock.HOST_UNKNOWN, HOST_ID),
-    (sanlock.HOST_FREE, None),
-    (sanlock.HOST_DEAD, None)
-])
+@pytest.mark.parametrize(
+    "status,expected_owner_id",
+    [
+        (sanlock.HOST_LIVE, HOST_ID),
+        (sanlock.HOST_FAIL, HOST_ID),
+        (sanlock.HOST_UNKNOWN, HOST_ID),
+        (sanlock.HOST_FREE, None),
+        (sanlock.HOST_DEAD, None),
+    ],
+)
 def test_inspect_owner_status(fake_sanlock, lock, status, expected_owner_id):
     lock.acquireHostId(HOST_ID, wait=True)
     lock.acquire(HOST_ID, LEASE)
@@ -394,30 +401,36 @@ def test_inquire_process_fd_closed_panic(fake_sanlock, lock):
     assert old_socket == fake_sanlock.process_socket
 
 
-@pytest.mark.parametrize('block_size, max_hosts, alignment', [
-    (sc.BLOCK_SIZE_512, 250, sc.ALIGNMENT_1M),
-    (sc.BLOCK_SIZE_512, 2000, sc.ALIGNMENT_1M),
-    (sc.BLOCK_SIZE_4K, 250, sc.ALIGNMENT_1M),
-    (sc.BLOCK_SIZE_4K, 251, sc.ALIGNMENT_2M),
-    (sc.BLOCK_SIZE_4K, 499, sc.ALIGNMENT_2M),
-    (sc.BLOCK_SIZE_4K, 500, sc.ALIGNMENT_2M),
-    (sc.BLOCK_SIZE_4K, 501, sc.ALIGNMENT_4M),
-    (sc.BLOCK_SIZE_4K, 999, sc.ALIGNMENT_4M),
-    (sc.BLOCK_SIZE_4K, 1000, sc.ALIGNMENT_4M),
-    (sc.BLOCK_SIZE_4K, 1001, sc.ALIGNMENT_8M),
-    (sc.BLOCK_SIZE_4K, 1999, sc.ALIGNMENT_8M),
-    (sc.BLOCK_SIZE_4K, 2000, sc.ALIGNMENT_8M),
-])
+@pytest.mark.parametrize(
+    'block_size, max_hosts, alignment',
+    [
+        (sc.BLOCK_SIZE_512, 250, sc.ALIGNMENT_1M),
+        (sc.BLOCK_SIZE_512, 2000, sc.ALIGNMENT_1M),
+        (sc.BLOCK_SIZE_4K, 250, sc.ALIGNMENT_1M),
+        (sc.BLOCK_SIZE_4K, 251, sc.ALIGNMENT_2M),
+        (sc.BLOCK_SIZE_4K, 499, sc.ALIGNMENT_2M),
+        (sc.BLOCK_SIZE_4K, 500, sc.ALIGNMENT_2M),
+        (sc.BLOCK_SIZE_4K, 501, sc.ALIGNMENT_4M),
+        (sc.BLOCK_SIZE_4K, 999, sc.ALIGNMENT_4M),
+        (sc.BLOCK_SIZE_4K, 1000, sc.ALIGNMENT_4M),
+        (sc.BLOCK_SIZE_4K, 1001, sc.ALIGNMENT_8M),
+        (sc.BLOCK_SIZE_4K, 1999, sc.ALIGNMENT_8M),
+        (sc.BLOCK_SIZE_4K, 2000, sc.ALIGNMENT_8M),
+    ],
+)
 def test_sanlock_alignment(block_size, max_hosts, alignment):
     assert clusterlock.alignment(block_size, max_hosts) == alignment
 
 
-@pytest.mark.parametrize('block_size, max_hosts', [
-    (sc.BLOCK_SIZE_512 - 1, sc.HOSTS_512_1M),
-    (sc.BLOCK_SIZE_512 + 1, sc.HOSTS_512_1M),
-    (sc.BLOCK_SIZE_4K - 1, sc.HOSTS_4K_8M),
-    (sc.BLOCK_SIZE_4K + 1, sc.HOSTS_4K_1M),
-])
+@pytest.mark.parametrize(
+    'block_size, max_hosts',
+    [
+        (sc.BLOCK_SIZE_512 - 1, sc.HOSTS_512_1M),
+        (sc.BLOCK_SIZE_512 + 1, sc.HOSTS_512_1M),
+        (sc.BLOCK_SIZE_4K - 1, sc.HOSTS_4K_8M),
+        (sc.BLOCK_SIZE_4K + 1, sc.HOSTS_4K_1M),
+    ],
+)
 def test_sanlock_invalid_block_size(block_size, max_hosts):
     with pytest.raises(se.InvalidParameterException) as e:
         clusterlock.alignment(block_size, max_hosts)
@@ -426,12 +439,15 @@ def test_sanlock_invalid_block_size(block_size, max_hosts):
     assert str(block_size) in error_str
 
 
-@pytest.mark.parametrize('block_size, max_hosts', [
-    (sc.BLOCK_SIZE_512, -1),
-    (sc.BLOCK_SIZE_4K, 0),
-    (sc.BLOCK_SIZE_512, sc.HOSTS_512_1M + 1),
-    (sc.BLOCK_SIZE_4K, sc.HOSTS_4K_8M + 1),
-])
+@pytest.mark.parametrize(
+    'block_size, max_hosts',
+    [
+        (sc.BLOCK_SIZE_512, -1),
+        (sc.BLOCK_SIZE_4K, 0),
+        (sc.BLOCK_SIZE_512, sc.HOSTS_512_1M + 1),
+        (sc.BLOCK_SIZE_4K, sc.HOSTS_4K_8M + 1),
+    ],
+)
 def test_sanlock_invalid_max_hosts(block_size, max_hosts):
     with pytest.raises(se.InvalidParameterException) as e:
         clusterlock.alignment(block_size, max_hosts)
@@ -445,11 +461,7 @@ def test_set_lvb(fake_sanlock, lock):
     lock.acquire(HOST_ID, LEASE, lvb=True)
 
     # Test smaller size
-    info = {
-        "generation": 1,
-        "job_status": "STARTED",
-        "padding": ""
-    }
+    info = {"generation": 1, "job_status": "STARTED", "padding": ""}
 
     lock.set_lvb(LEASE, info)
     result = lock.get_lvb(LEASE)

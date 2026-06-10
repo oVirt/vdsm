@@ -3,9 +3,15 @@
 
 from vdsm.common import validate
 from vdsm.common import xmlutils
-from vdsm.common.hostdev import detach_detachable, reattach_detachable, \
-    device_name_from_address, spawn_mdev, despawn_mdev, MdevPlacement, \
-    MdevProperties
+from vdsm.common.hostdev import (
+    detach_detachable,
+    reattach_detachable,
+    device_name_from_address,
+    spawn_mdev,
+    despawn_mdev,
+    MdevPlacement,
+    MdevProperties,
+)
 from vdsm.virt import vmxml
 
 from . import core
@@ -59,8 +65,10 @@ def _mdev_properties(dev, meta):
 def setup_device(dom, meta, log):
     name, type_ = _get_device_name_type(dom)
     if name is None:
-        log.debug("Unknown kind of host device: %s",
-                  xmlutils.tostring(dom, pretty=True))
+        log.debug(
+            "Unknown kind of host device: %s",
+            xmlutils.tostring(dom, pretty=True),
+        )
     elif type_ == 'mdev':
         spawn_mdev(_mdev_properties(dom, meta), name, log)
     else:
@@ -72,8 +80,10 @@ def setup_device(dom, meta, log):
 def teardown_device(dom, log):
     name, type_ = _get_device_name_type(dom)
     if name is None:
-        log.debug("Unknown kind of host device: %s",
-                  xmlutils.tostring(dom, pretty=True))
+        log.debug(
+            "Unknown kind of host device: %s",
+            xmlutils.tostring(dom, pretty=True),
+        )
     elif type_ == 'mdev':
         despawn_mdev(name)
     else:

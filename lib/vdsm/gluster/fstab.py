@@ -9,10 +9,10 @@ from vdsm.gluster import exception as ge
 
 from . import safeWrite
 
-
 log = logging.getLogger("Gluster")
-FstabRecord = namedtuple("FstabRecord", "device, mountPoint, fsType, "
-                         "mntOpts, fsDump, fsPass")
+FstabRecord = namedtuple(
+    "FstabRecord", "device, mountPoint, fsType, " "mntOpts, fsDump, fsPass"
+)
 
 
 class FsTab(object):
@@ -26,11 +26,16 @@ class FsTab(object):
                 line = line.strip()
                 if not (line == '' or line.startswith("#")):
                     tokens = line.split()
-                    devList.append(FstabRecord(tokens[0], tokens[1],
-                                               tokens[2],
-                                               tokens[3].split(","),
-                                               int(tokens[4]),
-                                               int(tokens[5])))
+                    devList.append(
+                        FstabRecord(
+                            tokens[0],
+                            tokens[1],
+                            tokens[2],
+                            tokens[3].split(","),
+                            int(tokens[4]),
+                            int(tokens[5]),
+                        )
+                    )
         return devList
 
     def _getFsUuid(self, device):
@@ -46,8 +51,15 @@ class FsTab(object):
                 return True
         return False
 
-    def add(self, device, mountPoint, fsType,
-            mntOpts=['defaults'], fsDump=0, fsPass=0):
+    def add(
+        self,
+        device,
+        mountPoint,
+        fsType,
+        mntOpts=['defaults'],
+        fsDump=0,
+        fsPass=0,
+    ):
         if self._exists(device):
             raise ge.GlusterHostStorageDeviceFsTabFoundException(device)
         uuid = self._getFsUuid(device)
@@ -57,5 +69,10 @@ class FsTab(object):
         content += "%s%s\t%s\t%s\t%s\t%s\t%s\n" % (
             '' if content.endswith('\n') else '\n',
             "UUID=%s" % uuid if uuid else device,
-            mountPoint, fsType, ",".join(mntOpts), fsDump, fsPass)
+            mountPoint,
+            fsType,
+            ",".join(mntOpts),
+            fsDump,
+            fsPass,
+        )
         safeWrite(self.fileName, content)

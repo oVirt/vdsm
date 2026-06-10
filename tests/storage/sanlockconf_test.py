@@ -5,7 +5,7 @@ import pytest
 
 from vdsm.storage import sanlockconf
 
-from . marks import requires_selinux
+from .marks import requires_selinux
 
 EXAMPLE = """
 # Example sanlock configuration file.

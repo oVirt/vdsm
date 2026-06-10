@@ -36,8 +36,14 @@ class Command(object):
     Simple storage command that does not support progress.
     """
 
-    def __init__(self, cmd, cwd=None, nice=utils.NICENESS.HIGH,
-                 ioclass=utils.IOCLASS.IDLE, warn_stderr=False):
+    def __init__(
+        self,
+        cmd,
+        cwd=None,
+        nice=utils.NICENESS.HIGH,
+        ioclass=utils.IOCLASS.IDLE,
+        warn_stderr=False,
+    ):
         self._cmd = cmd
         self._cwd = cwd
         self._nice = nice
@@ -136,7 +142,8 @@ class Command(object):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 nice=self._nice,
-                ioclass=self._ioclass)
+                ioclass=self._ioclass,
+            )
             self._state = RUNNING
 
     def _finalize(self, out, err):
@@ -151,7 +158,8 @@ class Command(object):
         rc = self._proc.returncode
         if rc == 0 and self._warn_stderr and err:
             log.warning(
-                "Command %s succeeded with warnings: %s", self._cmd, err)
+                "Command %s succeeded with warnings: %s", self._cmd, err
+            )
         else:
             log.debug("%s", cmdutils.retcode_log_line(rc, err))
 

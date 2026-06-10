@@ -28,14 +28,17 @@ class GlusterException(VdsmException):
 
     def __str__(self):
         return '{}: rc={} out={!r} err={!r}'.format(
-            self.msg, self.rc, self.out, self.err)
+            self.msg, self.rc, self.out, self.err
+        )
 
     def info(self):
-        return {'code': self.code,
-                'message': str(self),
-                'rc': self.rc,
-                'out': self.out,
-                'err': self.err}
+        return {
+            'code': self.code,
+            'message': str(self),
+            'rc': self.rc,
+            'out': self.out,
+            'err': self.err,
+        }
 
 
 # General
@@ -230,7 +233,8 @@ class GlusterVolumeDeleteFailedException(GlusterVolumeException):
 
 
 class GlusterVolumeReplaceBrickCommitForceFailedException(
-        GlusterVolumeException):
+    GlusterVolumeException
+):
     code = 4148
     message = "Volume replace brick commit force failed"
 
@@ -370,12 +374,15 @@ class GlusterHostStorageDeviceInUseException(GlusterHostException):
 class GlusterHostStorageDeviceMountFailedException(GlusterHostException):
     code = 4411
 
-    def __init__(self, device=None, mountPoint=None,
-                 fsType=None, mountOpts=None):
+    def __init__(
+        self, device=None, mountPoint=None, fsType=None, mountOpts=None
+    ):
         GlusterHostException.__init__(self)
-        self.message = "Failed to mount device %s on mount point %s using " \
-                       "fs-type %s with mount options %s" % (
-                           device, mountPoint, fsType, mountOpts)
+        self.message = (
+            "Failed to mount device %s on mount point %s using "
+            "fs-type %s with mount options %s"
+            % (device, mountPoint, fsType, mountOpts)
+        )
 
 
 class GlusterHostStorageDeviceFsTabFoundException(GlusterHostException):
@@ -393,8 +400,10 @@ class GlusterHostStorageDevicePVCreateFailedException(GlusterHostException):
         self.rc = rc
         self.out = out
         self.err = err
-        self.message = "Failed to create LVM PV for device %s with " \
-                       "data alignment %s" % (device, alignment)
+        self.message = (
+            "Failed to create LVM PV for device %s with "
+            "data alignment %s" % (device, alignment)
+        )
 
 
 class GlusterHostStorageDeviceLVConvertFailedException(GlusterHostException):
@@ -404,8 +413,10 @@ class GlusterHostStorageDeviceLVConvertFailedException(GlusterHostException):
         self.rc = rc
         self.out = out
         self.err = err
-        self.message = "Failed to run lvconvert for device %s with " \
-                       "data alignment %s" % (device, alignment)
+        self.message = (
+            "Failed to run lvconvert for device %s with "
+            "data alignment %s" % (device, alignment)
+        )
 
 
 class GlusterHostStorageDeviceLVChangeFailedException(GlusterHostException):
@@ -416,7 +427,8 @@ class GlusterHostStorageDeviceLVChangeFailedException(GlusterHostException):
         self.out = out
         self.err = err
         self.message = "Failed to run lvchange for the thin pool: %s" % (
-            poolName)
+            poolName
+        )
 
 
 class GlusterHostStorageDeviceMakeDirsFailedException(GlusterHostException):
@@ -435,13 +447,16 @@ class GlusterHostStorageMountPointInUseException(GlusterHostException):
 class GlusterHostStorageDeviceVGCreateFailedException(GlusterHostException):
     code = 4418
 
-    def __init__(self, name=None, devices=None, stripeSize=None,
-                 rc=0, out=(), err=()):
+    def __init__(
+        self, name=None, devices=None, stripeSize=None, rc=0, out=(), err=()
+    ):
         self.rc = rc
         self.out = out
         self.err = err
-        self.message = "Failed to create LVM VG:%s for devices %s with " \
-                       "stripe size %s" % (name, devices, stripeSize)
+        self.message = (
+            "Failed to create LVM VG:%s for devices %s with "
+            "stripe size %s" % (name, devices, stripeSize)
+        )
 
 
 class GlusterHostStorageDeviceVGScanFailedException(GlusterHostException):
@@ -456,8 +471,9 @@ class GlusterHostFailedToSetSelinuxContext(GlusterHostException):
         self.rc = rc
         self.out = out
         self.err = err
-        self.message = "Failed to set selinux context on the brick : %s" \
-                       % brickMountPoint
+        self.message = (
+            "Failed to set selinux context on the brick : %s" % brickMountPoint
+        )
 
 
 class GlusterHostFailedToRunRestorecon(GlusterHostException):
@@ -467,8 +483,9 @@ class GlusterHostFailedToRunRestorecon(GlusterHostException):
         self.rc = rc
         self.out = out
         self.err = err
-        self.message = "Failed to run restorecon on the brick : %s" \
-                       % brickMountPoint
+        self.message = (
+            "Failed to run restorecon on the brick : %s" % brickMountPoint
+        )
 
 
 class GlusterHostStorageDeviceMkfsFailedException(GlusterHostException):
@@ -508,9 +525,11 @@ class GlusterHookNotFoundException(GlusterHookException):
         self.glusterCmd = glusterCmd
         self.level = level
         self.hookName = hookName
-        self.message = \
-            'Hook %s of command %s, level %s not found' % \
-            (hookName, glusterCmd, level)
+        self.message = 'Hook %s of command %s, level %s not found' % (
+            hookName,
+            glusterCmd,
+            level,
+        )
 
 
 class GlusterHookReadFailedException(GlusterHookException):
@@ -531,9 +550,11 @@ class GlusterHookAlreadyExistException(GlusterHookException):
         self.glusterCmd = glusterCmd
         self.level = level
         self.hookName = hookName
-        self.message = \
-            'Hook %s of command %s, level %s already exist' % \
-            (hookName, glusterCmd, level)
+        self.message = 'Hook %s of command %s, level %s already exist' % (
+            hookName,
+            glusterCmd,
+            level,
+        )
 
 
 class GlusterHookCheckSumMismatchException(GlusterHookException):
@@ -543,8 +564,10 @@ class GlusterHookCheckSumMismatchException(GlusterHookException):
         GlusterHookException.__init__(self)
         self.computedMd5Sum = computedMd5Sum
         self.expectedMd5Sum = expectedMd5Sum
-        self.message = 'Hook file check sum:%s mismatch %s' % (computedMd5Sum,
-                                                               expectedMd5Sum)
+        self.message = 'Hook file check sum:%s mismatch %s' % (
+            computedMd5Sum,
+            expectedMd5Sum,
+        )
 
 
 class GlusterHookAddFailedException(GlusterHookException):
@@ -607,14 +630,12 @@ class GlusterMetaVolumeFstabUpdateFailedException(GlusterVolumeException):
     message = "Failed to Update fstab entry for meta-volume"
 
 
-class GlusterSnapshotScheduleFlagUpdateFailedException(
-        GlusterVolumeException):
+class GlusterSnapshotScheduleFlagUpdateFailedException(GlusterVolumeException):
     code = 4577
     message = "Failed to update snapshot schedule flag"
 
 
-class GlusterDisableSnapshotScheduleFailedException(
-        GlusterVolumeException):
+class GlusterDisableSnapshotScheduleFailedException(GlusterVolumeException):
     code = 4578
     message = "Failed to disable snapshot schedule through cli"
 
@@ -655,8 +676,7 @@ class GlusterGeoRepConfigFailedException(GlusterGeoRepException):
     message = "Volume geo-replication config failed"
 
 
-class GlusterGeoRepPublicKeyFileCreateFailedException(
-        GlusterGeoRepException):
+class GlusterGeoRepPublicKeyFileCreateFailedException(GlusterGeoRepException):
     code = 4207
     message = "Creation of public key file failed"
 
@@ -677,19 +697,20 @@ class GlusterGeoRepPublicKeyWriteFailedException(GlusterGeoRepException):
 
 
 class GlusterGeoRepExecuteMountBrokerOptFailedException(
-        GlusterGeoRepException):
+    GlusterGeoRepException
+):
     code = 4211
     message = "geo rep mount broker option set failed"
 
 
 class GlusterGeoRepExecuteMountBrokerUserAddFailedException(
-        GlusterGeoRepException):
+    GlusterGeoRepException
+):
     code = 4212
     message = "geo rep mount broker user add failed"
 
 
-class GlusterMountBrokerRootCreateFailedException(
-        GlusterGeoRepException):
+class GlusterMountBrokerRootCreateFailedException(GlusterGeoRepException):
     code = 4213
     message = "geo rep mount broker root create failed"
 
@@ -710,14 +731,12 @@ class GlusterSnapshotException(GlusterException):
     message = "Gluster Volume Snapshot Exception"
 
 
-class GlusterSnapshotCreateFailedException(
-        GlusterSnapshotException):
+class GlusterSnapshotCreateFailedException(GlusterSnapshotException):
     code = 4701
     message = "Snapshot create failed"
 
 
-class GlusterSnapshotDeleteFailedException(
-        GlusterSnapshotException):
+class GlusterSnapshotDeleteFailedException(GlusterSnapshotException):
     code = 4702
     message = "Snapshot delete failed"
 
@@ -737,20 +756,17 @@ class GlusterSnapshotRestoreFailedException(GlusterSnapshotException):
     message = "Snapshot restore failed"
 
 
-class GlusterSnapshotConfigFailedException(
-        GlusterSnapshotException):
+class GlusterSnapshotConfigFailedException(GlusterSnapshotException):
     code = 4706
     message = "Snapshot config failed"
 
 
-class GlusterSnapshotConfigSetFailedException(
-        GlusterSnapshotException):
+class GlusterSnapshotConfigSetFailedException(GlusterSnapshotException):
     code = 4707
     message = "Snapshot config set failed"
 
 
-class GlusterSnapshotConfigGetFailedException(
-        GlusterSnapshotException):
+class GlusterSnapshotConfigGetFailedException(GlusterSnapshotException):
     code = 4708
     message = "Snapshot config get failed"
 
@@ -786,14 +802,14 @@ class GlusterWebhookDeleteException(GlusterEventException):
     message = "Failed to delete webhook"
 
 
-class GlusterVolumeResetBrickStartFailedException(
-        GlusterVolumeException):
+class GlusterVolumeResetBrickStartFailedException(GlusterVolumeException):
     code = 4148
     message = "Volume reset brick start failed"
 
 
 class GlusterVolumeResetBrickCommitForceFailedException(
-        GlusterVolumeException):
+    GlusterVolumeException
+):
     code = 4148
     message = "Volume reset brick commit force failed"
 

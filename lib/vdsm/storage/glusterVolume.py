@@ -8,22 +8,21 @@ from vdsm.storage.sdc import sdCache
 
 try:
     from vdsm.gluster.exception import GlusterException
+
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
 
 # Volume transport to Libvirt transport mapping
-VOLUME_TRANS_MAP = {
-    'TCP': 'tcp',
-    'RDMA': 'rdma'
-}
+VOLUME_TRANS_MAP = {'TCP': 'tcp', 'RDMA': 'rdma'}
 
 
 class GlusterVolume(fileVolume.FileVolume):
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        fileVolume.FileVolume.__init__(self, repoPath, sdUUID, imgUUID,
-                                       volUUID)
+        fileVolume.FileVolume.__init__(
+            self, repoPath, sdUUID, imgUUID, volUUID
+        )
 
     def getVmVolumeInfo(self):
         """
@@ -40,18 +39,21 @@ class GlusterVolume(fileVolume.FileVolume):
             res = svdsmProxy.glusterVolumeInfo(volname, volfileServer)
         except GlusterException:
             # In case of issues with finding transport type, default to tcp
-            self.log.warning("Unable to find transport type for GlusterFS"
-                             " volume %s. GlusterFS server = %s."
-                             "Defaulting to tcp",
-                             volname, volfileServer, exc_info=True)
+            self.log.warning(
+                "Unable to find transport type for GlusterFS"
+                " volume %s. GlusterFS server = %s."
+                "Defaulting to tcp",
+                volname,
+                volfileServer,
+                exc_info=True,
+            )
             transport = VOLUME_TRANS_MAP['TCP']
             brickServers = []
         else:
             vol_info = res[volname]
             transport = VOLUME_TRANS_MAP[vol_info['transportType'][0]]
             brickServers = utils.unique(
-                brick.split(":", 1)[0]
-                for brick in vol_info['bricks']
+                brick.split(":", 1)[0] for brick in vol_info['bricks']
             )
             # remove server passed as argument from backup servers to avoid
             # duplicates
@@ -71,11 +73,11 @@ class GlusterVolume(fileVolume.FileVolume):
 
         glusterPath = volname + '/' + imgFileRelPath
 
-        hosts = [dict(name=volfileServer,
-                      port=volPort,
-                      transport=transport)]
-        hosts.extend(dict(name=brickServer, port=volPort, transport=transport)
-                     for brickServer in brickServers)
+        hosts = [dict(name=volfileServer, port=volPort, transport=transport)]
+        hosts.extend(
+            dict(name=brickServer, port=volPort, transport=transport)
+            for brickServer in brickServers
+        )
 
         return {
             'type': 'network',

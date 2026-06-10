@@ -50,7 +50,9 @@ VHOSTMD_CONF = """
       <transport>virtio</transport>
       </globals>
     </vhostmd>
-""".format(vhostmd_before.DEFAULT_VBD_PATH)
+""".format(
+    vhostmd_before.DEFAULT_VBD_PATH
+)
 
 
 @pytest.fixture(autouse=True)
@@ -80,7 +82,7 @@ def vhostmd_conf(request, tmpdir):
             </vhostmd>
             """,
             {vhostmd_before.VhostmdTransport.VBD},
-            id="vbd only"
+            id="vbd only",
         ),
         pytest.param(
             """
@@ -91,7 +93,7 @@ def vhostmd_conf(request, tmpdir):
             </vhostmd>
             """,
             {vhostmd_before.VhostmdTransport.VIRTIO},
-            id="virtio only"
+            id="virtio only",
         ),
         pytest.param(
             """
@@ -104,14 +106,15 @@ def vhostmd_conf(request, tmpdir):
             """,
             {
                 vhostmd_before.VhostmdTransport.VBD,
-                vhostmd_before.VhostmdTransport.VIRTIO
+                vhostmd_before.VhostmdTransport.VIRTIO,
             },
-            id="vbd and virtio"
+            id="vbd and virtio",
         ),
-    ]
+    ],
 )
-def test_vhostmdconf_should_detect_used_transports(vhostmd_conf,
-                                                   expected_transports):
+def test_vhostmdconf_should_detect_used_transports(
+    vhostmd_conf, expected_transports
+):
     assert vhostmd_conf.transports == expected_transports
 
 
@@ -135,7 +138,7 @@ def test_vhostmdconf_should_detect_used_transports(vhostmd_conf,
             </vhostmd>
             """,
             "/dev/my/vhostmd",
-            id="custom vbd path"
+            id="custom vbd path",
         ),
         pytest.param(
             """
@@ -150,12 +153,13 @@ def test_vhostmdconf_should_detect_used_transports(vhostmd_conf,
             </vhostmd>
             """,
             vhostmd_before.DEFAULT_VBD_PATH,
-            id="default vbd path"
+            id="default vbd path",
         ),
-    ]
+    ],
 )
-def test_vhostmdconf_should_provide_path_to_vbd(vhostmd_conf,
-                                                expected_vbd_path):
+def test_vhostmdconf_should_provide_path_to_vbd(
+    vhostmd_conf, expected_vbd_path
+):
     assert vhostmd_conf.vbd_path == expected_vbd_path
 
 
@@ -211,8 +215,9 @@ def test_hook_should_inject_devices_to_vm(dom_xml, vhostmd_conf, sap_agent):
 
 
 @pytest.mark.parametrize("sap_agent", indirect=True, argvalues=["false"])
-def test_vm_with_sap_agent_disabled_should_be_unaffected(dom_xml, vhostmd_conf,
-                                                         sap_agent):
+def test_vm_with_sap_agent_disabled_should_be_unaffected(
+    dom_xml, vhostmd_conf, sap_agent
+):
     dom_xml_before = hooking.read_domxml().toxml()
     vhostmd_before.main(vhostmd_conf)
 

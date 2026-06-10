@@ -34,7 +34,7 @@ def vol_chain(tmp_mount):
         base_vol,
         size=virtual_size,
         format=qemuimg.FORMAT.QCOW2,
-        qcow2Compat='1.1'
+        qcow2Compat='1.1',
     )
     op.run()
 
@@ -46,7 +46,7 @@ def vol_chain(tmp_mount):
         format=qemuimg.FORMAT.QCOW2,
         qcow2Compat='1.1',
         backing=base_vol,
-        backingFormat='qcow2'
+        backingFormat='qcow2',
     )
     op.run()
 
@@ -54,6 +54,7 @@ def vol_chain(tmp_mount):
 
 
 # add_bitmaps tests
+
 
 def test_add_only_valid_bitmaps(vol_chain):
     bitmap = 'bitmap'
@@ -63,11 +64,7 @@ def test_add_only_valid_bitmaps(vol_chain):
     op.run()
 
     # Add invalid bitmap to base volume
-    op = qemuimg.bitmap_add(
-        vol_chain.base_vol,
-        'disabled',
-        enable=False
-    )
+    op = qemuimg.bitmap_add(vol_chain.base_vol, 'disabled', enable=False)
     op.run()
 
     # Add bitmaps from base volume to top volume
@@ -75,11 +72,7 @@ def test_add_only_valid_bitmaps(vol_chain):
 
     info = qemuimg.info(vol_chain.top_vol)
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ["auto"],
-            "name": bitmap,
-            "granularity": 65536
-        },
+        {"flags": ["auto"], "name": bitmap, "granularity": 65536},
     ]
 
 
@@ -103,6 +96,7 @@ def test_add_bitmap_failed(monkeypatch, vol_chain):
 
 # merge_bitmaps tests
 
+
 def test_merge_only_valid_bitmaps(vol_chain):
     bitmap = 'bitmap'
 
@@ -111,11 +105,7 @@ def test_merge_only_valid_bitmaps(vol_chain):
     op.run()
 
     # Add invalid bitmap to top volume
-    op = qemuimg.bitmap_add(
-        vol_chain.top_vol,
-        'disabled',
-        enable=False
-    )
+    op = qemuimg.bitmap_add(vol_chain.top_vol, 'disabled', enable=False)
     op.run()
 
     # Add new bitmap to top volume
@@ -127,11 +117,7 @@ def test_merge_only_valid_bitmaps(vol_chain):
 
     info = qemuimg.info(vol_chain.base_vol)
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ["auto"],
-            "name": bitmap,
-            "granularity": 65536
-        },
+        {"flags": ["auto"], "name": bitmap, "granularity": 65536},
     ]
 
 
@@ -157,16 +143,11 @@ def test_merge_bitmaps_failed(monkeypatch, vol_chain):
     info = qemuimg.info(vol_chain.base_vol)
     # TODO: test that this bitmap is empty
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ['auto'],
-            "name": bitmap,
-            "granularity": 65536
-        },
+        {"flags": ['auto'], "name": bitmap, "granularity": 65536},
     ]
 
 
-def test_merge_bitmaps_failed_to_add_bitmap(
-        monkeypatch, vol_chain):
+def test_merge_bitmaps_failed_to_add_bitmap(monkeypatch, vol_chain):
     bitmap = 'bitmap'
 
     # Add new bitmap to top volume
@@ -191,7 +172,7 @@ def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
         base_parent_vol,
         size=virtual_size,
         format=qemuimg.FORMAT.QCOW2,
-        qcow2Compat='1.1'
+        qcow2Compat='1.1',
     )
     op.run()
 
@@ -201,7 +182,8 @@ def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
         base_parent_vol,
         format=qemuimg.FORMAT.QCOW2,
         backingFormat=qemuimg.FORMAT.QCOW2,
-        unsafe=True)
+        unsafe=True,
+    )
     op.run()
 
     # Add new bitmap to base parent volume
@@ -213,8 +195,8 @@ def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
     op.run()
 
     bitmaps.merge_bitmaps(
-        vol_chain.base_vol, vol_chain.top_vol,
-        base_parent_path=base_parent_vol)
+        vol_chain.base_vol, vol_chain.top_vol, base_parent_path=base_parent_vol
+    )
 
     info = qemuimg.info(vol_chain.base_vol)
     assert 'bitmaps' not in info['format-specific']['data']
@@ -250,11 +232,7 @@ def test_prune_stale_bitmaps(tmp_mount, vol_chain):
 
     info = qemuimg.info(vol_chain.base_vol)
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ['auto'],
-            "name": bitmap,
-            "granularity": 65536
-        },
+        {"flags": ['auto'], "name": bitmap, "granularity": 65536},
     ]
 
 
@@ -269,17 +247,14 @@ def test_prune_disabled_bitmaps(tmp_mount, vol_chain):
         bitmap_disabled = f"disabled-bitmap-{i}"
         qemuimg.bitmap_add(vol_chain.base_vol, bitmap_disabled).run()
         qemuimg.bitmap_add(
-            vol_chain.top_vol, bitmap_disabled, enable=False).run()
+            vol_chain.top_vol, bitmap_disabled, enable=False
+        ).run()
 
     bitmaps.prune_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
 
     info = qemuimg.info(vol_chain.base_vol)
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ['auto'],
-            "name": bitmap,
-            "granularity": 65536
-        },
+        {"flags": ['auto'], "name": bitmap, "granularity": 65536},
     ]
 
 
@@ -300,11 +275,7 @@ def test_prune_in_use_bitmaps(tmp_mount, vol_chain):
 
     info = qemuimg.info(vol_chain.base_vol)
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ['auto'],
-            "name": bitmap,
-            "granularity": 65536
-        },
+        {"flags": ['auto'], "name": bitmap, "granularity": 65536},
     ]
 
 

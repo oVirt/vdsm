@@ -39,8 +39,12 @@ _STEPS_HUGE = 1000
 _DOWNTIME_MIN = 100
 _DOWNTIME_HUGE = 10000
 
-_PARAMS = tuple(product((_DOWNTIME_MIN, _DOWNTIME, _DOWNTIME_HUGE),
-                        (_STEPS_MIN, _STEPS, _STEPS_HUGE)))
+_PARAMS = tuple(
+    product(
+        (_DOWNTIME_MIN, _DOWNTIME, _DOWNTIME_HUGE),
+        (_STEPS_MIN, _STEPS, _STEPS_HUGE),
+    )
+)
 
 
 @expandPermutations
@@ -91,7 +95,7 @@ class TestVmMigrationDowntimeSequence(TestCaseBase):
         However, downtime is in milliseconds, so it is fair to
         have a lower bound here.
         """
-        return max(1, (downtime / steps) / 10.)
+        return max(1, (downtime / steps) / 10.0)
 
     def _default(self, downtime, steps):
         """provides the default downtime sequence"""
@@ -124,65 +128,74 @@ class TestProgress(TestCaseBase):
         }
         # available since libvirt 3.2
         if getattr(libvirt, 'VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT', None):
-            self.job_stats['operation'] = \
+            self.job_stats['operation'] = (
                 libvirt.VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT
+            )
 
     def test___str__(self):
         prog = migration.Progress.from_job_stats(self.job_stats)
         self.assertNotRaises(str, prog)
 
-    @permutations([
-        # fields
-        [(libvirt.VIR_DOMAIN_JOB_DATA_TOTAL,)],
-        [(libvirt.VIR_DOMAIN_JOB_DATA_PROCESSED,)],
-        [(libvirt.VIR_DOMAIN_JOB_DATA_REMAINING,)],
-        [(libvirt.VIR_DOMAIN_JOB_MEMORY_TOTAL,)],
-        [(libvirt.VIR_DOMAIN_JOB_MEMORY_PROCESSED,)],
-        [(libvirt.VIR_DOMAIN_JOB_MEMORY_REMAINING,)],
-    ])
+    @permutations(
+        [
+            # fields
+            [(libvirt.VIR_DOMAIN_JOB_DATA_TOTAL,)],
+            [(libvirt.VIR_DOMAIN_JOB_DATA_PROCESSED,)],
+            [(libvirt.VIR_DOMAIN_JOB_DATA_REMAINING,)],
+            [(libvirt.VIR_DOMAIN_JOB_MEMORY_TOTAL,)],
+            [(libvirt.VIR_DOMAIN_JOB_MEMORY_PROCESSED,)],
+            [(libvirt.VIR_DOMAIN_JOB_MEMORY_REMAINING,)],
+        ]
+    )
     def test_job_stats_required_fields(self, fields):
         for field in fields:
             del self.job_stats[field]
         with pytest.raises(KeyError):
             migration.Progress.from_job_stats(self.job_stats)
 
-    @permutations([
-        # fields
-        [(libvirt.VIR_DOMAIN_JOB_MEMORY_BPS,)],
-        [(libvirt.VIR_DOMAIN_JOB_MEMORY_CONSTANT,)],
-        [(libvirt.VIR_DOMAIN_JOB_COMPRESSION_BYTES,)],
-        [('memory_dirty_rate',)],
-        [('memory_iteration',)],
-    ])
+    @permutations(
+        [
+            # fields
+            [(libvirt.VIR_DOMAIN_JOB_MEMORY_BPS,)],
+            [(libvirt.VIR_DOMAIN_JOB_MEMORY_CONSTANT,)],
+            [(libvirt.VIR_DOMAIN_JOB_COMPRESSION_BYTES,)],
+            [('memory_dirty_rate',)],
+            [('memory_iteration',)],
+        ]
+    )
     def test___str___without_optional_fields(self, fields):
         for field in fields:
             del self.job_stats[field]
         prog = migration.Progress.from_job_stats(self.job_stats)
         self.assertNotRaises(str, prog)
 
-    @permutations([
-        # data_remaining, data_total, progress
-        [0, 0, 0],
-        [0, 100, 100],
-        [100, 100, 0],
-        [50, 100, 50],
-        [33, 100, 67],
-        [1, 100, 99],
-        [99, 100, 1],
-    ])
+    @permutations(
+        [
+            # data_remaining, data_total, progress
+            [0, 0, 0],
+            [0, 100, 100],
+            [100, 100, 0],
+            [50, 100, 50],
+            [33, 100, 67],
+            [1, 100, 99],
+            [99, 100, 1],
+        ]
+    )
     def test_percentage(self, data_remaining, data_total, progress):
         self.job_stats[libvirt.VIR_DOMAIN_JOB_DATA_REMAINING] = data_remaining
         self.job_stats[libvirt.VIR_DOMAIN_JOB_DATA_TOTAL] = data_total
         prog = migration.Progress.from_job_stats(self.job_stats)
         assert prog.percentage == progress
 
-    @permutations([
-        # job_type, ongoing
-        # not sure could actually happen
-        [libvirt.VIR_DOMAIN_JOB_BOUNDED, True],
-        [libvirt.VIR_DOMAIN_JOB_UNBOUNDED, True],
-        [libvirt.VIR_DOMAIN_JOB_NONE, False],
-    ])
+    @permutations(
+        [
+            # job_type, ongoing
+            # not sure could actually happen
+            [libvirt.VIR_DOMAIN_JOB_BOUNDED, True],
+            [libvirt.VIR_DOMAIN_JOB_UNBOUNDED, True],
+            [libvirt.VIR_DOMAIN_JOB_NONE, False],
+        ]
+    )
     def test_ongoing(self, job_type, ongoing):
         self.job_stats['type'] = job_type
         assert migration.ongoing(self.job_stats) == ongoing
@@ -196,40 +209,44 @@ class TestVmMigrate(TestCaseBase):
         self.serv = fake.JsonRpcServer()
         self.cif.bindings["jsonrpc"] = self.serv
 
-    @permutations([
-        # vm_status, pause_code
-        [vmstatus.UP, None],
-        [vmstatus.PAUSED, ''],  # empty pause code = not an I/O error
-        [vmstatus.PAUSED, 'NOERR'],
-    ])
+    @permutations(
+        [
+            # vm_status, pause_code
+            [vmstatus.UP, None],
+            [vmstatus.PAUSED, ''],  # empty pause code = not an I/O error
+            [vmstatus.PAUSED, 'NOERR'],
+        ]
+    )
     def test_migrate_from_status(self, vm_status, pause_code):
-        with MonkeyPatchScope([
-            (migration, 'SourceThread', fake.MigrationSourceThread)
-        ]):
+        with MonkeyPatchScope(
+            [(migration, 'SourceThread', fake.MigrationSourceThread)]
+        ):
             with fake.VM(
-                    cif=self.cif,
-                    status=vm_status,
-                    runCpu=(vm_status == vmstatus.UP),
-                    pause_code=pause_code
+                cif=self.cif,
+                status=vm_status,
+                runCpu=(vm_status == vmstatus.UP),
+                pause_code=pause_code,
             ) as testvm:
                 res = testvm.migrate({})  # no params needed
                 assert not response.is_error(res)
 
-    @permutations([
-        # vm_status, pause_code, exception
-        [vmstatus.WAIT_FOR_LAUNCH, None, exception.NoSuchVM],
-        [vmstatus.DOWN, None, exception.NoSuchVM],
-        [vmstatus.PAUSED, 'EIO', vdsm.virt.vm.MigrationError],
-    ])
+    @permutations(
+        [
+            # vm_status, pause_code, exception
+            [vmstatus.WAIT_FOR_LAUNCH, None, exception.NoSuchVM],
+            [vmstatus.DOWN, None, exception.NoSuchVM],
+            [vmstatus.PAUSED, 'EIO', vdsm.virt.vm.MigrationError],
+        ]
+    )
     def test_migrate_from_status_error(self, vm_status, pause_code, exc):
-        with MonkeyPatchScope([
-            (migration, 'SourceThread', fake.MigrationSourceThread)
-        ]):
+        with MonkeyPatchScope(
+            [(migration, 'SourceThread', fake.MigrationSourceThread)]
+        ):
             with fake.VM(
-                    cif=self.cif,
-                    status=vm_status,
-                    runCpu=False,
-                    pause_code=pause_code
+                cif=self.cif,
+                status=vm_status,
+                runCpu=False,
+                pause_code=pause_code,
             ) as testvm:
                 with pytest.raises(exc):
                     testvm.migrate({})  # no params needed
@@ -238,9 +255,11 @@ class TestVmMigrate(TestCaseBase):
 class TestPostCopy(TestCaseBase):
 
     def test_post_copy_status(self):
-        with fake.VM(status=vmstatus.MIGRATION_SOURCE,
-                     post_copy=migration.PostCopyPhase.RUNNING,
-                     params={'vmType': 'kvm'}) as testvm:
+        with fake.VM(
+            status=vmstatus.MIGRATION_SOURCE,
+            post_copy=migration.PostCopyPhase.RUNNING,
+            params={'vmType': 'kvm'},
+        ) as testvm:
             stats = testvm.getStats()
         assert stats['status'] == vmstatus.PAUSED
 
@@ -248,8 +267,10 @@ class TestPostCopy(TestCaseBase):
 class TestMigrationTimeout:
 
     CONFIG = make_config(
-        [('vars', 'migration_listener_timeout', '30'),
-         ('vars', 'max_migration_listener_timeout', '5')]
+        [
+            ('vars', 'migration_listener_timeout', '30'),
+            ('vars', 'max_migration_listener_timeout', '5'),
+        ]
     )
 
     def test_disk_timeout_needed(self):
@@ -341,8 +362,7 @@ class FakeVM(object):
         self.stopped_migrated_event_processed.set()
         self.guestAgent = FakeGuestAgent()
         self.hibernation_attempts = 0
-        self.volume_monitor = thinp.VolumeMonitor(
-            self, self.log, enabled=True)
+        self.volume_monitor = thinp.VolumeMonitor(self, self.log, enabled=True)
 
     def min_cluster_version(self, major, minor):
         return False
@@ -429,11 +449,13 @@ class SourceThreadTests(TestCaseBase):
         assert src._progress == 0
 
     # random increasing numbers, no special meaning
-    @permutations([
-        # steps
-        [(42,)],
-        [(12, 33)],
-    ])
+    @permutations(
+        [
+            # steps
+            [(42,)],
+            [(12, 33)],
+        ]
+    )
     def test_progress_update_on_get_stat(self, steps):
         vm = FakeVM()
         src = migration.SourceThread(vm)
@@ -461,16 +483,19 @@ class SourceThreadTests(TestCaseBase):
 
         assert src._progress == max(steps)
 
-    @permutations([
-        # failures
-        [0],
-        [1],
-        [2],
-        [10],
-    ])
+    @permutations(
+        [
+            # failures
+            [0],
+            [1],
+            [2],
+            [10],
+        ]
+    )
     def test_retry_on_limit_exceeded(self, failures):
-        serv = FakeServer(initial_failures=failures,
-                          exc=exception.MigrationLimitExceeded())
+        serv = FakeServer(
+            initial_failures=failures, exc=exception.MigrationLimitExceeded()
+        )
         dom, src = make_env()
         src._destServer = serv
         cfg = make_config([('vars', 'migration_retry_timeout', '0')])
@@ -509,11 +534,13 @@ class SourceThreadTests(TestCaseBase):
         assert src.migration_flags & libvirt.VIR_MIGRATE_PEER2PEER
 
     def test_sets_migration_flags(self):
-        src = migration.SourceThread(FakeVM(),
-                                     tunneled=True,
-                                     abortOnError=True,
-                                     compressed=True,
-                                     autoConverge=True)
+        src = migration.SourceThread(
+            FakeVM(),
+            tunneled=True,
+            abortOnError=True,
+            compressed=True,
+            autoConverge=True,
+        )
         flags = src.migration_flags
         assert flags & libvirt.VIR_MIGRATE_TUNNELLED
         assert flags & libvirt.VIR_MIGRATE_ABORT_ON_ERROR
@@ -554,7 +581,8 @@ class CannonizeHostPortTest(TestCaseBase):
 
     def test_none_argument(self):
         self._assert_is_ip_address_with_port(
-            migration._cannonize_host_port(None))
+            migration._cannonize_host_port(None)
+        )
 
     def test_none_argument_and_port(self):
         port = 65432
@@ -565,7 +593,8 @@ class CannonizeHostPortTest(TestCaseBase):
 
     def test_address_no_port(self):
         self._assert_is_ip_address_with_port(
-            migration._cannonize_host_port('127.0.0.1'))
+            migration._cannonize_host_port('127.0.0.1')
+        )
 
     def test_address_with_port(self):
         address = "127.0.0.1:65432"
@@ -593,8 +622,9 @@ class CannonizeHostPortTest(TestCaseBase):
             # the following will handle all IP families:
             addr, port = addrWithPort.rsplit(':', 1)
         except ValueError:
-            raise AssertionError('%s is not a valid IP address:' %
-                                 addrWithPort)
+            raise AssertionError(
+                '%s is not a valid IP address:' % addrWithPort
+            )
         else:
             self._assert_valid_address(addr)
             self._assert_valid_port(port)
@@ -604,18 +634,16 @@ class CannonizeHostPortTest(TestCaseBase):
         if addr != 'localhost':
             if '.' in addr:
                 if not _is_ipv4_address(addr):
-                    raise AssertionError('invalid IPv4 address: %s',
-                                         addr)
+                    raise AssertionError('invalid IPv4 address: %s', addr)
             elif ':' in addr:
                 if not addr.startswith('[') or not addr.endswith(']'):
-                    raise AssertionError('malformed IPv6 address: %s',
-                                         addr)
+                    raise AssertionError('malformed IPv6 address: %s', addr)
                 if not _is_ipv6_address(addr[1:-1]):
-                    raise AssertionError('invalid IPv6 address: %s',
-                                         addr)
+                    raise AssertionError('invalid IPv6 address: %s', addr)
             else:
-                raise AssertionError('unrecognized IP address family: %s',
-                                     addr)
+                raise AssertionError(
+                    'unrecognized IP address family: %s', addr
+                )
 
     def _assert_valid_port(self, port_str):
         try:

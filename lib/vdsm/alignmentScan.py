@@ -9,12 +9,19 @@ from vdsm.storage.misc import execCmd
 
 ScanOutput = namedtuple(
     'ScanOutput',
-    ['partitionName', 'partitionStartBytes', 'partitionAlignment',
-     'alignmentScanResult', 'alignmentScanExplanation'])
+    [
+        'partitionName',
+        'partitionStartBytes',
+        'partitionAlignment',
+        'alignmentScanResult',
+        'alignmentScanExplanation',
+    ],
+)
 
-_virtAlignmentScan = CommandPath("virt-alignment-scan",
-                                 "/usr/bin/virt-alignment-scan",  # Fedora, EL6
-                                 )
+_virtAlignmentScan = CommandPath(
+    "virt-alignment-scan",
+    "/usr/bin/virt-alignment-scan",  # Fedora, EL6
+)
 
 
 class VirtAlignError(Exception):
@@ -38,8 +45,9 @@ def scanImage(image_path):
     if rc == 0:
         pass
     elif rc == 1:
-        raise VirtAlignError("An error scanning the disk image "
-                             "or guest:\n%s" % err)
+        raise VirtAlignError(
+            "An error scanning the disk image " "or guest:\n%s" % err
+        )
     elif rc == 2:
         # Successful exit, some partitions have alignment < 64K
         # which can result in poor performance on high end network storage.
@@ -49,16 +57,20 @@ def scanImage(image_path):
         # which can result in poor performance on most hypervisors.
         pass
     else:
-        raise ValueError("Unknown return code from "
-                         "virt-alignment-scan: %d" % rc)
+        raise ValueError(
+            "Unknown return code from " "virt-alignment-scan: %d" % rc
+        )
     outList = []
     for line in out:
         line = line.split(None, 3)
         partName = line[0]  # the device and partition name (eg. "/dev/sda1")
         partStart = int(line[1])  # the start of the partition in bytes
         partAlignment = line[2]  # in bytes or Kbytes (eg. 512 or "4K")
-        scanResult = (line[3] == "ok")  # True if aligned, otherwise False
+        scanResult = line[3] == "ok"  # True if aligned, otherwise False
         scanExplanation = line[3]  # optional free-text explanation
-        outList.append(ScanOutput(partName, partStart, partAlignment,
-                                  scanResult, scanExplanation))
+        outList.append(
+            ScanOutput(
+                partName, partStart, partAlignment, scanResult, scanExplanation
+            )
+        )
     return outList

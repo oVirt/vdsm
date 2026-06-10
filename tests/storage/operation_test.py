@@ -25,7 +25,8 @@ class TestCommandRun(VdsmTestCase):
 
     def test_error(self):
         op = operation.Command(
-            ["sh", "-c", "echo -n out >&1; echo -n err >&2; exit 1"])
+            ["sh", "-c", "echo -n out >&1; echo -n err >&2; exit 1"]
+        )
         with self.assertRaises(cmdutils.Error) as e:
             op.run()
         self.assertEqual(e.exception.rc, 1)
@@ -89,7 +90,8 @@ class TestCommandWatch(VdsmTestCase):
 
     def test_error(self):
         op = operation.Command(
-            ["sh", "-c", "echo -n out >&1; echo -n err >&2; exit 1"])
+            ["sh", "-c", "echo -n out >&1; echo -n err >&2; exit 1"]
+        )
         out = bytearray()
         with self.assertRaises(cmdutils.Error) as e:
             for data in op.watch():

@@ -16,7 +16,10 @@ class VdsmUpgrade(dnf.Plugin):
         transaction = self.base.transaction
         # Only upgrades are relevant, i.e. when the package is both
         # removed and installed.
-        for package_set in (transaction.install_set, transaction.remove_set,):
+        for package_set in (
+            transaction.install_set,
+            transaction.remove_set,
+        ):
             for package in package_set:
                 if package.name == 'vdsm':
                     break
@@ -31,5 +34,6 @@ class VdsmUpgrade(dnf.Plugin):
                 except OSError:
                     continue
                 if exe == '/usr/libexec/qemu-kvm':
-                    raise dnf.exceptions.Error('Running QEMU processes found, '
-                                               'cannot upgrade Vdsm.')
+                    raise dnf.exceptions.Error(
+                        'Running QEMU processes found, ' 'cannot upgrade Vdsm.'
+                    )

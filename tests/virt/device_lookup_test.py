@@ -14,17 +14,29 @@ import pytest
 _DRIVES_XML = [
     # drive_xml, dev_name - if None, we expect LookupError, alias
     (u'''<disk device="disk" snapshot="no" type="file" />''', None, None),
-    (u'''<disk device="disk" snapshot="no" type="file">
+    (
+        u'''<disk device="disk" snapshot="no" type="file">
           <serial>virtio0000</serial>
-        </disk>''', 'vdb', None),
+        </disk>''',
+        'vdb',
+        None,
+    ),
     # TODO: check it is valid for user aliases too
-    (u'''<disk device="disk" snapshot="no" type="file">
+    (
+        u'''<disk device="disk" snapshot="no" type="file">
           <alias name='ua-0000' />
-        </disk>''', 'sda', 'ua-0000'),
-    (u'''<disk device="disk" snapshot="no" type="file">
+        </disk>''',
+        'sda',
+        'ua-0000',
+    ),
+    (
+        u'''<disk device="disk" snapshot="no" type="file">
           <serial>virtio1111</serial>
           <alias name='ua-0000' />
-        </disk>''', 'sda', 'ua-0000'),
+        </disk>''',
+        'sda',
+        'ua-0000',
+    ),
 ]
 
 
@@ -33,29 +45,23 @@ class TestLookup(VdsmTestCase):
 
     def setUp(self):
         self.drives = [
-            FakeDrive(
-                name='sda',
-                serial='scsi0000',
-                alias='ua-0000'
-            ),
-            FakeDrive(
-                name='vdb',
-                serial='virtio0000',
-                alias='ua-2001'
-            ),
+            FakeDrive(name='sda', serial='scsi0000', alias='ua-0000'),
+            FakeDrive(name='vdb', serial='virtio0000', alias='ua-2001'),
         ]
         self.devices_conf = [
             {'alias': 'dimm0', 'type': 'memory', 'size': 1024},
-            {'alias': 'ac97', 'type': 'sound'}
+            {'alias': 'ac97', 'type': 'sound'},
         ]
         self.devices = common.empty_dev_map()
-        self.device_xml = xmlutils.fromstring("""
+        self.device_xml = xmlutils.fromstring(
+            """
             <devices>
               <disk><alias name='ua-1'/></disk>
               <hostdev><alias name='ua-2'/></hostdev>
               <interface><alias name='ua-3'/></interface>
             </devices>
-        """)
+        """
+        )
 
     def test_lookup_drive_by_name_found(self):
         drive = lookup.drive_by_name(self.drives, 'sda')
@@ -110,71 +116,71 @@ class TestLookup(VdsmTestCase):
                 )
         else:
             drive = lookup.drive_from_element(
-                self.drives,
-                xmlutils.fromstring(drive_xml)
+                self.drives, xmlutils.fromstring(drive_xml)
             )
             assert drive.name == dev_name
 
     @permutations(_DRIVES_XML)
     def test_lookup_device_from_xml_alias(
-            self, drive_xml, dev_name, alias_name):
+        self, drive_xml, dev_name, alias_name
+    ):
         # intentionally without serial and alias
         if dev_name is None or alias_name is None:
             with pytest.raises(LookupError):
-                lookup.device_from_xml_alias(
-                    self.drives, drive_xml
-                )
+                lookup.device_from_xml_alias(self.drives, drive_xml)
         else:
-            drive = lookup.device_from_xml_alias(
-                self.drives,
-                drive_xml
-            )
+            drive = lookup.device_from_xml_alias(self.drives, drive_xml)
             assert drive.name == dev_name
 
-    @permutations([
-        ['memory', 'dimm0', 0],
-        ['sound', 'ac97', 1],
-    ])
+    @permutations(
+        [
+            ['memory', 'dimm0', 0],
+            ['sound', 'ac97', 1],
+        ]
+    )
     def test_lookup_conf(self, dev_type, alias, index):
-        conf = lookup.conf_by_alias(
-            self.devices_conf, dev_type, alias)
+        conf = lookup.conf_by_alias(self.devices_conf, dev_type, alias)
         assert conf == self.devices_conf[index]
 
-    @permutations([
-        ['memory', 'dimm1'],
-        ['sound', 'dimm0'],
-    ])
+    @permutations(
+        [
+            ['memory', 'dimm1'],
+            ['sound', 'dimm0'],
+        ]
+    )
     def test_lookup_conf_error(self, dev_type, alias):
         with pytest.raises(LookupError):
             lookup.conf_by_alias(self.devices_conf, dev_type, alias)
 
-    @permutations([
-        # devices_conf
-        [[]],
-        [[{}]],
-    ])
+    @permutations(
+        [
+            # devices_conf
+            [[]],
+            [[{}]],
+        ]
+    )
     def test_lookup_conf_missing(self, devices_conf):
         with pytest.raises(LookupError):
             lookup.conf_by_alias(devices_conf, 'memory', 'dimm0')
 
-    @permutations([
-        # devices_conf
-        [[]],
-        [[{}]],
-        [[{'alias': 'ac97', 'type': 'sound'}]],
-    ])
+    @permutations(
+        [
+            # devices_conf
+            [[]],
+            [[{}]],
+            [[{'alias': 'ac97', 'type': 'sound'}]],
+        ]
+    )
     def test_lookup_conf_by_path_missing(self, devices_conf):
         with pytest.raises(LookupError):
             lookup.conf_by_path(devices_conf, '/fake/test/path')
 
-    @permutations([
-        # devices_conf, path, dev_index
+    @permutations(
         [
-            [{'path': '/foo/bar', 'type': hwclass.DISK}],
-            '/foo/bar',
-            0
-        ],
-    ])
+            # devices_conf, path, dev_index
+            [[{'path': '/foo/bar', 'type': hwclass.DISK}], '/foo/bar', 0],
+        ]
+    )
     def test_lookup_conf_by_path(self, devices_conf, path, dev_index):
         drive = lookup.conf_by_path(devices_conf, path)
         assert drive == devices_conf[dev_index]

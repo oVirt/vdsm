@@ -28,6 +28,7 @@ from vdsm.common import sigutils
 
 try:
     from vdsm.gluster import listPublicFunctions
+
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
@@ -55,7 +56,7 @@ _running = True
 
 
 class FatalError(Exception):
-    """ Raised when supervdsm fails to start """
+    """Raised when supervdsm fails to start"""
 
 
 class Timeout(RuntimeError):
@@ -70,16 +71,15 @@ def logDecorator(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        callbackLogger.debug('call %s with %s %s',
-                             func.__name__, args, kwargs)
+        callbackLogger.debug('call %s with %s %s', func.__name__, args, kwargs)
         try:
             res = func(*args, **kwargs)
         except:
             callbackLogger.error("Error in %s", func.__name__, exc_info=True)
             raise
-        callbackLogger.debug('return %s with %s',
-                             func.__name__, res)
+        callbackLogger.debug('return %s with %s', func.__name__, res)
         return res
+
     return wrapper
 
 
@@ -88,6 +88,7 @@ class PopenAdapter:
     Adapt multiprocessing.Process() to subprocess.Popen() interface so it can
     be used with commands.wait_async().
     """
+
     def __init__(self, proc):
         self._proc = proc
 
@@ -109,10 +110,10 @@ class _SuperVdsm(object):
     log = logging.getLogger("SuperVdsm.ServerCallback")
 
     @logDecorator
-    def mount(self, fs_spec, fs_file, mntOpts=None, vfstype=None,
-              cgroup=None):
-        mount._mount(fs_spec, fs_file, mntOpts=mntOpts, vfstype=vfstype,
-                     cgroup=cgroup)
+    def mount(self, fs_spec, fs_file, mntOpts=None, vfstype=None, cgroup=None):
+        mount._mount(
+            fs_spec, fs_file, mntOpts=mntOpts, vfstype=vfstype, cgroup=cgroup
+        )
 
     @logDecorator
     def umount(self, fs_file, force=False, lazy=False, freeloop=False):
@@ -173,8 +174,9 @@ class _SuperVdsm(object):
 
     @logDecorator
     def validateAccess(self, user, groups, *args, **kwargs):
-        return self._runAs(user, groups, _validateAccess, args=args,
-                           kwargs=kwargs)
+        return self._runAs(
+            user, groups, _validateAccess, args=args, kwargs=kwargs
+        )
 
     @logDecorator
     def fuser(self, *args, **kwargs):
@@ -213,8 +215,9 @@ def main(args):
         transientdisk.P_TRANSIENT_DISKS = args.transient_disks
 
         try:
-            logging.config.fileConfig(args.logger_conf,
-                                      disable_existing_loggers=False)
+            logging.config.fileConfig(
+                args.logger_conf, disable_existing_loggers=False
+            )
         except Exception as e:
             raise FatalError("Cannot configure logging: %s" % e)
 
@@ -228,20 +231,26 @@ def main(args):
         def bind(func):
             def wrapper(_SuperVdsm, *args, **kwargs):
                 return func(*args, **kwargs)
+
             return wrapper
 
         if args.enable_gluster:
             for name, func in listPublicFunctions(
-                    constants.GLUSTER_MGMT_ENABLED):
+                constants.GLUSTER_MGMT_ENABLED
+            ):
                 setattr(_SuperVdsm, name, bind(logDecorator(func)))
 
-        for _, module_name, _ in pkgutil.iter_modules([supervdsm_api.
-                                                       __path__[0]]):
-            module = importlib.import_module('%s.%s' %
-                                             (supervdsm_api.__name__,
-                                              module_name))
-            api_funcs = [f for _, f in module.__dict__.items()
-                         if callable(f) and getattr(f, 'exposed_api', False)]
+        for _, module_name, _ in pkgutil.iter_modules(
+            [supervdsm_api.__path__[0]]
+        ):
+            module = importlib.import_module(
+                '%s.%s' % (supervdsm_api.__name__, module_name)
+            )
+            api_funcs = [
+                f
+                for _, f in module.__dict__.items()
+                if callable(f) and getattr(f, 'exposed_api', False)
+            ]
             for func in api_funcs:
                 setattr(_SuperVdsm, func.__name__, bind(logDecorator(func)))
 
@@ -310,46 +319,52 @@ def main(args):
 def option_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--sockfile',
-        dest='sockfile',
-        required=True,
-        help="socket file path")
-    parser.add_argument(
-        '--pidfile',
-        default=None,
-        help="pid file path")
+        '--sockfile', dest='sockfile', required=True, help="socket file path"
+    )
+    parser.add_argument('--pidfile', default=None, help="pid file path")
     parser.add_argument(
         '--user',
         default=constants.VDSM_USER,
-        help="override user name (default %s)" % constants.VDSM_USER)
+        help="override user name (default %s)" % constants.VDSM_USER,
+    )
     parser.add_argument(
         '--group',
         default=constants.VDSM_GROUP,
-        help="override group name (default %s)" % constants.VDSM_GROUP)
+        help="override group name (default %s)" % constants.VDSM_GROUP,
+    )
     parser.add_argument(
         '--logger-conf',
         default=LOG_CONF_PATH,
-        help="logger config file path (default %s)" % LOG_CONF_PATH)
+        help="logger config file path (default %s)" % LOG_CONF_PATH,
+    )
     parser.add_argument(
         '--disable-gluster',
         action='store_false',
         dest='enable_gluster',
         default=_glusterEnabled,
-        help="disable gluster services (default enabled)")
+        help="disable gluster services (default enabled)",
+    )
     parser.add_argument(
         '--disable-network',
         action='store_false',
         dest='enable_network',
         default=True,
-        help="disable network initialization (default enabled)")
+        help="disable network initialization (default enabled)",
+    )
     parser.add_argument(
         '--data-center',
         default=sc.REPO_DATA_CENTER,
-        help=("override storage repository directory (default %s)"
-              % sc.REPO_DATA_CENTER))
+        help=(
+            "override storage repository directory (default %s)"
+            % sc.REPO_DATA_CENTER
+        ),
+    )
     parser.add_argument(
         '--transient-disks',
         default=transientdisk.P_TRANSIENT_DISKS,
-        help=("override storage transient disks directory (default %s)"
-              % transientdisk.P_TRANSIENT_DISKS))
+        help=(
+            "override storage transient disks directory (default %s)"
+            % transientdisk.P_TRANSIENT_DISKS
+        ),
+    )
     return parser

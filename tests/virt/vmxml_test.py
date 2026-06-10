@@ -23,9 +23,9 @@ from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 from . import vmfakelib as fake
 import pytest
 
-AGENT_DEVICE_NAMES = frozenset([
-    vmchannels.LEGACY_DEVICE_NAME,
-    vmchannels.QEMU_GA_DEVICE_NAME])
+AGENT_DEVICE_NAMES = frozenset(
+    [vmchannels.LEGACY_DEVICE_NAME, vmchannels.QEMU_GA_DEVICE_NAME]
+)
 
 
 class VmXmlTestCase(TestCaseBase):
@@ -33,7 +33,8 @@ class VmXmlTestCase(TestCaseBase):
     _CONFS = {
         cpuarch.X86_64: CONF_TO_DOMXML_X86_64,
         cpuarch.PPC64: CONF_TO_DOMXML_PPC64,
-        'novdsm': CONF_TO_DOMXML_NO_VDSM}
+        'novdsm': CONF_TO_DOMXML_NO_VDSM,
+    }
 
     def _build_domain_xml(self, arch):
         for conf, rawXml in self._CONFS[arch]:
@@ -47,8 +48,10 @@ class TestVmXmlFunctions(VmXmlTestCase):
     @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
     def test_has_channel(self, arch):
         for _, dom_xml in self._build_domain_xml(arch):
-            assert vmxml.has_channel(dom_xml, vmchannels.LEGACY_DEVICE_NAME) \
+            assert (
+                vmxml.has_channel(dom_xml, vmchannels.LEGACY_DEVICE_NAME)
                 is True
+            )
 
 
 @expandPermutations
@@ -76,7 +79,9 @@ class TestVmXmlHelpers(XMLTestCase):
         xml = re.sub(' *\n *', '', self._XML)
         dom = xmlutils.fromstring(xml)
         pretty = xmlutils.tostring(dom, pretty=True)
-        assert pretty == u'''<?xml version='1.0' encoding='utf-8'?>
+        assert (
+            pretty
+            == u'''<?xml version='1.0' encoding='utf-8'?>
 <topelement>
     <hello lang="english">hello</hello>
     <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
@@ -91,6 +96,7 @@ class TestVmXmlHelpers(XMLTestCase):
     <empty />
 </topelement>
 '''
+        )
 
     def test_pretty_format_safety(self):
         # Check that dom is not modified in tostring; we check that by
@@ -107,8 +113,9 @@ class TestVmXmlHelpers(XMLTestCase):
     def test_pretty_format_timing(self):
         test_path = os.path.realpath(__file__)
         dir_name = os.path.split(test_path)[0]
-        xml_path = os.path.join(dir_name, '..', 'devices', 'data',
-                                'testComplexVm.xml')
+        xml_path = os.path.join(
+            dir_name, '..', 'devices', 'data', 'testComplexVm.xml'
+        )
         xml = re.sub(' *\n *', '', open(xml_path).read())
         setup = """
 import re
@@ -117,21 +124,33 @@ from vdsm.virt import vmxml
 xml = re.sub(' *\\n *', '', '''%s''')
 dom = xmlutils.fromstring(xml)
 def run():
-    xmlutils.tostring(dom, pretty=%%s)""" % (xml,)
+    xmlutils.tostring(dom, pretty=%%s)""" % (
+            xml,
+        )
         repetitions = 100
-        elapsed = timeit.timeit('run()', setup=(setup % ('False',)),
-                                number=repetitions)
-        elapsed_pretty = timeit.timeit('run()', setup=(setup % ('True',)),
-                                       number=repetitions)
-        print('slowdown: %d%% (%.3f s per one domain)' %
-              (100 * (elapsed_pretty - elapsed) / elapsed,
-               (elapsed_pretty - elapsed) / repetitions,))
+        elapsed = timeit.timeit(
+            'run()', setup=(setup % ('False',)), number=repetitions
+        )
+        elapsed_pretty = timeit.timeit(
+            'run()', setup=(setup % ('True',)), number=repetitions
+        )
+        print(
+            'slowdown: %d%% (%.3f s per one domain)'
+            % (
+                100 * (elapsed_pretty - elapsed) / elapsed,
+                (elapsed_pretty - elapsed) / repetitions,
+            )
+        )
 
-    @permutations([[None, 'topelement', 1],
-                   ['topelement', 'topelement', 1],
-                   [None, 'hello', 3],
-                   ['topelement', 'bye', 1],
-                   [None, 'none', 0]])
+    @permutations(
+        [
+            [None, 'topelement', 1],
+            ['topelement', 'topelement', 1],
+            [None, 'hello', 3],
+            ['topelement', 'bye', 1],
+            [None, 'none', 0],
+        ]
+    )
     def test_find_all(self, start_tag, tag, number):
         dom = self._dom
         if start_tag is not None:
@@ -145,27 +164,32 @@ def run():
         with pytest.raises(vmxml.NotFound):
             vmxml.find_first(self._dom, 'none')
 
-    @permutations([['hello', 'lang', 'english'],
-                   ['hello', 'none', ''],
-                   ['none', 'lang', ''],
-                   ])
+    @permutations(
+        [
+            ['hello', 'lang', 'english'],
+            ['hello', 'none', ''],
+            ['none', 'lang', ''],
+        ]
+    )
     def test_find_attr(self, tag, attribute, result):
         value = vmxml.find_attr(self._dom, tag, attribute)
         assert value == result
 
-    @permutations([['hello', 'hello'],
-                   ['empty', '']])
+    @permutations([['hello', 'hello'], ['empty', '']])
     def test_text(self, tag, result):
         element = vmxml.find_first(self._dom, tag)
         text = vmxml.text(element)
         assert text == result
 
-    @permutations([['topelement', 'hello', 2],
-                   ['bye', 'hello', 1],
-                   ['empty', 'hello', 0],
-                   ['topelement', 'none', 0],
-                   ['topelement', None, 6],
-                   ])
+    @permutations(
+        [
+            ['topelement', 'hello', 2],
+            ['bye', 'hello', 1],
+            ['empty', 'hello', 0],
+            ['topelement', 'none', 0],
+            ['topelement', None, 6],
+        ]
+    )
     def test_children(self, start_tag, tag, number):
         element = vmxml.find_first(self._dom, start_tag)
         assert len(list(vmxml.children(element, tag))) == number
@@ -192,8 +216,9 @@ def run():
     def test_append_child_too_many_args(self):
         empty = vmxml.find_first(self._dom, 'empty')
         with pytest.raises(RuntimeError):
-            vmxml.append_child(empty, vmxml.Element('new'),
-                               xmlutils.fromstring('<new/>'))
+            vmxml.append_child(
+                empty, vmxml.Element('new'), xmlutils.fromstring('<new/>')
+            )
 
     def test_remove_child(self):
         top = vmxml.find_first(self._dom, 'topelement')
@@ -225,8 +250,9 @@ def run():
         new_child = xmlutils.fromstring(new_element)
         container = vmxml.find_first(self._dom, 'container')
         vmxml.replace_first_child(container, new_child)
-        self.assertXMLEqual(xmlutils.tostring(self._dom, pretty=True),
-                            expected)
+        self.assertXMLEqual(
+            xmlutils.tostring(self._dom, pretty=True), expected
+        )
 
     def test_namespaces(self):
         expected_xml = '''
@@ -239,8 +265,11 @@ def run():
         domain = vmxml.Element('domain')
         metadata = vmxml.Element('metadata')
         domain.appendChild(metadata)
-        qos = vmxml.Element('qos', namespace='ovirt-tune',
-                            namespace_uri='http://ovirt.org/vm/tune/1.0')
+        qos = vmxml.Element(
+            'qos',
+            namespace='ovirt-tune',
+            namespace_uri='http://ovirt.org/vm/tune/1.0',
+        )
         metadata.appendChild(qos)
         self.assertXMLEqual(xmlutils.tostring(domain), expected_xml)
 
@@ -263,10 +292,13 @@ def run():
 @expandPermutations
 class TestDomainDescriptor(VmXmlTestCase):
 
-    @permutations([[domain_descriptor.DomainDescriptor, cpuarch.X86_64],
-                   [domain_descriptor.DomainDescriptor, cpuarch.PPC64],
-                   [domain_descriptor.MutableDomainDescriptor, cpuarch.X86_64]]
-                  )
+    @permutations(
+        [
+            [domain_descriptor.DomainDescriptor, cpuarch.X86_64],
+            [domain_descriptor.DomainDescriptor, cpuarch.PPC64],
+            [domain_descriptor.MutableDomainDescriptor, cpuarch.X86_64],
+        ]
+    )
     def test_all_channels_vdsm_domain(self, descriptor, arch):
         for _, dom_xml in self._build_domain_xml(arch):
             dom = descriptor(dom_xml)
@@ -275,8 +307,12 @@ class TestDomainDescriptor(VmXmlTestCase):
             for name, path, _ in channels:
                 assert name in AGENT_DEVICE_NAMES
 
-    @permutations([[domain_descriptor.DomainDescriptor],
-                   [domain_descriptor.MutableDomainDescriptor]])
+    @permutations(
+        [
+            [domain_descriptor.DomainDescriptor],
+            [domain_descriptor.MutableDomainDescriptor],
+        ]
+    )
     def test_all_channels_extra_domain(self, descriptor):
         for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
             dom = descriptor(raw_xml % conf)
@@ -287,8 +323,12 @@ class TestDomainDescriptor(VmXmlTestCase):
         dom = domain_descriptor.MutableDomainDescriptor('<domain/>')
         assert list(dom.all_channels()) == []
 
-    @permutations([[domain_descriptor.DomainDescriptor],
-                   [domain_descriptor.MutableDomainDescriptor]])
+    @permutations(
+        [
+            [domain_descriptor.DomainDescriptor],
+            [domain_descriptor.MutableDomainDescriptor],
+        ]
+    )
     def test_channel_state(self, descriptor):
         for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
             dom = descriptor(raw_xml % conf)

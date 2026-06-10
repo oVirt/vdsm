@@ -45,15 +45,13 @@ class JsonRpcRequest(object):
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
             raise exception.JsonRpcInvalidRequestError(
-                "Wrong protocol version",
-                request=obj
+                "Wrong protocol version", request=obj
             )
 
         method = obj.get("method")
         if method is None:
             raise exception.JsonRpcInvalidRequestError(
-                "missing method header in method",
-                request=obj
+                "missing method header in method", request=obj
             )
 
         reqId = obj.get("id")
@@ -62,8 +60,7 @@ class JsonRpcRequest(object):
         params = obj.get('params', [])
         if not isinstance(params, (list, dict)):
             raise exception.JsonRpcInvalidRequestError(
-                "wrong params type",
-                request=obj
+                "wrong params type", request=obj
             )
 
         return JsonRpcRequest(method, protect_passwords(params), reqId)
@@ -76,7 +73,7 @@ class JsonRpcRequest(object):
             'jsonrpc': '2.0',
             'method': self.method,
             'params': self.params,
-            'id': self.id
+            'id': self.id,
         }
 
     def encode(self):
@@ -84,7 +81,7 @@ class JsonRpcRequest(object):
         return json.dumps(res)
 
     def isNotification(self):
-        return (self.id is None)
+        return self.id is None
 
 
 class JsonRpcResponse(object):
@@ -94,12 +91,13 @@ class JsonRpcResponse(object):
         self.id = reqId
 
     def toDict(self):
-        res = {'jsonrpc': '2.0',
-               'id': self.id}
+        res = {'jsonrpc': '2.0', 'id': self.id}
 
         if self.error is not None:
-            res['error'] = {'code': self.error.code,
-                            'message': str(self.error)}
+            res['error'] = {
+                'code': self.error.code,
+                'message': str(self.error),
+            }
         else:
             res['result'] = self.result
 
@@ -118,14 +116,12 @@ class JsonRpcResponse(object):
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
             raise exception.JsonRpcInvalidRequestError(
-                "wrong protocol version",
-                request=obj
+                "wrong protocol version", request=obj
             )
 
         if "result" not in obj and "error" not in obj:
             raise exception.JsonRpcInvalidRequestError(
-                "missing result or error info",
-                request=obj
+                "missing result or error info", request=obj
             )
 
         result = obj.get("result")
@@ -145,6 +141,7 @@ class Notification(object):
     notification and pass it a callback which is responsible for
     sending it.
     """
+
     log = logging.getLogger("jsonrpc.Notification")
 
     def __init__(self, event_id, cb, event_schema):
@@ -163,9 +160,9 @@ class Notification(object):
         """
         self._add_notify_time(params)
         self._event_schema.verify_event_params(self._event_id, params)
-        notification = json.dumps({'jsonrpc': '2.0',
-                                   'method': self._event_id,
-                                   'params': params})
+        notification = json.dumps(
+            {'jsonrpc': '2.0', 'method': self._event_id, 'params': params}
+        )
 
         self.log.debug("Sending event %s", notification)
         self._cb(notification)
@@ -213,9 +210,9 @@ class _JsonRpcServeRequestContext(object):
             try:
                 encodedObjects.append(response.encode())
             except:  # Error encoding data
-                response = JsonRpcResponse(None,
-                                           exception.JsonRpcInternalError(),
-                                           response.id)
+                response = JsonRpcResponse(
+                    None, exception.JsonRpcInternalError(), response.id
+                )
                 encodedObjects.append(response.encode())
 
         if len(encodedObjects) == 1:
@@ -251,9 +248,7 @@ class JsonRpcTask(object):
         self._handler(self._ctx, self._req)
 
     def __repr__(self):
-        return '<JsonRpcTask %s at 0x%x>' % (
-            self._req, id(self)
-        )
+        return '<JsonRpcTask %s at 0x%x>' % (self._req, id(self))
 
 
 class JsonRpcServer(object):
@@ -264,6 +259,7 @@ class JsonRpcServer(object):
     which defining how often we should log connections stats and thread
     factory.
     """
+
     def __init__(self, bridge, timeout, cif, threadFactory=None):
         self._bridge = bridge
         self._cif = cif
@@ -281,11 +277,15 @@ class JsonRpcServer(object):
     a batch is added separately. After time defined by timeout we log
     number of requests.
     """
+
     def _attempt_log_stats(self):
         self._counter += 1
         if monotonic_time() > self._next_report:
-            self.log.info('%s requests processed during %s seconds',
-                          self._counter, self._timeout)
+            self.log.info(
+                '%s requests processed during %s seconds',
+                self._counter,
+                self._timeout,
+            )
             self._next_report += self._timeout
             self._counter = 0
 
@@ -295,12 +295,19 @@ class JsonRpcServer(object):
         duration = monotonic_time() - start_time
         error = getattr(response, "error", None)
         if error is not None:
-            self.log.info("RPC call %s failed (error %s) in %.2f seconds",
-                          req.method, error.code, duration)
+            self.log.info(
+                "RPC call %s failed (error %s) in %.2f seconds",
+                req.method,
+                error.code,
+                duration,
+            )
         elif duration > _SLOW_CALL_THRESHOLD:
-            self.log.info("RPC call %s took more than %.2f seconds "
-                          "to succeed: %.2f", req.method, _SLOW_CALL_THRESHOLD,
-                          duration)
+            self.log.info(
+                "RPC call %s took more than %.2f seconds " "to succeed: %.2f",
+                req.method,
+                _SLOW_CALL_THRESHOLD,
+                duration,
+            )
         if response is not None:
             ctx.requestDone(response)
 
@@ -311,13 +318,18 @@ class JsonRpcServer(object):
         # VDSM should never respond to any request before all information about
         # running VMs is recovered, see https://bugzilla.redhat.com/1339291
         if not self._cif.ready:
-            self.log.info("In recovery, ignoring '%s' in bridge with %s",
-                          req.method, req.params)
+            self.log.info(
+                "In recovery, ignoring '%s' in bridge with %s",
+                req.method,
+                req.params,
+            )
             return JsonRpcResponse(
-                None, vdsmexception.RecoveryInProgress(), req.id)
+                None, vdsmexception.RecoveryInProgress(), req.id
+            )
 
-        self.log.log(logLevel, "Calling '%s' in bridge with %s",
-                     req.method, req.params)
+        self.log.log(
+            logLevel, "Calling '%s' in bridge with %s", req.method, req.params
+        )
         try:
             method = self._bridge.dispatch(req.method)
         except exception.JsonRpcMethodNotFoundError as e:
@@ -340,11 +352,13 @@ class JsonRpcServer(object):
         except Exception as e:
             self.log.exception("Internal server error")
             return JsonRpcResponse(
-                None, exception.JsonRpcInternalError(str(e)), req.id)
+                None, exception.JsonRpcInternalError(str(e)), req.id
+            )
         else:
             res = True if res is None else res
-            self.log.log(logLevel, "Return '%s' in bridge with %s",
-                         req.method, res)
+            self.log.log(
+                logLevel, "Return '%s' in bridge with %s", req.method, res
+            )
             if isinstance(res, Suppressed):
                 res = res.value
             return JsonRpcResponse(res, None, req.id)
@@ -367,8 +381,9 @@ class JsonRpcServer(object):
         try:
             rawRequests = json.loads(msg)
         except:
-            ctx.addResponse(JsonRpcResponse(
-                None, exception.JsonRpcParseError(), None))
+            ctx.addResponse(
+                JsonRpcResponse(None, exception.JsonRpcParseError(), None)
+            )
             ctx.sendReply()
             return
 
@@ -377,9 +392,13 @@ class JsonRpcServer(object):
             if len(rawRequests) == 0:
                 ctx.addResponse(
                     JsonRpcResponse(
-                        None, exception.JsonRpcInvalidRequestError(
-                            "request batch is empty", request=rawRequests),
-                        None))
+                        None,
+                        exception.JsonRpcInvalidRequestError(
+                            "request batch is empty", request=rawRequests
+                        ),
+                        None,
+                    )
+                )
                 ctx.sendReply()
                 return
         else:
@@ -395,8 +414,11 @@ class JsonRpcServer(object):
             except vdsmexception.VdsmException as err:
                 ctx.addResponse(JsonRpcResponse(None, err, None))
             except:
-                ctx.addResponse(JsonRpcResponse(
-                    None, exception.JsonRpcInternalError(), None))
+                ctx.addResponse(
+                    JsonRpcResponse(
+                        None, exception.JsonRpcInternalError(), None
+                    )
+                )
 
         ctx.setRequests(requests)
 
@@ -422,10 +444,8 @@ class JsonRpcServer(object):
                 ctx.requestDone(
                     JsonRpcResponse(
                         None,
-                        exception.JsonRpcInternalError(
-                            str(e)
-                        ),
-                        request.id
+                        exception.JsonRpcInternalError(str(e)),
+                        request.id,
                     )
                 )
 

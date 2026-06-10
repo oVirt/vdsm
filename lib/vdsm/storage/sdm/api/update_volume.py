@@ -17,5 +17,6 @@ class Job(base.Job):
 
     def _run(self):
         with guarded.context(self._endpoint.locks):
-            self._endpoint.volume.update_attributes(self._endpoint.generation,
-                                                    self._vol_attr)
+            self._endpoint.volume.update_attributes(
+                self._endpoint.generation, self._vol_attr
+            )

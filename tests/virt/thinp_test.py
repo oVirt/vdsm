@@ -216,7 +216,7 @@ def make_drive(log, index, **param_dict):
 
 
 def drive_config(**kw):
-    """ Return drive configuration updated from **kw """
+    """Return drive configuration updated from **kw"""
     conf = {
         'device': 'disk',
         'format': 'cow',

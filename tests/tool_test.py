@@ -34,11 +34,11 @@ LibvirtConnectionConfig = libvirt._LibvirtConnectionConfig
 # helpers
 def _setConfig(obj, *configurations):
     for file_, type_ in configurations:
-        with open(os.path.join(dirName,
-                               'toolTests_%s.conf' % type_)) as template:
+        with open(
+            os.path.join(dirName, 'toolTests_%s.conf' % type_)
+        ) as template:
             data = template.read()
-            data = data % {
-                'LATEST_CONF_VERSION': libvirt.CONF_VERSION}
+            data = data % {'LATEST_CONF_VERSION': libvirt.CONF_VERSION}
         with open(obj.test_env[file_], 'w') as testConf:
             testConf.write(data)
 
@@ -82,15 +82,14 @@ def patchConfigurators(mockConfigurers):
     return monkeypatch.MonkeyPatch(
         configurator,
         '_CONFIGURATORS',
-        dict((m.name, m) for m in mockConfigurers))
+        dict((m.name, m) for m in mockConfigurers),
+    )
 
 
 class PasswdConfiguratorTest(VdsmTestCase):
     def testCheckIsConfiguredNo(self):
         with tempfile.NamedTemporaryFile(mode='w+') as f:
-            f.write("\n"
-                    "\n"
-                    "mech_list: gssapi\n")
+            f.write("\n" "\n" "mech_list: gssapi\n")
             f.flush()
 
             passwd._SASL2_CONF = f.name
@@ -140,9 +139,7 @@ class ConfiguratorTests(VdsmTestCase):
     )
     def testDependencyCircle(self):
         self.assertRaises(
-            RuntimeError,
-            configurator._parse_args,
-            'validate-config'
+            RuntimeError, configurator._parse_args, 'validate-config'
         )
 
     @patchConfigurators(
@@ -183,8 +180,7 @@ class ConfiguratorTests(VdsmTestCase):
     )
     def testDependenciesAdditionPositive(self):
         modules = configurator._parse_args(
-            'validate-config',
-            '--module=a'
+            'validate-config', '--module=a'
         ).modules
         modulesNames = [m.name for m in modules]
         self.assertTrue('a' in modulesNames)
@@ -201,8 +197,7 @@ class ConfiguratorTests(VdsmTestCase):
     def testDependenciesAdditionNegative(self):
 
         modules = configurator._parse_args(
-            'validate-config',
-            '--module=a'
+            'validate-config', '--module=a'
         ).modules
         moduleNames = [m.name for m in modules]
         self.assertTrue('a' in moduleNames)
@@ -221,16 +216,17 @@ class ConfiguratorTests(VdsmTestCase):
             UsageError,
             configurator._parse_args,
             'validate-config',
-            '--module=multipath'
+            '--module=multipath',
         )
 
     def testConfigureFiltering(self):
         class Dummy(object):
             pass
+
         c = Dummy()
         setattr(c, 'name', "Mock")
 
-        for (isconfigured, isvalid, force, expected) in (
+        for isconfigured, isvalid, force, expected in (
             (YES, True, True, False),
             (YES, True, False, False),
             (YES, False, True, InvalidConfig),
@@ -248,13 +244,11 @@ class ConfiguratorTests(VdsmTestCase):
             setattr(c, 'validate', lambda: isvalid)
             if isinstance(expected, bool):
                 self.assertEqual(
-                    configurator._should_configure(c, force),
-                    expected
+                    configurator._should_configure(c, force), expected
                 )
             else:
                 self.assertRaises(
-                    InvalidConfig,
-                    configurator._should_configure, c, force
+                    InvalidConfig, configurator._should_configure, c, force
                 )
 
 
@@ -266,9 +260,11 @@ class ExposedFunctionsTests(VdsmTestCase):
             "a": MockModuleConfigurator("a"),
             "b": MockModuleConfigurator("b"),
         }
-        self.patch = monkeypatch.Patch([
-            (configurator, "_CONFIGURATORS", configurators),
-        ])
+        self.patch = monkeypatch.Patch(
+            [
+                (configurator, "_CONFIGURATORS", configurators),
+            ]
+        )
         self.patch.apply()
 
     def tearDown(self):
@@ -295,32 +291,38 @@ class ExposedFunctionsFailuresTests(VdsmTestCase):
             "a": MockModuleConfigurator("a", should_succeed=False),
             "b": MockModuleConfigurator("b", should_succeed=False),
         }
-        self.patch = monkeypatch.Patch([
-            (configurator, "_CONFIGURATORS", configurators),
-        ])
+        self.patch = monkeypatch.Patch(
+            [
+                (configurator, "_CONFIGURATORS", configurators),
+            ]
+        )
         self.patch.apply()
 
     def tearDown(self):
         self.patch.revert()
 
     def test_validate_config(self):
-        self.assertRaises(InvalidConfig, configurator.validate_config,
-                          "validate-config")
+        self.assertRaises(
+            InvalidConfig, configurator.validate_config, "validate-config"
+        )
 
     def test_isconfigured(self):
-        self.assertRaises(InvalidRun, configurator.isconfigured,
-                          "is-configured")
+        self.assertRaises(
+            InvalidRun, configurator.isconfigured, "is-configured"
+        )
 
     def test_configure(self):
         # Using --force to avoid validation
-        self.assertRaises(InvalidRun, configurator.configure,
-                          "configure", "--force")
+        self.assertRaises(
+            InvalidRun, configurator.configure, "configure", "--force"
+        )
 
     # remove_config writes errors to stderr, breaking progress display
     @monkeypatch.MonkeyPatch(sys, 'stderr', sys.stdout)
     def test_remove_config(self):
-        self.assertRaises(InvalidRun, configurator.remove_config,
-                          "remove-config")
+        self.assertRaises(
+            InvalidRun, configurator.remove_config, "remove-config"
+        )
 
 
 class LibvirtModuleConfigureTests(TestCase):
@@ -343,39 +345,22 @@ class LibvirtModuleConfigureTests(TestCase):
             if not key == 'VDSM_CONF':
                 FakeLibvirtFiles[key]['path'] = val
 
-        _setConfig(self,
-                   ('QLCONF', 'libvirtd'),
-                   ('LDCONF', 'qemu_sanlock'),
-                   )
+        _setConfig(
+            self,
+            ('QLCONF', 'libvirtd'),
+            ('LDCONF', 'qemu_sanlock'),
+        )
         self.vdsm_cfg = make_config(())
 
-        self.patch = monkeypatch.Patch([
-            (
-                os,
-                'getuid',
-                lambda: 0
-            ),
-            (
-                libvirt,
-                'config',
-                self.vdsm_cfg
-            ),
-            (
-                libvirt,
-                'FILES',
-                FakeLibvirtFiles
-            ),
-            (
-                cpuarch,
-                'real',
-                lambda: cpuarch.X86_64
-            ),
-            (
-                cpuinfo,
-                'flags',
-                lambda: ['pdpe1gb']
-            ),
-        ])
+        self.patch = monkeypatch.Patch(
+            [
+                (os, 'getuid', lambda: 0),
+                (libvirt, 'config', self.vdsm_cfg),
+                (libvirt, 'FILES', FakeLibvirtFiles),
+                (cpuarch, 'real', lambda: cpuarch.X86_64),
+                (cpuinfo, 'flags', lambda: ['pdpe1gb']),
+            ]
+        )
 
         self.patch.apply()
 
@@ -387,10 +372,11 @@ class LibvirtModuleConfigureTests(TestCase):
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     def testValidatePositive(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
+        )
 
         self.assertTrue(libvirt.validate())
 
@@ -398,10 +384,11 @@ class LibvirtModuleConfigureTests(TestCase):
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     def testValidateNegative(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
+        )
 
         self.assertFalse(libvirt.validate())
 
@@ -409,132 +396,137 @@ class LibvirtModuleConfigureTests(TestCase):
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled', lambda _: True)
     def testIsConfiguredPositive(self):
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
-        self.assertEqual(
-            libvirt.isconfigured(),
-            MAYBE
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
         )
+        self.assertEqual(libvirt.isconfigured(), MAYBE)
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled', lambda _: True)
     def testIsConfiguredNegative(self):
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'empty'),
-                   )
-        self.assertEqual(
-            libvirt.isconfigured(),
-            NO
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'empty'),
         )
+        self.assertEqual(libvirt.isconfigured(), NO)
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
-                             lambda u: u != libvirt._LIBVIRT_TCP_SOCKET_UNIT)
+    @monkeypatch.MonkeyPatch(
+        libvirt,
+        '_unit_enabled',
+        lambda u: u != libvirt._LIBVIRT_TCP_SOCKET_UNIT,
+    )
     def testIsConfiguredTcpSocketDisabled(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
-        self.assertEqual(
-            libvirt.isconfigured(),
-            NO
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
         )
+        self.assertEqual(libvirt.isconfigured(), NO)
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
-                             lambda u: u == libvirt._LIBVIRT_TCP_SOCKET_UNIT)
+    @monkeypatch.MonkeyPatch(
+        libvirt,
+        '_unit_enabled',
+        lambda u: u == libvirt._LIBVIRT_TCP_SOCKET_UNIT,
+    )
     def testIsConfiguredTcpSocketEnabled(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
-        self.assertEqual(
-            libvirt.isconfigured(),
-            MAYBE
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
         )
+        self.assertEqual(libvirt.isconfigured(), MAYBE)
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
-                             lambda: LibvirtConnectionConfig(
-                                 auth_tcp='',
-                                 spice_tls=0))
-    @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
-                             lambda u: u != libvirt._LIBVIRT_TLS_SOCKET_UNIT)
+    @monkeypatch.MonkeyPatch(
+        libvirt,
+        '_read_libvirt_connection_config',
+        lambda: LibvirtConnectionConfig(auth_tcp='', spice_tls=0),
+    )
+    @monkeypatch.MonkeyPatch(
+        libvirt,
+        '_unit_enabled',
+        lambda u: u != libvirt._LIBVIRT_TLS_SOCKET_UNIT,
+    )
     def testIsConfiguredTlsSocketDisabled(self):
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
-        self.assertEqual(
-            libvirt.isconfigured(),
-            NO
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
         )
+        self.assertEqual(libvirt.isconfigured(), NO)
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
-                             lambda: LibvirtConnectionConfig(
-                                 auth_tcp='',
-                                 spice_tls=0))
-    @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
-                             lambda u: u == libvirt._LIBVIRT_TLS_SOCKET_UNIT)
+    @monkeypatch.MonkeyPatch(
+        libvirt,
+        '_read_libvirt_connection_config',
+        lambda: LibvirtConnectionConfig(auth_tcp='', spice_tls=0),
+    )
+    @monkeypatch.MonkeyPatch(
+        libvirt,
+        '_unit_enabled',
+        lambda u: u == libvirt._LIBVIRT_TLS_SOCKET_UNIT,
+    )
     def testIsConfiguredTlsSocketEnabled(self):
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
-        self.assertEqual(
-            libvirt.isconfigured(),
-            MAYBE
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
         )
+        self.assertEqual(libvirt.isconfigured(), MAYBE)
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
     def testLibvirtConfigureShouldEnableTcpSocket(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
+        )
 
         libvirt.configure()
-        systemctl.enable.assert_has_calls([
-            mock.call(libvirt._LIBVIRT_TCP_SOCKET_UNIT)
-        ])
+        systemctl.enable.assert_has_calls(
+            [mock.call(libvirt._LIBVIRT_TCP_SOCKET_UNIT)]
+        )
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
     def testLibvirtConfigureShouldEnableTlsSocket(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
+        )
 
         libvirt.configure()
-        systemctl.enable.assert_has_calls([
-            mock.call(libvirt._LIBVIRT_TLS_SOCKET_UNIT)
-        ])
+        systemctl.enable.assert_has_calls(
+            [mock.call(libvirt._LIBVIRT_TLS_SOCKET_UNIT)]
+        )
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
     def testLibvirtConfigureSysconfigWithSocketActivation(self):
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
+        _setConfig(
+            self,
+            ('LCONF', 'lconf_ssl'),
+            ('QCONF', 'qemu_ssl'),
+        )
         libvirt.configure()
 
         with open(self.test_env['LDCONF']) as f:
@@ -554,22 +546,17 @@ class LibvirtModuleConfigureTests(TestCase):
         libvirt._unit_enabled = lambda name: name in enabled_units
 
         self.vdsm_cfg.set('vars', 'ssl', 'true')
-        _setConfig(self,
-                   ('LCONF', 'empty'),
-                   ('QCONF', 'empty'),
-                   )
-
-        self.assertEqual(
-            libvirt.isconfigured(),
-            NO
+        _setConfig(
+            self,
+            ('LCONF', 'empty'),
+            ('QCONF', 'empty'),
         )
+
+        self.assertEqual(libvirt.isconfigured(), NO)
 
         libvirt.configure()
 
-        self.assertEqual(
-            libvirt.isconfigured(),
-            MAYBE
-        )
+        self.assertEqual(libvirt.isconfigured(), MAYBE)
 
     @brokentest(reason="needs pytest rewrite")
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
@@ -582,44 +569,43 @@ class LibvirtModuleConfigureTests(TestCase):
         libvirt._unit_enabled = lambda name: name in enabled_units
 
         self.vdsm_cfg.set('vars', 'ssl', 'false')
-        _setConfig(self,
-                   ('LCONF', 'empty'),
-                   ('QCONF', 'empty'),
-                   )
-        self.assertEqual(
-            libvirt.isconfigured(),
-            NO
+        _setConfig(
+            self,
+            ('LCONF', 'empty'),
+            ('QCONF', 'empty'),
         )
+        self.assertEqual(libvirt.isconfigured(), NO)
 
         libvirt.configure()
 
-        self.assertEqual(
-            libvirt.isconfigured(),
-            MAYBE
-        )
+        self.assertEqual(libvirt.isconfigured(), MAYBE)
 
     def test_hugetlbfs_mount_false(self):
-        path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
-                                         'toolTests_mtab_nohugetlbfs')
+        path_to_fake_mtab = os.path.join(
+            self.srcPath, 'tests', 'toolTests_mtab_nohugetlbfs'
+        )
 
         self.assertFalse(libvirt._is_hugetlbfs_1g_mounted(path_to_fake_mtab))
 
     def test_hugetlbfs_mount_default(self):
-        path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
-                                         'toolTests_mtab_default')
+        path_to_fake_mtab = os.path.join(
+            self.srcPath, 'tests', 'toolTests_mtab_default'
+        )
 
         self.assertFalse(libvirt._is_hugetlbfs_1g_mounted(path_to_fake_mtab))
 
     @monkeypatch.MonkeyPatch(cpuarch, 'real', lambda: cpuarch.PPC64LE)
     def test_hugetlbfs_mount_default_ppc(self):
-        path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
-                                         'toolTests_mtab_default')
+        path_to_fake_mtab = os.path.join(
+            self.srcPath, 'tests', 'toolTests_mtab_default'
+        )
 
         self.assertTrue(libvirt._is_hugetlbfs_1g_mounted(path_to_fake_mtab))
 
     def test_hugetlbfs_mount_1g(self):
-        path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
-                                         'toolTests_mtab_1g')
+        path_to_fake_mtab = os.path.join(
+            self.srcPath, 'tests', 'toolTests_mtab_1g'
+        )
 
         self.assertTrue(libvirt._is_hugetlbfs_1g_mounted(path_to_fake_mtab))
 
@@ -638,206 +624,242 @@ class ConfigFileTests(TestCase):
             f.write(text)
 
     def testAddExistingConf(self):
-        self._writeConf("key1=val1\n"
-                        "key2=val2"
-                        "#key3=val4")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf") as conf:
+        self._writeConf("key1=val1\n" "key2=val2" "#key3=val4")
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+        ) as conf:
             conf.addEntry("key3", "val3")
             conf.addEntry("key2", "val3")
 
         with open(self.tname, 'r') as f:
-            self.assertEqual(f.read(), "key1=val1\n"
-                                       "## commented out by vdsm\n"
-                                       "# key2=val2"
-                                       "#key3=val4\n"
-                                       "# start conf-3.4.4\n"
-                                       "key2=val3\n"
-                                       "key3=val3\n"
-                                       "# end conf-3.4.4\n")
+            self.assertEqual(
+                f.read(),
+                "key1=val1\n"
+                "## commented out by vdsm\n"
+                "# key2=val2"
+                "#key3=val4\n"
+                "# start conf-3.4.4\n"
+                "key2=val3\n"
+                "key3=val3\n"
+                "# end conf-3.4.4\n",
+            )
 
     def testAddCommentedoutConf(self):
-        self._writeConf("key1=val1\n"
-                        "#key3=val4")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf") as conf:
+        self._writeConf("key1=val1\n" "#key3=val4")
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+        ) as conf:
             conf.addEntry("key3", "val3")
             conf.addEntry("key2", "val3")
 
         with open(self.tname, 'r') as f:
-            self.assertEqual(f.read(), "key1=val1\n"
-                                       "#key3=val4"
-                                       "# start conf-3.4.4\n"
-                                       "key2=val3\n"
-                                       "key3=val3\n"
-                                       "# end conf-3.4.4\n")
+            self.assertEqual(
+                f.read(),
+                "key1=val1\n"
+                "#key3=val4"
+                "# start conf-3.4.4\n"
+                "key2=val3\n"
+                "key3=val3\n"
+                "# end conf-3.4.4\n",
+            )
 
     def testAddExistingConfWithWhitespaces(self):
-        self._writeConf("key1=val1\n"
-                        "    key2    =val2"
-                        "#key3=val4")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf") as conf:
+        self._writeConf("key1=val1\n" "    key2    =val2" "#key3=val4")
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+        ) as conf:
             conf.addEntry("key3", "val3")
             conf.addEntry("key2", "val3")
 
         with open(self.tname, 'r') as f:
-            self.assertEqual(f.read(), "key1=val1\n"
-                                       "## commented out by vdsm\n"
-                                       "#     key2    =val2"
-                                       "#key3=val4\n"
-                                       "# start conf-3.4.4\n"
-                                       "key2=val3\n"
-                                       "key3=val3\n"
-                                       "# end conf-3.4.4\n")
+            self.assertEqual(
+                f.read(),
+                "key1=val1\n"
+                "## commented out by vdsm\n"
+                "#     key2    =val2"
+                "#key3=val4\n"
+                "# start conf-3.4.4\n"
+                "key2=val3\n"
+                "key3=val3\n"
+                "# end conf-3.4.4\n",
+            )
 
     def testSort(self):
         self._writeConf("")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf") as conf:
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+        ) as conf:
             conf.addEntry("key3", "val")
             conf.addEntry("key2", "val")
             conf.addEntry("key1", "val")
             conf.addEntry("key4", "val")
 
         with open(self.tname, 'r') as f:
-            self.assertEqual(f.read(), "# start conf-3.4.4\n"
-                                       "key1=val\n"
-                                       "key2=val\n"
-                                       "key3=val\n"
-                                       "key4=val\n"
-                                       "# end conf-3.4.4\n")
+            self.assertEqual(
+                f.read(),
+                "# start conf-3.4.4\n"
+                "key1=val\n"
+                "key2=val\n"
+                "key3=val\n"
+                "key4=val\n"
+                "# end conf-3.4.4\n",
+            )
 
     def testEncoding(self):
         self._writeConf("")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf") as conf:
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+        ) as conf:
             conf.addEntry("key1", "\xd7\x99\xd7\xa0\xd7\x99\xd7\x91")
 
         with io.open(self.tname, 'r', encoding='utf8') as f:
-            self.assertEqual(f.read(),
-                             "# start conf-3.4.4\n"
-                             "key1=\xd7\x99\xd7\xa0\xd7\x99\xd7\x91\n"
-                             "# end conf-3.4.4\n")
+            self.assertEqual(
+                f.read(),
+                "# start conf-3.4.4\n"
+                "key1=\xd7\x99\xd7\xa0\xd7\x99\xd7\x91\n"
+                "# end conf-3.4.4\n",
+            )
 
     def testPrefixAndPrepend(self):
-        self._writeConf("/var/log/libvirt/libvirtd.log {\n"
-                        "        weekly\n"
-                        "}\n")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf",
-                        prefix="# comment ") as conf:
+        self._writeConf(
+            "/var/log/libvirt/libvirtd.log {\n" "        weekly\n" "}\n"
+        )
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+            prefix="# comment ",
+        ) as conf:
             conf.prefixLines()
-            conf.prependSection(u"Some text to\n"
-                                "add at the top\n")
+            conf.prependSection(u"Some text to\n" "add at the top\n")
         with open(self.tname, 'r') as f:
-            self.assertEqual(f.read(),
-                             "# start conf-3.4.4\n"
-                             "Some text to\n"
-                             "add at the top\n"
-                             "# end conf-3.4.4\n"
-                             "# comment /var/log/libvirt/libvirtd.log {\n"
-                             "# comment         weekly\n"
-                             "# comment }\n")
+            self.assertEqual(
+                f.read(),
+                "# start conf-3.4.4\n"
+                "Some text to\n"
+                "add at the top\n"
+                "# end conf-3.4.4\n"
+                "# comment /var/log/libvirt/libvirtd.log {\n"
+                "# comment         weekly\n"
+                "# comment }\n",
+            )
 
     def testPrefixIdempotencey(self):
-        original = (
-            "/var/log/libvirt/libvirtd.log {\n"
-            "        weekly\n"
-            "}\n"
-        )
+        original = "/var/log/libvirt/libvirtd.log {\n" "        weekly\n" "}\n"
         self._writeConf(original)
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf",
-                        prefix="# comment ") as conf:
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+            prefix="# comment ",
+        ) as conf:
             conf.prefixLines()
         with open(self.tname, 'r') as f:
-            self.assertEqual(f.read(),
-                             "# comment /var/log/libvirt/libvirtd.log {\n"
-                             "# comment         weekly\n"
-                             "# comment }\n")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf",
-                        prefix="# comment ") as conff:
+            self.assertEqual(
+                f.read(),
+                "# comment /var/log/libvirt/libvirtd.log {\n"
+                "# comment         weekly\n"
+                "# comment }\n",
+            )
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+            prefix="# comment ",
+        ) as conff:
             conff.unprefixLines()
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(), original)
 
     def testRemoveEntireLinePrefix(self):
         self._writeConf("# comment\n")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf",
-                        prefix="# comment") as conf:
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+            prefix="# comment",
+        ) as conf:
             conf.unprefixLines()
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(), "\n")
 
     def testRemoveConfSection(self):
-        self._writeConf("key=val\n"
-                        "remove me!(see 'Backward compatibility')# by vdsm\n"
-                        "key=val\n"
-                        "# start conf-text-here don't matter\n"
-                        "all you sections are belong to us\n"
-                        "# end conf-text-here don't matter\n"
-                        "# comment line\n")
-        with ConfigFile(self.tname,
-                        version='3.4.4',
-                        sectionStart="# start conf",
-                        sectionEnd="# end conf",
-                        prefix="# comment") as conf:
+        self._writeConf(
+            "key=val\n"
+            "remove me!(see 'Backward compatibility')# by vdsm\n"
+            "key=val\n"
+            "# start conf-text-here don't matter\n"
+            "all you sections are belong to us\n"
+            "# end conf-text-here don't matter\n"
+            "# comment line\n"
+        )
+        with ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+            prefix="# comment",
+        ) as conf:
             conf.removeConf()
         with open(self.tname, 'r') as f:
-            self.assertEqual(f.read(), "key=val\n"
-                                       "key=val\n"
-                                       "# comment line\n")
+            self.assertEqual(
+                f.read(), "key=val\n" "key=val\n" "# comment line\n"
+            )
 
     def testOutOfContext(self):
-        conff = ConfigFile(self.tname,
-                           version='3.4.4',
-                           sectionStart="# start conf",
-                           sectionEnd="# end conf")
+        conff = ConfigFile(
+            self.tname,
+            version='3.4.4',
+            sectionStart="# start conf",
+            sectionEnd="# end conf",
+        )
         self.assertRaises(RuntimeError, conff.prefixLines)
         self.assertRaises(RuntimeError, conff.removeConf)
 
     def testHasConf(self):
-        self._writeConf("key=val\n"
-                        "kay=val\n"
-                        "# start conf-3.4.4\n"
-                        "all you sections are belong to us\n"
-                        "# end conf-3.4.4\n")
-        self.assertTrue(ConfigFile(self.tname,
-                                   version='3.4.4',
-                                   sectionStart="# start conf",
-                                   sectionEnd="# end conf").hasConf())
+        self._writeConf(
+            "key=val\n"
+            "kay=val\n"
+            "# start conf-3.4.4\n"
+            "all you sections are belong to us\n"
+            "# end conf-3.4.4\n"
+        )
+        self.assertTrue(
+            ConfigFile(
+                self.tname,
+                version='3.4.4',
+                sectionStart="# start conf",
+                sectionEnd="# end conf",
+            ).hasConf()
+        )
 
     def testConfRead(self):
-        self._writeConf("key=val\n"
-                        "key1=val1\n")
+        self._writeConf("key=val\n" "key1=val1\n")
         conff = ParserWrapper(None)
         conff.read(self.tname)
         self.assertEqual(conff.get('key'), 'val')
 
     def testConfDefaults(self):
-        self._writeConf("key=val\n"
-                        "key1=val1\n")
+        self._writeConf("key=val\n" "key1=val1\n")
         conff = ParserWrapper({'key2': 'val2'})
         conff.read(self.tname)
         self.assertEqual(conff.get('key2'), 'val2')
@@ -852,10 +874,9 @@ class UpgradeTests(TestCase):
             self.invocations = 0
 
         def extendArgParser(self, ap):
-            ap.add_argument('--foo',
-                            dest='foo',
-                            default=False,
-                            action='store_true')
+            ap.add_argument(
+                '--foo', dest='foo', default=False, action='store_true'
+            )
 
         def run(self, ns, args):
             self.invocations += 1
@@ -871,8 +892,9 @@ class UpgradeTests(TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
-        self.patch = monkeypatch.Patch([(upgrade, 'P_VDSM_LIB',
-                                         self.temp_dir)])
+        self.patch = monkeypatch.Patch(
+            [(upgrade, 'P_VDSM_LIB', self.temp_dir)]
+        )
         os.mkdir(os.path.join(self.temp_dir, 'upgrade'))
         self.patch.apply()
 

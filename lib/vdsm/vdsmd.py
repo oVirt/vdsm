@@ -39,12 +39,11 @@ from vdsm.storage.hsm import HSM
 from vdsm.storage.dispatcher import Dispatcher
 from vdsm.virt import periodic
 
-
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 
 
 class FatalError(Exception):
-    """ Raised when vdsm fail to start """
+    """Raised when vdsm fail to start"""
 
 
 def serve_clients(log):
@@ -66,8 +65,7 @@ def serve_clients(log):
             # pylint: disable=no-member
             # TODO remove when side effect removed from HSM.__init__ and
             # initialize it in line #63
-            irs.spmStop(
-                irs.getConnectedStoragePoolsList()['poollist'][0])
+            irs.spmStop(irs.getConnectedStoragePoolsList()['poollist'][0])
 
     sigutils.register()
     signal.signal(signal.SIGTERM, sigtermHandler)
@@ -85,11 +83,13 @@ def serve_clients(log):
             except:
                 panic("Error initializing IRS")
 
-        scheduler = schedule.Scheduler(name="vdsm.Scheduler",
-                                       clock=time.monotonic_time)
+        scheduler = schedule.Scheduler(
+            name="vdsm.Scheduler", clock=time.monotonic_time
+        )
         scheduler.start()
 
         from vdsm.clientIF import clientIF  # must import after config is read
+
         cif = clientIF.getInstance(irs, log, scheduler)
 
         jobs.start(scheduler, cif)
@@ -138,9 +138,13 @@ def run():
         log.handlers.append(logging.StreamHandler())
 
         sysname, nodename, release, version, machine = os.uname()
-        log.info('(PID: %s) I am the actual vdsm %s %s (%s)',
-                 os.getpid(), dsaversion.raw_version_revision, nodename,
-                 release)
+        log.info(
+            '(PID: %s) I am the actual vdsm %s %s (%s)',
+            os.getpid(),
+            dsaversion.raw_version_revision,
+            nodename,
+            release,
+        )
 
         try:
             __set_cpu_affinity()
@@ -184,8 +188,14 @@ def install_manhole(locals):
     #                     stderr.
 
     path = os.path.join(constants.P_VDSM_RUN, 'vdsmd.manhole')
-    manhole.install(locals=locals, socket_path=path, daemon_connection=True,
-                    patch_fork=False, sigmask=None, redirect_stderr=False)
+    manhole.install(
+        locals=locals,
+        socket_path=path,
+        daemon_connection=True,
+        patch_fork=False,
+        sigmask=None,
+        redirect_stderr=False,
+    )
 
 
 def __assertLogPermission():
@@ -211,32 +221,42 @@ def __assertSingleInstance():
 def __assertVdsmUser():
     username = getpass.getuser()
     if username != constants.VDSM_USER:
-        raise FatalError("Not running as %r, trying to run as %r"
-                         % (constants.VDSM_USER, username))
+        raise FatalError(
+            "Not running as %r, trying to run as %r"
+            % (constants.VDSM_USER, username)
+        )
     group = grp.getgrnam(constants.VDSM_GROUP)
-    if (constants.VDSM_USER not in group.gr_mem) and \
-       (pwd.getpwnam(constants.VDSM_USER).pw_gid != group.gr_gid):
+    if (constants.VDSM_USER not in group.gr_mem) and (
+        pwd.getpwnam(constants.VDSM_USER).pw_gid != group.gr_gid
+    ):
         raise FatalError("Vdsm user is not in KVM group")
 
 
 def __assertVdsmHome():
     home = os.path.expanduser("~")
     if not os.access(home, os.F_OK | os.R_OK | os.W_OK | os.X_OK):
-        raise FatalError("Home directory: '%s' doesn't exist or doesn't "
-                         "have correct permissions" % home)
+        raise FatalError(
+            "Home directory: '%s' doesn't exist or doesn't "
+            "have correct permissions" % home
+        )
 
 
 def __assertSudoerPermissions():
     with tempfile.NamedTemporaryFile() as dst:
         # This cmd choice is arbitrary to validate that sudoers.d/50_vdsm file
         # is read properly
-        cmd = [constants.EXT_CHOWN, "%s:%s" %
-               (constants.VDSM_USER, constants.QEMU_PROCESS_GROUP), dst.name]
+        cmd = [
+            constants.EXT_CHOWN,
+            "%s:%s" % (constants.VDSM_USER, constants.QEMU_PROCESS_GROUP),
+            dst.name,
+        ]
         try:
             commands.run(cmd, sudo=True)
         except cmdutils.Error as e:
-            msg = ("Vdsm user could not manage to run sudo operation: "
-                   "(stderr: %s). Verify sudoer rules configuration" % e.err)
+            msg = (
+                "Vdsm user could not manage to run sudo operation: "
+                "(stderr: %s). Verify sudoer rules configuration" % e.err
+            )
             raise FatalError(msg)
 
 
@@ -256,8 +276,9 @@ def __set_cpu_affinity():
     if cpu_affinity.lower() == taskset.AUTOMATIC:
         cpu_set = frozenset((taskset.pick_cpu(online_cpus),))
     else:
-        cpu_set = frozenset(int(cpu.strip())
-                            for cpu in cpu_affinity.split(","))
+        cpu_set = frozenset(
+            int(cpu.strip()) for cpu in cpu_affinity.split(",")
+        )
 
     log.info('VDSM will run with cpu affinity: %s', cpu_set)
     taskset.set(os.getpid(), cpu_set, all_tasks=True)

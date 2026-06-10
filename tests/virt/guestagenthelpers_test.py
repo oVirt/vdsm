@@ -16,30 +16,31 @@ class GuestAgentHelpersTest(TestCaseBase):
         assert 'unknown' == guestagenthelpers.translate_arch('ia64')
 
     def test_translate_linux_osinfo(self):
-        assert guestagenthelpers.translate_linux_osinfo({}) == \
-            {
-                'guestOs': '',
-                'guestOsInfo': {
-                    'type': 'linux',
-                    'arch': 'unknown',
-                    'kernel': '',
-                    'distribution': '',
-                    'version': '',
-                    'codename': '',
-                },
+        assert guestagenthelpers.translate_linux_osinfo({}) == {
+            'guestOs': '',
+            'guestOsInfo': {
+                'type': 'linux',
+                'arch': 'unknown',
+                'kernel': '',
+                'distribution': '',
+                'version': '',
+                'codename': '',
+            },
         }
-        assert guestagenthelpers.translate_linux_osinfo({
-            "id": "some-id",
-            "kernel-release": "some-release",
-            "kernel-version": "some-version",
-            "machine": "x86_64",
-            "name": "some-name",
-            "pretty-name": "pretty name",
-            "variant": "my variant",
-            "variant-id": "some-variant",
-            "version": "123 my version",
-            "version-id": "123",
-        }) == {
+        assert guestagenthelpers.translate_linux_osinfo(
+            {
+                "id": "some-id",
+                "kernel-release": "some-release",
+                "kernel-version": "some-version",
+                "machine": "x86_64",
+                "name": "some-name",
+                "pretty-name": "pretty name",
+                "variant": "my variant",
+                "variant-id": "some-variant",
+                "version": "123 my version",
+                "version-id": "123",
+            }
+        ) == {
             'guestOs': 'some-release',
             'guestOsInfo': {
                 'type': 'linux',
@@ -52,30 +53,31 @@ class GuestAgentHelpersTest(TestCaseBase):
         }
 
     def test_translate_windows_osinfo(self):
-        assert guestagenthelpers.translate_windows_osinfo({}) == \
-            {
-                'guestOs': '',
-                'guestOsInfo': {
-                    'type': 'windows',
-                    'arch': 'unknown',
-                    'kernel': '',
-                    'distribution': '',
-                    'version': '',
-                    'codename': '',
-                },
+        assert guestagenthelpers.translate_windows_osinfo({}) == {
+            'guestOs': '',
+            'guestOsInfo': {
+                'type': 'windows',
+                'arch': 'unknown',
+                'kernel': '',
+                'distribution': '',
+                'version': '',
+                'codename': '',
+            },
         }
-        assert guestagenthelpers.translate_windows_osinfo({
-            "id": "some-id",
-            "kernel-release": "1234",
-            "kernel-version": "6.1",
-            "machine": "x86_64",
-            "name": "some-name",
-            "pretty-name": "Windows 7 Standard",
-            "variant": "client",
-            "variant-id": "client",
-            "version": "10",
-            "version-id": "10",
-        }) == {
+        assert guestagenthelpers.translate_windows_osinfo(
+            {
+                "id": "some-id",
+                "kernel-release": "1234",
+                "kernel-version": "6.1",
+                "machine": "x86_64",
+                "name": "some-name",
+                "pretty-name": "Windows 7 Standard",
+                "variant": "client",
+                "variant-id": "client",
+                "version": "10",
+                "version-id": "10",
+            }
+        ) == {
             'guestOs': 'Windows 7 Standard',
             'guestOsInfo': {
                 'type': 'windows',
@@ -88,14 +90,16 @@ class GuestAgentHelpersTest(TestCaseBase):
         }
 
     def test_translate_fsinfo(self):
-        assert guestagenthelpers.translate_fsinfo({
-            'name': 'dm-3',
-            'used-bytes': 123,
-            'total-bytes': 456,
-            'mountpoint': '/home',
-            'disk': [],
-            'type': 'ext4',
-        }) == {
+        assert guestagenthelpers.translate_fsinfo(
+            {
+                'name': 'dm-3',
+                'used-bytes': 123,
+                'total-bytes': 456,
+                'mountpoint': '/home',
+                'disk': [],
+                'type': 'ext4',
+            }
+        ) == {
             'fs': 'ext4',
             'path': '/home',
             'total': '456',
@@ -103,18 +107,20 @@ class GuestAgentHelpersTest(TestCaseBase):
         }
 
     def test_translate_pci_device_iso_date(self):
-        assert guestagenthelpers.translate_pci_device({
-            'driver-date': '2019-08-12',
-            'driver-name': 'Red Hat VirtIO Ethernet Adapter',
-            'driver-version': '100.80.104.17300',
-            'address': {
-                'type': 'pci',
-                'data': {
-                    'device-id': 4096,
-                    'vendor-id': 6900,
-                }
+        assert guestagenthelpers.translate_pci_device(
+            {
+                'driver-date': '2019-08-12',
+                'driver-name': 'Red Hat VirtIO Ethernet Adapter',
+                'driver-version': '100.80.104.17300',
+                'address': {
+                    'type': 'pci',
+                    'data': {
+                        'device-id': 4096,
+                        'vendor-id': 6900,
+                    },
+                },
             }
-        }) == {
+        ) == {
             'device_id': 4096,
             'driver_date': '2019-08-12',
             'driver_name': 'Red Hat VirtIO Ethernet Adapter',
@@ -123,16 +129,18 @@ class GuestAgentHelpersTest(TestCaseBase):
         }
 
     def test_translate_pci_device_timestamp(self):
-        assert guestagenthelpers.translate_pci_device({
-            'driver-date': 1565568000000000000,
-            'driver-name': 'Red Hat VirtIO Ethernet Adapter',
-            'driver-version': '100.80.104.17300',
-            'id': {
-                'type': 'pci',
-                'device-id': 4096,
-                'vendor-id': 6900,
+        assert guestagenthelpers.translate_pci_device(
+            {
+                'driver-date': 1565568000000000000,
+                'driver-name': 'Red Hat VirtIO Ethernet Adapter',
+                'driver-version': '100.80.104.17300',
+                'id': {
+                    'type': 'pci',
+                    'device-id': 4096,
+                    'vendor-id': 6900,
+                },
             }
-        }) == {
+        ) == {
             'device_id': 4096,
             'driver_date': '2019-08-12',
             'driver_name': 'Red Hat VirtIO Ethernet Adapter',

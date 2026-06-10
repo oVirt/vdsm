@@ -31,7 +31,7 @@ def child_test(*args):
     proc = subprocess.Popen(
         [sys.executable, "-u", CHILD_SCRIPT] + list(args),
         stdout=subprocess.PIPE,
-        cwd=os.path.dirname(__file__)
+        cwd=os.path.dirname(__file__),
     )
     try:
         yield proc

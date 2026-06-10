@@ -29,16 +29,20 @@ import pytest
 
 _NESTED_XML = (
     # spacing *IS* significant: here root.text is like '\n       '
-    (u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    (
+        u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
       <ovirt-vm:root type="unknown">
         <ovirt-vm:leaf type="int">42</ovirt-vm:leaf>
       </ovirt-vm:root>
-    </ovirt-vm:vm>''',),
+    </ovirt-vm:vm>''',
+    ),
     # spacing *IS* significant: here root.text is None
-    (u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    (
+        u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
 <ovirt-vm:root type="unknown"><ovirt-vm:leaf type="int">42</ovirt-vm:leaf>
       </ovirt-vm:root>
-    </ovirt-vm:vm>''',),
+    </ovirt-vm:vm>''',
+    ),
 )
 
 
@@ -48,13 +52,15 @@ class MetadataTests(XMLTestCase):
     def setUp(self):
         self.md = metadata.Metadata()
 
-    @permutations([
-        # custom
-        [{'none': None}],
-        [{'dict': {}}],
-        [{'list': []}],
-        [{'set': set()}],
-    ])
+    @permutations(
+        [
+            # custom
+            [{'none': None}],
+            [{'dict': {}}],
+            [{'list': []}],
+            [{'set': set()}],
+        ]
+    )
     def test_unsupported_types(self, custom):
         with pytest.raises(metadata.UnsupportedType):
             self.md.dump('test', **custom)
@@ -62,9 +68,7 @@ class MetadataTests(XMLTestCase):
     def test_unsupported_type_dump_key_in_exception(self):
         KEY = "versions"
         data = {KEY: set()}
-        metadata_obj = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
-        )
+        metadata_obj = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
         try:
             metadata_obj.dump('test', **data)
         except metadata.UnsupportedType as exc:
@@ -72,17 +76,19 @@ class MetadataTests(XMLTestCase):
         else:
             raise AssertionError('dump() did not raise!')
 
-    @permutations([
-        # custom
-        [{}],
-        [{'str': 'a'}],
-        [{'int': 42}],
-        [{'float': 0.333}],
-        [{'bool': True}],
-        [{'bool2': False}],
-        [{'str': 'a', 'int': 42, 'float': 0.333, 'bool': True}],
-        [{'name': 'something'}],
-    ])
+    @permutations(
+        [
+            # custom
+            [{}],
+            [{'str': 'a'}],
+            [{'int': 42}],
+            [{'float': 0.333}],
+            [{'bool': True}],
+            [{'bool2': False}],
+            [{'str': 'a', 'int': 42, 'float': 0.333, 'bool': True}],
+            [{'name': 'something'}],
+        ]
+    )
     def test_roundtrip(self, custom):
         elem = self.md.dump('test', **custom)
         restored = self.md.load(elem)
@@ -92,98 +98,101 @@ class MetadataTests(XMLTestCase):
         test_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
           <ovirt-vm:version type="float">4.2</ovirt-vm:version>
         </ovirt-vm:vm>'''
-        metadata_obj = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
-        )
-        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == \
-            {'version': 4.2}
+        metadata_obj = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
+        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == {
+            'version': 4.2
+        }
 
     def test_dump_ns(self):
         expected_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
           <ovirt-vm:version type="float">4.2</ovirt-vm:version>
         </ovirt-vm:vm>'''
-        metadata_obj = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
-        )
+        metadata_obj = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
         self.assertXMLEqual(
             xmlutils.tostring(metadata_obj.dump('vm', version=4.2)),
-            expected_xml
+            expected_xml,
         )
 
-    @permutations([
-        # custom
-        [{}],
-        [{'version': 4.2}],
-        [{'mode': 'fast', 'version': 5.0}],
-    ])
+    @permutations(
+        [
+            # custom
+            [{}],
+            [{'version': 4.2}],
+            [{'mode': 'fast', 'version': 5.0}],
+        ]
+    )
     def test_create(self, custom):
         namespace = 'ovirt-vm'
         namespace_uri = 'http://ovirt.org/vm/1.0'
-        elem = metadata.create(
-            'vm', namespace, namespace_uri,
-            **custom
-        )
+        elem = metadata.create('vm', namespace, namespace_uri, **custom)
         metadata_obj = metadata.Metadata(namespace, namespace_uri)
         assert metadata_obj.load(elem) == custom
 
-    @permutations([
-        # elem_type
-        ['str'],
-        [None],
-    ])
+    @permutations(
+        [
+            # elem_type
+            ['str'],
+            [None],
+        ]
+    )
     def test_load_empty(self, elem_type):
         elem_spec = (
-            '' if elem_type is None else
-            'type="{elem_type}"'.format(elem_type=elem_type)
+            ''
+            if elem_type is None
+            else 'type="{elem_type}"'.format(elem_type=elem_type)
         )
         test_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
           <ovirt-vm:param {elem_spec}/>
-        </ovirt-vm:vm>'''.format(elem_spec=elem_spec)
-        metadata_obj = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        </ovirt-vm:vm>'''.format(
+            elem_spec=elem_spec
         )
-        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == \
-            {'param': ''}
+        metadata_obj = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
+        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == {
+            'param': ''
+        }
 
-    @permutations([
-        # elem_type
-        ['bool'],
-        ['int'],
-        ['float'],
-    ])
+    @permutations(
+        [
+            # elem_type
+            ['bool'],
+            ['int'],
+            ['float'],
+        ]
+    )
     def test_load_empty_not_string(self, elem_type):
         test_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
           <ovirt-vm:param type="{elem_type}" />
-        </ovirt-vm:vm>'''.format(elem_type=elem_type)
-        metadata_obj = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        </ovirt-vm:vm>'''.format(
+            elem_type=elem_type
         )
+        metadata_obj = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
         with pytest.raises(ValueError):
             metadata_obj.load(xmlutils.fromstring(test_xml))
 
-    @permutations([
-        # elem_type
-        ['str'],
-        [None],
-    ])
+    @permutations(
+        [
+            # elem_type
+            ['str'],
+            [None],
+        ]
+    )
     def test_roundtrip_empty(self, elem_type):
         elem_spec = (
-            '' if elem_type is None else
-            'type="{elem_type}"'.format(elem_type=elem_type)
+            ''
+            if elem_type is None
+            else 'type="{elem_type}"'.format(elem_type=elem_type)
         )
         test_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
           <ovirt-vm:param {elem_spec}/>
-        </ovirt-vm:vm>'''.format(elem_spec=elem_spec)
+        </ovirt-vm:vm>'''.format(
+            elem_spec=elem_spec
+        )
         expected_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
           <ovirt-vm:param />
         </ovirt-vm:vm>'''
 
-        metadata_src = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
-        )
-        metadata_dst = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
-        )
+        metadata_src = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
+        metadata_dst = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
         data = metadata_src.load(xmlutils.fromstring(test_xml))
         out_xml = xmlutils.tostring(metadata_dst.dump('vm', **data))
         self.assertXMLEqual(out_xml, expected_xml)
@@ -196,25 +205,28 @@ class MetadataTests(XMLTestCase):
           <ovirt-vm:item>42</ovirt-vm:item>
           <ovirt-vm:item>0.25</ovirt-vm:item>
         </ovirt-vm:sequence>'''
-        metadata_obj = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
-        )
+        metadata_obj = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
         self.assertXMLEqual(
             xmlutils.tostring(
                 metadata_obj.dump_sequence(
-                    'sequence', 'item', ('foo', 'bar', True, 42, 0.25,)
+                    'sequence',
+                    'item',
+                    (
+                        'foo',
+                        'bar',
+                        True,
+                        42,
+                        0.25,
+                    ),
                 )
             ),
-            expected_xml
+            expected_xml,
         )
 
     @permutations(_NESTED_XML)
     def test_skip_nested(self, test_xml):
-        metadata_obj = metadata.Metadata(
-            'ovirt-vm', 'http://ovirt.org/vm/1.0'
-        )
-        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == \
-            {}
+        metadata_obj = metadata.Metadata('ovirt-vm', 'http://ovirt.org/vm/1.0')
+        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == {}
 
 
 @expandPermutations
@@ -224,15 +236,22 @@ class DescriptorTests(XMLTestCase):
         # empty descriptor
         self.md_desc = metadata.Descriptor()
 
-    @permutations([
-        # snippet_xml, expected
-        ("<ovirt-vm:vm><ovirt-vm:foo>bar</ovirt-vm:foo></ovirt-vm:vm>",
-         True),
-        ("""<ovirt-vm:vm>
+    @permutations(
+        [
+            # snippet_xml, expected
+            (
+                "<ovirt-vm:vm><ovirt-vm:foo>bar</ovirt-vm:foo></ovirt-vm:vm>",
+                True,
+            ),
+            (
+                """<ovirt-vm:vm>
          <ovirt-vm:custom><ovirt-vm:foo>bar</ovirt-vm:foo></ovirt-vm:custom>
-         </ovirt-vm:vm>""", True),
-        ("", False),
-    ])
+         </ovirt-vm:vm>""",
+                True,
+            ),
+            ("", False),
+        ]
+    )
     def test_bool(self, snippet_xml, expected):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
@@ -240,7 +259,9 @@ class DescriptorTests(XMLTestCase):
   <metadata>
     {snippet}
   </metadata>
-</domain>""".format(snippet=snippet_xml)
+</domain>""".format(
+            snippet=snippet_xml
+        )
         md_desc = metadata.Descriptor.from_xml(test_xml)
         assert bool(md_desc) == expected
 
@@ -276,8 +297,7 @@ class DescriptorTests(XMLTestCase):
 </domain>"""
         md_desc = metadata.Descriptor.from_xml(test_xml)
         md_desc.add_custom({'bee': 'bop'})
-        assert md_desc.custom == \
-            {'foo': 'bar', 'bee': 'bop'}
+        assert md_desc.custom == {'foo': 'bar', 'bee': 'bop'}
 
     def test_load_overwrites_content(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
@@ -311,8 +331,7 @@ class DescriptorTests(XMLTestCase):
         dom = FakeDomain()
         self.md_desc.dump(dom)
         self.assertXMLEqual(
-            dom.xml.get(xmlconstants.METADATA_VM_VDSM_URI),
-            expected_xml
+            dom.xml.get(xmlconstants.METADATA_VM_VDSM_URI), expected_xml
         )
 
     def test_update_domain(self):
@@ -332,49 +351,60 @@ class DescriptorTests(XMLTestCase):
             vals['beer'] = 'cold'
         self.md_desc.dump(dom)
         self.assertXMLEqual(
-            dom.xml.get(xmlconstants.METADATA_VM_VDSM_URI),
-            expected_xml
+            dom.xml.get(xmlconstants.METADATA_VM_VDSM_URI), expected_xml
         )
 
-    @permutations([
-        # dom_xml, expected_dev
-        [None, {}],
-        ["<vm>"
-         "<device id='NOMATCH'>"
-         "<foobar type='int'>42</foobar>"
-         "</device>"
-         "</vm>",
-         {}],
-        ["<vm>"
-         "<device id='alias0'>"
-         "<foobar type='int'>42</foobar>"
-         "</device>"
-         "</vm>",
-         {'foobar': 42}],
-        ["<vm>"
-         "<device id='alias0'>"
-         "<foo type='int'>42</foo>"
-         "<beer type='bool'>true</beer>"
-         "</device>"
-         "</vm>",
-         {'foo': 42, 'beer': True}],
-    ])
+    @permutations(
+        [
+            # dom_xml, expected_dev
+            [None, {}],
+            [
+                "<vm>"
+                "<device id='NOMATCH'>"
+                "<foobar type='int'>42</foobar>"
+                "</device>"
+                "</vm>",
+                {},
+            ],
+            [
+                "<vm>"
+                "<device id='alias0'>"
+                "<foobar type='int'>42</foobar>"
+                "</device>"
+                "</vm>",
+                {'foobar': 42},
+            ],
+            [
+                "<vm>"
+                "<device id='alias0'>"
+                "<foo type='int'>42</foo>"
+                "<beer type='bool'>true</beer>"
+                "</device>"
+                "</vm>",
+                {'foo': 42, 'beer': True},
+            ],
+        ]
+    )
     def test_get_device(self, dom_xml, expected_dev):
         dom = FakeDomain.with_metadata(dom_xml)
         self.md_desc.load(dom)
         with self.md_desc.device(id='alias0') as dev:
             assert dev == expected_dev
 
-    @permutations([
-        # dom_xml
-        [None],
-        ["<vm>"
-         "<device id='alias0'>"
-         "<mode>12</mode>"
-         "<removeme>true</removeme>"
-         "</device>"
-         "</vm>"],
-    ])
+    @permutations(
+        [
+            # dom_xml
+            [None],
+            [
+                "<vm>"
+                "<device id='alias0'>"
+                "<mode>12</mode>"
+                "<removeme>true</removeme>"
+                "</device>"
+                "</vm>"
+            ],
+        ]
+    )
     def test_update_device(self, dom_xml):
         expected_res = {
             'flag': True,
@@ -389,11 +419,13 @@ class DescriptorTests(XMLTestCase):
         self.md_desc.dump(dom)
 
         # troubleshooting helper should the test fail
-        print(dom.metadata(
-            libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-            xmlconstants.METADATA_VM_VDSM_URI,
-            0
-        ))
+        print(
+            dom.metadata(
+                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                xmlconstants.METADATA_VM_VDSM_URI,
+                0,
+            )
+        )
         # our assertXMLEqual consider the order of XML attributes
         # significant, while according to XML spec is not.
         with self.md_desc.device(id='alias0') as dev:
@@ -415,7 +447,7 @@ class DescriptorTests(XMLTestCase):
         produced_xml = dom.metadata(
             libvirt.VIR_DOMAIN_METADATA_ELEMENT,
             xmlconstants.METADATA_VM_VDSM_URI,
-            0
+            0,
         )
         self.assertXMLEqual(produced_xml, expected_xml)
 
@@ -490,8 +522,10 @@ class DescriptorTests(XMLTestCase):
         </vm>'''
         dom = FakeDomain.with_metadata(dom_xml)
         self.md_desc.load(dom)
-        assert list(self.md_desc.all_devices(type='fancydev')) == \
-            [{'mode': 1}, {'mode': 2}]
+        assert list(self.md_desc.all_devices(type='fancydev')) == [
+            {'mode': 1},
+            {'mode': 2},
+        ]
 
     def test_all_devices_copy_data(self):
         dom_xml = u'''<vm>
@@ -508,8 +542,10 @@ class DescriptorTests(XMLTestCase):
         for dev in self.md_desc.all_devices(type='fancydev'):
             dev['mode'] = 3
 
-        assert list(self.md_desc.all_devices(type='fancydev')) == \
-            [{'mode': 1}, {'mode': 2}]
+        assert list(self.md_desc.all_devices(type='fancydev')) == [
+            {'mode': 1},
+            {'mode': 2},
+        ]
 
     def test_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -529,8 +565,7 @@ class DescriptorTests(XMLTestCase):
 </domain>'''
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(id='dev0') as dev:
-            assert dev == \
-                {'foo': 'bar', 'custom': {'baz': 42}}
+            assert dev == {'foo': 'bar', 'custom': {'baz': 42}}
 
     def test_multiple_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -553,8 +588,7 @@ class DescriptorTests(XMLTestCase):
         for dev_id in ('dev0', 'dev1'):
             with md_desc.device(id=dev_id) as dev:
                 found.append(dev.copy())
-        assert found == \
-            [{'foo': 'bar'}, {'number': 42}]
+        assert found == [{'foo': 'bar'}, {'number': 42}]
 
     def test_unknown_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -604,13 +638,12 @@ class DescriptorTests(XMLTestCase):
 </domain>'''
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(mac_address='00:1a:4a:16:20:30') as dev:
-            assert dev == \
-                {
-                    'custom': {
-                        'vnic_id': 'da688238-8b79-4a5f-9f0e-0b207463ff1f',
-                        'provider_type': 'EXTERNAL_NETWORK',
-                    },
-                }
+            assert dev == {
+                'custom': {
+                    'vnic_id': 'da688238-8b79-4a5f-9f0e-0b207463ff1f',
+                    'provider_type': 'EXTERNAL_NETWORK',
+                },
+            }
 
     def test_deeply_nested_metadata_preserved(self):
         conf = {
@@ -654,8 +687,9 @@ class DescriptorTests(XMLTestCase):
 
         desc = metadata.Descriptor()
         with desc.device(
-                devtype=conf['type'],
-                name=drivename.make(conf['iface'], conf['index'])) as dev:
+            devtype=conf['type'],
+            name=drivename.make(conf['iface'], conf['index']),
+        ) as dev:
             dev.update(conf)
         dom = FakeDomain()
         desc.dump(dom)
@@ -685,8 +719,9 @@ class DescriptorTests(XMLTestCase):
 </domain>"""
         desc = metadata.Descriptor.from_xml(source_xml)
         with desc.device(
-                devtype=conf['type'],
-                name=drivename.make(conf['iface'], conf['index'])) as dev:
+            devtype=conf['type'],
+            name=drivename.make(conf['iface'], conf['index']),
+        ) as dev:
             # test we ignore IO tune settings from metadata, should we
             # (unexpectedly) found it (see below to learn why)
             assert dev == {'specParams': {}}
@@ -716,8 +751,9 @@ class DescriptorTests(XMLTestCase):
 </domain>"""
         desc = metadata.Descriptor.from_xml(source_xml)
         with desc.device(
-                devtype=conf['type'],
-                name=drivename.make(conf['iface'], conf['index'])) as dev:
+            devtype=conf['type'],
+            name=drivename.make(conf['iface'], conf['index']),
+        ) as dev:
             # test we ignore IO tune settings from metadata, should we
             # (unexpectedly) found it (see below to learn why)
             assert dev == {'specParams': {}}
@@ -748,8 +784,10 @@ class SaveDeviceMetadataTests(XMLTestCase):
 
     def test_device_no_metadata(self):
         dev_map = common.empty_dev_map()
-        dev_map[hwclass.LEASE].append(lease.Device(
-            self.log, lease_id='l', sd_id='s', path='p', offset='0')
+        dev_map[hwclass.LEASE].append(
+            lease.Device(
+                self.log, lease_id='l', sd_id='s', path='p', offset='0'
+            )
         )
         common.save_device_metadata(self.md_desc, dev_map, self.log)
         self.assertXMLEqual(self.md_desc.to_xml(), self.EMPTY_XML)
@@ -818,7 +856,7 @@ class SaveDeviceMetadataTests(XMLTestCase):
                     'read_iops_sec': 100,
                     'read_bytes_sec': 0,
                     'write_iops_sec': 100,
-                    'total_bytes_sec': 0
+                    'total_bytes_sec': 0,
                 }
             },
             'iface': 'virtio',
@@ -892,7 +930,7 @@ class SaveDeviceMetadataTests(XMLTestCase):
                         u'openstack/content/0000': u'A',
                         u'openstack/latest/meta_data.json': u'B',
                         u'openstack/latest/user_data': u'C',
-                    }
+                    },
                 }
             },
             u'readonly': u'true',
@@ -900,7 +938,7 @@ class SaveDeviceMetadataTests(XMLTestCase):
             u'shared': u'false',
             u'device': u'cdrom',
             u'path': u'',
-            u'type': u'disk'
+            u'type': u'disk',
         }
         expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
 <ovirt-vm:device name="hdd" devtype="disk">
@@ -918,8 +956,7 @@ class SaveDeviceMetadataTests(XMLTestCase):
   </ovirt-vm:device>
 </ovirt-vm:vm>"""
         dev_map = common.empty_dev_map()
-        dev_map[hwclass.DISK].append(
-            storage.Drive(self.log, **payload_params))
+        dev_map[hwclass.DISK].append(storage.Drive(self.log, **payload_params))
         common.save_device_metadata(self.md_desc, dev_map, self.log)
         self.assertXMLEqual(self.md_desc.to_xml(), expected_xml)
 

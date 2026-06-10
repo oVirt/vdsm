@@ -35,8 +35,7 @@ def test_collisions():
     for obj in find_module_exceptions(storage_exception, GeneralException):
         codes[obj.code].append(obj.__name__)
 
-    problems = [(k, v) for k, v in codes.items()
-                if len(v) != 1 or k >= 5000]
+    problems = [(k, v) for k, v in codes.items() if len(v) != 1 or k >= 5000]
 
     assert not problems, "Duplicated or invalid exception code"
 
@@ -61,23 +60,23 @@ def test_info():
 
         # Instantiate the traversed exception object.
         e = obj(*args, **kwargs)
-        assert e.info() == {
-            "code": e.code,
-            "message": str(e)
-        }
+        assert e.info() == {"code": e.code, "message": str(e)}
 
 
 def test_LogicalVolumeDoesNotExistError():
     # Expected error type is LVMCommandError.
     with pytest.raises(TypeError):
         e = storage_exception.LogicalVolumeDoesNotExistError(
-            "vg-name", "lv-name", error="error")
+            "vg-name", "lv-name", error="error"
+        )
 
     # Correct initialization.
     fake_error = storage_exception.LVMCommandError(
-        rc=5, cmd=["fake"], out=["fake output"], err=["fake error"])
+        rc=5, cmd=["fake"], out=["fake output"], err=["fake error"]
+    )
     e = storage_exception.LogicalVolumeDoesNotExistError(
-        "vg-name", "lv-name", error=fake_error)
+        "vg-name", "lv-name", error=fake_error
+    )
     assert e.error == fake_error
     # Check error format
     formatted = str(e)
@@ -98,7 +97,8 @@ def test_VolumeGroupDoesNotExist():
 
     # Correct initialization.
     fake_error = storage_exception.LVMCommandError(
-        rc=5, cmd=["fake"], out=["fake output"], err=["fake error"])
+        rc=5, cmd=["fake"], out=["fake output"], err=["fake error"]
+    )
     e = storage_exception.VolumeGroupDoesNotExist("vg-name", error=fake_error)
     assert e.error == fake_error
     # Check error format
@@ -115,7 +115,8 @@ def test_InaccessiblePhysDev():
 
     # Correct initialization.
     fake_error = storage_exception.LVMCommandError(
-        rc=5, cmd=["fake"], out=["fake output"], err=["fake error"])
+        rc=5, cmd=["fake"], out=["fake output"], err=["fake error"]
+    )
     e = storage_exception.InaccessiblePhysDev("pv-name", error=fake_error)
     assert e.error == fake_error
     # Check error format

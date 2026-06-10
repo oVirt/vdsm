@@ -19,17 +19,17 @@ from vdsm.storage import xlease
 
 from testlib import make_uuid
 
-from . fakesanlock import FakeSanlock
+from .fakesanlock import FakeSanlock
 
 BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 
 
 class ReadError(Exception):
-    """ Raised to simulate read errors """
+    """Raised to simulate read errors"""
 
 
 class WriteError(Exception):
-    """ Raised to simulate read errors """
+    """Raised to simulate read errors"""
 
 
 class FailingReader(xlease.DirectFile):
@@ -62,11 +62,12 @@ class TemporaryVolume(object):
     """
 
     def __init__(
-            self,
-            backend,
-            alignment,
-            block_size=4096,
-            max_records=xlease.MAX_RECORDS):
+        self,
+        backend,
+        alignment,
+        block_size=4096,
+        max_records=xlease.MAX_RECORDS,
+    ):
         """
         Zero storage and format index area.
         """
@@ -104,35 +105,31 @@ class TemporaryVolume(object):
             self.backend,
             alignment=self.alignment,
             block_size=self.block_size,
-            max_records=self.max_records)
+            max_records=self.max_records,
+        )
 
     def close(self):
         self.backend.close()
 
 
-@pytest.fixture(params=[
-    pytest.param(
-        (BACKENDS["file-512"], sc.ALIGNMENT_1M),
-        id="file-512-1m"),
-    pytest.param(
-        (BACKENDS["file-4k"], sc.ALIGNMENT_1M),
-        id="file-4k-1m"),
-    pytest.param(
-        (BACKENDS["file-4k"], sc.ALIGNMENT_2M),
-        id="file-4k-2m"),
-    pytest.param(
-        (BACKENDS["file-4k"], sc.ALIGNMENT_4M),
-        id="file-4k-4m"),
-    pytest.param(
-        (BACKENDS["file-4k"], sc.ALIGNMENT_8M),
-        id="file-4k-8m"),
-])
+@pytest.fixture(
+    params=[
+        pytest.param(
+            (BACKENDS["file-512"], sc.ALIGNMENT_1M), id="file-512-1m"
+        ),
+        pytest.param((BACKENDS["file-4k"], sc.ALIGNMENT_1M), id="file-4k-1m"),
+        pytest.param((BACKENDS["file-4k"], sc.ALIGNMENT_2M), id="file-4k-2m"),
+        pytest.param((BACKENDS["file-4k"], sc.ALIGNMENT_4M), id="file-4k-4m"),
+        pytest.param((BACKENDS["file-4k"], sc.ALIGNMENT_8M), id="file-4k-8m"),
+    ]
+)
 def tmp_vol(request):
     storage, alignment = request.param
     with storage:
         backend = xlease.DirectFile(storage.path)
         tv = TemporaryVolume(
-            backend, alignment, block_size=storage.sector_size)
+            backend, alignment, block_size=storage.sector_size
+        )
         yield tv
         tv.close()
 
@@ -151,9 +148,8 @@ def memory_vol():
     backend = xlease.MemoryBackend(size=sc.ALIGNMENT_1M + 4096)
 
     memory_volume = TemporaryVolume(
-        backend,
-        alignment=sc.ALIGNMENT_1M,
-        max_records=max_records)
+        backend, alignment=sc.ALIGNMENT_1M, max_records=max_records
+    )
 
     yield memory_volume
     memory_volume.close()
@@ -182,7 +178,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             assert vol.version == 1
             assert vol.lockspace == tmp_vol.lockspace
@@ -199,7 +196,8 @@ class TestIndex:
             xlease.LeasesVolume(
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size).close()
+                block_size=tmp_vol.block_size,
+            ).close()
 
     def test_bad_version(self, tmp_vol):
         with io.open(tmp_vol.path, "r+b") as f:
@@ -210,7 +208,8 @@ class TestIndex:
             xlease.LeasesVolume(
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size).close()
+                block_size=tmp_vol.block_size,
+            ).close()
 
     def test_unsupported_version(self, tmp_vol):
         md = xlease.IndexMetadata(2, "lockspace")
@@ -222,7 +221,8 @@ class TestIndex:
             xlease.LeasesVolume(
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size).close()
+                block_size=tmp_vol.block_size,
+            ).close()
 
     def test_bad_lockspace(self, tmp_vol):
         with io.open(tmp_vol.path, "r+b") as f:
@@ -233,7 +233,8 @@ class TestIndex:
             xlease.LeasesVolume(
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size).close()
+                block_size=tmp_vol.block_size,
+            ).close()
 
     def test_bad_mtime(self, tmp_vol):
         with io.open(tmp_vol.path, "r+b") as f:
@@ -244,11 +245,13 @@ class TestIndex:
             xlease.LeasesVolume(
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size).close()
+                block_size=tmp_vol.block_size,
+            ).close()
 
     def test_updating(self, tmp_vol):
         md = xlease.IndexMetadata(
-            xlease.INDEX_VERSION, "lockspace", updating=True)
+            xlease.INDEX_VERSION, "lockspace", updating=True
+        )
         with io.open(tmp_vol.path, "r+b") as f:
             f.seek(tmp_vol.alignment)
             f.write(md.bytes())
@@ -257,25 +260,29 @@ class TestIndex:
             xlease.LeasesVolume(
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size).close()
+                block_size=tmp_vol.block_size,
+            ).close()
 
     def test_truncated_index(self, tmp_vol):
         # Truncate index, reading it should fail.
         with io.open(tmp_vol.path, "r+b") as f:
             f.truncate(
-                tmp_vol.alignment + xlease.INDEX_SIZE - tmp_vol.block_size)
+                tmp_vol.alignment + xlease.INDEX_SIZE - tmp_vol.block_size
+            )
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size).close()
+                block_size=tmp_vol.block_size,
+            ).close()
 
     def test_empty(self, tmp_vol):
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             assert vol.leases() == {}
 
@@ -283,7 +290,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Create a few leases.
         lease_ids = []
@@ -308,7 +316,8 @@ class TestIndex:
             vol.lockspace,
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Verify resources can be found after rebuild.
         for lease in leases:
@@ -316,7 +325,8 @@ class TestIndex:
                 lease.path,
                 lease.offset,
                 align=tmp_vol.alignment,
-                sector=tmp_vol.block_size)
+                sector=tmp_vol.block_size,
+            )
             check_lease(lease, lease.resource, res, vol)
 
     def test_rebuild_leftover_resource(self, tmp_vol, fake_sanlock):
@@ -324,7 +334,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Add a lease as usual, writing resource to sanlock.
         vol.add(lease_id)
@@ -332,8 +343,9 @@ class TestIndex:
         with utils.closing(vol):
 
             # Make sanlock fail to write/remove a resource.
-            fake_sanlock.errors["write_resource"] = \
+            fake_sanlock.errors["write_resource"] = (
                 fake_sanlock.SanlockException
+            )
 
             # Removal will not raise - this will remove the record from index
             # but due to sanlock write failure the resource will be left over.
@@ -345,20 +357,23 @@ class TestIndex:
             tmp_vol.backend.name,
             offset,
             align=tmp_vol.alignment,
-            sector=tmp_vol.block_size)
+            sector=tmp_vol.block_size,
+        )
 
         # Rebuild index.
         xlease.rebuild_index(
             vol.lockspace,
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Reload volume and check the lease is gone.
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with pytest.raises(se.NoSuchLease):
             vol.lookup(lease_id)
 
@@ -367,7 +382,8 @@ class TestIndex:
             tmp_vol.backend.name,
             offset,
             align=tmp_vol.alignment,
-            sector=tmp_vol.block_size)
+            sector=tmp_vol.block_size,
+        )
         assert not res['resource']
         assert not res['lockspace']
 
@@ -379,7 +395,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         vol.add(lease_id1)
         vol.add(lease_id2)
         vol.add(lease_id3)
@@ -401,7 +418,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with pytest.raises(se.NoSuchLease):
             vol.lookup(lease_id3)
 
@@ -413,32 +431,39 @@ class TestIndex:
             vol.lockspace,
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Check that lease was not incorrectly restored from sanlock.
         with pytest.raises(se.NoSuchLease):
             vol.lookup(lease_id3)
 
         # Check that resource of removed lease was cleared at it's offset.
-        assert fake_sanlock.resources[(
-            lease3.path, lease3.offset)]['resource'] == b''
+        assert (
+            fake_sanlock.resources[(lease3.path, lease3.offset)]['resource']
+            == b''
+        )
 
         # Check lease was not changed by rebuild.
-        assert vol.lookup(lease_id1).resource == \
-            resource1['resource'].decode("utf-8")
+        assert vol.lookup(lease_id1).resource == resource1['resource'].decode(
+            "utf-8"
+        )
 
     def test_rebuild_corrupted_record_repair_from_resource(
-            self, tmp_vol, fake_sanlock):
+        self, tmp_vol, fake_sanlock
+    ):
         lease_id = make_uuid()
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         vol.add(lease_id)
 
         # Prepare zeroed temporary buffer for record corruption.
@@ -454,7 +479,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with pytest.raises(se.NoSuchLease):
             vol.lookup(lease_id)
 
@@ -463,13 +489,15 @@ class TestIndex:
             vol.lockspace,
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Check rebuild fixed the index.
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         assert vol.lookup(lease_id).resource == lease_id
 
     def test_rebuild_corrupted_record_fails(self, tmp_vol, fake_sanlock):
@@ -477,7 +505,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         vol.add(lease_id)
         first_offset = vol.lookup(lease_id).offset
 
@@ -499,13 +528,15 @@ class TestIndex:
             vol.lockspace,
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Check lease can not be found.
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with pytest.raises(se.NoSuchLease):
             vol.lookup(lease_id)
 
@@ -522,7 +553,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         vol.add(lease_id)
         offset = vol.leases()[lease_id]['offset']
 
@@ -535,13 +567,15 @@ class TestIndex:
             vol.lockspace,
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         repaired_res = fake_sanlock.read_resource(
             tmp_vol.backend.name,
             offset,
             align=tmp_vol.alignment,
-            sector=tmp_vol.block_size)
+            sector=tmp_vol.block_size,
+        )
 
         # Check lease still exists in index.
         resource = vol.lookup(lease_id).resource
@@ -554,12 +588,14 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         vol.add(lease_id)
 
         # Write index in updating state to storage, simulating failed rebuild.
         md = xlease.IndexMetadata(
-            xlease.INDEX_VERSION, "lockspace", updating=True)
+            xlease.INDEX_VERSION, "lockspace", updating=True
+        )
         with io.open(tmp_vol.path, "r+b") as f:
             f.seek(tmp_vol.alignment)
             f.write(md.bytes())
@@ -569,20 +605,23 @@ class TestIndex:
             vol = xlease.LeasesVolume(
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size)
+                block_size=tmp_vol.block_size,
+            )
 
         # Rebuild index which clears updating flag.
         xlease.rebuild_index(
             vol.lockspace,
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # This works ok after rebuild.
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         lease = vol.lookup(lease_id)
         res = fake_sanlock.resources[(lease.path, lease.offset)]
@@ -595,7 +634,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Prepare zeroed temporary buffer for metadata corruption.
         buf = mmap.mmap(-1, tmp_vol.alignment)
@@ -612,7 +652,8 @@ class TestIndex:
                 vol.lockspace,
                 tmp_vol.backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size)
+                block_size=tmp_vol.block_size,
+            )
 
     def test_create_read_failure(self, tmp_vol):
         file = FailingReader(tmp_vol.path)
@@ -621,13 +662,15 @@ class TestIndex:
                 xlease.LeasesVolume(
                     file,
                     alignment=tmp_vol.alignment,
-                    block_size=tmp_vol.block_size)
+                    block_size=tmp_vol.block_size,
+                )
 
     def test_lookup_missing(self, tmp_vol):
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             with pytest.raises(se.NoSuchLease):
                 vol.lookup(make_uuid())
@@ -640,7 +683,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             leases = vol.leases()
             # Verify record is in updating state.
@@ -653,7 +697,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             lease_id = make_uuid()
             lease = vol.add(lease_id)
@@ -661,7 +706,8 @@ class TestIndex:
                 lease.path,
                 lease.offset,
                 align=tmp_vol.alignment,
-                sector=tmp_vol.block_size)
+                sector=tmp_vol.block_size,
+            )
             check_lease(lease, lease_id, res, vol)
 
     def test_add_write_failure(self, tmp_vol, fake_sanlock):
@@ -670,7 +716,8 @@ class TestIndex:
             vol = xlease.LeasesVolume(
                 backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size)
+                block_size=tmp_vol.block_size,
+            )
             with utils.closing(vol):
                 lease_id = make_uuid()
                 with pytest.raises(WriteError):
@@ -685,7 +732,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             memory_vol.backend,
             alignment=memory_vol.alignment,
-            block_size=memory_vol.block_size)
+            block_size=memory_vol.block_size,
+        )
         # Fill up the index with records.
         for _ in range(memory_vol.max_records):
             vol.add(make_uuid())
@@ -698,13 +746,15 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         # Add a lease as usual.
         vol.add(lease_id)
         with utils.closing(vol):
             # Make sanlock fail to write a resource.
-            fake_sanlock.errors["write_resource"] = \
+            fake_sanlock.errors["write_resource"] = (
                 fake_sanlock.SanlockException
+            )
             # Removal must not raise.
             vol.remove(lease_id)
             # Lookup lease id, it should not exist despite sanlock failure.
@@ -716,11 +766,13 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             # Make sanlock fail to write a resource.
-            fake_sanlock.errors["write_resource"] = \
+            fake_sanlock.errors["write_resource"] = (
                 fake_sanlock.SanlockException
+            )
             with pytest.raises(fake_sanlock.SanlockException):
                 vol.add(lease_id)
             # Lookup lease id, it should not exist.
@@ -736,7 +788,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         # Adding a lease should pass despite record updating state.
         with utils.closing(vol):
             lease = vol.add(lease_id)
@@ -744,14 +797,16 @@ class TestIndex:
                 lease.path,
                 lease.offset,
                 align=tmp_vol.alignment,
-                sector=tmp_vol.block_size)
+                sector=tmp_vol.block_size,
+            )
             check_lease(lease, lease_id, res, vol)
 
     def test_leases(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             uuid = make_uuid()
             lease_info = vol.add(uuid)
@@ -768,7 +823,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         # Index three leases.
         with utils.closing(vol):
@@ -786,7 +842,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
 
         with utils.closing(vol):
             # Dumping leases from index skips the second bad index record
@@ -797,7 +854,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             lease_id = make_uuid()
             lease = vol.add(lease_id)
@@ -807,7 +865,8 @@ class TestIndex:
                 lease.path,
                 lease.offset,
                 align=tmp_vol.alignment,
-                sector=tmp_vol.block_size)
+                sector=tmp_vol.block_size,
+            )
             assert res["lockspace"] == lease.lockspace.encode("utf-8")
             assert res["resource"] == lease.resource.encode("utf-8")
 
@@ -815,7 +874,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             lease_id = make_uuid()
             add_info = vol.add(lease_id)
@@ -826,7 +886,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             leases = [make_uuid() for i in range(3)]
             for lease in leases:
@@ -838,7 +899,8 @@ class TestIndex:
                 lease.path,
                 lease.offset,
                 align=tmp_vol.alignment,
-                sector=tmp_vol.block_size)
+                sector=tmp_vol.block_size,
+            )
             # There is no sanlock api for removing a resource, so we mark a
             # removed resource with empty (invalid) lockspace and lease id.
             assert res["lockspace"] == b""
@@ -848,7 +910,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             lease_id = make_uuid()
             with pytest.raises(se.NoSuchLease):
@@ -862,7 +925,8 @@ class TestIndex:
             vol = xlease.LeasesVolume(
                 backend,
                 alignment=tmp_vol.alignment,
-                block_size=tmp_vol.block_size)
+                block_size=tmp_vol.block_size,
+            )
             with utils.closing(vol):
                 with pytest.raises(WriteError):
                     vol.remove(record.resource)
@@ -873,7 +937,8 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
+            block_size=tmp_vol.block_size,
+        )
         with utils.closing(vol):
             uuids = [make_uuid() for i in range(4)]
             for uuid in uuids[:3]:
@@ -930,8 +995,10 @@ def bench():
         }
         count = 100
         elapsed = timeit.timeit("bench()", setup=setup, number=count)
-        print("%d lookups in %.6f seconds (%.6f seconds per lookup)"
-              % (count, elapsed, elapsed / count))
+        print(
+            "%d lookups in %.6f seconds (%.6f seconds per lookup)"
+            % (count, elapsed, elapsed / count)
+        )
 
     @pytest.mark.slow
     def test_time_add(self, tmp_vol, fake_sanlock):
@@ -966,14 +1033,18 @@ def bench():
         elapsed = timeit.timeit("bench()", setup=setup, number=count)
         # Note: this does not include the time to create the real sanlock
         # resource.
-        print("%d adds in %.6f seconds (%.6f seconds per add)"
-              % (count, elapsed, elapsed / count))
+        print(
+            "%d adds in %.6f seconds (%.6f seconds per add)"
+            % (count, elapsed, elapsed / count)
+        )
 
 
-@pytest.fixture(params=[
-    xlease.DirectFile,
-    xlease.InterruptibleDirectFile,
-])
+@pytest.fixture(
+    params=[
+        xlease.DirectFile,
+        xlease.InterruptibleDirectFile,
+    ]
+)
 def direct_file(request):
     """
     Returns a direct file factory function accpting a path. Test for
@@ -1003,12 +1074,15 @@ class TestDirectFile:
         with utils.closing(file):
             assert file.size() == GiB
 
-    @pytest.mark.parametrize("offset,size", [
-        (0, 1024),      # some content
-        (0, 2048),      # all content
-        (512, 1024),    # offset, some content
-        (1024, 1024),   # offset, all content
-    ])
+    @pytest.mark.parametrize(
+        "offset,size",
+        [
+            (0, 1024),  # some content
+            (0, 2048),  # all content
+            (512, 1024),  # offset, some content
+            (1024, 1024),  # offset, all content
+        ],
+    )
     def test_pread(self, tmpdir, direct_file, offset, size):
         data = b"a" * 512 + b"b" * 512 + b"c" * 512 + b"d" * 512
         path = tmpdir.join("file")
@@ -1019,7 +1093,7 @@ class TestDirectFile:
             with utils.closing(buf):
                 n = file.pread(offset, buf)
                 assert n == size
-                assert buf[:] == data[offset:offset + size]
+                assert buf[:] == data[offset : offset + size]
 
     def test_pread_short(self, tmpdir, direct_file):
         data = b"a" * 1024
@@ -1033,12 +1107,15 @@ class TestDirectFile:
                 assert n == 512
                 assert buf[:n] == data[512:]
 
-    @pytest.mark.parametrize("offset,size", [
-        (0, 1024),      # some content
-        (0, 2048),      # all content
-        (512, 1024),    # offset, some content
-        (1024, 1024),   # offset, all content
-    ])
+    @pytest.mark.parametrize(
+        "offset,size",
+        [
+            (0, 1024),  # some content
+            (0, 2048),  # all content
+            (512, 1024),  # offset, some content
+            (1024, 1024),  # offset, all content
+        ],
+    )
     def test_pwrite(self, tmpdir, direct_file, offset, size):
         # Create a file full of "a"s
         path = tmpdir.join("file")
@@ -1051,7 +1128,5 @@ class TestDirectFile:
             with utils.closing(file):
                 file.pwrite(offset, buf)
         data = path.read()
-        expected = ("a" * offset +
-                    "b" * size +
-                    "a" * (2048 - offset - size))
+        expected = "a" * offset + "b" * size + "a" * (2048 - offset - size)
         assert data == expected

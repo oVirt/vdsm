@@ -312,14 +312,16 @@ class EventLoop(object):
         Changes from Python 3:
         - Standard vdsmm __repr__ formatting
         """
-        return ("<{self.__class__.__name__} "
-                "running={self._running} "
-                "closed={self._closed} "
-                "at 0x{addr}>").format(self=self, addr=id(self))
+        return (
+            "<{self.__class__.__name__} "
+            "running={self._running} "
+            "closed={self._closed} "
+            "at 0x{addr}>"
+        ).format(self=self, addr=id(self))
 
 
 class _StopError(BaseException):
-    """ Raised for stopping the event loop """
+    """Raised for stopping the event loop"""
 
 
 def _raise_stop_error():
@@ -581,8 +583,9 @@ class Reaper(object):
     Wait for process and notify when it has terminated.
     """
 
-    def __init__(self, loop, proc, complete, min_interval=2**-5,
-                 max_interval=1.0):
+    def __init__(
+        self, loop, proc, complete, min_interval=2**-5, max_interval=1.0
+    ):
         self._loop = loop
         self._proc = proc
         self._complete = complete

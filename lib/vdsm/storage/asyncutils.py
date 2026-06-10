@@ -116,8 +116,9 @@ class LoopingCall(object):
             return
         delay = self._loop.time() - self._deadline
         if delay > self.warning_delay:
-            log.warning("Call %s delayed by %.2f seconds",
-                        self._callback, delay)
+            log.warning(
+                "Call %s delayed by %.2f seconds", self._callback, delay
+            )
         try:
             self._callback(*self._args)
         finally:
@@ -138,7 +139,10 @@ class LoopingCall(object):
             # We missed at least one deadline.
             missed = (now - self._deadline) // self._interval + 1
             self._deadline += missed * self._interval
-            log.warning("Call %s missed %d deadlines, scheduling next call "
-                        "at %.2f",
-                        self._callback, missed, self._deadline)
+            log.warning(
+                "Call %s missed %d deadlines, scheduling next call " "at %.2f",
+                self._callback,
+                missed,
+                self._deadline,
+            )
         self._timer = self._loop.call_at(self._deadline, self)

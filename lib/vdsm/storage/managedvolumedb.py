@@ -14,7 +14,6 @@ from contextlib import closing
 from vdsm.common import errors
 from vdsm.storage.constants import P_VDSM_LIB
 
-
 VERSION = 1
 DB_FILE = os.path.join(P_VDSM_LIB, "managedvolume.db")
 
@@ -31,8 +30,10 @@ class NotFound(errors.Base):
 
 class VolumeAlreadyExists(errors.Base):
 
-    msg = ("Failed to store {self.vol_info}."
-           "Volume with id {self.vol_id} already exists in the DB")
+    msg = (
+        "Failed to store {self.vol_info}."
+        "Volume with id {self.vol_id} already exists in the DB"
+    )
 
     def __init__(self, vol_id, vol_info):
         self.vol_id = vol_id
@@ -124,7 +125,8 @@ class DB(object):
 
         if vol_ids:
             sql += "WHERE vol_id IN ({ids})\n".format(
-                ids=",".join("?" for _ in vol_ids))
+                ids=",".join("?" for _ in vol_ids)
+            )
 
         sql += "ORDER BY vol_id\n"
 
@@ -140,7 +142,8 @@ class DB(object):
             volume_info = {"vol_id": vol["vol_id"]}
             if vol["connection_info"]:
                 volume_info["connection_info"] = json.loads(
-                    vol["connection_info"])
+                    vol["connection_info"]
+                )
             if vol["path"]:
                 volume_info["path"] = vol["path"]
             if vol["attachment"]:
@@ -157,8 +160,9 @@ class DB(object):
             VALUES (?, ?)
         """
 
-        log.info("Adding volume %s connection_info=%s",
-                 vol_id, connection_info)
+        log.info(
+            "Adding volume %s connection_info=%s", vol_id, connection_info
+        )
 
         conn_info_json = json.dumps(connection_info).encode("utf-8")
 
@@ -185,14 +189,20 @@ class DB(object):
             WHERE vol_id = ?
         """
 
-        log.info("Updating volume %s path=%s, attachment=%s, multipath_id=%s",
-                 vol_id, path, attachment, multipath_id)
+        log.info(
+            "Updating volume %s path=%s, attachment=%s, multipath_id=%s",
+            vol_id,
+            path,
+            attachment,
+            multipath_id,
+        )
 
         attachment_json = json.dumps(attachment).encode("utf-8")
 
         with self._conn:
-            self._conn.execute(sql, (path, attachment_json, multipath_id,
-                                     vol_id))
+            self._conn.execute(
+                sql, (path, attachment_json, multipath_id, vol_id)
+            )
 
     def owns_multipath(self, multipath_id):
         """
@@ -225,6 +235,7 @@ class DB(object):
 
 
 # Private
+
 
 class _closed_connection(object):
 

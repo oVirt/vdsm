@@ -10,10 +10,7 @@ from vdsm.common import time
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompclient import StompRpcClient
 from yajsonrpc.stompserver import StompDetector
-from yajsonrpc.stomp import (
-    SUBSCRIPTION_ID_REQUEST,
-    SUBSCRIPTION_ID_RESPONSE
-)
+from yajsonrpc.stomp import SUBSCRIPTION_ID_REQUEST, SUBSCRIPTION_ID_RESPONSE
 from yajsonrpc import Notification
 from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm.protocoldetector import MultiProtocolAcceptor
@@ -41,6 +38,7 @@ class FakeClientIf(object):
 
         # API module is redefined for apiTests so we need to add BLANK_UUIDs
         from vdsm import API
+
         API.Image.BLANK_UUID = '00000000-0000-0000-0000-000000000000'
         API.StorageDomain.BLANK_UUID = '00000000-0000-0000-0000-000000000000'
         API.Volume.BLANK_UUID = "00000000-0000-0000-0000-000000000000"
@@ -61,14 +59,13 @@ class FakeClientIf(object):
         notification = Notification(
             event_id,
             lambda message: server.send(message, destination),
-            self.json_binding.bridge.event_schema
+            self.json_binding.bridge.event_schema,
         )
         notification.emit(params)
 
 
 @contextmanager
-def constructAcceptor(log, ssl_ctx, jsonBridge,
-                      dest=SUBSCRIPTION_ID_RESPONSE):
+def constructAcceptor(log, ssl_ctx, jsonBridge, dest=SUBSCRIPTION_ID_RESPONSE):
     reactor = Reactor()
     acceptor = MultiProtocolAcceptor(
         reactor,
@@ -77,29 +74,34 @@ def constructAcceptor(log, ssl_ctx, jsonBridge,
         ssl_ctx,
     )
 
-    scheduler = schedule.Scheduler(name="test.Scheduler",
-                                   clock=time.monotonic_time)
+    scheduler = schedule.Scheduler(
+        name="test.Scheduler", clock=time.monotonic_time
+    )
     scheduler.start()
 
     cif = FakeClientIf(dest)
 
-    json_binding = BindingJsonRpc(jsonBridge, defaultdict(list), 60,
-                                  scheduler, cif)
+    json_binding = BindingJsonRpc(
+        jsonBridge, defaultdict(list), 60, scheduler, cif
+    )
     json_binding.start()
 
     cif.json_binding = json_binding
 
-    with MonkeyPatchScope([
-        (API.clientIF, 'getInstance', lambda _: cif),
-        (API, 'confirm_connectivity', lambda: None)
-    ]):
+    with MonkeyPatchScope(
+        [
+            (API.clientIF, 'getInstance', lambda _: cif),
+            (API, 'confirm_connectivity', lambda: None),
+        ]
+    ):
         jsonBridge.cif = cif
 
         stompDetector = StompDetector(json_binding)
         acceptor.add_detector(stompDetector)
 
-        thread = threading.Thread(target=reactor.process_requests,
-                                  name='Detector thread')
+        thread = threading.Thread(
+            target=reactor.process_requests, name='Detector thread'
+        )
         thread.setDaemon(True)
         thread.start()
 
@@ -124,11 +126,13 @@ def constructClient(log, bridge, ssl_ctx, dest=SUBSCRIPTION_ID_RESPONSE):
             )
 
         def clientFactory():
-            return client(utils.create_connected_socket(
-                acceptor._host,
-                acceptor._port,
-                sslctx=ssl_ctx,
-                timeout=TIMEOUT
-            ))
+            return client(
+                utils.create_connected_socket(
+                    acceptor._host,
+                    acceptor._port,
+                    sslctx=ssl_ctx,
+                    timeout=TIMEOUT,
+                )
+            )
 
         yield clientFactory

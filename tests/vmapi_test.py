@@ -38,11 +38,16 @@ class TestSchemaCompliancyBase(TestCaseBase):
 
 
 _VM_PARAMS = {
-    'displayPort': -1, 'displaySecurePort': -1, 'display': 'qxl',
-    'displayIp': '127.0.0.1', 'vmType': 'kvm', 'devices': {},
+    'displayPort': -1,
+    'displaySecurePort': -1,
+    'display': 'qxl',
+    'displayIp': '127.0.0.1',
+    'vmType': 'kvm',
+    'devices': {},
     'memSize': 1024,
     # HACKs
-    'pauseCode': 'NOERR'}
+    'pauseCode': 'NOERR',
+}
 
 
 class TestVmStats(TestSchemaCompliancyBase):
@@ -51,14 +56,16 @@ class TestVmStats(TestSchemaCompliancyBase):
     def testDownStats(self):
         with fake.VM() as testvm:
             testvm.setDownStatus(define.ERROR, vmexitreason.GENERIC_ERROR)
-            self.assertVmStatsSchemaCompliancy('ExitedVmStats',
-                                               testvm.getStats())
+            self.assertVmStatsSchemaCompliancy(
+                'ExitedVmStats', testvm.getStats()
+            )
 
     @brokentest('Racy test, see http://gerrit.ovirt.org/37275')
     def testRunningStats(self):
         with fake.VM(_VM_PARAMS) as testvm:
-            self.assertVmStatsSchemaCompliancy('RunningVmStats',
-                                               testvm.getStats())
+            self.assertVmStatsSchemaCompliancy(
+                'RunningVmStats', testvm.getStats()
+            )
 
 
 class TestApiAllVm(TestSchemaCompliancyBase):
@@ -66,8 +73,9 @@ class TestApiAllVm(TestSchemaCompliancyBase):
     @brokentest('Racy test, see http://gerrit.ovirt.org/36894')
     def testAllVmStats(self):
         with fake.VM(_VM_PARAMS) as testvm:
-            with MonkeyPatchScope([(clientIF, 'getInstance',
-                                    lambda _: testvm.cif)]):
+            with MonkeyPatchScope(
+                [(clientIF, 'getInstance', lambda _: testvm.cif)]
+            ):
                 api = API.Global()
 
                 # here is where clientIF will be used.
@@ -76,5 +84,4 @@ class TestApiAllVm(TestSchemaCompliancyBase):
                 self.assertEqual(response['status']['code'], 0)
 
                 for stat in response['statsList']:
-                    self.assertVmStatsSchemaCompliancy(
-                        'RunningVmStats', stat)
+                    self.assertVmStatsSchemaCompliancy('RunningVmStats', stat)

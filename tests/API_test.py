@@ -75,30 +75,51 @@ class TestVMCreate(TestCaseBase):
 
         res = self.vm.create(vmParams)
         self.assertFalse(response.is_error(res))
-        expected_memory_dump = {'device': 'disk', 'domainID': '0',
-                                'poolID': '1', 'imageID': '2', 'volumeID': '3'}
+        expected_memory_dump = {
+            'device': 'disk',
+            'domainID': '0',
+            'poolID': '1',
+            'imageID': '2',
+            'volumeID': '3',
+        }
         self.assertEqual(expected_memory_dump, vmParams['restoreState'])
 
     def test_get_hibernation_paths_from_old_params(self):
-        vmParams = {
-            'hiberVolHandle': self._hibernation_volume_old_format
-        }
+        vmParams = {'hiberVolHandle': self._hibernation_volume_old_format}
         vmParams.update(self.vmParams)
 
         memory_dump, memory_conf = self.vm._getHibernationPaths(vmParams)
-        expected_memory_dump = {'device': 'disk', 'domainID': '0',
-                                'poolID': '1', 'imageID': '2', 'volumeID': '3'}
-        expected_memory_conf = {'device': 'disk', 'domainID': '0',
-                                'poolID': '1', 'imageID': '4', 'volumeID': '5'}
+        expected_memory_dump = {
+            'device': 'disk',
+            'domainID': '0',
+            'poolID': '1',
+            'imageID': '2',
+            'volumeID': '3',
+        }
+        expected_memory_conf = {
+            'device': 'disk',
+            'domainID': '0',
+            'poolID': '1',
+            'imageID': '4',
+            'volumeID': '5',
+        }
         self.assertEqual(expected_memory_dump, memory_dump)
         self.assertEqual(expected_memory_conf, memory_conf)
 
     def test_get_hibernation_paths_from_new_params(self):
         vmParams = {
-            'memoryDumpVolume': {'domainID': '0', 'poolID': '1',
-                                 'imageID': '2', 'volumeID': '3'},
-            'memoryConfVolume': {'domainID': '0', 'poolID': '1',
-                                 'imageID': '2', 'volumeID': '3'}
+            'memoryDumpVolume': {
+                'domainID': '0',
+                'poolID': '1',
+                'imageID': '2',
+                'volumeID': '3',
+            },
+            'memoryConfVolume': {
+                'domainID': '0',
+                'poolID': '1',
+                'imageID': '2',
+                'volumeID': '3',
+            },
         }
         vmParams.update(self.vmParams)
 

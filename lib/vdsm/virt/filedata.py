@@ -16,7 +16,6 @@ from vdsm import constants
 from vdsm.common import commands
 from vdsm.common import exception
 
-
 # Python shutil implementation is unsafe when extracting malicious
 # tar files, let's use tar instead, which is supposed to be safe.
 # Also, using tar doesn't require using temporary files.
@@ -25,14 +24,25 @@ _TAR = '/usr/bin/tar'
 
 
 def _make_tar_archive(path):
-    return commands.run([_TAR, '--create', '--verbose', '--xz',
-                         '--sort=name', '--directory=%s' % path, '.'])
+    return commands.run(
+        [
+            _TAR,
+            '--create',
+            '--verbose',
+            '--xz',
+            '--sort=name',
+            '--directory=%s' % path,
+            '.',
+        ]
+    )
 
 
 def _unpack_tar_archive(path, data):
     os.mkdir(path, 0o700)
-    commands.run([_TAR, '--extract', '--verbose', '--xz',
-                  '--directory=%s' % path], input=data)
+    commands.run(
+        [_TAR, '--extract', '--verbose', '--xz', '--directory=%s' % path],
+        input=data,
+    )
 
 
 class _FileSystemData(object):
@@ -49,6 +59,7 @@ class _FileSystemData(object):
     encoding and decoding it to or from ASCII, and detecting its
     changes.
     """
+
     def __init__(self, path, compress=True, allow_empty=False):
         """
         Define the data to be accessed.
@@ -116,8 +127,10 @@ class _FileSystemData(object):
                 reason="Data path doesn't exist", path=self._path
             )
         currently_modified = self.last_modified()
-        if currently_modified <= last_modified and \
-           last_modified <= time.time():  # last_modified in future? no!
+        if (
+            currently_modified <= last_modified
+            and last_modified <= time.time()
+        ):  # last_modified in future? no!
             return None
         data = self._retrieve()
         data_format = ''
@@ -161,8 +174,11 @@ class _FileSystemData(object):
         #   0   bzip2 compressed data
         #
         data_format = None
-        if len(byte_data) > 3 and byte_data[0] == ord('=') and \
-                byte_data[2] == ord('='):
+        if (
+            len(byte_data) > 3
+            and byte_data[0] == ord('=')
+            and byte_data[2] == ord('=')
+        ):
             data_format = byte_data[1]
             byte_data = byte_data[3:]
         # Decode base64
@@ -173,7 +189,8 @@ class _FileSystemData(object):
             error = e
         if error is not None:
             raise exception.ExternalDataFailed(
-                'Failed to decode base64 data', exception=error)
+                'Failed to decode base64 data', exception=error
+            )
         # Uncompress
         if data_format == ord('0'):
             error = None
@@ -183,12 +200,14 @@ class _FileSystemData(object):
                 error = e
             if error is not None:
                 raise exception.ExternalDataFailed(
-                    'Failed to decompress bzip2 content', exception=error)
+                    'Failed to decompress bzip2 content', exception=error
+                )
         elif data_format is None:
             final_data = decoded_data
         else:
             raise exception.ExternalDataFailed(
-                'Invalid data format', data_format=data_format)
+                'Invalid data format', data_format=data_format
+            )
         self._store(final_data)
 
 
@@ -207,7 +226,8 @@ class FileData(_FileSystemData):
             data = f.read()
         if len(data) == 0 and not self._allow_empty:
             raise exception.ExternalDataFailed(
-                'File with zero size is not allowed', path=self._path)
+                'File with zero size is not allowed', path=self._path
+            )
         return data
 
     def _store(self, data):
@@ -221,6 +241,7 @@ class DirectoryData(_FileSystemData):
 
     `path` constructor argument is the directory location.
     """
+
     def last_modified(self):
         timestamp = 0
         for root, dirs, files in os.walk(self._path):
@@ -233,7 +254,8 @@ class DirectoryData(_FileSystemData):
     def _retrieve(self):
         if len(os.listdir(self._path)) == 0 and not self._allow_empty:
             raise exception.ExternalDataFailed(
-                'Empty directory is not allowed', path=self._path)
+                'Empty directory is not allowed', path=self._path
+            )
         return _make_tar_archive(self._path)
 
     def _store(self, data):
@@ -257,6 +279,7 @@ class Monitor(object):
     constructor.  This allows retrieving data from supervdsm using its
     API calls.
     """
+
     def __init__(self, data_retriever):
         """
         :param data_retriever: function of a single argument,

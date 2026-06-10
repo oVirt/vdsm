@@ -29,9 +29,11 @@ def secured(cls):
     for name, value in cls.__dict__.items():
         # Skipping non callable attributes, special methods (including
         # SECURE_METHOD_NAME) and unsecured methods.
-        if (not inspect.isfunction(value) or
-                not getattr(value, SECURE_FIELD, True) or
-                name.startswith("__")):
+        if (
+            not inspect.isfunction(value)
+            or not getattr(value, SECURE_FIELD, True)
+            or name.startswith("__")
+        ):
             continue
         setattr(cls, name, _secure_method(value))
 
@@ -53,8 +55,9 @@ def _secure_method(method):
     def wrapper(self, *args, **kwargs):
         override = kwargs.pop(OVERRIDE_ARG, False)
 
-        if not (getattr(self, SECURE_METHOD_NAME)() is True or
-                override is True):
+        if not (
+            getattr(self, SECURE_METHOD_NAME)() is True or override is True
+        ):
             raise SecureError("Secured object is not in safe state")
 
         return method(self, *args, **kwargs)

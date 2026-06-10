@@ -5,10 +5,16 @@ from contextlib import contextmanager
 
 from vdsm.common import concurrent
 from vdsm.storage import outOfProcess as oop
-from vdsm.storage.task import Job, Recovery, Task, TaskCleanType, \
-    TaskPersistType, TaskRecoveryType
+from vdsm.storage.task import (
+    Job,
+    Recovery,
+    Task,
+    TaskCleanType,
+    TaskPersistType,
+    TaskRecoveryType,
+)
 
-from . storagetestlib import Callable
+from .storagetestlib import Callable
 
 
 WAIT_TIMEOUT = 5  # Used for task done or hang timeout
@@ -57,7 +63,7 @@ def test_task_prepare():
     assert status == {
         "result": result,
         "state": {"code": 0, "message": "OK"},
-        "task": {"id": "task-id", "state": "finished"}
+        "task": {"id": "task-id", "state": "finished"},
     }
     assert c.is_finished()
 
@@ -71,7 +77,7 @@ def test_task_abort():
         assert status == {
             "result": "",
             "state": {"code": 0, "message": "Task is initializing"},
-            "task": {"id": "task-id", "state": "preparing"}
+            "task": {"id": "task-id", "state": "preparing"},
         }
 
         # Stop task and wait for a done state
@@ -88,11 +94,13 @@ def test_task_abort():
             "result": "",
             "state": {
                 "code": 0,
-                "message": ("Task prepare failed: Task is aborted: "
-                            "'value=Unknown error encountered "
-                            "abortedcode=411'")
+                "message": (
+                    "Task prepare failed: Task is aborted: "
+                    "'value=Unknown error encountered "
+                    "abortedcode=411'"
+                ),
             },
-            "task": {"id": "task-id", "state": "failed"}
+            "task": {"id": "task-id", "state": "failed"},
         }
 
 
@@ -116,7 +124,7 @@ def test_task_queued():
     assert status == {
         "result": "",
         "state": {"code": 0, "message": "Task is initializing"},
-        "task": {"id": "task-id", "state": "queued"}
+        "task": {"id": "task-id", "state": "queued"},
     }
 
     # Check that job callable was not called yet
@@ -130,7 +138,7 @@ def test_task_queued():
     assert status == {
         "result": result,
         "state": {"code": 0, "message": "1 jobs completed successfully"},
-        "task": {"id": "task-id", "state": "finished"}
+        "task": {"id": "task-id", "state": "finished"},
     }
 
     # Check that job callable was called
@@ -167,11 +175,13 @@ def test_task_rollback(add_recovery):
             "result": "",
             "state": {
                 "code": 0,
-                "message": ("Task prepare failed: Task is aborted: "
-                            "'value=Unknown error encountered "
-                            "abortedcode=411'")
+                "message": (
+                    "Task prepare failed: Task is aborted: "
+                    "'value=Unknown error encountered "
+                    "abortedcode=411'"
+                ),
             },
-            "task": {"id": "task-id", "state": "recovered"}
+            "task": {"id": "task-id", "state": "recovered"},
         }
 
 
@@ -210,32 +220,20 @@ def test_task_save_load(tmpdir, add_recovery):
     assert status == {
         "result": "",
         "state": {"code": 0, "message": "Task is initializing"},
-        "task": {"id": "task-id", "state": "recovered"}
+        "task": {"id": "task-id", "state": "recovered"},
     }
 
 
 def test_recovery_list():
     # Check push pop single recovery
     t = Task(id="task-id")
-    recovery1 = Recovery(
-        "name_1",
-        "storage_1",
-        "task_1",
-        "func_1",
-        []
-    )
+    recovery1 = Recovery("name_1", "storage_1", "task_1", "func_1", [])
     t.pushRecovery(recovery1)
     assert t.popRecovery() is recovery1
 
     # Check replace recovery by another
     t.pushRecovery(recovery1)
-    recovery2 = Recovery(
-        "name_2",
-        "storage_2",
-        "task_2",
-        "func_2",
-        []
-    )
+    recovery2 = Recovery("name_2", "storage_2", "task_2", "func_2", [])
     t.replaceRecoveries(recovery2)
     assert t.popRecovery() is recovery2
     assert t.popRecovery() is None
@@ -253,25 +251,25 @@ def test_recovery_list():
 
 def test_enum_type():
     # Same enums, same values.
-    assert TaskPersistType(TaskPersistType.none) ==\
-        TaskPersistType(TaskPersistType.none)
-    assert TaskPersistType(TaskPersistType.none) ==\
+    assert TaskPersistType(TaskPersistType.none) == TaskPersistType(
         TaskPersistType.none
+    )
+    assert TaskPersistType(TaskPersistType.none) == TaskPersistType.none
 
     # Same enums, different values.
-    assert TaskPersistType(TaskPersistType.manual) !=\
-        TaskPersistType(TaskPersistType.auto)
-    assert TaskPersistType(TaskPersistType.manual) !=\
+    assert TaskPersistType(TaskPersistType.manual) != TaskPersistType(
         TaskPersistType.auto
+    )
+    assert TaskPersistType(TaskPersistType.manual) != TaskPersistType.auto
 
     # Different enums, different values.
-    assert TaskPersistType(TaskPersistType.none) !=\
-        TaskCleanType(TaskCleanType.manual)
-    assert TaskPersistType(TaskPersistType.none) !=\
+    assert TaskPersistType(TaskPersistType.none) != TaskCleanType(
         TaskCleanType.manual
+    )
+    assert TaskPersistType(TaskPersistType.none) != TaskCleanType.manual
 
     # Different enums, same values.
-    assert TaskPersistType(TaskPersistType.auto) !=\
-        TaskRecoveryType(TaskRecoveryType.auto)
-    assert TaskPersistType(TaskPersistType.auto) ==\
+    assert TaskPersistType(TaskPersistType.auto) != TaskRecoveryType(
         TaskRecoveryType.auto
+    )
+    assert TaskPersistType(TaskPersistType.auto) == TaskRecoveryType.auto

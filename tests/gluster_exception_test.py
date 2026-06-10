@@ -18,17 +18,24 @@ class TestGlusterException(VdsmTestCase):
 
     def test_str_lists(self):
         e = GlusterException(rc=1, out=["o", "u", "t"], err=["e", "r", "r"])
-        expected = ("Gluster Exception: rc=1 out=['o', 'u', 't'] "
-                    "err=['e', 'r', 'r']")
+        expected = (
+            "Gluster Exception: rc=1 out=['o', 'u', 't'] "
+            "err=['e', 'r', 'r']"
+        )
         self.assertEqual(str(e), expected)
 
     def test_info(self):
         e = GlusterException()
-        self.assertEqual(e.info(), {'code': 4100,
-                                    'message': str(e),
-                                    'rc': e.rc,
-                                    'out': e.out,
-                                    'err': e.err})
+        self.assertEqual(
+            e.info(),
+            {
+                'code': 4100,
+                'message': str(e),
+                'rc': e.rc,
+                'out': e.out,
+                'err': e.err,
+            },
+        )
 
     def test_response(self):
         e = GlusterException()

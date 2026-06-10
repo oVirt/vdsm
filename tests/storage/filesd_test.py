@@ -71,38 +71,51 @@ class TestGetAllVolumes(VdsmTestCase):
         self.assertEqual(res, {})
 
     def test_no_templates(self):
-        oop = FakeOOP(FakeGlob([
-            os.path.join(self.IMAGES_DIR, "image-1", "volume-1.meta"),
-            os.path.join(self.IMAGES_DIR, "image-1", "volume-2.meta"),
-            os.path.join(self.IMAGES_DIR, "image-1", "volume-3.meta"),
-            os.path.join(self.IMAGES_DIR, "image-2", "volume-4.meta"),
-            os.path.join(self.IMAGES_DIR, "image-2", "volume-5.meta"),
-            os.path.join(self.IMAGES_DIR, "image-3", "volume-6.meta"),
-        ]))
+        oop = FakeOOP(
+            FakeGlob(
+                [
+                    os.path.join(self.IMAGES_DIR, "image-1", "volume-1.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-1", "volume-2.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-1", "volume-3.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-2", "volume-4.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-2", "volume-5.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-3", "volume-6.meta"),
+                ]
+            )
+        )
         dom = FileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
         res = dom.getAllVolumes()
 
         # These volumes should have parent uuid, but the implementation does
         # not read the meta data files, so this info is not available (None).
-        self.assertEqual(res, {
-            "volume-1": (("image-1",), None),
-            "volume-2": (("image-1",), None),
-            "volume-3": (("image-1",), None),
-            "volume-4": (("image-2",), None),
-            "volume-5": (("image-2",), None),
-            "volume-6": (("image-3",), None),
-        })
+        self.assertEqual(
+            res,
+            {
+                "volume-1": (("image-1",), None),
+                "volume-2": (("image-1",), None),
+                "volume-3": (("image-1",), None),
+                "volume-4": (("image-2",), None),
+                "volume-5": (("image-2",), None),
+                "volume-6": (("image-3",), None),
+            },
+        )
 
     def test_with_template(self):
-        oop = FakeOOP(FakeGlob([
-            os.path.join(self.IMAGES_DIR, "template-1", "volume-1.meta"),
-            os.path.join(self.IMAGES_DIR, "image-1", "volume-1.meta"),
-            os.path.join(self.IMAGES_DIR, "image-1", "volume-2.meta"),
-            os.path.join(self.IMAGES_DIR, "image-1", "volume-3.meta"),
-            os.path.join(self.IMAGES_DIR, "image-2", "volume-1.meta"),
-            os.path.join(self.IMAGES_DIR, "image-2", "volume-4.meta"),
-            os.path.join(self.IMAGES_DIR, "image-3", "volume-5.meta"),
-        ]))
+        oop = FakeOOP(
+            FakeGlob(
+                [
+                    os.path.join(
+                        self.IMAGES_DIR, "template-1", "volume-1.meta"
+                    ),
+                    os.path.join(self.IMAGES_DIR, "image-1", "volume-1.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-1", "volume-2.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-1", "volume-3.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-2", "volume-1.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-2", "volume-4.meta"),
+                    os.path.join(self.IMAGES_DIR, "image-3", "volume-5.meta"),
+                ]
+            )
+        )
         dom = FileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
         res = dom.getAllVolumes()
 
@@ -112,8 +125,9 @@ class TestGetAllVolumes(VdsmTestCase):
         self.assertEqual(res["volume-1"].imgs[0], "template-1")
 
         # The rest of the images have random order.
-        self.assertEqual(sorted(res["volume-1"].imgs[1:]),
-                         ["image-1", "image-2"])
+        self.assertEqual(
+            sorted(res["volume-1"].imgs[1:]), ["image-1", "image-2"]
+        )
 
         # For template volumes we have parent info.
         self.assertEqual(res["volume-1"].parent, sd.BLANK_UUID)
@@ -125,7 +139,8 @@ class TestGetAllVolumes(VdsmTestCase):
 
     @pytest.mark.skipif(
         "OVIRT_CI" in os.environ or "TRAVIS_CI" in os.environ,
-        reason="performance test, unpredictable on CI")
+        reason="performance test, unpredictable on CI",
+    )
     def test_scale(self):
         # For this test we want real world strings
         images_count = 5000
@@ -133,18 +148,23 @@ class TestGetAllVolumes(VdsmTestCase):
         template_volume_uuid = str(uuid.uuid4())
 
         files = []
-        template_volume = os.path.join(self.IMAGES_DIR, template_image_uuid,
-                                       template_volume_uuid + ".meta")
+        template_volume = os.path.join(
+            self.IMAGES_DIR,
+            template_image_uuid,
+            template_volume_uuid + ".meta",
+        )
         files.append(template_volume)
 
         for i in range(images_count):
             image_uuid = str(uuid.uuid4())
             volume_uuid = str(uuid.uuid4())
-            template_volume = os.path.join(self.IMAGES_DIR, image_uuid,
-                                           template_volume_uuid + ".meta")
+            template_volume = os.path.join(
+                self.IMAGES_DIR, image_uuid, template_volume_uuid + ".meta"
+            )
             files.append(template_volume)
-            new_volume = os.path.join(self.IMAGES_DIR, image_uuid,
-                                      volume_uuid + ".meta")
+            new_volume = os.path.join(
+                self.IMAGES_DIR, image_uuid, volume_uuid + ".meta"
+            )
             files.append(new_volume)
 
         oop = FakeOOP(FakeGlob(files))
@@ -159,8 +179,9 @@ class TestGetAllVolumes(VdsmTestCase):
         self.assertTrue(elapsed < 0.5, "Elapsed time: %f seconds" % elapsed)
 
 
-SDInfo = collections.namedtuple("SDInfo",
-                                "uuid, remote_path, mountpoint, dom_dir")
+SDInfo = collections.namedtuple(
+    "SDInfo", "uuid, remote_path, mountpoint, dom_dir"
+)
 
 
 class TestGetStorageDomainsList(VdsmTestCase):
@@ -187,45 +208,58 @@ class TestScanDomains(VdsmTestCase):
         with fake_repo():
             self.assertEqual(list(fileSD.scanDomains()), [])
 
-    @permutations([
-        # scan_pattern, sd_type
-        (os.path.join(sd.GLUSTERSD_DIR, "*"), "gluster"),
-        ("_*", "local"),
-        ("*", "all"),
-    ])
+    @permutations(
+        [
+            # scan_pattern, sd_type
+            (os.path.join(sd.GLUSTERSD_DIR, "*"), "gluster"),
+            ("_*", "local"),
+            ("*", "all"),
+        ]
+    )
     def test_select_domains(self, scan_pattern, sd_type):
         with fake_repo() as repo, namedTemporaryDir() as tmpdir:
             file_sd = add_filesd(repo, "nfs.server:/path", str(uuid.uuid4()))
-            gluster_sd = add_filesd(repo, "gluster.server:/volname",
-                                    str(uuid.uuid4()), subdir=sd.GLUSTERSD_DIR)
+            gluster_sd = add_filesd(
+                repo,
+                "gluster.server:/volname",
+                str(uuid.uuid4()),
+                subdir=sd.GLUSTERSD_DIR,
+            )
             local_sd = add_localsd(repo, tmpdir, str(uuid.uuid4()))
-            domains = {"gluster": [gluster_sd],
-                       "local": [local_sd],
-                       "all": [file_sd, gluster_sd, local_sd]}
-            expected = set([(domain.uuid, domain.dom_dir)
-                            for domain in domains[sd_type]])
+            domains = {
+                "gluster": [gluster_sd],
+                "local": [local_sd],
+                "all": [file_sd, gluster_sd, local_sd],
+            }
+            expected = set(
+                [(domain.uuid, domain.dom_dir) for domain in domains[sd_type]]
+            )
             self.assertEqual(set(fileSD.scanDomains(scan_pattern)), expected)
 
     def test_nfs_with_IPV6_address(self):
         with fake_repo() as repo:
             nfs_sd = add_filesd(repo, "[201::1]:/path", str(uuid.uuid4()))
-            self.assertEqual(list(fileSD.scanDomains()),
-                             [(nfs_sd.uuid, nfs_sd.dom_dir)])
+            self.assertEqual(
+                list(fileSD.scanDomains()), [(nfs_sd.uuid, nfs_sd.dom_dir)]
+            )
 
 
 @expandPermutations
 class TestVolumeOperations(VdsmTestCase):
 
-    @permutations([
-        # allow_active
-        (True,),
-        (False,),
-    ])
+    @permutations(
+        [
+            # allow_active
+            (True,),
+            (False,),
+        ]
+    )
     def test_reduce_volume(self, allow_active):
         oop = FakeOOP(FakeGlob([]))
         dom = FileStorageDomain("dummy_sd_uuid", "dummy_mountpoint", oop)
-        dom.reduceVolume("dummy_img_uuid", "dummy_vol_uuuid",
-                         allowActive=allow_active)
+        dom.reduceVolume(
+            "dummy_img_uuid", "dummy_vol_uuuid", allowActive=allow_active
+        )
 
 
 def add_filesd(repo, remote_path, sd_uuid, subdir=""):

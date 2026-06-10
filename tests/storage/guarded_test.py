@@ -22,14 +22,16 @@ class TestContext(VdsmTestCase):
         locks = [
             FakeGuardedLock('01_dom', 'dom', 'mode', log),
             FakeGuardedLock('02_img', 'img', 'mode', log),
-            FakeGuardedLock('03_vol', 'vol', 'mode', log)]
+            FakeGuardedLock('03_vol', 'vol', 'mode', log),
+        ]
         expected = [
             ('acquire', '01_dom', 'dom', 'mode'),
             ('acquire', '02_img', 'img', 'mode'),
             ('acquire', '03_vol', 'vol', 'mode'),
             ('release', '03_vol', 'vol', 'mode'),
             ('release', '02_img', 'img', 'mode'),
-            ('release', '01_dom', 'dom', 'mode')]
+            ('release', '01_dom', 'dom', 'mode'),
+        ]
         with guarded.context(locks):
             self.assertEqual(expected[:3], log)
         self.assertEqual(expected, log)
@@ -42,7 +44,8 @@ class TestContext(VdsmTestCase):
             FakeGuardedLock('03_vol', 'vol1', 'mode', log),
             FakeGuardedLock('01_dom', 'dom2', 'mode', log),
             FakeGuardedLock('02_img', 'img2', 'mode', log),
-            FakeGuardedLock('03_vol', 'vol2', 'mode', log)]
+            FakeGuardedLock('03_vol', 'vol2', 'mode', log),
+        ]
         expected = [
             ('acquire', '01_dom', 'dom1', 'mode'),
             ('acquire', '01_dom', 'dom2', 'mode'),
@@ -55,7 +58,8 @@ class TestContext(VdsmTestCase):
             ('release', '02_img', 'img2', 'mode'),
             ('release', '02_img', 'img1', 'mode'),
             ('release', '01_dom', 'dom2', 'mode'),
-            ('release', '01_dom', 'dom1', 'mode')]
+            ('release', '01_dom', 'dom1', 'mode'),
+        ]
         with guarded.context(locks):
             self.assertEqual(expected[:6], log)
         self.assertEqual(expected, log)
@@ -68,7 +72,8 @@ class TestContext(VdsmTestCase):
             FakeGuardedLock('03_vol', 'vol1', 'mode', log),
             FakeGuardedLock('01_dom', 'dom1', 'mode', log),
             FakeGuardedLock('02_img', 'img1', 'mode', log),
-            FakeGuardedLock('03_vol', 'vol2', 'mode', log)]
+            FakeGuardedLock('03_vol', 'vol2', 'mode', log),
+        ]
         expected = [
             ('acquire', '01_dom', 'dom1', 'mode'),
             ('acquire', '02_img', 'img1', 'mode'),
@@ -77,7 +82,8 @@ class TestContext(VdsmTestCase):
             ('release', '03_vol', 'vol2', 'mode'),
             ('release', '03_vol', 'vol1', 'mode'),
             ('release', '02_img', 'img1', 'mode'),
-            ('release', '01_dom', 'dom1', 'mode')]
+            ('release', '01_dom', 'dom1', 'mode'),
+        ]
         with guarded.context(locks):
             self.assertEqual(expected[:4], log)
         self.assertEqual(expected, log)
@@ -87,13 +93,16 @@ class TestContext(VdsmTestCase):
         locks = [
             FakeGuardedLock('01_dom', 'dom1', 'mode', log),
             FakeGuardedLock('02_img', 'img1', 'mode', log),
-            FakeGuardedLock('03_vol', 'vol1', 'mode', log,
-                            acquire=InjectedFailure)]
+            FakeGuardedLock(
+                '03_vol', 'vol1', 'mode', log, acquire=InjectedFailure
+            ),
+        ]
         expected = [
             ('acquire', '01_dom', 'dom1', 'mode'),
             ('acquire', '02_img', 'img1', 'mode'),
             ('release', '02_img', 'img1', 'mode'),
-            ('release', '01_dom', 'dom1', 'mode')]
+            ('release', '01_dom', 'dom1', 'mode'),
+        ]
         with self.assertRaises(InjectedFailure):
             with guarded.context(locks):
                 pass
@@ -103,14 +112,18 @@ class TestContext(VdsmTestCase):
         log = []
         locks = [
             FakeGuardedLock('01_dom', 'dom1', 'mode', log),
-            FakeGuardedLock('02_img', 'img1', 'mode', log,
-                            release=InjectedFailure),
-            FakeGuardedLock('03_vol', 'vol1', 'mode', log,
-                            acquire=InjectedFailure)]
+            FakeGuardedLock(
+                '02_img', 'img1', 'mode', log, release=InjectedFailure
+            ),
+            FakeGuardedLock(
+                '03_vol', 'vol1', 'mode', log, acquire=InjectedFailure
+            ),
+        ]
         expected = [
             ('acquire', '01_dom', 'dom1', 'mode'),
             ('acquire', '02_img', 'img1', 'mode'),
-            ('release', '01_dom', 'dom1', 'mode')]
+            ('release', '01_dom', 'dom1', 'mode'),
+        ]
         with self.assertRaises(InjectedFailure):
             with guarded.context(locks):
                 pass
@@ -121,14 +134,17 @@ class TestContext(VdsmTestCase):
         locks = [
             FakeGuardedLock('01_dom', 'dom1', 'mode', log),
             FakeGuardedLock('02_img', 'img1', 'mode', log),
-            FakeGuardedLock('03_vol', 'vol1', 'mode', log,
-                            release=InjectedFailure)]
+            FakeGuardedLock(
+                '03_vol', 'vol1', 'mode', log, release=InjectedFailure
+            ),
+        ]
         expected = [
             ('acquire', '01_dom', 'dom1', 'mode'),
             ('acquire', '02_img', 'img1', 'mode'),
             ('acquire', '03_vol', 'vol1', 'mode'),
             ('release', '02_img', 'img1', 'mode'),
-            ('release', '01_dom', 'dom1', 'mode')]
+            ('release', '01_dom', 'dom1', 'mode'),
+        ]
         with self.assertRaises(guarded.ReleaseError):
             with guarded.context(locks):
                 pass
@@ -139,14 +155,16 @@ class TestContext(VdsmTestCase):
         locks = [
             FakeGuardedLock('01_dom', 'dom1', 'mode', log),
             FakeGuardedLock('02_img', 'img1', 'mode', log),
-            FakeGuardedLock('03_vol', 'vol1', 'mode', log)]
+            FakeGuardedLock('03_vol', 'vol1', 'mode', log),
+        ]
         expected = [
             ('acquire', '01_dom', 'dom1', 'mode'),
             ('acquire', '02_img', 'img1', 'mode'),
             ('acquire', '03_vol', 'vol1', 'mode'),
             ('release', '03_vol', 'vol1', 'mode'),
             ('release', '02_img', 'img1', 'mode'),
-            ('release', '01_dom', 'dom1', 'mode')]
+            ('release', '01_dom', 'dom1', 'mode'),
+        ]
         with self.assertRaises(InjectedFailure):
             with guarded.context(locks):
                 raise InjectedFailure()
@@ -157,14 +175,17 @@ class TestContext(VdsmTestCase):
         locks = [
             FakeGuardedLock('01_dom', 'dom1', 'mode', log),
             FakeGuardedLock('02_img', 'img1', 'mode', log),
-            FakeGuardedLock('03_vol', 'vol1', 'mode', log,
-                            release=InjectedFailure)]
+            FakeGuardedLock(
+                '03_vol', 'vol1', 'mode', log, release=InjectedFailure
+            ),
+        ]
         expected = [
             ('acquire', '01_dom', 'dom1', 'mode'),
             ('acquire', '02_img', 'img1', 'mode'),
             ('acquire', '03_vol', 'vol1', 'mode'),
             ('release', '02_img', 'img1', 'mode'),
-            ('release', '01_dom', 'dom1', 'mode')]
+            ('release', '01_dom', 'dom1', 'mode'),
+        ]
         with self.assertRaises(RuntimeError):
             with guarded.context(locks):
                 raise RuntimeError()

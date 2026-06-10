@@ -37,7 +37,7 @@ class MonitorBusy(Exception):
 DEFAULT_INTERFACE_FOR_ARCH = {
     cpuarch.X86_64: 'ide',
     cpuarch.PPC64: 'scsi',
-    cpuarch.PPC64LE: 'scsi'
+    cpuarch.PPC64LE: 'scsi',
 }
 
 
@@ -50,7 +50,7 @@ class DISK_TYPE:
 SOURCE_ATTR = {
     DISK_TYPE.FILE: 'file',
     DISK_TYPE.NETWORK: 'name',
-    DISK_TYPE.BLOCK: 'dev'
+    DISK_TYPE.BLOCK: 'dev',
 }
 
 
@@ -79,8 +79,10 @@ class BLOCK_THRESHOLD:
 
 
 class VolumeNotFound(errors.Base):
-    msg = ("Cannot find volume {self.vol_id} in drive {self.drive_name}'s "
-           "volume chain")
+    msg = (
+        "Cannot find volume {self.vol_id} in drive {self.drive_name}'s "
+        "volume chain"
+    )
 
     def __init__(self, drive_name, vol_id):
         self.drive_name = drive_name
@@ -95,27 +97,67 @@ class InvalidDiskXML(errors.Base):
 
 
 VolumeChainEntry = collections.namedtuple(
-    'VolumeChainEntry',
-    ['uuid', 'path', 'index'])
+    'VolumeChainEntry', ['uuid', 'path', 'index']
+)
 
 
 class Drive(core.Base):
-    __slots__ = ('iface', '_path', 'readonly', 'bootOrder', 'domainID',
-                 'poolID', 'imageID', 'UUID', 'volumeID', 'format',
-                 'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
-                 'index', 'name', 'optional', 'shared', 'truesize',
-                 'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
-                 'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
-                 '_diskType', 'hosts', 'protocol', 'auth', 'discard',
-                 'vm_custom', '_block_info', '_threshold_state', '_lock',
-                 '_monitor_lock', '_monitorable', 'guestName', '_iotune',
-                 'RBD', 'managed', 'scratch_disk', 'exceeded_time',
-                 'extend_time', 'managed_reservation', 'discard_no_unref')
+    __slots__ = (
+        'iface',
+        '_path',
+        'readonly',
+        'bootOrder',
+        'domainID',
+        'poolID',
+        'imageID',
+        'UUID',
+        'volumeID',
+        'format',
+        'propagateErrors',
+        'address',
+        'apparentsize',
+        'volumeInfo',
+        'index',
+        'name',
+        'optional',
+        'shared',
+        'truesize',
+        'volumeChain',
+        'baseVolumeID',
+        'serial',
+        'reqsize',
+        'cache',
+        'extSharedState',
+        'drv',
+        'sgio',
+        'GUID',
+        'diskReplicate',
+        '_diskType',
+        'hosts',
+        'protocol',
+        'auth',
+        'discard',
+        'vm_custom',
+        '_block_info',
+        '_threshold_state',
+        '_lock',
+        '_monitor_lock',
+        '_monitorable',
+        'guestName',
+        '_iotune',
+        'RBD',
+        'managed',
+        'scratch_disk',
+        'exceeded_time',
+        'extend_time',
+        'managed_reservation',
+        'discard_no_unref',
+    )
     # pylint: disable=used-before-assignment
     VOLWM_CHUNK_SIZE = (
-        config.getint('irs', 'volume_utilization_chunk_mb') * MiB)
-    VOLWM_FREE_PCT = (
-        100 - config.getint('irs', 'volume_utilization_percent'))
+        config.getint('irs', 'volume_utilization_chunk_mb') * MiB
+    )
+    VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
 
     # Estimate of the additional space needed for qcow format internal data.
@@ -141,15 +183,22 @@ class Drive(core.Base):
             address = vmxml.device_address(x)
 
             # Keep data as dict for easier debugging
-            deviceDict = {'path': devPath, 'name': name,
-                          'readonly': readonly, 'bootOrder': bootOrder,
-                          'address': address, 'type': devType}
+            deviceDict = {
+                'path': devPath,
+                'name': name,
+                'readonly': readonly,
+                'bootOrder': bootOrder,
+                'address': address,
+                'type': devType,
+            }
 
             # display indexed pairs of ordered values from 2 dicts
             # such as {key_1: (valueA_1, valueB_1), ...}
             def mergeDicts(deviceDef, dev):
-                return dict((k, (deviceDef[k], getattr(dev, k, None)))
-                            for k in deviceDef)
+                return dict(
+                    (k, (deviceDef[k], getattr(dev, k, None)))
+                    for k in deviceDef
+                )
 
             vm.log.debug('Looking for drive with attributes %s', deviceDict)
             for d in device_conf:
@@ -158,10 +207,17 @@ class Drive(core.Base):
                 # verify that the cached path is the one used in libvirt.
                 # We already hit few times the problem that after a live
                 # migration the paths were not in sync anymore (BZ#1059482).
-                if (hasattr(d, 'alias') and d.alias == alias and
-                        d.path != devPath):
-                    vm.log.warning('updating drive %s path from %s to %s',
-                                   d.alias, d.path, devPath)
+                if (
+                    hasattr(d, 'alias')
+                    and d.alias == alias
+                    and d.path != devPath
+                ):
+                    vm.log.warning(
+                        'updating drive %s path from %s to %s',
+                        d.alias,
+                        d.path,
+                        devPath,
+                    )
                     d.path = devPath
                 if d.path == devPath:
                     d.name = name
@@ -178,14 +234,19 @@ class Drive(core.Base):
             for dev in vm.conf['devices']:
                 # See comment in previous loop. This part is used to update
                 # the vm configuration as well.
-                if ('alias' in dev and dev['alias'] == alias and
-                        dev['path'] != devPath):
-                    vm.log.warning('updating drive %s config path from %s '
-                                   'to %s', dev['alias'], dev['path'],
-                                   devPath)
+                if (
+                    'alias' in dev
+                    and dev['alias'] == alias
+                    and dev['path'] != devPath
+                ):
+                    vm.log.warning(
+                        'updating drive %s config path from %s ' 'to %s',
+                        dev['alias'],
+                        dev['path'],
+                        devPath,
+                    )
                     dev['path'] = devPath
-                if (dev['type'] == hwclass.DISK and
-                        dev['path'] == devPath):
+                if dev['type'] == hwclass.DISK and dev['path'] == devPath:
                     dev['name'] = name
                     dev['address'] = address
                     dev['alias'] = alias
@@ -198,10 +259,16 @@ class Drive(core.Base):
             if not knownDev:
                 archIface = DEFAULT_INTERFACE_FOR_ARCH[vm.arch]
                 iface = archIface if address['type'] == 'drive' else 'pci'
-                diskDev = {'type': hwclass.DISK, 'device': devType,
-                           'iface': iface, 'path': devPath, 'name': name,
-                           'address': address, 'alias': alias,
-                           'readonly': str(readonly)}
+                diskDev = {
+                    'type': hwclass.DISK,
+                    'device': devType,
+                    'iface': iface,
+                    'path': devPath,
+                    'name': name,
+                    'address': address,
+                    'alias': alias,
+                    'readonly': str(readonly),
+                }
                 if bootOrder:
                     diskDev['bootOrder'] = bootOrder
                 vm.log.warning('Found unknown drive: %s', diskDev)
@@ -245,7 +312,8 @@ class Drive(core.Base):
         # floppies are used only internally for sysprep, so
         # they are readonly unless explicitely stated otherwise
         self.readonly = conv.tobool(
-            kwargs.get('readonly', self.device == 'floppy'))
+            kwargs.get('readonly', self.device == 'floppy')
+        )
 
         # Used for chunked drives or drives replicating to chunked replica.
         self._block_info = None
@@ -378,8 +446,10 @@ class Drive(core.Base):
         volume may require extending. See Drive.chunked for more info.
         """
         replica = getattr(self, "diskReplicate", {})
-        return (replica.get("diskType") == DISK_TYPE.BLOCK and
-                replica.get("format") == "cow")
+        return (
+            replica.get("diskType") == DISK_TYPE.BLOCK
+            and replica.get("format") == "cow"
+        )
 
     @property
     def monitorable(self):
@@ -430,7 +500,10 @@ class Drive(core.Base):
                 self._threshold_state = BLOCK_THRESHOLD.UNSET
                 self.log.debug(
                     "Drive %s move from %r to %r, unsetting threshold",
-                    self.name, self._path, path)
+                    self.name,
+                    self._path,
+                    path,
+                )
 
             self._path = path
 
@@ -490,7 +563,8 @@ class Drive(core.Base):
 
             return self._threshold_state in (
                 BLOCK_THRESHOLD.UNSET,
-                BLOCK_THRESHOLD.EXCEEDED)
+                BLOCK_THRESHOLD.EXCEEDED,
+            )
 
     @property
     def block_info(self):
@@ -499,8 +573,12 @@ class Drive(core.Base):
     @block_info.setter
     def block_info(self, value):
         if value != self._block_info:
-            self.log.debug("Extension info for drive %s volume %s: %s",
-                           self.name, self.volumeID, value)
+            self.log.debug(
+                "Extension info for drive %s volume %s: %s",
+                self.name,
+                self.volumeID,
+                value,
+            )
             self._block_info = value
 
     @property
@@ -511,19 +589,26 @@ class Drive(core.Base):
     def diskType(self, value):
         if value not in SOURCE_ATTR:
             raise exception.UnsupportedOperation(
-                "Unsupported diskType %r" % value)
+                "Unsupported diskType %r" % value
+            )
         if self.device == 'floppy' and value != DISK_TYPE.FILE:
             raise exception.UnsupportedOperation(
-                "diskType of device 'floppy' can only be 'file'")
+                "diskType of device 'floppy' can only be 'file'"
+            )
 
         # TODO: Check if a cdrom can be on network device
         if self.device == 'cdrom' and value == DISK_TYPE.NETWORK:
             raise exception.UnsupportedOperation(
-                "diskType of device 'cdrom' can not be 'network'")
+                "diskType of device 'cdrom' can not be 'network'"
+            )
 
         if self._diskType is not None and self._diskType != value:
-            self.log.debug("Drive %s type changed from %r to %r",
-                           self.name, self._diskType, value)
+            self.log.debug(
+                "Drive %s type changed from %r to %r",
+                self.name,
+                self._diskType,
+                value,
+            )
 
         self._diskType = value
 
@@ -547,17 +632,21 @@ class Drive(core.Base):
         # when libvirt will support shared leases this will loop over all the
         # volumes
         for volInfo in self.volumeChain[-1:]:
-            device = lease.Device(self.log,
-                                  lease_id=volInfo['volumeID'],
-                                  sd_id=volInfo['domainID'],
-                                  path=volInfo['leasePath'],
-                                  offset=volInfo['leaseOffset'])
+            device = lease.Device(
+                self.log,
+                lease_id=volInfo['volumeID'],
+                sd_id=volInfo['domainID'],
+                path=volInfo['leasePath'],
+                offset=volInfo['leaseOffset'],
+            )
             yield device.getXML()
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
-        return dict(devtype=core.dev_class_from_dev_elem(dev_elem),
-                    **core.get_xml_elem(dev_elem, 'name', 'target', 'dev'))
+        return dict(
+            devtype=core.dev_class_from_dev_elem(dev_elem),
+            **core.get_xml_elem(dev_elem, 'name', 'target', 'dev'),
+        )
 
     def config(self):
         return compat.drive_config(super(Drive, self).config(), self)
@@ -575,8 +664,9 @@ class Drive(core.Base):
         </disk>
         """
         self._validate()
-        diskelem = self.createXmlElem('disk', self.diskType,
-                                      ['device', 'address', 'sgio'])
+        diskelem = self.createXmlElem(
+            'disk', self.diskType, ['device', 'address', 'sgio']
+        )
         diskelem.setAttrs(snapshot='no')
 
         diskelem.appendChild(_getSourceXML(self))
@@ -626,9 +716,9 @@ class Drive(core.Base):
 
     def _getAuthXML(self):
         auth = vmxml.Element("auth", username=self.auth["username"])
-        auth.appendChildWithArgs("secret",
-                                 type=self.auth["type"],
-                                 uuid=self.auth["uuid"])
+        auth.appendChildWithArgs(
+            "secret", type=self.auth["type"], uuid=self.auth["uuid"]
+        )
         return auth
 
     def _getTargetXML(self):
@@ -667,13 +757,17 @@ class Drive(core.Base):
             DISK_TYPE.BLOCK: 'dev',
             DISK_TYPE.NETWORK: 'name',
         }
-        return ("./devices/disk/source[@%s='%s']" %
-                (source_key[self.diskType], self.path))
+        return "./devices/disk/source[@%s='%s']" % (
+            source_key[self.diskType],
+            self.path,
+        )
 
     def __repr__(self):
-        return ("<Drive name={self.name}, type={self.diskType}, "
-                "path={self.path} threshold={self.threshold_state} "
-                "at {addr:#x}>").format(self=self, addr=id(self))
+        return (
+            "<Drive name={self.name}, type={self.diskType}, "
+            "path={self.path} threshold={self.threshold_state} "
+            "at {addr:#x}>"
+        ).format(self=self, addr=id(self))
 
     @property
     def iotune(self):
@@ -859,8 +953,7 @@ class Drive(core.Base):
         try:
             return int(index)
         except ValueError:
-            raise InvalidDiskXML(
-                "Invalid backingStore index {}".format(index))
+            raise InvalidDiskXML("Invalid backingStore index {}".format(index))
 
     def _parse_type(self, element):
         """
@@ -894,17 +987,20 @@ class Drive(core.Base):
                 raise exception.UnsupportedOperation(
                     "Unexpected diskType",
                     drive_disk_type=self.diskType,
-                    snapshot_disk_type=snap_info["diskType"])
+                    snapshot_disk_type=snap_info["diskType"],
+                )
 
         if self.diskType == DISK_TYPE.NETWORK:
             if self.protocol != snap_info['protocol']:
                 raise exception.UnsupportedOperation(
                     "Unexpected protocol",
                     drive_protocol=self.protocol,
-                    snapshot_protocol=snap_info["protocol"])
+                    snapshot_protocol=snap_info["protocol"],
+                )
 
-        disk = vmxml.Element('disk', name=self.name, snapshot='external',
-                             type=self.diskType)
+        disk = vmxml.Element(
+            'disk', name=self.name, snapshot='external', type=self.diskType
+        )
 
         drive_info = snap_info.copy()
         drive_info["diskType"] = self.diskType
@@ -931,7 +1027,10 @@ class Drive(core.Base):
                 self.log.debug(
                     "block threshold event mismatch drive %r path=%r "
                     "reported path=%r - ignored",
-                    self.name, self._path, reported_path)
+                    self.name,
+                    self._path,
+                    reported_path,
+                )
                 return False
 
             return self._mark_for_extension()
@@ -955,8 +1054,8 @@ class Drive(core.Base):
         """
         if self._threshold_state == BLOCK_THRESHOLD.EXCEEDED:
             self.log.debug(
-                "drive %r block threshold already exceeded, ignored",
-                self.name)
+                "drive %r block threshold already exceeded, ignored", self.name
+            )
             return False
 
         self.log.info("drive %r needs extension", self.name)
@@ -972,7 +1071,8 @@ class Drive(core.Base):
         """
         if not self._monitor_lock.acquire(timeout=timeout):
             raise MonitorBusy(
-                f"Timeout acquiring monitor lock for drive {self.name}")
+                f"Timeout acquiring monitor lock for drive {self.name}"
+            )
         try:
             yield
         finally:
@@ -1056,8 +1156,7 @@ def is_payload_drive(drive):
     Arguments:
       drive: 'Drive' instance
     """
-    return (hasattr(drive, 'specParams') and
-            'vmPayload' in drive.specParams)
+    return hasattr(drive, 'specParams') and 'vmPayload' in drive.specParams
 
 
 def _getSourceXML(drive):
@@ -1134,8 +1233,9 @@ def _getDriverXML(drive):
         # cache setting is irrelevant for cdroms
         driverAttrs['cache'] = drive['cache']
 
-    if (drive['propagateErrors'] == 'on' or
-            conv.tobool(drive['propagateErrors'])):
+    if drive['propagateErrors'] == 'on' or conv.tobool(
+        drive['propagateErrors']
+    ):
         driverAttrs['error_policy'] = 'enospace'
     elif drive['propagateErrors'] == 'report':
         driverAttrs['error_policy'] = 'report'
@@ -1149,9 +1249,11 @@ def _getDriverXML(drive):
 def _get_drive_identification(dom):
     source = vmxml.find_first(dom, 'source', None)
     if source is not None:
-        devPath = (vmxml.attr(source, 'file') or
-                   vmxml.attr(source, 'dev') or
-                   vmxml.attr(source, 'name'))
+        devPath = (
+            vmxml.attr(source, 'file')
+            or vmxml.attr(source, 'dev')
+            or vmxml.attr(source, 'name')
+        )
     else:
         devPath = ''
     name = vmxml.find_attr(dom, 'target', 'dev')

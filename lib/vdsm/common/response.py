@@ -17,7 +17,7 @@ class MalformedResponse(Exception):
 def success(message=None, **kwargs):
     kwargs["status"] = {
         "code": doneCode["code"],
-        "message": message or doneCode["message"]
+        "message": message or doneCode["message"],
     }
     return kwargs
 
@@ -41,18 +41,13 @@ def error(name, message=None):
     return {
         "status": {
             "code": status["code"],
-            "message": message or status["message"]
+            "message": message or status["message"],
         }
     }
 
 
 def error_raw(code, message):
-    return {
-        "status": {
-            "code": code,
-            "message": message
-        }
-    }
+    return {"status": {"code": code, "message": message}}
 
 
 def is_error(res, err=None):

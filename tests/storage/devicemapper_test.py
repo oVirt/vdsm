@@ -16,15 +16,22 @@ from vdsm.storage.devicemapper import DMPATH_PREFIX
 from vdsm.storage.devicemapper import Error
 from vdsm.storage.devicemapper import PathStatus
 
-from . marks import requires_root, broken_on_ci
+from .marks import requires_root, broken_on_ci
 
 FAKE_DMSETUP_STATUS = [
-    ("360014053d0b83eff3d347c48509fc426", " 0 104857600 multipath 2 0 1 0 3 2 E 0 1 1 67:16 F 4 0 E 0 1 1 65:240 A 84 0 E 0 1 1 66:64 A 39 0"),  # NOQA: E501 (long line)
-    ("3600140543cb8d7510d54f058c7b3f7ec", " 0 209715200 multipath 2 0 1 0 3 1 A 0 1 1 65:224 A 0 0 E 0 1 1 65:160 A 0 0 E 0 1 1 66:176 F 1 0"),  # NOQA: E501 (long line)
+    (
+        "360014053d0b83eff3d347c48509fc426",
+        " 0 104857600 multipath 2 0 1 0 3 2 E 0 1 1 67:16 F 4 0 E 0 1 1 65:240 A 84 0 E 0 1 1 66:64 A 39 0",
+    ),  # NOQA: E501 (long line)
+    (
+        "3600140543cb8d7510d54f058c7b3f7ec",
+        " 0 209715200 multipath 2 0 1 0 3 1 A 0 1 1 65:224 A 0 0 E 0 1 1 65:160 A 0 0 E 0 1 1 66:176 F 1 0",
+    ),  # NOQA: E501 (long line)
 ]
 
 broken_on_ci = broken_on_ci.with_args(
-    reason="device mapper doesn't work properly in containers")
+    reason="device mapper doesn't work properly in containers"
+)
 
 
 class FakeDmSetupStatus(object):
@@ -72,7 +79,8 @@ def zero_dm_device():
                 commands.run(cmd)
             except cmdutils.Error as e:
                 raise Error(
-                    "Could not remove mapping {!r}: {}".format(device_name, e))
+                    "Could not remove mapping {!r}: {}".format(device_name, e)
+                )
 
 
 def test_dm_status(fake_dmsetup_status):
@@ -80,18 +88,16 @@ def test_dm_status(fake_dmsetup_status):
 
     res = devicemapper.multipath_status()
     expected = {
-        '360014053d0b83eff3d347c48509fc426':
-            [
-                PathStatus('67:16', 'F'),
-                PathStatus('65:240', 'A'),
-                PathStatus('66:64', 'A')
-            ],
-        '3600140543cb8d7510d54f058c7b3f7ec':
-            [
-                PathStatus('65:224', 'A'),
-                PathStatus('65:160', 'A'),
-                PathStatus('66:176', 'F')
-            ]
+        '360014053d0b83eff3d347c48509fc426': [
+            PathStatus('67:16', 'F'),
+            PathStatus('65:240', 'A'),
+            PathStatus('66:64', 'A'),
+        ],
+        '3600140543cb8d7510d54f058c7b3f7ec': [
+            PathStatus('65:224', 'A'),
+            PathStatus('65:160', 'A'),
+            PathStatus('66:176', 'F'),
+        ],
     }
 
     assert res == expected
@@ -103,7 +109,8 @@ def test_dm_status_no_device(fake_dmsetup_status):
 
 def test_get_paths_status(monkeypatch, fake_dmsetup_status):
     monkeypatch.setattr(
-        devicemapper, "device_name", lambda major_minor: major_minor)
+        devicemapper, "device_name", lambda major_minor: major_minor
+    )
     dmsetup.status.lines = FAKE_DMSETUP_STATUS
 
     res = devicemapper.getPathsStatus()

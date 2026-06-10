@@ -31,71 +31,91 @@ def fake_estimate_qcow2_size(self, src_vol_params, dst_sd_id):
 @expandPermutations
 class TestCalculateVolAlloc(VdsmTestCase):
 
-    @permutations([
-        # srcVolParams, destVolFormt, expectedAlloc
-        # copy raw to raw, using virtual size
-        (dict(capacity=2 * GiB,
-              volFormat=sc.RAW_FORMAT,
-              apparentsize=GiB),
-         sc.RAW_FORMAT,
-         2 * GiB),
-        # copy raw to qcow, using estimated chain size
-        (dict(capacity=2 * GiB,
-              volFormat=sc.RAW_FORMAT,
-              apparentsize=GiB,
-              prealloc=sc.SPARSE_VOL,
-              parent="parentUUID",
-              imgUUID="imgUUID",
-              volUUID="volUUID"),
-         sc.COW_FORMAT,
-         1.25 * GiB),
-        # copy single cow volume to raw, using virtual size
-        (dict(capacity=2 * GiB,
-              volFormat=sc.COW_FORMAT,
-              apparentsize=GiB),
-         sc.RAW_FORMAT,
-         2 * GiB),
-        # copy cow chain to raw, using virtual size
-        (dict(capacity=2 * GiB,
-              volFormat=sc.COW_FORMAT,
-              apparentsize=GiB,
-              parent="parentUUID"),
-         sc.RAW_FORMAT,
-         2 * GiB),
-        # copy single cow to cow, using estimated size.
-        (dict(capacity=2 * GiB,
-              volFormat=sc.COW_FORMAT,
-              apparentsize=GiB,
-              parent=sc.BLANK_UUID),
-         sc.COW_FORMAT,
-         1.25 * GiB),
-        # copy qcow chain to cow, using estimated chain size
-        (dict(capacity=2 * GiB,
-              volFormat=sc.COW_FORMAT,
-              apparentsize=GiB,
-              prealloc=sc.SPARSE_VOL,
-              parent="parentUUID",
-              imgUUID="imgUUID",
-              volUUID="volUUID"),
-         sc.COW_FORMAT,
-         2.25 * GiB),
-    ])
+    @permutations(
+        [
+            # srcVolParams, destVolFormt, expectedAlloc
+            # copy raw to raw, using virtual size
+            (
+                dict(
+                    capacity=2 * GiB, volFormat=sc.RAW_FORMAT, apparentsize=GiB
+                ),
+                sc.RAW_FORMAT,
+                2 * GiB,
+            ),
+            # copy raw to qcow, using estimated chain size
+            (
+                dict(
+                    capacity=2 * GiB,
+                    volFormat=sc.RAW_FORMAT,
+                    apparentsize=GiB,
+                    prealloc=sc.SPARSE_VOL,
+                    parent="parentUUID",
+                    imgUUID="imgUUID",
+                    volUUID="volUUID",
+                ),
+                sc.COW_FORMAT,
+                1.25 * GiB,
+            ),
+            # copy single cow volume to raw, using virtual size
+            (
+                dict(
+                    capacity=2 * GiB, volFormat=sc.COW_FORMAT, apparentsize=GiB
+                ),
+                sc.RAW_FORMAT,
+                2 * GiB,
+            ),
+            # copy cow chain to raw, using virtual size
+            (
+                dict(
+                    capacity=2 * GiB,
+                    volFormat=sc.COW_FORMAT,
+                    apparentsize=GiB,
+                    parent="parentUUID",
+                ),
+                sc.RAW_FORMAT,
+                2 * GiB,
+            ),
+            # copy single cow to cow, using estimated size.
+            (
+                dict(
+                    capacity=2 * GiB,
+                    volFormat=sc.COW_FORMAT,
+                    apparentsize=GiB,
+                    parent=sc.BLANK_UUID,
+                ),
+                sc.COW_FORMAT,
+                1.25 * GiB,
+            ),
+            # copy qcow chain to cow, using estimated chain size
+            (
+                dict(
+                    capacity=2 * GiB,
+                    volFormat=sc.COW_FORMAT,
+                    apparentsize=GiB,
+                    prealloc=sc.SPARSE_VOL,
+                    parent="parentUUID",
+                    imgUUID="imgUUID",
+                    volUUID="volUUID",
+                ),
+                sc.COW_FORMAT,
+                2.25 * GiB,
+            ),
+        ]
+    )
     @MonkeyPatch(image.Image, 'estimateChainSize', fake_estimate_chain_size)
-    @MonkeyPatch(
-        image.Image, 'estimate_qcow2_size', fake_estimate_qcow2_size)
-    def test_calculate_vol_alloc(
-            self, src_params, dest_format, expected):
+    @MonkeyPatch(image.Image, 'estimate_qcow2_size', fake_estimate_qcow2_size)
+    def test_calculate_vol_alloc(self, src_params, dest_format, expected):
         img = image.Image("/path/to/repo")
-        allocation = img.calculate_vol_alloc("src_sd_id", src_params,
-                                             "dst_sd_id", dest_format)
+        allocation = img.calculate_vol_alloc(
+            "src_sd_id", src_params, "dst_sd_id", dest_format
+        )
         self.assertEqual(allocation, expected)
 
 
 class TestEstimateQcow2Size:
 
     @pytest.mark.parametrize('sd_class', [FakeFileSD, FakeBlockSD])
-    def test_raw_to_qcow2_estimated_size(
-            self, monkeypatch, sd_class):
+    def test_raw_to_qcow2_estimated_size(self, monkeypatch, sd_class):
         monkeypatch.setattr(image, "config", CONFIG)
         monkeypatch.setattr(
             qemuimg,
@@ -107,7 +127,8 @@ class TestEstimateQcow2Size:
             # output:
             #   required size: 393216
             #   fully allocated size: 1074135040
-            lambda **args: {"required": 393216})
+            lambda **args: {"required": 393216},
+        )
         monkeypatch.setattr(image, 'sdCache', FakeStorageDomainCache())
 
         image.sdCache.domains['sdUUID'] = sd_class("fake manifest")
@@ -117,14 +138,14 @@ class TestEstimateQcow2Size:
             capacity=GiB,
             volFormat=sc.RAW_FORMAT,
             path='path',
-            block=sd_class.is_block())
+            block=sd_class.is_block(),
+        )
         estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
 
         assert estimated_size == 1074135040
 
     @pytest.mark.parametrize('sd_class', [FakeFileSD, FakeBlockSD])
-    def test_qcow2_to_qcow2_estimated_size(
-            self, monkeypatch, sd_class):
+    def test_qcow2_to_qcow2_estimated_size(self, monkeypatch, sd_class):
         monkeypatch.setattr(image, "config", CONFIG)
         monkeypatch.setattr(
             qemuimg,
@@ -136,7 +157,8 @@ class TestEstimateQcow2Size:
             # output:
             #   required size: 393216
             #   fully allocated size: 1074135040
-            lambda **args: {"required": 393216})
+            lambda **args: {"required": 393216},
+        )
         monkeypatch.setattr(image, 'sdCache', FakeStorageDomainCache())
 
         image.sdCache.domains['sdUUID'] = sd_class("fake manifest")
@@ -146,31 +168,34 @@ class TestEstimateQcow2Size:
             capacity=GiB,
             volFormat=sc.COW_FORMAT,
             path='path',
-            block=sd_class.is_block())
+            block=sd_class.is_block(),
+        )
         estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
 
         assert estimated_size == 1074135040
 
-    @pytest.mark.parametrize("storage,format,prealloc,estimate,expected", [
-        # File raw preallocated, avoid prealocation.
-        ("file", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 10 * GiB, 0),
-
-        # File - anything else no initial size.
-        ("file", sc.RAW_FORMAT, sc.SPARSE_VOL, 10 * GiB, None),
-        ("file", sc.COW_FORMAT, sc.SPARSE_VOL, 10 * GiB, None),
-        ("file", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 10 * GiB, None),
-
-        # Block qcow2 thin, return estimate.
-        ("block", sc.COW_FORMAT, sc.SPARSE_VOL, 10 * GiB, 10 * GiB),
-
-        # Block - anything else no initial size.
-        ("block", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 10 * GiB, None),
-        ("block", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 10 * GiB, None),
-    ])
+    @pytest.mark.parametrize(
+        "storage,format,prealloc,estimate,expected",
+        [
+            # File raw preallocated, avoid prealocation.
+            ("file", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 10 * GiB, 0),
+            # File - anything else no initial size.
+            ("file", sc.RAW_FORMAT, sc.SPARSE_VOL, 10 * GiB, None),
+            ("file", sc.COW_FORMAT, sc.SPARSE_VOL, 10 * GiB, None),
+            ("file", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 10 * GiB, None),
+            # Block qcow2 thin, return estimate.
+            ("block", sc.COW_FORMAT, sc.SPARSE_VOL, 10 * GiB, 10 * GiB),
+            # Block - anything else no initial size.
+            ("block", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 10 * GiB, None),
+            ("block", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 10 * GiB, None),
+        ],
+    )
     def test_calculate_initial_size_file_raw_prealloc(
-            self, storage, format, prealloc, estimate, expected):
+        self, storage, format, prealloc, estimate, expected
+    ):
         img = image.Image("/path")
         initial_size = img.calculate_initial_size(
-            storage == "file", format, prealloc, estimate)
+            storage == "file", format, prealloc, estimate
+        )
 
         assert initial_size == expected

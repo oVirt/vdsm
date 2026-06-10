@@ -7,7 +7,6 @@ from xml.sax.saxutils import escape
 from vdsm.common import cpuarch
 from vdsm.virt import vmxml
 
-
 _DEFAULT_MACHINES = {
     cpuarch.X86_64: 'pc',
     cpuarch.PPC64: 'pseries',
@@ -25,8 +24,13 @@ def make_placeholder_domain_xml(vm):
   <os>
     <type arch="{arch}" machine="{machine}">hvm</type>
   </os>
-</domain>'''.format(name=escape(vm.name), id=vm.id, memory=vm.mem_size_mb(),
-                    arch=vm.arch, machine=_DEFAULT_MACHINES[vm.arch])
+</domain>'''.format(
+        name=escape(vm.name),
+        id=vm.id,
+        memory=vm.mem_size_mb(),
+        arch=vm.arch,
+        machine=_DEFAULT_MACHINES[vm.arch],
+    )
 
 
 def update_sysinfo(dom, osname, osversion, hostserial):

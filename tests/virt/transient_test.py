@@ -78,8 +78,9 @@ class TestTransient(VdsmTestCase):
     def check_drive(self, drive, original_path, tmpdir):
         assert drive['diskType'] == DISK_TYPE.FILE
         assert drive['format'] == 'cow'
-        assert drive['path'].startswith(tmpdir), \
-            "%s does not start with %s" % (drive['path'], tmpdir)
+        assert drive['path'].startswith(
+            tmpdir
+        ), "%s does not start with %s" % (drive['path'], tmpdir)
 
         file_stat = os.stat(drive['path'])
         assert stat.S_IMODE(file_stat.st_mode) == 0o660
@@ -87,8 +88,9 @@ class TestTransient(VdsmTestCase):
         transient_info = qemuimg.info(drive['path'])
         assert transient_info['format'] == qemuimg.FORMAT.QCOW2
         assert transient_info['virtual-size'] == VIRTUAL_SIZE
-        assert transient_info['format-specific']['data']['compat'] == \
-            QCOW2_COMPAT
+        assert (
+            transient_info['format-specific']['data']['compat'] == QCOW2_COMPAT
+        )
         assert transient_info['backing-filename'] == original_path
 
     def create_image(self, img_path, img_format):
@@ -100,7 +102,8 @@ class TestTransient(VdsmTestCase):
                 img_path,
                 size=VIRTUAL_SIZE,
                 format=qemuimg.FORMAT.QCOW2,
-                qcow2Compat=QCOW2_COMPAT)
+                qcow2Compat=QCOW2_COMPAT,
+            )
             op.run()
         else:
             raise AssertionError("invalid format: %s" % img_format)

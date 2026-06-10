@@ -25,12 +25,14 @@ class Job(base.Job):
             raise se.UnsupportedOperation(
                 "Storage domain does not support moving devices",
                 sdUUID=sd_manifest.sdUUID(),
-                sdType=sd_manifest.getStorageType())
+                sdType=sd_manifest.getStorageType(),
+            )
         # TODO: we assume at this point that the domain isn't active and can't
         # be activated - we need to ensure that.
         with rm.acquireResource(STORAGE, self.params.sd_id, rm.EXCLUSIVE):
-            with sd_manifest.domain_id(self.host_id), \
-                    sd_manifest.domain_lock(self.host_id):
+            with sd_manifest.domain_id(self.host_id), sd_manifest.domain_lock(
+                self.host_id
+            ):
                 sd_manifest.movePV(self.params.src_guid, self.params.dst_guids)
 
 

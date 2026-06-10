@@ -415,14 +415,17 @@ class TestEventLoopTiming:
     # seconds). For this test it is useful to use a real time source with
     # microsecond resolution.
     @pytest.mark.slow
-    @pytest.mark.parametrize("clock, timers", [
-        (vdsm.common.time.monotonic_time, 1),
-        (vdsm.common.time.monotonic_time, 100),
-        (vdsm.common.time.monotonic_time, 1000),
-        (time.time, 1),
-        (time.time, 100),
-        (time.time, 1000),
-    ])
+    @pytest.mark.parametrize(
+        "clock, timers",
+        [
+            (vdsm.common.time.monotonic_time, 1),
+            (vdsm.common.time.monotonic_time, 100),
+            (vdsm.common.time.monotonic_time, 1000),
+            (time.time, 1),
+            (time.time, 100),
+            (time.time, 1000),
+        ],
+    )
     def test_call_at_latency(self, clock, timers):
         self.loop.time = clock
         interval = 0.001
@@ -443,8 +446,10 @@ class TestEventLoopTiming:
         avg_lat = sum(latency) // len(latency)
         med_lat = latency[len(latency) // 2 - 1]
         max_lat = max(latency)
-        print("avg=%f, min=%f, med=%f, max=%f" %
-              (avg_lat, min_lat, med_lat, max_lat))
+        print(
+            "avg=%f, min=%f, med=%f, max=%f"
+            % (avg_lat, min_lat, med_lat, max_lat)
+        )
         assert avg_lat < 0.01
 
     @pytest.mark.slow
@@ -520,19 +525,23 @@ class TestBufferedReader:
         self.received = data
         self.loop.stop()
 
-    @pytest.mark.parametrize("size, bufsize", [
-        (0, 1),
-        (1, 32),
-        (1 * KiB, 256),
-        (4 * KiB, 1 * KiB),
-        (16 * KiB, 4 * KiB),
-        (64 * KiB, 16 * KiB),
-    ])
+    @pytest.mark.parametrize(
+        "size, bufsize",
+        [
+            (0, 1),
+            (1, 32),
+            (1 * KiB, 256),
+            (4 * KiB, 1 * KiB),
+            (16 * KiB, 4 * KiB),
+            (64 * KiB, 16 * KiB),
+        ],
+    )
     def test_read(self, size, bufsize):
         data = b"x" * size
         r, w = os.pipe()
         reader = self.loop.create_dispatcher(
-            asyncevent.BufferedReader, r, self.complete, bufsize=bufsize)
+            asyncevent.BufferedReader, r, self.complete, bufsize=bufsize
+        )
         with closing(reader):
             os.close(r)  # Dupped by BufferedReader
             Sender(self.loop, w, data, bufsize)
@@ -550,7 +559,8 @@ class TestBufferedReader:
         data = b"it works"
         r, w = os.pipe()
         reader = self.loop.create_dispatcher(
-            asyncevent.BufferedReader, r, failing_complete)
+            asyncevent.BufferedReader, r, failing_complete
+        )
         with closing(reader):
             os.close(r)  # Dupped by BufferedReader
             Sender(self.loop, w, data, 64)
@@ -574,7 +584,7 @@ class Sender(object):
         if self.pos == len(self.data):
             os.close(self.fd)
             return
-        buf = memoryview(self.data)[self.pos:self.pos + self.bufsize]
+        buf = memoryview(self.data)[self.pos : self.pos + self.bufsize]
         self.pos += os.write(self.fd, buf)
         self.loop.call_soon(self.send)
 
@@ -652,9 +662,7 @@ class TestHandle:
         h = asyncevent.Handle(cb, ())
         h.cancel()
         assert not cb.called
-        assert repr(h) == (
-            "<Handle cancelled at 0x{:x}>".format(id(h))
-        )
+        assert repr(h) == ("<Handle cancelled at 0x{:x}>".format(id(h)))
 
     def test_run(self):
         cb = Callback()
@@ -662,9 +670,7 @@ class TestHandle:
         h._run()
         assert cb.called
         assert cb.args == (1, 2)
-        assert repr(h) == (
-            "<Handle at 0x{:x}>".format(id(h))
-        )
+        assert repr(h) == ("<Handle at 0x{:x}>".format(id(h)))
 
 
 class TestTimer:
@@ -692,9 +698,7 @@ class TestTimer:
         h._run()
         assert cb.called
         assert cb.args == ()
-        assert repr(h) == (
-            "<Timer when=1.000000 at 0x{:x}>".format(id(h))
-        )
+        assert repr(h) == ("<Timer when=1.000000 at 0x{:x}>".format(id(h)))
 
     def test_lt(self):
         cb = Callback()

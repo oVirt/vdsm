@@ -7,8 +7,14 @@ import weakref
 from vdsm.common.time import monotonic_time
 
 
-def retry(func, expectedException=Exception, tries=None,
-          timeout=None, sleep=1, stopCallback=None):
+def retry(
+    func,
+    expectedException=Exception,
+    tries=None,
+    timeout=None,
+    sleep=1,
+    stopCallback=None,
+):
     """
     Retry a function. Wraps the retry logic so you don't have to
     implement it each time you need it.
@@ -41,8 +47,7 @@ def retry(func, expectedException=Exception, tries=None,
             if tries == 0:
                 raise
 
-            if (timeout > 0) and ((monotonic_time() - startTime) >
-                                  timeout):
+            if (timeout > 0) and ((monotonic_time() - startTime) > timeout):
                 raise
 
             if stopCallback is not None and stopCallback():

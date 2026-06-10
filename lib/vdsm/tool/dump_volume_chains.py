@@ -35,35 +35,47 @@ class ChainError(DumpChainsError):
 
 
 class DuplicateParentError(ChainError):
-    description = ("more than one volume pointing to the same parent volume "
-                   "e.g: (_BLANK_UUID<-a), (a<-b), (a<-c)")
+    description = (
+        "more than one volume pointing to the same parent volume "
+        "e.g: (_BLANK_UUID<-a), (a<-b), (a<-c)"
+    )
 
 
 class UnknownParentError(ChainError):
-    description = ("there are volumes in the chain missing the parent info "
-                   "in their metadata, please check the metadata integrity")
+    description = (
+        "there are volumes in the chain missing the parent info "
+        "in their metadata, please check the metadata integrity"
+    )
 
 
 class UnknownImageError(ChainError):
-    description = ("there are volumes in the storage missing the image info "
-                   "in their metadata, these are listed here")
+    description = (
+        "there are volumes in the storage missing the image info "
+        "in their metadata, these are listed here"
+    )
 
 
 class NoBaseVolume(ChainError):
-    description = ("no volume with a parent volume Id _BLANK_UUID found e.g: "
-                   "(a<-b), (b<-c)")
+    description = (
+        "no volume with a parent volume Id _BLANK_UUID found e.g: "
+        "(a<-b), (b<-c)"
+    )
 
 
 class ChainLoopError(ChainError):
-    description = ("a loop found in the volume chain. This happens if a "
-                   "volume points to one of it's parent volume e.g.: "
-                   "(BLANK_UUID<-a), (a<-b), (b<-c), (c<-a)")
+    description = (
+        "a loop found in the volume chain. This happens if a "
+        "volume points to one of it's parent volume e.g.: "
+        "(BLANK_UUID<-a), (a<-b), (b<-c), (c<-a)"
+    )
 
 
 class OrphanVolumes(ChainError):
-    description = ("there are volumes that are part of an image and are "
-                   "pointing to volumes which are not part of the chain e.g: "
-                   "(BLANK_UUID<-a), (a<-b), (c<-d)")
+    description = (
+        "there are volumes that are part of an image and are "
+        "pointing to volumes which are not part of the chain e.g: "
+        "(BLANK_UUID<-a), (a<-b), (c<-d)"
+    )
 
 
 @expose(_NAME)
@@ -76,8 +88,9 @@ def dump_chains(*args):
     analysis.
     """
     parsed_args = _parse_args(args)
-    cli = client.connect(parsed_args.host, parsed_args.port,
-                         use_tls=parsed_args.use_ssl)
+    cli = client.connect(
+        parsed_args.host, parsed_args.port, use_tls=parsed_args.use_ssl
+    )
     with utils.closing(cli):
         volumes_info = _get_volumes_info(cli, parsed_args.sd_uuid)
         if parsed_args.output == 'text':
@@ -97,14 +110,25 @@ def dump_chains(*args):
 def _parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('sd_uuid', help="storage domain UUID")
-    parser.add_argument('-u', '--unsecured', action='store_false',
-                        dest='use_ssl', default=True,
-                        help="use unsecured connection")
-    parser.add_argument('-H', '--host', default='localhost')
-    parser.add_argument('-o', '--output', choices=['text', 'json', 'sqlite'],
-                        default='text', help="select output format")
     parser.add_argument(
-        '-p', '--port', default=config.getint('addresses', 'management_port'))
+        '-u',
+        '--unsecured',
+        action='store_false',
+        dest='use_ssl',
+        default=True,
+        help="use unsecured connection",
+    )
+    parser.add_argument('-H', '--host', default='localhost')
+    parser.add_argument(
+        '-o',
+        '--output',
+        choices=['text', 'json', 'sqlite'],
+        default='text',
+        help="select output format",
+    )
+    parser.add_argument(
+        '-p', '--port', default=config.getint('addresses', 'management_port')
+    )
     parser.add_argument('-f', '--sqlite-file', help="sqlite3 db output file")
 
     parsed_args = parser.parse_args(args=args[1:])
@@ -117,7 +141,8 @@ def _parse_args(args):
 
 def _dump_sql(volumes_info, sql_file):
     with sqlite3.connect(sql_file) as con:
-        con.executescript("""
+        con.executescript(
+            """
             DROP TABLE IF EXISTS volumes;
             CREATE TABLE volumes(
                 uuid UUID,
@@ -134,8 +159,10 @@ def _dump_sql(volumes_info, sql_file):
                 truesize UNSIGNED INTEGER,
                 ctime UNSIGNED INTEGER
             );
-            """)
-        con.executemany("""
+            """
+        )
+        con.executemany(
+            """
             INSERT INTO volumes VALUES (
                 :uuid,
                 :parent,
@@ -151,7 +178,9 @@ def _dump_sql(volumes_info, sql_file):
                 :truesize,
                 :ctime
             );
-            """, _iter_volumes_info(volumes_info))
+            """,
+            _iter_volumes_info(volumes_info),
+        )
 
 
 def _iter_volumes_info(volumes_info):
@@ -264,10 +293,12 @@ def _print_volume_chains(image_chains, volumes_info):
 
 def _print_vol_info(volume_info):
     robust_volume_info = defaultdict(lambda: '(missing)', volume_info)
-    info_fmt = "status: {d[status]}, voltype: {d[voltype]}, " \
-               "format: {d[format]}, legality: {d[legality]}, " \
-               "type: {d[type]}, capacity: {d[capacity]}, " \
-               "truesize: {d[truesize]}"
+    info_fmt = (
+        "status: {d[status]}, voltype: {d[voltype]}, "
+        "format: {d[format]}, legality: {d[legality]}, "
+        "type: {d[type]}, capacity: {d[capacity]}, "
+        "truesize: {d[truesize]}"
+    )
     formatted_info = info_fmt.format(d=robust_volume_info)
     _print_line('  ' + formatted_info)
 

@@ -11,8 +11,10 @@ from vdsm.common import commands
 from vdsm.common import cmdutils
 from vdsm.gluster import thinstorage
 
-_fake_vdoCommandPath = cmdutils.CommandPath("true",
-                                            "/bin/true",)
+_fake_vdoCommandPath = cmdutils.CommandPath(
+    "true",
+    "/bin/true",
+)
 
 
 def fake_json_call(data, *args, **kw):
@@ -31,22 +33,22 @@ class GlusterStorageDevTest(TestCaseBase):
                             "data_percent": "0.06",
                             "lv_name": "internal_pool",
                             "vg_name": "INTERNAL",
-                            "pool_lv": ""
+                            "pool_lv": "",
                         },
                         {
                             "lv_size": "10737418240",
                             "data_percent": "0.16",
                             "lv_name": "vdodistr",
                             "vg_name": "INTERNAL",
-                            "pool_lv": "internal_pool"
+                            "pool_lv": "internal_pool",
                         },
                         {
                             "lv_size": "53687091200",
                             "data_percent": "",
                             "lv_name": "engine",
                             "vg_name": "vg0",
-                            "pool_lv": ""
-                        }
+                            "pool_lv": "",
+                        },
                     ]
                 }
             ]
@@ -58,26 +60,27 @@ class GlusterStorageDevTest(TestCaseBase):
                 "lv_free": 52581781366,
                 "lv_name": "internal_pool",
                 "vg_name": "INTERNAL",
-                "pool_lv": ""
+                "pool_lv": "",
             },
             {
                 "lv_size": 10737418240,
                 "lv_free": 0,
                 "lv_name": "vdodistr",
                 "vg_name": "INTERNAL",
-                "pool_lv": "internal_pool"
+                "pool_lv": "internal_pool",
             },
             {
                 "lv_size": 53687091200,
                 "lv_free": 0,
                 "lv_name": "engine",
                 "vg_name": "vg0",
-                "pool_lv": ""
-            }
+                "pool_lv": "",
+            },
         ]
 
-        with MonkeyPatchScope([(commands, "run",
-                                partial(fake_json_call, data))]):
+        with MonkeyPatchScope(
+            [(commands, "run", partial(fake_json_call, data))]
+        ):
             actual = thinstorage.logicalVolumeList()
             self.assertEqual(expected, actual)
 
@@ -88,25 +91,22 @@ class GlusterStorageDevTest(TestCaseBase):
                     "pv": [
                         {
                             "pv_name": "/dev/mapper/vdodata",
-                            "vg_name": "INTERNAL"
+                            "vg_name": "INTERNAL",
                         },
-                        {
-                            "pv_name": "/dev/sdb1",
-                            "vg_name": "vg0"
-                        }
+                        {"pv_name": "/dev/sdb1", "vg_name": "vg0"},
                     ]
                 }
             ]
-
         }
 
         expected = [
             {"pv_name": "/dev/mapper/vdodata", "vg_name": "INTERNAL"},
-            {"pv_name": "/dev/sdb1", "vg_name": "vg0"}
+            {"pv_name": "/dev/sdb1", "vg_name": "vg0"},
         ]
 
-        with MonkeyPatchScope([(commands, "run",
-                                partial(fake_json_call, data))]):
+        with MonkeyPatchScope(
+            [(commands, "run", partial(fake_json_call, data))]
+        ):
             actual = thinstorage.physicalVolumeList()
             self.assertEqual(expected, actual)
 
@@ -119,7 +119,7 @@ class GlusterStorageDevTest(TestCaseBase):
                 "size": 10737418240,
                 "free": 6415798272,
                 'logicalBytesUsed': 81920,
-                'physicalBytesUsed': 40960
+                'physicalBytesUsed': 40960,
             },
             {
                 "device": "/dev/vg0/vdosecond",
@@ -127,14 +127,14 @@ class GlusterStorageDevTest(TestCaseBase):
                 'logicalBytesUsed': 40960,
                 'physicalBytesUsed': 15360,
                 "size": 10737418240,
-                "free": 6438100992
-            }
+                "free": 6438100992,
+            },
         ]
 
         def fake_run(*args, **kwargs):
             path = os.path.join(
                 os.path.dirname(__file__),
-                'gluster/results/fake_vdo_status.yml'
+                'gluster/results/fake_vdo_status.yml',
             )
             with open(path, "rb") as f:
                 out = f.read()

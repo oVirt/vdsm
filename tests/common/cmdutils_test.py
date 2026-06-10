@@ -36,9 +36,13 @@ class TestCommandPath(TestCaseBase):
 class List2CmdlineeTests(TestCaseBase):
 
     def test_simple(self):
-        args = ['/usr/bin/dd', 'iflag=direct',
-                'if=/dev/a70a4106-24f2-4599-be3e-934fee6e4499/metadata',
-                'bs=4096', 'count=1']
+        args = [
+            '/usr/bin/dd',
+            'iflag=direct',
+            'if=/dev/a70a4106-24f2-4599-be3e-934fee6e4499/metadata',
+            'bs=4096',
+            'count=1',
+        ]
         line = ' '.join(args)
         self.assertEqual(cmdutils._list2cmdline(args), line)
 
@@ -54,8 +58,10 @@ class List2CmdlineeTests(TestCaseBase):
 
     def test_safe(self):
         # Stolen from pipes._safechars
-        line = ' '.join('%+,-./0123456789:=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdef'
-                        'ghijklmnopqrstuvwxyz')
+        line = ' '.join(
+            '%+,-./0123456789:=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdef'
+            'ghijklmnopqrstuvwxyz'
+        )
         args = line.split()
         self.assertEqual(cmdutils._list2cmdline(args), line)
 
@@ -98,7 +104,8 @@ class ExecCmdTest(TestCaseBase):
 
     def test_exec_cmd_with_env(self):
         rc, out, err = cmdutils.exec_cmd(
-            ('sh', '-c', 'echo $XXX'), env={'XXX': 'hello'})
+            ('sh', '-c', 'echo $XXX'), env={'XXX': 'hello'}
+        )
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'hello\n')
 
@@ -113,37 +120,45 @@ class TestError(TestCaseBase):
 class TestReceive(TestCaseBase):
 
     def test_no_output_success(self):
-        p = subprocess.Popen(["true"],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["true"],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         received = list(cmdutils.receive(p))
         self.assertEqual(received, [])
         self.assertEqual(p.returncode, 0)
 
     def test_no_output_error(self):
-        p = subprocess.Popen(["false"],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["false"],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         received = list(cmdutils.receive(p))
         self.assertEqual(received, [])
         self.assertEqual(p.returncode, 1)
 
     def test_stdout(self):
-        p = subprocess.Popen(["echo", "output"],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["echo", "output"],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         received = list(cmdutils.receive(p))
         self.assertEqual(received, [(cmdutils.OUT, b"output\n")])
         self.assertEqual(p.returncode, 0)
 
     def test_stderr(self):
-        p = subprocess.Popen(["sh", "-c", "echo error >/dev/stderr"],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["sh", "-c", "echo error >/dev/stderr"],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         received = list(cmdutils.receive(p))
         self.assertEqual(received, [(cmdutils.ERR, b"error\n")])
         self.assertEqual(p.returncode, 0)
@@ -153,18 +168,22 @@ class TestReceive(TestCaseBase):
             ["sh", "-c", "echo output; echo error >/dev/stderr;"],
             stdin=None,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+        )
         received = list(cmdutils.receive(p))
-        self.assertEqual(sorted(received), sorted([
-            (cmdutils.OUT, b"output\n"), (cmdutils.ERR, b"error\n")
-        ]))
+        self.assertEqual(
+            sorted(received),
+            sorted([(cmdutils.OUT, b"output\n"), (cmdutils.ERR, b"error\n")]),
+        )
         self.assertEqual(p.returncode, 0)
 
     def test_timeout(self):
-        p = subprocess.Popen(["sleep", "1"],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["sleep", "1"],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         try:
             with self.assertRaises(cmdutils.TimeoutExpired):
                 for _ in cmdutils.receive(p, 0.5):
@@ -174,10 +193,9 @@ class TestReceive(TestCaseBase):
             p.wait()
 
     def test_timeout_with_data(self):
-        p = subprocess.Popen(["yes"],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["yes"], stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         try:
             with self.assertRaises(cmdutils.TimeoutExpired):
                 for _ in cmdutils.receive(p, 0.5):
@@ -187,10 +205,9 @@ class TestReceive(TestCaseBase):
             p.wait()
 
     def test_no_fds(self):
-        p = subprocess.Popen(["sleep", "1"],
-                             stdin=None,
-                             stdout=None,
-                             stderr=None)
+        p = subprocess.Popen(
+            ["sleep", "1"], stdin=None, stdout=None, stderr=None
+        )
         try:
             with self.assertRaises(cmdutils.TimeoutExpired):
                 for _ in cmdutils.receive(p, 0.5):
@@ -200,10 +217,14 @@ class TestReceive(TestCaseBase):
             p.wait()
 
     def test_fds_closed(self):
-        cmd = ["python", "-c",
-               "import os, time; os.close(1); os.close(2); time.sleep(1)"]
-        p = subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        cmd = [
+            "python",
+            "-c",
+            "import os, time; os.close(1); os.close(2); time.sleep(1)",
+        ]
+        p = subprocess.Popen(
+            cmd, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         try:
             with self.assertRaises(cmdutils.TimeoutExpired):
                 for _ in cmdutils.receive(p, 0.5):
@@ -213,19 +234,23 @@ class TestReceive(TestCaseBase):
             p.wait()
 
     def test_terminate(self):
-        p = subprocess.Popen(["sleep", "1"],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["sleep", "1"],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         p.terminate()
         list(cmdutils.receive(p))
         self.assertEqual(p.returncode, -signal.SIGTERM)
 
     def test_kill(self):
-        p = subprocess.Popen(["sleep", "1"],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["sleep", "1"],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         p.kill()
         list(cmdutils.receive(p))
         self.assertEqual(p.returncode, -signal.SIGKILL)

@@ -209,12 +209,15 @@ class TestTmap:
         results = list(concurrent.tmap(lambda x: x, []))
         assert results == []
 
-    @pytest.mark.parametrize("values,max_workers,actual_workers", [
-        # Start len(values) workers.
-        (3, 4, 3),
-        # Start max_workers workers.
-        (10, 4, 4),
-    ])
+    @pytest.mark.parametrize(
+        "values,max_workers,actual_workers",
+        [
+            # Start len(values) workers.
+            (3, 4, 3),
+            # Start max_workers workers.
+            (10, 4, 4),
+        ],
+    )
     def test_max_workers(self, values, max_workers, actual_workers):
         workers = set()
         done = threading.Event()
@@ -227,10 +230,9 @@ class TestTmap:
                 done.set()
             workers.add(threading.current_thread().ident)
 
-        list(concurrent.tmap(
-            func,
-            iter(range(values)),
-            max_workers=max_workers))
+        list(
+            concurrent.tmap(func, iter(range(values)), max_workers=max_workers)
+        )
 
         assert len(workers) == actual_workers
 
@@ -250,9 +252,8 @@ class TestTmap:
     @pytest.mark.parametrize("max_workers", [1, 10, 50])
     def test_many_values(self, max_workers):
         results = concurrent.tmap(
-            lambda x: x,
-            itertools.repeat(True, 1000),
-            max_workers=max_workers)
+            lambda x: x, itertools.repeat(True, 1000), max_workers=max_workers
+        )
         assert all(r.value for r in results)
 
     def test_invalid_max_workers(self):
@@ -358,11 +359,14 @@ class TestThread:
         assert message.startswith("FINISH thread")
         assert kwargs == {}
 
-    @pytest.mark.parametrize("exc_class", [
-        RuntimeError,
-        GeneratorExit,
-        BaseException,
-    ])
+    @pytest.mark.parametrize(
+        "exc_class",
+        [
+            RuntimeError,
+            GeneratorExit,
+            BaseException,
+        ],
+    )
     def test_log_failure(self, exc_class):
         def run():
             raise exc_class("Threads are evil")

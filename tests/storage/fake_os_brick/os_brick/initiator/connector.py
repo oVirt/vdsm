@@ -36,9 +36,11 @@ class FakeConnector(object):
         log_action("connect_volume", connection_properties)
         res = os.environ["FAKE_ATTACH_RESULT"]
         if res == "OK":
-            return {"path": "/dev/fakesda",
-                    "scsi_wwn": "fakewwn",
-                    "multipath_id": "fakemultipathid"}
+            return {
+                "path": "/dev/fakesda",
+                "scsi_wwn": "fakewwn",
+                "multipath_id": "fakemultipathid",
+            }
         elif res == "OK_RBD":
             return {"path": "/dev/fakerbd"}
         elif res == "NO_WWN":
@@ -46,10 +48,20 @@ class FakeConnector(object):
         else:
             return fake_error(res)
 
-    def disconnect_volume(self, connection_properties, device_info,
-                          force=False, ignore_errors=False):
-        log_action("disconnect_volume",
-                   connection_properties, device_info, force, ignore_errors)
+    def disconnect_volume(
+        self,
+        connection_properties,
+        device_info,
+        force=False,
+        ignore_errors=False,
+    ):
+        log_action(
+            "disconnect_volume",
+            connection_properties,
+            device_info,
+            force,
+            ignore_errors,
+        )
 
 
 def log_action(action, *args):

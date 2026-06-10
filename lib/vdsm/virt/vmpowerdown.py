@@ -12,6 +12,7 @@ class VmPowerDown(object):
     Derived classes must provide the ovirtGuestAgentCallback and acpiCallback
     methods and returnMsg property.
     """
+
     returnMsg = 'Machine power down'
 
     def __init__(self, vm, delay, message, timeout, force, event):
@@ -63,7 +64,8 @@ class VmPowerDown(object):
             return response.error(
                 'exist',
                 message='VM without ACPI or active oVirt guest agent. '
-                        'Try Forced Shutdown.')
+                'Try Forced Shutdown.',
+            )
 
     # action callbacks, to be reimplemented
 
@@ -99,7 +101,7 @@ class VmShutdown(VmPowerDown):
             self.event.wait(self.timeout),
             self.vm.log,
             "Shutting down with guest agent succeeded",
-            "Shutting down with guest agent timeout out"
+            "Shutting down with guest agent timeout out",
         )
 
     def ovirtGuestAgentCallback(self):
@@ -109,7 +111,7 @@ class VmShutdown(VmPowerDown):
             self.event.wait(self.delay + self.timeout),
             self.vm.log,
             "Shutting down with oVirt agent succeeded",
-            "Shutting down with oVirt agent timed out"
+            "Shutting down with oVirt agent timed out",
         )
 
     def acpiCallback(self):
@@ -122,7 +124,7 @@ class VmShutdown(VmPowerDown):
             self.event.wait(self.timeout),
             self.vm.log,
             "Shutting down with ACPI succeeded",
-            "Shutting down with ACPI timed out"
+            "Shutting down with ACPI timed out",
         )
 
     def forceCallback(self):
@@ -133,7 +135,7 @@ class VmShutdown(VmPowerDown):
             self.event.wait(self.timeout),
             self.vm.log,
             "Shutting down with FORCE succeeded",
-            "Shutting down with FORCE timed out"
+            "Shutting down with FORCE timed out",
         )
 
 
@@ -156,7 +158,7 @@ class VmReboot(VmPowerDown):
             self.event.wait(self.timeout),
             self.vm.log,
             "Rebooting with guest agent succeeded",
-            "Rebooting with guest agent timed out"
+            "Rebooting with guest agent timed out",
         )
 
     def ovirtGuestAgentCallback(self):
@@ -180,7 +182,7 @@ class VmReboot(VmPowerDown):
             self.event.wait(self.timeout),
             self.vm.log,
             "Rebooting with ACPI succeeded",
-            "Rebooting with ACPI timed out"
+            "Rebooting with ACPI timed out",
         )
 
     def forceCallback(self):

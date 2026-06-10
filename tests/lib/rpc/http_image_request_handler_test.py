@@ -44,8 +44,14 @@ def server_thread():
         sock.settimeout(5)
         sock.bind(("127.0.0.1", 0))
         sock.listen(5)
-        thread = concurrent.thread(server_proc, (sock, server.add_socket,),
-                                   log=logger)
+        thread = concurrent.thread(
+            server_proc,
+            (
+                sock,
+                server.add_socket,
+            ),
+            log=logger,
+        )
         thread.start()
         yield sock.getsockname()
     finally:
@@ -70,108 +76,109 @@ def irh_connection(server_thread):
 
 
 @pytest.mark.parametrize(
-    "verb,headers,expected_error", [
+    "verb,headers,expected_error",
+    [
         pytest.param(
             "GET",
             {},
             "missing header Range",
-            id="GET - missing 'Range' header"
+            id="GET - missing 'Range' header",
         ),
         pytest.param(
             "GET",
-            {
-                IRH.HEADER_RANGE: "invalid range"
-            },
+            {IRH.HEADER_RANGE: "invalid range"},
             "Unsupported range",
-            id="GET - invalid 'Range' header"
+            id="GET - invalid 'Range' header",
         ),
         pytest.param(
             "GET",
             {
                 IRH.HEADER_RANGE: "bytes=0-2000",
                 IRH.HEADER_DOMAIN: "domain",
-                IRH.HEADER_IMAGE: "image"
+                IRH.HEADER_IMAGE: "image",
             },
             "missing or empty required header",
-            id="GET - missing storage pool header"
+            id="GET - missing storage pool header",
         ),
         pytest.param(
             "GET",
             {
                 IRH.HEADER_RANGE: "bytes=0-2000",
                 IRH.HEADER_POOL: "pool",
-                IRH.HEADER_IMAGE: "image"
+                IRH.HEADER_IMAGE: "image",
             },
             "missing or empty required header",
-            id="GET - missing storage domain header"
+            id="GET - missing storage domain header",
         ),
         pytest.param(
             "GET",
             {
                 IRH.HEADER_RANGE: "bytes=0-2000",
                 IRH.HEADER_POOL: "pool",
-                IRH.HEADER_DOMAIN: "domain"
+                IRH.HEADER_DOMAIN: "domain",
             },
             "missing or empty required header",
-            id="GET - missing image id header"
+            id="GET - missing image id header",
         ),
         pytest.param(
             "PUT",
             {},
             "missing or empty required header",
-            id="PUT - missing content length header"
+            id="PUT - missing content length header",
         ),
         pytest.param(
             "PUT",
-            {
-                IRH.HEADER_CONTENT_LENGTH: "zorro"
-            },
+            {IRH.HEADER_CONTENT_LENGTH: "zorro"},
             "not int value",
-            id="PUT - invalid content length header"
+            id="PUT - invalid content length header",
         ),
         pytest.param(
             "PUT",
             {
                 IRH.HEADER_CONTENT_LENGTH: "2000",
                 IRH.HEADER_DOMAIN: "domain",
-                IRH.HEADER_IMAGE: "image"
+                IRH.HEADER_IMAGE: "image",
             },
             "missing or empty required header",
-            id="PUT - missing storage pool header"
+            id="PUT - missing storage pool header",
         ),
         pytest.param(
             "PUT",
             {
                 IRH.HEADER_CONTENT_LENGTH: "2000",
                 IRH.HEADER_POOL: "pool",
-                IRH.HEADER_IMAGE: "image"
+                IRH.HEADER_IMAGE: "image",
             },
             "missing or empty required header",
-            id="PUT - missing storage domain header"
+            id="PUT - missing storage domain header",
         ),
         pytest.param(
             "PUT",
             {
                 IRH.HEADER_CONTENT_LENGTH: "2000",
                 IRH.HEADER_POOL: "pool",
-                IRH.HEADER_DOMAIN: "domain"
+                IRH.HEADER_DOMAIN: "domain",
             },
             "missing or empty required header",
-            id="PUT - missing image id header"
+            id="PUT - missing image id header",
         ),
-    ]
+    ],
 )
 def test_irh_should_report_missing_headers(
-        caplog, irh_connection, verb, headers, expected_error):
+    caplog, irh_connection, verb, headers, expected_error
+):
     response = irh_connection(verb, headers, b"").getresponse()
 
-    errors_logged = [logged_msg
-                     for (_, logging_level, logged_msg) in caplog.record_tuples
-                     if logging_level == logging.ERROR]
+    errors_logged = [
+        logged_msg
+        for (_, logging_level, logged_msg) in caplog.record_tuples
+        if logging_level == logging.ERROR
+    ]
 
     assert response.status == httpclient.BAD_REQUEST
-    assert any(expected_error in error for error in errors_logged), \
-        "expected error '{}' not found in logs".format(expected_error)
+    assert any(
+        expected_error in error for error in errors_logged
+    ), "expected error '{}' not found in logs".format(expected_error)
 
 
 @pytest.fixture
@@ -194,9 +201,7 @@ def image_operation_mock(image_operation_status_code):
     image_operation = mock.Mock()
     image_operation.return_value = {
         "uuid": TASK_ID,
-        "status": {
-            "code": image_operation_status_code
-        }
+        "status": {"code": image_operation_status_code},
     }
     return image_operation
 
@@ -262,49 +267,65 @@ def put_headers():
 
 
 @pytest.mark.parametrize(
-    "verb,headers,body,image_operation_status_code,expected_status", [
+    "verb,headers,body,image_operation_status_code,expected_status",
+    [
         pytest.param(
             "GET",
             get_headers(),
             b"",
             0,
             httpclient.PARTIAL_CONTENT,
-            id="valid get"
+            id="valid get",
         ),
-    ]
+    ],
 )
 def test_irh_should_retrieve_image(
-        irh_connection, api_image_mock, finish_image_upload, verb, headers,
-        body, expected_status):
+    irh_connection,
+    api_image_mock,
+    finish_image_upload,
+    verb,
+    headers,
+    body,
+    expected_status,
+):
     response = irh_connection(verb, headers, body).getresponse()
     finish_image_upload()
 
     api_image_mock.assert_called_with(IMAGE_UUID, POOL_UUID, DOMAIN_UUID)
 
     assert response.status == expected_status
-    assert response.getheader(IRH.HEADER_CONTENT_LENGTH) == \
-        str(len(IMAGE_DATA))
-    assert response.getheader(IRH.HEADER_CONTENT_RANGE) == \
-        "bytes 0-{}".format(len(IMAGE_DATA) - 1)
+    assert response.getheader(IRH.HEADER_CONTENT_LENGTH) == str(
+        len(IMAGE_DATA)
+    )
+    assert response.getheader(IRH.HEADER_CONTENT_RANGE) == "bytes 0-{}".format(
+        len(IMAGE_DATA) - 1
+    )
     assert response.getheader(IRH.HEADER_TASK_ID) == TASK_ID
     assert response.read() == IMAGE_DATA
 
 
 @pytest.mark.parametrize(
-    "verb,headers,body,image_operation_status_code,expected_status", [
+    "verb,headers,body,image_operation_status_code,expected_status",
+    [
         pytest.param(
             "GET",
             get_headers(range_boundary=8),
             b"",
             0,
             httpclient.PARTIAL_CONTENT,
-            id="valid partial get"
+            id="valid partial get",
         )
-    ]
+    ],
 )
 def test_irh_should_retrieve_partial_image(
-        irh_connection, api_image_mock, finish_image_upload, verb, headers,
-        body, expected_status):
+    irh_connection,
+    api_image_mock,
+    finish_image_upload,
+    verb,
+    headers,
+    body,
+    expected_status,
+):
     response = irh_connection(verb, headers, body).getresponse()
     finish_image_upload()
 
@@ -318,20 +339,22 @@ def test_irh_should_retrieve_partial_image(
 
 
 @pytest.mark.parametrize(
-    "verb,headers,body,image_operation_status_code,expected_status", [
+    "verb,headers,body,image_operation_status_code,expected_status",
+    [
         pytest.param(
-            "PUT",
-            put_headers(),
-            IMAGE_DATA,
-            0,
-            httpclient.OK,
-            id="valid put"
+            "PUT", put_headers(), IMAGE_DATA, 0, httpclient.OK, id="valid put"
         ),
-    ]
+    ],
 )
 def test_irh_should_save_image(
-        irh_connection, api_image_mock, finish_image_download, verb, headers,
-        body, expected_status):
+    irh_connection,
+    api_image_mock,
+    finish_image_download,
+    verb,
+    headers,
+    body,
+    expected_status,
+):
     conn = irh_connection(verb, headers, body)
     read_image_data = finish_image_download()
     response = conn.getresponse()
@@ -344,27 +367,24 @@ def test_irh_should_save_image(
 
 
 @pytest.mark.parametrize(
-    "verb,headers,body,image_operation_status_code", [
+    "verb,headers,body,image_operation_status_code",
+    [
+        pytest.param("GET", get_headers(), b"", 100, id="unsuccessful upload"),
         pytest.param(
-            "GET",
-            get_headers(),
-            b"",
-            100,
-            id="unsuccessful upload"
+            "PUT", put_headers(), IMAGE_DATA, 100, id="unsuccessful download"
         ),
-        pytest.param(
-            "PUT",
-            put_headers(),
-            IMAGE_DATA,
-            100,
-            id="unsuccessful download"
-        ),
-    ]
+    ],
 )
 def test_irh_should_respond_with_error_after_unsuccessful_image_operation(
-        irh_connection, api_image_mock, upload_to_stream_mock,
-        download_from_stream_mock, verb, headers, body,
-        image_operation_status_code):
+    irh_connection,
+    api_image_mock,
+    upload_to_stream_mock,
+    download_from_stream_mock,
+    verb,
+    headers,
+    body,
+    image_operation_status_code,
+):
     response = irh_connection(verb, headers, body).getresponse()
 
     api_image_mock.assert_called_with(IMAGE_UUID, POOL_UUID, DOMAIN_UUID)
@@ -379,23 +399,22 @@ def test_irh_should_respond_with_error_after_unsuccessful_image_operation(
 
 
 @pytest.mark.parametrize(
-    "verb,headers,body", [
+    "verb,headers,body",
+    [
         pytest.param(
-            "GET",
-            get_headers(),
-            b"",
-            id="GET - unsuccessful 'Image' api call"
+            "GET", get_headers(), b"", id="GET - unsuccessful 'Image' api call"
         ),
         pytest.param(
             "PUT",
             put_headers(),
             IMAGE_DATA,
-            id="PUT - unsuccessful 'Image' api call"
+            id="PUT - unsuccessful 'Image' api call",
         ),
-    ]
+    ],
 )
 def test_irh_should_respond_with_error_after_unexpected_exception(
-        irh_connection, api_image_mock, verb, headers, body):
+    irh_connection, api_image_mock, verb, headers, body
+):
     api_image_mock.side_effect = ValueError("smth went wrong")
     response = irh_connection(verb, headers, body).getresponse()
 

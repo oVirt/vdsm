@@ -27,14 +27,17 @@ class TestVMBulkSampling(TestCaseBase):
     TIMEOUT = 2  # seconds
 
     def setUp(self):
-        self.sched = schedule.Scheduler(name="test.Scheduler",
-                                        clock=monotonic_time)
+        self.sched = schedule.Scheduler(
+            name="test.Scheduler", clock=monotonic_time
+        )
         self.sched.start()
 
-        self.exc = executor.Executor(name="test.Executor",
-                                     workers_count=1,
-                                     max_tasks=100,
-                                     scheduler=self.sched)
+        self.exc = executor.Executor(
+            name="test.Executor",
+            workers_count=1,
+            max_tasks=100,
+            scheduler=self.sched,
+        )
         self.exc.start()
 
     def tearDown(self):
@@ -54,10 +57,7 @@ class TestVMBulkSampling(TestCaseBase):
         with cache.await_completion(self.CALL_TIMEOUT):
             self.exc.dispatch(sampler, self.CALL_TIMEOUT)
 
-        self.assertCallSequence(
-            conn.__calls__,
-            ['getAllDomainStats']
-        )
+        self.assertCallSequence(conn.__calls__, ['getAllDomainStats'])
 
     @pytest.mark.slow
     def test_collect_slow_path_after_blocked(self):
@@ -76,8 +76,7 @@ class TestVMBulkSampling(TestCaseBase):
                 self.exc.dispatch(sampler, self.CALL_TIMEOUT)
 
         self.assertCallSequence(
-            conn.__calls__,
-            ['getAllDomainStats', 'domainListGetStats']
+            conn.__calls__, ['getAllDomainStats', 'domainListGetStats']
         )
 
     @pytest.mark.slow
@@ -99,7 +98,7 @@ class TestVMBulkSampling(TestCaseBase):
 
         self.assertCallSequence(
             conn.__calls__,
-            ['getAllDomainStats', 'domainListGetStats', 'domainListGetStats']
+            ['getAllDomainStats', 'domainListGetStats', 'domainListGetStats'],
         )
 
     @pytest.mark.slow
@@ -128,7 +127,7 @@ class TestVMBulkSampling(TestCaseBase):
         self.assertCallSequence(conn.__calls__, expected)
         # now we make sure the call #1 (fast) is completed.
         # we expect NOT to wait here, timeout added just in case
-        assert (cache.sync.wait(self.TIMEOUT))
+        assert cache.sync.wait(self.TIMEOUT)
 
         # reset fake environment to pristine state
         vms['1'].ready = True
@@ -182,7 +181,7 @@ class FakeStatsCache(object):
         try:
             yield self
         finally:
-            assert (self.sync.wait(timeout))
+            assert self.sync.wait(timeout)
 
 
 class FakeDomain(object):
@@ -232,18 +231,14 @@ class FakeConnection(object):
         if not self._block.wait(self._delay):
             return []
         return [
-            (vm._dom, {
-                'vmid': vm._dom.UUIDString()
-            })
+            (vm._dom, {'vmid': vm._dom.UUIDString()})
             for vm in self.vms.values()
         ]
 
     @recorded
     def domainListGetStats(self, doms, stats=0, flags=0):
         return [
-            (dom, {
-                'vmid': dom.UUIDString()
-            })
+            (dom, {'vmid': dom.UUIDString()})
             for dom in doms
             if dom.UUIDString() in self.vms
         ]

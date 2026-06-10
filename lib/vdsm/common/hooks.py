@@ -34,16 +34,26 @@ def _scriptsPerDir(dir_name):
         if tail == "..":
             raise ValueError("Hook directory paths cannot contain '..'")
     path = os.path.join(P_VDSM_HOOKS, dir_name, '*')
-    return [s for s in glob.glob(path)
-            if os.path.isfile(s) and os.access(s, os.X_OK)]
+    return [
+        s
+        for s in glob.glob(path)
+        if os.path.isfile(s) and os.access(s, os.X_OK)
+    ]
 
 
 _DOMXML_HOOK = 1
 _JSON_HOOK = 2
 
 
-def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
-                 hookType=_DOMXML_HOOK):
+def _runHooksDir(
+    data,
+    dir,
+    vmconf={},
+    raiseError=True,
+    errors=None,
+    params={},
+    hookType=_DOMXML_HOOK,
+):
     if errors is None:
         errors = []
 
@@ -64,8 +74,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
         scriptenv = os.environ.copy()
 
         # Update the environment using params and custom configuration
-        env_update = [params.items(),
-                      vmconf.get('custom', {}).items()]
+        env_update = [params.items(), vmconf.get('custom', {}).items()]
 
         # On py2 encode custom properties with default system encoding
         # and save them to scriptenv. Pass str objects (byte-strings)
@@ -87,11 +96,15 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
             scriptenv['_hook_json'] = data_filename
 
         for s in scripts:
-            p = commands.start([s], stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, env=scriptenv)
+            p = commands.start(
+                [s],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=scriptenv,
+            )
 
             with commands.terminating(p):
-                (out, err) = p.communicate()
+                out, err = p.communicate()
 
             rc = p.returncode
             logging.info('%s: rc=%s err=%s', s, rc, err)
@@ -117,29 +130,52 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
 
 
 def before_device_create(devicexml, vmconf={}, customProperties={}):
-    return _runHooksDir(devicexml, 'before_device_create', vmconf=vmconf,
-                        params=customProperties)
+    return _runHooksDir(
+        devicexml,
+        'before_device_create',
+        vmconf=vmconf,
+        params=customProperties,
+    )
 
 
 def after_device_create(devicexml, vmconf={}, customProperties={}):
-    return _runHooksDir(devicexml, 'after_device_create', vmconf=vmconf,
-                        params=customProperties, raiseError=False)
+    return _runHooksDir(
+        devicexml,
+        'after_device_create',
+        vmconf=vmconf,
+        params=customProperties,
+        raiseError=False,
+    )
 
 
 def before_device_destroy(devicexml, vmconf={}, customProperties={}):
-    return _runHooksDir(devicexml, 'before_device_destroy', vmconf=vmconf,
-                        params=customProperties)
+    return _runHooksDir(
+        devicexml,
+        'before_device_destroy',
+        vmconf=vmconf,
+        params=customProperties,
+    )
 
 
 def after_device_destroy(devicexml, vmconf={}, customProperties={}):
-    return _runHooksDir(devicexml, 'after_device_destroy', vmconf=vmconf,
-                        params=customProperties, raiseError=False)
+    return _runHooksDir(
+        devicexml,
+        'after_device_destroy',
+        vmconf=vmconf,
+        params=customProperties,
+        raiseError=False,
+    )
 
 
 def before_vm_start(domxml, vmconf={}, final_callback=None):
     errors = []
-    final_xml = _runHooksDir(domxml, 'before_vm_start', vmconf=vmconf,
-                             raiseError=False, errors=errors)
+    final_xml = _runHooksDir(
+        domxml,
+        'before_vm_start',
+        vmconf=vmconf,
+        raiseError=False,
+        errors=errors,
+    )
     if final_callback is not None:
         final_callback(final_xml)
     if errors:
@@ -148,8 +184,9 @@ def before_vm_start(domxml, vmconf={}, final_callback=None):
 
 
 def after_vm_start(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_start',
-                        vmconf=vmconf, raiseError=False)
+    return _runHooksDir(
+        domxml, 'after_vm_start', vmconf=vmconf, raiseError=False
+    )
 
 
 def before_vm_cont(domxml, vmconf={}):
@@ -157,8 +194,9 @@ def before_vm_cont(domxml, vmconf={}):
 
 
 def after_vm_cont(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_cont',
-                        vmconf=vmconf, raiseError=False)
+    return _runHooksDir(
+        domxml, 'after_vm_cont', vmconf=vmconf, raiseError=False
+    )
 
 
 def before_vm_pause(domxml, vmconf={}):
@@ -166,32 +204,51 @@ def before_vm_pause(domxml, vmconf={}):
 
 
 def after_vm_pause(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_pause',
-                        vmconf=vmconf, raiseError=False)
+    return _runHooksDir(
+        domxml, 'after_vm_pause', vmconf=vmconf, raiseError=False
+    )
 
 
 def before_device_migrate_source(devicexml, vmconf={}, customProperties={}):
-    return _runHooksDir(devicexml, 'before_device_migrate_source',
-                        vmconf=vmconf, params=customProperties)
+    return _runHooksDir(
+        devicexml,
+        'before_device_migrate_source',
+        vmconf=vmconf,
+        params=customProperties,
+    )
 
 
 def after_device_migrate_source(devicexml, vmconf={}, customProperties={}):
-    return _runHooksDir(devicexml, 'after_device_migrate_source',
-                        vmconf=vmconf, params=customProperties,
-                        raiseError=False)
+    return _runHooksDir(
+        devicexml,
+        'after_device_migrate_source',
+        vmconf=vmconf,
+        params=customProperties,
+        raiseError=False,
+    )
 
 
 def before_device_migrate_destination(
-        devicexml, vmconf={}, customProperties={}):
-    return _runHooksDir(devicexml, 'before_device_migrate_destination',
-                        vmconf=vmconf, params=customProperties)
+    devicexml, vmconf={}, customProperties={}
+):
+    return _runHooksDir(
+        devicexml,
+        'before_device_migrate_destination',
+        vmconf=vmconf,
+        params=customProperties,
+    )
 
 
 def after_device_migrate_destination(
-        devicexml, vmconf={}, customProperties={}):
-    return _runHooksDir(devicexml, 'after_device_migrate_destination',
-                        vmconf=vmconf, params=customProperties,
-                        raiseError=False)
+    devicexml, vmconf={}, customProperties={}
+):
+    return _runHooksDir(
+        devicexml,
+        'after_device_migrate_destination',
+        vmconf=vmconf,
+        params=customProperties,
+        raiseError=False,
+    )
 
 
 def before_vm_migrate_source(domxml, vmconf={}):
@@ -199,8 +256,9 @@ def before_vm_migrate_source(domxml, vmconf={}):
 
 
 def after_vm_migrate_source(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_migrate_source', vmconf=vmconf,
-                        raiseError=False)
+    return _runHooksDir(
+        domxml, 'after_vm_migrate_source', vmconf=vmconf, raiseError=False
+    )
 
 
 def before_vm_migrate_destination(domxml, vmconf={}):
@@ -208,8 +266,9 @@ def before_vm_migrate_destination(domxml, vmconf={}):
 
 
 def after_vm_migrate_destination(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_migrate_destination', vmconf=vmconf,
-                        raiseError=False)
+    return _runHooksDir(
+        domxml, 'after_vm_migrate_destination', vmconf=vmconf, raiseError=False
+    )
 
 
 def before_vm_hibernate(domxml, vmconf={}):
@@ -217,128 +276,213 @@ def before_vm_hibernate(domxml, vmconf={}):
 
 
 def after_vm_hibernate(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_hibernate', vmconf=vmconf,
-                        raiseError=False)
+    return _runHooksDir(
+        domxml, 'after_vm_hibernate', vmconf=vmconf, raiseError=False
+    )
 
 
 def before_vm_dehibernate(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'before_vm_dehibernate', vmconf=vmconf,
-                        params=params)
+    return _runHooksDir(
+        domxml, 'before_vm_dehibernate', vmconf=vmconf, params=params
+    )
 
 
 def after_vm_dehibernate(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'after_vm_dehibernate', vmconf=vmconf,
-                        raiseError=False, params=params)
+    return _runHooksDir(
+        domxml,
+        'after_vm_dehibernate',
+        vmconf=vmconf,
+        raiseError=False,
+        params=params,
+    )
 
 
 def before_vm_destroy(domxml, vmconf={}):
-    return _runHooksDir(None, 'before_vm_destroy', vmconf=vmconf,
-                        raiseError=False)
+    return _runHooksDir(
+        None, 'before_vm_destroy', vmconf=vmconf, raiseError=False
+    )
 
 
 def after_vm_destroy(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_destroy', vmconf=vmconf,
-                        raiseError=False)
+    return _runHooksDir(
+        domxml, 'after_vm_destroy', vmconf=vmconf, raiseError=False
+    )
 
 
 def before_vm_set_ticket(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'before_vm_set_ticket', vmconf=vmconf,
-                        raiseError=False, params=params)
+    return _runHooksDir(
+        domxml,
+        'before_vm_set_ticket',
+        vmconf=vmconf,
+        raiseError=False,
+        params=params,
+    )
 
 
 def after_vm_set_ticket(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'after_vm_set_ticket', vmconf=vmconf,
-                        raiseError=False, params=params)
+    return _runHooksDir(
+        domxml,
+        'after_vm_set_ticket',
+        vmconf=vmconf,
+        raiseError=False,
+        params=params,
+    )
 
 
 def before_update_device(devxml, vmconf={}, params={}):
-    return _runHooksDir(devxml, 'before_update_device', vmconf=vmconf,
-                        params=params)
+    return _runHooksDir(
+        devxml, 'before_update_device', vmconf=vmconf, params=params
+    )
 
 
 def after_update_device(devxml, vmconf={}, params={}):
-    return _runHooksDir(devxml, 'after_update_device', vmconf=vmconf,
-                        raiseError=False, params=params)
+    return _runHooksDir(
+        devxml,
+        'after_update_device',
+        vmconf=vmconf,
+        raiseError=False,
+        params=params,
+    )
 
 
 def after_update_device_fail(devxml, vmconf={}, params={}):
-    return _runHooksDir(devxml, 'after_update_device_fail', vmconf=vmconf,
-                        raiseError=False, params=params)
+    return _runHooksDir(
+        devxml,
+        'after_update_device_fail',
+        vmconf=vmconf,
+        raiseError=False,
+        params=params,
+    )
 
 
 def before_nic_hotplug(nicxml, vmconf={}, params={}):
-    return _runHooksDir(nicxml, 'before_nic_hotplug', vmconf=vmconf,
-                        params=params)
+    return _runHooksDir(
+        nicxml, 'before_nic_hotplug', vmconf=vmconf, params=params
+    )
 
 
 def after_nic_hotplug(nicxml, vmconf={}, params={}):
-    return _runHooksDir(nicxml, 'after_nic_hotplug', vmconf=vmconf,
-                        params=params, raiseError=False)
+    return _runHooksDir(
+        nicxml,
+        'after_nic_hotplug',
+        vmconf=vmconf,
+        params=params,
+        raiseError=False,
+    )
 
 
 def before_nic_hotunplug(nicxml, vmconf={}, params={}):
-    return _runHooksDir(nicxml, 'before_nic_hotunplug', vmconf=vmconf,
-                        params=params)
+    return _runHooksDir(
+        nicxml, 'before_nic_hotunplug', vmconf=vmconf, params=params
+    )
 
 
 def after_nic_hotunplug(nicxml, vmconf={}, params={}):
-    return _runHooksDir(nicxml, 'after_nic_hotunplug', vmconf=vmconf,
-                        params=params, raiseError=False)
+    return _runHooksDir(
+        nicxml,
+        'after_nic_hotunplug',
+        vmconf=vmconf,
+        params=params,
+        raiseError=False,
+    )
 
 
 def after_nic_hotplug_fail(nicxml, vmconf={}, params={}):
-    return _runHooksDir(nicxml, 'after_nic_hotplug_fail', vmconf=vmconf,
-                        params=params, raiseError=False)
+    return _runHooksDir(
+        nicxml,
+        'after_nic_hotplug_fail',
+        vmconf=vmconf,
+        params=params,
+        raiseError=False,
+    )
 
 
 def after_nic_hotunplug_fail(nicxml, vmconf={}, params={}):
-    return _runHooksDir(nicxml, 'after_nic_hotunplug_fail', vmconf=vmconf,
-                        params=params, raiseError=False)
+    return _runHooksDir(
+        nicxml,
+        'after_nic_hotunplug_fail',
+        vmconf=vmconf,
+        params=params,
+        raiseError=False,
+    )
 
 
 def after_disk_prepare(disk_dict, vmconf={}):
-    return _runHooksDir(disk_dict, 'after_disk_prepare', vmconf=vmconf,
-                        raiseError=True, hookType=_JSON_HOOK)
+    return _runHooksDir(
+        disk_dict,
+        'after_disk_prepare',
+        vmconf=vmconf,
+        raiseError=True,
+        hookType=_JSON_HOOK,
+    )
 
 
 def before_disk_hotplug(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'before_disk_hotplug', vmconf=vmconf,
-                        params=params)
+    return _runHooksDir(
+        domxml, 'before_disk_hotplug', vmconf=vmconf, params=params
+    )
 
 
 def after_disk_hotplug(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'after_disk_hotplug', vmconf=vmconf,
-                        params=params, raiseError=False)
+    return _runHooksDir(
+        domxml,
+        'after_disk_hotplug',
+        vmconf=vmconf,
+        params=params,
+        raiseError=False,
+    )
 
 
 def before_disk_hotunplug(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'before_disk_hotunplug', vmconf=vmconf,
-                        params=params)
+    return _runHooksDir(
+        domxml, 'before_disk_hotunplug', vmconf=vmconf, params=params
+    )
 
 
 def after_disk_hotunplug(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'after_disk_hotunplug', vmconf=vmconf,
-                        params=params, raiseError=False)
+    return _runHooksDir(
+        domxml,
+        'after_disk_hotunplug',
+        vmconf=vmconf,
+        params=params,
+        raiseError=False,
+    )
 
 
 def before_set_num_of_cpus(vmconf={}, params={}):
-    return _runHooksDir(None, 'before_set_num_of_cpus', vmconf=vmconf,
-                        params=params, raiseError=True)
+    return _runHooksDir(
+        None,
+        'before_set_num_of_cpus',
+        vmconf=vmconf,
+        params=params,
+        raiseError=True,
+    )
 
 
 def after_set_num_of_cpus(vmconf={}, params={}):
-    return _runHooksDir(None, 'after_set_num_of_cpus', vmconf=vmconf,
-                        params=params, raiseError=False)
+    return _runHooksDir(
+        None,
+        'after_set_num_of_cpus',
+        vmconf=vmconf,
+        params=params,
+        raiseError=False,
+    )
 
 
 def before_memory_hotplug(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'before_memory_hotplug', vmconf=vmconf,
-                        params=params)
+    return _runHooksDir(
+        domxml, 'before_memory_hotplug', vmconf=vmconf, params=params
+    )
 
 
 def after_memory_hotplug(domxml, vmconf={}, params={}):
-    return _runHooksDir(domxml, 'after_memory_hotplug', vmconf=vmconf,
-                        params=params, raiseError=False)
+    return _runHooksDir(
+        domxml,
+        'after_memory_hotplug',
+        vmconf=vmconf,
+        params=params,
+        raiseError=False,
+    )
 
 
 def before_vdsm_start():
@@ -350,63 +494,84 @@ def after_vdsm_stop():
 
 
 def before_network_setup(network_config_dict):
-    return _runHooksDir(network_config_dict, 'before_network_setup',
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        network_config_dict, 'before_network_setup', hookType=_JSON_HOOK
+    )
 
 
 def after_network_setup(network_config_dict):
-    return _runHooksDir(network_config_dict, 'after_network_setup',
-                        raiseError=False, hookType=_JSON_HOOK)
+    return _runHooksDir(
+        network_config_dict,
+        'after_network_setup',
+        raiseError=False,
+        hookType=_JSON_HOOK,
+    )
 
 
 def after_network_setup_fail(network_config_dict):
-    return _runHooksDir(network_config_dict, 'after_network_setup_fail',
-                        raiseError=False, hookType=_JSON_HOOK)
+    return _runHooksDir(
+        network_config_dict,
+        'after_network_setup_fail',
+        raiseError=False,
+        hookType=_JSON_HOOK,
+    )
 
 
 def before_get_vm_stats():
-    return _runHooksDir({}, 'before_get_vm_stats', raiseError=True,
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        {}, 'before_get_vm_stats', raiseError=True, hookType=_JSON_HOOK
+    )
 
 
 def after_get_vm_stats(stats):
-    return _runHooksDir(stats, 'after_get_vm_stats', raiseError=False,
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        stats, 'after_get_vm_stats', raiseError=False, hookType=_JSON_HOOK
+    )
 
 
 def before_get_all_vm_stats():
-    return _runHooksDir({}, 'before_get_all_vm_stats', raiseError=True,
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        {}, 'before_get_all_vm_stats', raiseError=True, hookType=_JSON_HOOK
+    )
 
 
 def after_get_all_vm_stats(stats):
-    return _runHooksDir(stats, 'after_get_all_vm_stats', raiseError=False,
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        stats, 'after_get_all_vm_stats', raiseError=False, hookType=_JSON_HOOK
+    )
 
 
 def before_get_caps():
-    return _runHooksDir({}, 'before_get_caps', raiseError=True,
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        {}, 'before_get_caps', raiseError=True, hookType=_JSON_HOOK
+    )
 
 
 def after_get_caps(caps):
-    return _runHooksDir(caps, 'after_get_caps', raiseError=False,
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        caps, 'after_get_caps', raiseError=False, hookType=_JSON_HOOK
+    )
 
 
 def before_get_stats():
-    return _runHooksDir({}, 'before_get_stats', raiseError=True,
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        {}, 'before_get_stats', raiseError=True, hookType=_JSON_HOOK
+    )
 
 
 def after_get_stats(caps):
-    return _runHooksDir(caps, 'after_get_stats', raiseError=False,
-                        hookType=_JSON_HOOK)
+    return _runHooksDir(
+        caps, 'after_get_stats', raiseError=False, hookType=_JSON_HOOK
+    )
 
 
 def after_hostdev_list_by_caps(devices):
-    return _runHooksDir(devices, 'after_hostdev_list_by_caps',
-                        raiseError=False, hookType=_JSON_HOOK)
+    return _runHooksDir(
+        devices,
+        'after_hostdev_list_by_caps',
+        raiseError=False,
+        hookType=_JSON_HOOK,
+    )
 
 
 def _getScriptInfo(path):
@@ -445,8 +610,10 @@ def remove_vm_launch_flags_file(vm_id):
 
 
 def _getHookInfo(dir):
-    return dict((os.path.basename(script), _getScriptInfo(script))
-                for script in _scriptsPerDir(dir))
+    return dict(
+        (os.path.basename(script), _getScriptInfo(script))
+        for script in _scriptsPerDir(dir)
+    )
 
 
 def installed():
@@ -459,6 +626,7 @@ def installed():
 
 
 if __name__ == '__main__':
+
     def usage():
         print('Usage: %s hook_name' % sys.argv[0])
         sys.exit(1)

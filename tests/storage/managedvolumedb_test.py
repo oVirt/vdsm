@@ -50,8 +50,9 @@ def test_version_info(db_path):
 
     assert managedvolumedb.VERSION == curr_version["version"]
     assert "Initial version" == curr_version["description"]
-    assert start <= datetime.strptime(curr_version["updated"],
-                                      "%Y-%m-%d %H:%M:%S")
+    assert start <= datetime.strptime(
+        curr_version["updated"], "%Y-%m-%d %H:%M:%S"
+    )
 
 
 def test_close(tmp_db):
@@ -117,11 +118,13 @@ def test_update(tmp_db):
         db.update_volume(test_id, path, attachment, multipath_id)
         res = db.get_volume(test_id)
 
-        expected = {"vol_id": test_id,
-                    "connection_info": connection_info,
-                    "path": path,
-                    "attachment": attachment,
-                    "multipath_id": multipath_id}
+        expected = {
+            "vol_id": test_id,
+            "connection_info": connection_info,
+            "path": path,
+            "attachment": attachment,
+            "multipath_id": multipath_id,
+        }
         assert res == expected
 
 
@@ -167,21 +170,28 @@ def test_owns_multipath(tmp_db):
 
 
 def test_get_all_volumes(tmp_db):
-    expected = [{"vol_id": "vol-id-1",
-                 "connection_info": {"connection": 1}},
-                {"vol_id": "vol-id-2",
-                 "connection_info": {"connection": 2},
-                 "path": "/dev/mapper/36001405376e34ea70384de7a34a2854d",
-                 "attachment": {"attachment": 2},
-                 "multipath_id": "36001405376e34ea70384de7a34a2854d"}]
+    expected = [
+        {"vol_id": "vol-id-1", "connection_info": {"connection": 1}},
+        {
+            "vol_id": "vol-id-2",
+            "connection_info": {"connection": 2},
+            "path": "/dev/mapper/36001405376e34ea70384de7a34a2854d",
+            "attachment": {"attachment": 2},
+            "multipath_id": "36001405376e34ea70384de7a34a2854d",
+        },
+    ]
 
     db = managedvolumedb.open()
     with closing(db):
         for vol in expected:
             db.add_volume(vol["vol_id"], vol["connection_info"])
             if "path" in vol:
-                db.update_volume(vol["vol_id"], vol["path"], vol["attachment"],
-                                 vol["multipath_id"])
+                db.update_volume(
+                    vol["vol_id"],
+                    vol["path"],
+                    vol["attachment"],
+                    vol["multipath_id"],
+                )
 
         actual = list(db.iter_volumes())
         assert expected == actual
@@ -189,11 +199,13 @@ def test_get_all_volumes(tmp_db):
 
 def test_get_volumes_by_id(tmp_db):
     vol1 = {"vol_id": "vol-id-1", "connection_info": {"connection": 1}}
-    vol2 = {"vol_id": "vol-id-2",
-            "connection_info": {"connection": 2},
-            "path": "/dev/mapper/36001405376e34ea70384de7a34a2854d",
-            "attachment": {"attachment": 2},
-            "multipath_id": "36001405376e34ea70384de7a34a2854d"}
+    vol2 = {
+        "vol_id": "vol-id-2",
+        "connection_info": {"connection": 2},
+        "path": "/dev/mapper/36001405376e34ea70384de7a34a2854d",
+        "attachment": {"attachment": 2},
+        "multipath_id": "36001405376e34ea70384de7a34a2854d",
+    }
     vol3 = {"vol_id": "vol-id-3", "connection_info": {"connection": 3}}
     expected = [vol1, vol2, vol3]
 
@@ -202,8 +214,12 @@ def test_get_volumes_by_id(tmp_db):
         for vol in expected:
             db.add_volume(vol["vol_id"], vol["connection_info"])
             if "path" in vol:
-                db.update_volume(vol["vol_id"], vol["path"], vol["attachment"],
-                                 vol["multipath_id"])
+                db.update_volume(
+                    vol["vol_id"],
+                    vol["path"],
+                    vol["attachment"],
+                    vol["multipath_id"],
+                )
 
         actual = list(db.iter_volumes(["vol-id-1", "vol-id-2", "vol-id-3"]))
         assert expected == actual
@@ -257,7 +273,8 @@ def test_concurrency(tmp_db):
                     vol_id,
                     path="/dev/mapper/" + vol_id,
                     multipath_id=vol_id,
-                    attachment={"attachment": vol_id})
+                    attachment={"attachment": vol_id},
+                )
 
             # Switch to another thread. Real code will process another
             # unrelated request here.
@@ -278,9 +295,11 @@ def test_concurrency(tmp_db):
     elapsed = time.time() - start
 
     volumes = concurrency * iterations
-    print("Added %d volumes with %s concurrent threads in %.6f seconds "
-          "(%.6f seconds/op)"
-          % (volumes, concurrency, elapsed, elapsed / volumes))
+    print(
+        "Added %d volumes with %s concurrent threads in %.6f seconds "
+        "(%.6f seconds/op)"
+        % (volumes, concurrency, elapsed, elapsed / volumes)
+    )
 
     db = managedvolumedb.open()
     with closing(db):
@@ -303,8 +322,9 @@ def test_lookup_benchmark(tmp_db):
     count = 500
 
     # Sort for fastest insertion.
-    volumes = sorted((str(uuid.uuid4()), make_multipath_id())
-                     for i in range(count))
+    volumes = sorted(
+        (str(uuid.uuid4()), make_multipath_id()) for i in range(count)
+    )
 
     def iter_volumes():
         for vol_id, multipath_id in volumes:
@@ -341,8 +361,10 @@ def test_lookup_benchmark(tmp_db):
 
     elapsed = time.time() - start
 
-    print("Lookup %d multipath ids in %.6f seconds (%.6f seconds/op)"
-          % (count, elapsed, elapsed / count))
+    print(
+        "Lookup %d multipath ids in %.6f seconds (%.6f seconds/op)"
+        % (count, elapsed, elapsed / count)
+    )
 
 
 def make_multipath_id():

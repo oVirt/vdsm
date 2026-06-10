@@ -17,10 +17,10 @@ from vdsm.network.netinfo import addresses
 from . import exception as ge
 from . import gluster_mgmt_api, gluster_api
 
-
-_glusterCommandPath = cmdutils.CommandPath("gluster",
-                                           "/usr/sbin/gluster",
-                                           )
+_glusterCommandPath = cmdutils.CommandPath(
+    "gluster",
+    "/usr/sbin/gluster",
+)
 _TIME_ZONE = time.tzname[0]
 
 _DEFAULT_TIMEOUT = 120  # secs
@@ -119,7 +119,8 @@ def _execGlusterXmlWithTimeout(cmd, timeout=_DEFAULT_TIMEOUT):
     cmd = cmdutils.wrap_command(cmd)
     logging.debug(cmdutils.command_log_line(cmd))
     proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
     try:
         with commands.terminating(proc):
             out, err = proc.communicate(timeout=timeout)
@@ -128,8 +129,7 @@ def _execGlusterXmlWithTimeout(cmd, timeout=_DEFAULT_TIMEOUT):
 
     logging.debug(cmdutils.retcode_log_line(proc.returncode, err))
     if proc.returncode != 0:
-        raise ge.GlusterCmdExecFailedException(
-            proc.returncode, out, err)
+        raise ge.GlusterCmdExecFailedException(proc.returncode, out, err)
 
     return _getTree(out)
 
@@ -168,10 +168,12 @@ def hostUUIDGet():
 
 
 def _parseVolumeStatus(tree):
-    status = {'name': tree.find('volStatus/volumes/volume/volName').text,
-              'bricks': [],
-              'nfs': [],
-              'shd': []}
+    status = {
+        'name': tree.find('volStatus/volumes/volume/volName').text,
+        'bricks': [],
+        'nfs': [],
+        'shd': [],
+    }
     hostname = _getLocalIpAddress() or _getGlusterHostName()
     for el in tree.findall('volStatus/volumes/volume/node'):
         value = {}
@@ -192,31 +194,44 @@ def _parseVolumeStatus(tree):
             value['status'] = 'OFFLINE'
 
         if value['hostname'] == 'NFS Server':
-            status['nfs'].append({'hostname': value['path'],
-                                  'hostuuid': value['peerid'],
-                                  'port': ports['tcp'],
-                                  'rdma_port': ports['rdma'],
-                                  'status': value['status'],
-                                  'pid': value['pid']})
+            status['nfs'].append(
+                {
+                    'hostname': value['path'],
+                    'hostuuid': value['peerid'],
+                    'port': ports['tcp'],
+                    'rdma_port': ports['rdma'],
+                    'status': value['status'],
+                    'pid': value['pid'],
+                }
+            )
         elif value['hostname'] == 'Self-heal Daemon':
-            status['shd'].append({'hostname': value['path'],
-                                  'hostuuid': value['peerid'],
-                                  'status': value['status'],
-                                  'pid': value['pid']})
+            status['shd'].append(
+                {
+                    'hostname': value['path'],
+                    'hostuuid': value['peerid'],
+                    'status': value['status'],
+                    'pid': value['pid'],
+                }
+            )
         else:
-            status['bricks'].append({'brick': '%s:%s' % (value['hostname'],
-                                                         value['path']),
-                                     'hostuuid': value['peerid'],
-                                     'port': ports['tcp'],
-                                     'rdma_port': ports['rdma'],
-                                     'status': value['status'],
-                                     'pid': value['pid']})
+            status['bricks'].append(
+                {
+                    'brick': '%s:%s' % (value['hostname'], value['path']),
+                    'hostuuid': value['peerid'],
+                    'port': ports['tcp'],
+                    'rdma_port': ports['rdma'],
+                    'status': value['status'],
+                    'pid': value['pid'],
+                }
+            )
     return status
 
 
 def _parseVolumeStatusDetail(tree):
-    status = {'name': tree.find('volStatus/volumes/volume/volName').text,
-              'bricks': []}
+    status = {
+        'name': tree.find('volStatus/volumes/volume/volName').text,
+        'bricks': [],
+    }
     for el in tree.findall('volStatus/volumes/volume/node'):
         value = {}
 
@@ -227,21 +242,26 @@ def _parseVolumeStatusDetail(tree):
         value['sizeTotal'] = sizeTotal / (1024.0 * 1024.0)
         sizeFree = int(value.get('sizeFree', '0'))
         value['sizeFree'] = sizeFree / (1024.0 * 1024.0)
-        status['bricks'].append({'brick': '%s:%s' % (value['hostname'],
-                                                     value['path']),
-                                 'hostuuid': value['peerid'],
-                                 'sizeTotal': '%.3f' % (value['sizeTotal'],),
-                                 'sizeFree': '%.3f' % (value['sizeFree'],),
-                                 'device': value.get('device', ''),
-                                 'blockSize': value.get('blockSize', '0'),
-                                 'mntOptions': value.get('mntOptions', ''),
-                                 'fsName': value.get('fsName', '')})
+        status['bricks'].append(
+            {
+                'brick': '%s:%s' % (value['hostname'], value['path']),
+                'hostuuid': value['peerid'],
+                'sizeTotal': '%.3f' % (value['sizeTotal'],),
+                'sizeFree': '%.3f' % (value['sizeFree'],),
+                'device': value.get('device', ''),
+                'blockSize': value.get('blockSize', '0'),
+                'mntOptions': value.get('mntOptions', ''),
+                'fsName': value.get('fsName', ''),
+            }
+        )
     return status
 
 
 def _parseVolumeStatusClients(tree):
-    status = {'name': tree.find('volStatus/volumes/volume/volName').text,
-              'bricks': []}
+    status = {
+        'name': tree.find('volStatus/volumes/volume/volName').text,
+        'bricks': [],
+    }
     for el in tree.findall('volStatus/volumes/volume/node'):
         hostname = el.find('hostname').text
         path = el.find('path').text
@@ -252,25 +272,37 @@ def _parseVolumeStatusClients(tree):
             clientValue = {}
             for ch in c:
                 clientValue[ch.tag] = ch.text or ''
-            clientsStatus.append({'hostname': clientValue['hostname'],
-                                  'bytesRead': clientValue['bytesRead'],
-                                  'bytesWrite': clientValue['bytesWrite']})
+            clientsStatus.append(
+                {
+                    'hostname': clientValue['hostname'],
+                    'bytesRead': clientValue['bytesRead'],
+                    'bytesWrite': clientValue['bytesWrite'],
+                }
+            )
 
-        status['bricks'].append({'brick': '%s:%s' % (hostname, path),
-                                 'hostuuid': hostuuid,
-                                 'clientsStatus': clientsStatus})
+        status['bricks'].append(
+            {
+                'brick': '%s:%s' % (hostname, path),
+                'hostuuid': hostuuid,
+                'clientsStatus': clientsStatus,
+            }
+        )
     return status
 
 
 def _parseVolumeStatusMem(tree):
-    status = {'name': tree.find('volStatus/volumes/volume/volName').text,
-              'bricks': []}
+    status = {
+        'name': tree.find('volStatus/volumes/volume/volName').text,
+        'bricks': [],
+    }
     for el in tree.findall('volStatus/volumes/volume/node'):
-        brick = {'brick': '%s:%s' % (el.find('hostname').text,
-                                     el.find('path').text),
-                 'hostuuid': el.find('peerid').text,
-                 'mallinfo': {},
-                 'mempool': []}
+        brick = {
+            'brick': '%s:%s'
+            % (el.find('hostname').text, el.find('path').text),
+            'hostuuid': el.find('peerid').text,
+            'mallinfo': {},
+            'mempool': [],
+        }
 
         for ch in el.find('memStatus/mallinfo'):
             brick['mallinfo'][ch.tag] = ch.text or ''
@@ -381,17 +413,17 @@ def volumeStatus(volumeName, brick=None, option=None):
 
 def _parseVolumeInfo(tree):
     """
-        {VOLUMENAME: {'brickCount': BRICKCOUNT,
-                      'bricks': [BRICK1, BRICK2, ...],
-                      'options': {OPTION: VALUE, ...},
-                      'transportType': [TCP,RDMA, ...],
-                      'uuid': UUID,
-                      'volumeName': NAME,
-                      'volumeStatus': STATUS,
-                      'volumeType': TYPE,
-                      'disperseCount': DISPERSE_COUNT,
-                      'redundancyCount': REDUNDANCY_COUNT,
-                      'isArbiter': [True/False]}, ...}
+    {VOLUMENAME: {'brickCount': BRICKCOUNT,
+                  'bricks': [BRICK1, BRICK2, ...],
+                  'options': {OPTION: VALUE, ...},
+                  'transportType': [TCP,RDMA, ...],
+                  'uuid': UUID,
+                  'volumeName': NAME,
+                  'volumeStatus': STATUS,
+                  'volumeType': TYPE,
+                  'disperseCount': DISPERSE_COUNT,
+                  'redundancyCount': REDUNDANCY_COUNT,
+                  'isArbiter': [True/False]}, ...}
     """
     volumes = {}
     for el in tree.findall('volInfo/volumes/volume'):
@@ -410,7 +442,7 @@ def _parseVolumeInfo(tree):
         value['replicaCount'] = el.find('replicaCount').text
         value['disperseCount'] = el.find('disperseCount').text
         value['redundancyCount'] = el.find('redundancyCount').text
-        value['isArbiter'] = (el.find('arbiterCount').text == '1')
+        value['isArbiter'] = el.find('arbiterCount').text == '1'
         transportType = el.find('transport').text
         if transportType == '0':
             value['transportType'] = [TransportType.TCP]
@@ -432,7 +464,7 @@ def _parseVolumeInfo(tree):
             try:
                 brickDetail['name'] = d.find('name').text
                 brickDetail['hostUuid'] = d.find('hostUuid').text
-                brickDetail['isArbiter'] = (d.find('isArbiter').text == '1')
+                brickDetail['isArbiter'] = d.find('isArbiter').text == '1'
                 value['bricksInfo'].append(brickDetail)
             except AttributeError:
                 break
@@ -457,41 +489,66 @@ def _parseVolumeProfileInfo(tree, nfs):
         if brickName == 'localhost':
             brickName = _getLocalIpAddress() or _getGlusterHostName()
         for block in brick.findall('cumulativeStats/blockStats/block'):
-            blkCumulative.append({'size': block.find('size').text,
-                                  'read': block.find('reads').text,
-                                  'write': block.find('writes').text})
+            blkCumulative.append(
+                {
+                    'size': block.find('size').text,
+                    'read': block.find('reads').text,
+                    'write': block.find('writes').text,
+                }
+            )
         for fop in brick.findall('cumulativeStats/fopStats/fop'):
-            fopCumulative.append({'name': fop.find('name').text,
-                                  'hits': fop.find('hits').text,
-                                  'latencyAvg': fop.find('avgLatency').text,
-                                  'latencyMin': fop.find('minLatency').text,
-                                  'latencyMax': fop.find('maxLatency').text})
+            fopCumulative.append(
+                {
+                    'name': fop.find('name').text,
+                    'hits': fop.find('hits').text,
+                    'latencyAvg': fop.find('avgLatency').text,
+                    'latencyMin': fop.find('minLatency').text,
+                    'latencyMax': fop.find('maxLatency').text,
+                }
+            )
         for block in brick.findall('intervalStats/blockStats/block'):
-            blkInterval.append({'size': block.find('size').text,
-                                'read': block.find('reads').text,
-                                'write': block.find('writes').text})
+            blkInterval.append(
+                {
+                    'size': block.find('size').text,
+                    'read': block.find('reads').text,
+                    'write': block.find('writes').text,
+                }
+            )
         for fop in brick.findall('intervalStats/fopStats/fop'):
-            fopInterval.append({'name': fop.find('name').text,
-                                'hits': fop.find('hits').text,
-                                'latencyAvg': fop.find('avgLatency').text,
-                                'latencyMin': fop.find('minLatency').text,
-                                'latencyMax': fop.find('maxLatency').text})
+            fopInterval.append(
+                {
+                    'name': fop.find('name').text,
+                    'hits': fop.find('hits').text,
+                    'latencyAvg': fop.find('avgLatency').text,
+                    'latencyMin': fop.find('minLatency').text,
+                    'latencyMax': fop.find('maxLatency').text,
+                }
+            )
         bricks.append(
-            {brickKey: brickName,
-             'cumulativeStats': {
-                 'blockStats': blkCumulative,
-                 'fopStats': fopCumulative,
-                 'duration': brick.find('cumulativeStats/duration').text,
-                 'totalRead': brick.find('cumulativeStats/totalRead').text,
-                 'totalWrite': brick.find('cumulativeStats/totalWrite').text},
-             'intervalStats': {
-                 'blockStats': blkInterval,
-                 'fopStats': fopInterval,
-                 'duration': brick.find('intervalStats/duration').text,
-                 'totalRead': brick.find('intervalStats/totalRead').text,
-                 'totalWrite': brick.find('intervalStats/totalWrite').text}})
-    status = {'volumeName': tree.find("volProfile/volname").text,
-              bricksKey: bricks}
+            {
+                brickKey: brickName,
+                'cumulativeStats': {
+                    'blockStats': blkCumulative,
+                    'fopStats': fopCumulative,
+                    'duration': brick.find('cumulativeStats/duration').text,
+                    'totalRead': brick.find('cumulativeStats/totalRead').text,
+                    'totalWrite': brick.find(
+                        'cumulativeStats/totalWrite'
+                    ).text,
+                },
+                'intervalStats': {
+                    'blockStats': blkInterval,
+                    'fopStats': fopInterval,
+                    'duration': brick.find('intervalStats/duration').text,
+                    'totalRead': brick.find('intervalStats/totalRead').text,
+                    'totalWrite': brick.find('intervalStats/totalWrite').text,
+                },
+            }
+        )
+    status = {
+        'volumeName': tree.find("volProfile/volname").text,
+        bricksKey: bricks,
+    }
     return status
 
 
@@ -535,8 +592,15 @@ def is_ipv4_fqdn(address):
 
 
 @gluster_mgmt_api
-def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
-                 transportList=[], force=False, arbiter=False):
+def volumeCreate(
+    volumeName,
+    brickList,
+    replicaCount=0,
+    stripeCount=0,
+    transportList=[],
+    force=False,
+    arbiter=False,
+):
     command = _getGlusterVolCmd() + ["create", volumeName]
     if stripeCount:
         command += ["stripe", "%s" % stripeCount]
@@ -597,8 +661,10 @@ def volumeDelete(volumeName):
 
 @gluster_mgmt_api
 def volumeSet(volumeName, option, value):
-    heal_is_set = option in ('cluster.granular-entry-heal',
-                             'granular-entry-heal')
+    heal_is_set = option in (
+        'cluster.granular-entry-heal',
+        'granular-entry-heal',
+    )
     volume_created = _checkIfVolumeCreated(volumeName)
     command = _getGlusterVolCmd()
     if heal_is_set and not volume_created:
@@ -658,8 +724,9 @@ def volumeReset(volumeName, option='', force=False):
 
 
 @gluster_mgmt_api
-def volumeAddBrick(volumeName, brickList,
-                   replicaCount=0, stripeCount=0, force=False):
+def volumeAddBrick(
+    volumeName, brickList, replicaCount=0, stripeCount=0, force=False
+):
     command = _getGlusterVolCmd() + ["add-brick", volumeName]
     if stripeCount:
         command += ["stripe", "%s" % stripeCount]
@@ -686,8 +753,7 @@ def volumeRebalanceStart(volumeName, rebalanceType="", force=False):
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeRebalanceStartFailedException(rc=e.rc,
-                                                            err=e.err)
+        raise ge.GlusterVolumeRebalanceStartFailedException(rc=e.rc, err=e.err)
     try:
         return {'taskId': xmltree.find('volRebalance/task-id').text}
     except _etreeExceptions:  # pylint: disable=catching-non-exception
@@ -702,8 +768,7 @@ def volumeRebalanceStop(volumeName, force=False):
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeRebalanceStopFailedException(rc=e.rc,
-                                                           err=e.err)
+        raise ge.GlusterVolumeRebalanceStopFailedException(rc=e.rc, err=e.err)
 
     try:
         return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'rebalance')
@@ -748,21 +813,27 @@ def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
             'filesFailed': tree.find('aggregate/failures').text,
             'filesSkipped': tree.find('aggregate/skipped').text,
             'totalSizeMoved': tree.find('aggregate/size').text,
-            'status': statusStr.upper()},
-        'hosts': []}
+            'status': statusStr.upper(),
+        },
+        'hosts': [],
+    }
 
     for el in tree.findall('node'):
         st = el.find('statusStr').text
         statusStr = st.replace(' ', '_').replace('-', '_')
-        status['hosts'].append({'name': el.find('nodeName').text,
-                                'id': el.find('id').text,
-                                'runtime': el.find('runtime').text,
-                                'filesScanned': el.find('lookups').text,
-                                'filesMoved': el.find('files').text,
-                                'filesFailed': el.find('failures').text,
-                                'filesSkipped': el.find('skipped').text,
-                                'totalSizeMoved': el.find('size').text,
-                                'status': statusStr.upper()})
+        status['hosts'].append(
+            {
+                'name': el.find('nodeName').text,
+                'id': el.find('id').text,
+                'runtime': el.find('runtime').text,
+                'filesScanned': el.find('lookups').text,
+                'filesMoved': el.find('files').text,
+                'filesFailed': el.find('failures').text,
+                'filesSkipped': el.find('skipped').text,
+                'totalSizeMoved': el.find('size').text,
+                'status': statusStr.upper(),
+            }
+        )
 
     return status
 
@@ -773,8 +844,9 @@ def volumeRebalanceStatus(volumeName):
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeRebalanceStatusFailedException(rc=e.rc,
-                                                             err=e.err)
+        raise ge.GlusterVolumeRebalanceStatusFailedException(
+            rc=e.rc, err=e.err
+        )
     try:
         return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'rebalance')
     except _etreeExceptions:  # pylint: disable=catching-non-exception
@@ -783,15 +855,21 @@ def volumeRebalanceStatus(volumeName):
 
 @gluster_mgmt_api
 def volumeReplaceBrickCommitForce(volumeName, existingBrick, newBrick):
-    command = _getGlusterVolCmd() + ["replace-brick", volumeName,
-                                     existingBrick, newBrick, "commit",
-                                     "force"]
+    command = _getGlusterVolCmd() + [
+        "replace-brick",
+        volumeName,
+        existingBrick,
+        newBrick,
+        "commit",
+        "force",
+    ]
     try:
         _execGlusterXml(command)
         return True
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeReplaceBrickCommitForceFailedException(rc=e.rc,
-                                                                     err=e.err)
+        raise ge.GlusterVolumeReplaceBrickCommitForceFailedException(
+            rc=e.rc, err=e.err
+        )
 
 
 @gluster_mgmt_api
@@ -803,8 +881,9 @@ def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeRemoveBrickStartFailedException(rc=e.rc,
-                                                              err=e.err)
+        raise ge.GlusterVolumeRemoveBrickStartFailedException(
+            rc=e.rc, err=e.err
+        )
     try:
         return {'taskId': xmltree.find('volRemoveBrick/task-id').text}
     except _etreeExceptions:  # pylint: disable=catching-non-exception
@@ -820,8 +899,9 @@ def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeRemoveBrickStopFailedException(rc=e.rc,
-                                                             err=e.err)
+        raise ge.GlusterVolumeRemoveBrickStopFailedException(
+            rc=e.rc, err=e.err
+        )
 
     try:
         return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'remove-brick')
@@ -838,8 +918,9 @@ def volumeRemoveBrickStatus(volumeName, brickList, replicaCount=0):
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeRemoveBrickStatusFailedException(rc=e.rc,
-                                                               err=e.err)
+        raise ge.GlusterVolumeRemoveBrickStatusFailedException(
+            rc=e.rc, err=e.err
+        )
     try:
         return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'remove-brick')
     except _etreeExceptions:  # pylint: disable=catching-non-exception
@@ -856,8 +937,9 @@ def volumeRemoveBrickCommit(volumeName, brickList, replicaCount=0):
         _execGlusterXml(command)
         return True
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeRemoveBrickCommitFailedException(rc=e.rc,
-                                                               err=e.err)
+        raise ge.GlusterVolumeRemoveBrickCommitFailedException(
+            rc=e.rc, err=e.err
+        )
 
 
 @gluster_mgmt_api
@@ -870,8 +952,9 @@ def volumeRemoveBrickForce(volumeName, brickList, replicaCount=0):
         _execGlusterXml(command)
         return True
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeRemoveBrickForceFailedException(rc=e.rc,
-                                                              err=e.err)
+        raise ge.GlusterVolumeRemoveBrickForceFailedException(
+            rc=e.rc, err=e.err
+        )
 
 
 @gluster_mgmt_api
@@ -900,9 +983,7 @@ def peerDetach(hostName, force=False):
 
 
 def _parsePeerStatus(tree, gHostName, gUuid, gStatus):
-    hostList = [{'hostname': gHostName,
-                 'uuid': gUuid,
-                 'status': gStatus}]
+    hostList = [{'hostname': gHostName, 'uuid': gUuid, 'status': gStatus}]
 
     for el in tree.findall('peerStatus/peer'):
         if el.find('state').text != '3':
@@ -911,9 +992,13 @@ def _parsePeerStatus(tree, gHostName, gUuid, gStatus):
             status = HostStatus.CONNECTED
         else:
             status = HostStatus.DISCONNECTED
-        hostList.append({'hostname': el.find('hostname').text,
-                         'uuid': el.find('uuid').text,
-                         'status': status})
+        hostList.append(
+            {
+                'hostname': el.find('hostname').text,
+                'uuid': el.find('uuid').text,
+                'status': status,
+            }
+        )
 
     return hostList
 
@@ -930,9 +1015,12 @@ def peerStatus():
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterHostsListFailedException(rc=e.rc, err=e.err)
     try:
-        return _parsePeerStatus(xmltree,
-                                _getLocalIpAddress() or _getGlusterHostName(),
-                                hostUUIDGet(), HostStatus.CONNECTED)
+        return _parsePeerStatus(
+            xmltree,
+            _getLocalIpAddress() or _getGlusterHostName(),
+            hostUUIDGet(),
+            HostStatus.CONNECTED,
+        )
     except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
@@ -1052,14 +1140,19 @@ def _parseVolumeTasks(tree):
             elif taskType == TaskType.REBALANCE:
                 pass
 
-            statusStr = c.find('statusStr').text.upper() \
-                                                .replace('-', '_') \
-                                                .replace(' ', '_')
+            statusStr = (
+                c.find('statusStr')
+                .text.upper()
+                .replace('-', '_')
+                .replace(' ', '_')
+            )
 
-            tasks[taskId] = {'volumeName': volumeName,
-                             'taskType': taskType,
-                             'status': statusStr,
-                             'bricks': bricks}
+            tasks[taskId] = {
+                'volumeName': volumeName,
+                'taskType': taskType,
+                'status': statusStr,
+                'bricks': bricks,
+            }
     return tasks
 
 
@@ -1077,41 +1170,51 @@ def volumeTasks(volumeName="all"):
 
 
 @gluster_mgmt_api
-def volumeGeoRepSessionStart(volumeName, remoteHost, remoteVolumeName,
-                             remoteUserName=None, force=False):
+def volumeGeoRepSessionStart(
+    volumeName, remoteHost, remoteVolumeName, remoteUserName=None, force=False
+):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
         userAtHost = remoteHost
-    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        userAtHost, remoteVolumeName), "start"]
+    command = _getGlusterVolGeoRepCmd() + [
+        volumeName,
+        "%s::%s" % (userAtHost, remoteVolumeName),
+        "start",
+    ]
     if force:
         command.append('force')
     try:
         _execGlusterXml(command)
         return True
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeGeoRepSessionStartFailedException(rc=e.rc,
-                                                                err=e.err)
+        raise ge.GlusterVolumeGeoRepSessionStartFailedException(
+            rc=e.rc, err=e.err
+        )
 
 
 @gluster_mgmt_api
-def volumeGeoRepSessionStop(volumeName, remoteHost, remoteVolumeName,
-                            remoteUserName=None, force=False):
+def volumeGeoRepSessionStop(
+    volumeName, remoteHost, remoteVolumeName, remoteUserName=None, force=False
+):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
         userAtHost = remoteHost
-    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        userAtHost, remoteVolumeName), "stop"]
+    command = _getGlusterVolGeoRepCmd() + [
+        volumeName,
+        "%s::%s" % (userAtHost, remoteVolumeName),
+        "stop",
+    ]
     if force:
         command.append('force')
     try:
         _execGlusterXml(command)
         return True
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeGeoRepSessionStopFailedException(rc=e.rc,
-                                                               err=e.err)
+        raise ge.GlusterVolumeGeoRepSessionStopFailedException(
+            rc=e.rc, err=e.err
+        )
 
 
 def _parseGeoRepStatus(tree):
@@ -1139,8 +1242,9 @@ def _parseGeoRepStatus(tree):
                ]....
     }
     """
-    gluster_old_format = tree.find(
-        'geoRep/volume/sessions/session/session_secondary') is None
+    gluster_old_format = (
+        tree.find('geoRep/volume/sessions/session/session_secondary') is None
+    )
     status = {}
     for volume in tree.findall('geoRep/volume'):
         sessions = []
@@ -1150,12 +1254,15 @@ def _parseGeoRepStatus(tree):
             sessionDetail = {}
             if gluster_old_format:
                 sessionDetail['sessionKey'] = session.find(
-                    'session_slave').text
+                    'session_slave'
+                ).text
             else:
                 sessionDetail['sessionKey'] = session.find(
-                    'session_secondary').text
-            sessionDetail['remoteVolumeName'] = sessionDetail[
-                'sessionKey'].split("::")[-1].split(":")[0]
+                    'session_secondary'
+                ).text
+            sessionDetail['remoteVolumeName'] = (
+                sessionDetail['sessionKey'].split("::")[-1].split(":")[0]
+            )
             for pair in session.findall('pair'):
                 pairDetail = {}
                 if gluster_old_format:
@@ -1165,47 +1272,60 @@ def _parseGeoRepStatus(tree):
                     pairDetail['remoteHost'] = pair.find('slave_node').text
                     if pairDetail['remoteHost'] is None:
                         pairDetail['remoteHost'] = pair.find(
-                            'slave').text.split("::")[0]
-                    pairDetail['remoteUserName'] = pair.find(
-                        'slave_user').text
+                            'slave'
+                        ).text.split("::")[0]
+                    pairDetail['remoteUserName'] = pair.find('slave_user').text
                 else:
                     pairDetail['host'] = pair.find('primary_node').text
                     pairDetail['hostUuid'] = pair.find(
-                        'primary_node_uuid').text
+                        'primary_node_uuid'
+                    ).text
                     pairDetail['brickName'] = pair.find('primary_brick').text
                     pairDetail['remoteHost'] = pair.find(
-                        'secondary').text.split("::")[0]
+                        'secondary'
+                    ).text.split("::")[0]
                     pairDetail['remoteUserName'] = pair.find(
-                        'secondary_user').text
+                        'secondary_user'
+                    ).text
                 pairDetail['status'] = pair.find('status').text
                 pairDetail['crawlStatus'] = pair.find('crawl_status').text
                 pairDetail['timeZone'] = _TIME_ZONE
                 pairDetail['lastSynced'] = pair.find('last_synced').text
                 if pairDetail['lastSynced'] != 'N/A':
                     pairDetail['lastSynced'] = calendar.timegm(
-                        time.strptime(pairDetail['lastSynced'],
-                                      "%Y-%m-%d %H:%M:%S"))
+                        time.strptime(
+                            pairDetail['lastSynced'], "%Y-%m-%d %H:%M:%S"
+                        )
+                    )
 
                 pairDetail['checkpointTime'] = pair.find(
-                    'checkpoint_time').text
+                    'checkpoint_time'
+                ).text
                 if pairDetail['checkpointTime'] != 'N/A':
                     pairDetail['checkpointTime'] = calendar.timegm(
-                        time.strptime(pairDetail['checkpointTime'],
-                                      "%Y-%m-%d %H:%M:%S"))
+                        time.strptime(
+                            pairDetail['checkpointTime'], "%Y-%m-%d %H:%M:%S"
+                        )
+                    )
 
                 pairDetail['checkpointCompletionTime'] = pair.find(
-                    'checkpoint_completion_time').text
+                    'checkpoint_completion_time'
+                ).text
                 if pairDetail['checkpointCompletionTime'] != 'N/A':
                     pairDetail['checkpointCompletionTime'] = calendar.timegm(
-                        time.strptime(pairDetail['checkpointCompletionTime'],
-                                      "%Y-%m-%d %H:%M:%S"))
+                        time.strptime(
+                            pairDetail['checkpointCompletionTime'],
+                            "%Y-%m-%d %H:%M:%S",
+                        )
+                    )
 
                 pairDetail['entry'] = pair.find('entry').text
                 pairDetail['data'] = pair.find('data').text
                 pairDetail['meta'] = pair.find('meta').text
                 pairDetail['failures'] = pair.find('failures').text
                 pairDetail['checkpointCompleted'] = pair.find(
-                    'checkpoint_completed').text
+                    'checkpoint_completed'
+                ).text
                 pairs.append(pairDetail)
             sessionDetail['bricks'] = pairs
             sessions.append(sessionDetail)
@@ -1215,8 +1335,12 @@ def _parseGeoRepStatus(tree):
 
 
 @gluster_mgmt_api
-def volumeGeoRepStatus(volumeName=None, remoteHost=None,
-                       remoteVolumeName=None, remoteUserName=None):
+def volumeGeoRepStatus(
+    volumeName=None,
+    remoteHost=None,
+    remoteVolumeName=None,
+    remoteUserName=None,
+):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
@@ -1239,41 +1363,51 @@ def volumeGeoRepStatus(volumeName=None, remoteHost=None,
 
 
 @gluster_mgmt_api
-def volumeGeoRepSessionPause(volumeName, remoteHost, remoteVolumeName,
-                             remoteUserName=None, force=False):
+def volumeGeoRepSessionPause(
+    volumeName, remoteHost, remoteVolumeName, remoteUserName=None, force=False
+):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
         userAtHost = remoteHost
-    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        userAtHost, remoteVolumeName), "pause"]
+    command = _getGlusterVolGeoRepCmd() + [
+        volumeName,
+        "%s::%s" % (userAtHost, remoteVolumeName),
+        "pause",
+    ]
     if force:
         command.append('force')
     try:
         _execGlusterXml(command)
         return True
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeGeoRepSessionPauseFailedException(rc=e.rc,
-                                                                err=e.err)
+        raise ge.GlusterVolumeGeoRepSessionPauseFailedException(
+            rc=e.rc, err=e.err
+        )
 
 
 @gluster_mgmt_api
-def volumeGeoRepSessionResume(volumeName, remoteHost, remoteVolumeName,
-                              remoteUserName=None, force=False):
+def volumeGeoRepSessionResume(
+    volumeName, remoteHost, remoteVolumeName, remoteUserName=None, force=False
+):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
         userAtHost = remoteHost
-    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        userAtHost, remoteVolumeName), "resume"]
+    command = _getGlusterVolGeoRepCmd() + [
+        volumeName,
+        "%s::%s" % (userAtHost, remoteVolumeName),
+        "resume",
+    ]
     if force:
         command.append('force')
     try:
         _execGlusterXml(command)
         return True
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeGeoRepSessionResumeFailedException(rc=e.rc,
-                                                                 err=e.err)
+        raise ge.GlusterVolumeGeoRepSessionResumeFailedException(
+            rc=e.rc, err=e.err
+        )
 
 
 def _parseVolumeGeoRepConfig(tree):
@@ -1290,16 +1424,23 @@ def _parseVolumeGeoRepConfig(tree):
 
 
 @gluster_mgmt_api
-def volumeGeoRepConfig(volumeName, remoteHost,
-                       remoteVolumeName, optionName=None,
-                       optionValue=None,
-                       remoteUserName=None):
+def volumeGeoRepConfig(
+    volumeName,
+    remoteHost,
+    remoteVolumeName,
+    optionName=None,
+    optionValue=None,
+    remoteUserName=None,
+):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
         userAtHost = remoteHost
-    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        userAtHost, remoteVolumeName), "config"]
+    command = _getGlusterVolGeoRepCmd() + [
+        volumeName,
+        "%s::%s" % (userAtHost, remoteVolumeName),
+        "config",
+    ]
     if optionName and optionValue:
         command += [optionName, optionValue]
     elif optionName:
@@ -1318,9 +1459,7 @@ def volumeGeoRepConfig(volumeName, remoteHost,
 
 
 @gluster_mgmt_api
-def snapshotCreate(volumeName, snapName,
-                   snapDescription=None,
-                   force=False):
+def snapshotCreate(volumeName, snapName, snapDescription=None, force=False):
     command = _getGlusterSnapshotCmd() + ["create", snapName, volumeName]
 
     if snapDescription:
@@ -1333,8 +1472,10 @@ def snapshotCreate(volumeName, snapName,
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterSnapshotCreateFailedException(rc=e.rc, err=e.err)
     try:
-        return {'uuid': xmltree.find('snapCreate/snapshot/uuid').text,
-                'name': xmltree.find('snapCreate/snapshot/name').text}
+        return {
+            'uuid': xmltree.find('snapCreate/snapshot/uuid').text,
+            'name': xmltree.find('snapCreate/snapshot/name').text,
+        }
     except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
@@ -1392,9 +1533,11 @@ def _parseRestoredSnapshot(tree):
     snapshotRestore['volumeName'] = tree.find('snapRestore/volume/name').text
     snapshotRestore['volumeUuid'] = tree.find('snapRestore/volume/uuid').text
     snapshotRestore['snapshotName'] = tree.find(
-        'snapRestore/snapshot/name').text
+        'snapRestore/snapshot/name'
+    ).text
     snapshotRestore['snapshotUuid'] = tree.find(
-        'snapRestore/snapshot/uuid').text
+        'snapRestore/snapshot/uuid'
+    ).text
 
     return snapshotRestore
 
@@ -1426,13 +1569,17 @@ def _parseSnapshotConfigList(tree):
     """
     systemConfig = {}
     systemConfig['snap-max-hard-limit'] = tree.find(
-        'snapConfig/systemConfig/hardLimit').text
+        'snapConfig/systemConfig/hardLimit'
+    ).text
     systemConfig['snap-max-soft-limit'] = tree.find(
-        'snapConfig/systemConfig/softLimit').text
+        'snapConfig/systemConfig/softLimit'
+    ).text
     systemConfig['auto-delete'] = tree.find(
-        'snapConfig/systemConfig/autoDelete').text
+        'snapConfig/systemConfig/autoDelete'
+    ).text
     systemConfig['activate-on-create'] = tree.find(
-        'snapConfig/systemConfig/activateOnCreate').text
+        'snapConfig/systemConfig/activateOnCreate'
+    ).text
 
     volumeConfig = {}
     for el in tree.findall('snapConfig/volumeConfig/volume'):
@@ -1478,25 +1625,26 @@ def _parseVolumeSnapshotList(tree):
     }
     """
     volume = {}
-    volumeName = tree.find(
-        'snapInfo/originVolume/name').text
+    volumeName = tree.find('snapInfo/originVolume/name').text
     volume[volumeName] = {
         'snapRemaining': tree.find('snapInfo/originVolume/snapRemaining').text,
-        'snapshots': []
+        'snapshots': [],
     }
     if int(tree.find('snapInfo/count').text) == 0:
         return {}
     for el in tree.findall('snapInfo/snapshots/snapshot'):
         snapshot = {}
         snapshot['id'] = el.find('uuid').text
-        snapshot['description'] = "" if el.find('description') is None \
-                                  else el.find('description').text
+        snapshot['description'] = (
+            ""
+            if el.find('description') is None
+            else el.find('description').text
+        )
         snapshot['createTime'] = {
             'epochTime': calendar.timegm(
-                time.strptime(el.find('createTime').text,
-                              "%Y-%m-%d %H:%M:%S")
+                time.strptime(el.find('createTime').text, "%Y-%m-%d %H:%M:%S")
             ),
-            'timeZone': _TIME_ZONE
+            'timeZone': _TIME_ZONE,
         }
         snapshot['snapVolume'] = el.find('snapVolume/name').text
         status = el.find('snapVolume/status').text
@@ -1537,14 +1685,16 @@ def _parseAllVolumeSnapshotList(tree):
     for el in tree.findall('snapInfo/snapshots/snapshot'):
         snapshot = {}
         snapshot['id'] = el.find('uuid').text
-        snapshot['description'] = "" if el.find('description') is None \
-                                  else el.find('description').text
+        snapshot['description'] = (
+            ""
+            if el.find('description') is None
+            else el.find('description').text
+        )
         snapshot['createTime'] = {
             'epochTime': calendar.timegm(
-                time.strptime(el.find('createTime').text,
-                              "%Y-%m-%d %H:%M:%S")
+                time.strptime(el.find('createTime').text, "%Y-%m-%d %H:%M:%S")
             ),
-            'timeZone': _TIME_ZONE
+            'timeZone': _TIME_ZONE,
         }
         snapshot['snapVolumeName'] = el.find('snapVolume/name').text
         status = el.find('snapVolume/status').text
@@ -1557,8 +1707,9 @@ def _parseAllVolumeSnapshotList(tree):
         if volumeName not in volumes:
             volumes[volumeName] = {
                 'snapRemaining': el.find(
-                    'snapVolume/originVolume/snapRemaining').text,
-                'snapshots': []
+                    'snapVolume/originVolume/snapRemaining'
+                ).text,
+                'snapshots': [],
             }
         volumes[volumeName]['snapshots'].append(snapshot)
     return volumes
@@ -1589,47 +1740,62 @@ def executeGsecCreate():
         _execGluster(command)
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterGeoRepPublicKeyFileCreateFailedException(
-            rc=e.rc, err=e.err)
+            rc=e.rc, err=e.err
+        )
     return True
 
 
 @gluster_mgmt_api
 def executeMountBrokerUserAdd(remoteUserName, remoteVolumeName):
-    command = _getGlusterSystemCmd() + ["execute", "mountbroker",
-                                        "user", remoteUserName,
-                                        remoteVolumeName]
+    command = _getGlusterSystemCmd() + [
+        "execute",
+        "mountbroker",
+        "user",
+        remoteUserName,
+        remoteVolumeName,
+    ]
     try:
         _execGluster(command)
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterGeoRepExecuteMountBrokerUserAddFailedException(
-            rc=e.rc, err=e.err)
+            rc=e.rc, err=e.err
+        )
     return True
 
 
 @gluster_mgmt_api
 def executeMountBrokerOpt(optionName, optionValue):
-    command = _getGlusterSystemCmd() + ["execute", "mountbroker",
-                                        "opt", optionName,
-                                        optionValue]
+    command = _getGlusterSystemCmd() + [
+        "execute",
+        "mountbroker",
+        "opt",
+        optionName,
+        optionValue,
+    ]
     try:
         _execGluster(command)
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterGeoRepExecuteMountBrokerOptFailedException(
-            rc=e.rc, err=e.err)
+            rc=e.rc, err=e.err
+        )
     return True
 
 
 @gluster_mgmt_api
-def volumeGeoRepSessionCreate(volumeName, remoteHost,
-                              remoteVolumeName,
-                              remoteUserName=None, force=False):
+def volumeGeoRepSessionCreate(
+    volumeName, remoteHost, remoteVolumeName, remoteUserName=None, force=False
+):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
         userAtHost = remoteHost
-    command = _getGlusterVolCmd() + ["geo-replication", volumeName,
-                                     "%s::%s" % (userAtHost, remoteVolumeName),
-                                     "create", "no-verify"]
+    command = _getGlusterVolCmd() + [
+        "geo-replication",
+        volumeName,
+        "%s::%s" % (userAtHost, remoteVolumeName),
+        "create",
+        "no-verify",
+    ]
     if force:
         command.append('force')
     try:
@@ -1640,15 +1806,19 @@ def volumeGeoRepSessionCreate(volumeName, remoteHost,
 
 
 @gluster_mgmt_api
-def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
-                              remoteUserName=None):
+def volumeGeoRepSessionDelete(
+    volumeName, remoteHost, remoteVolumeName, remoteUserName=None
+):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
         userAtHost = remoteHost
-    command = _getGlusterVolCmd() + ["geo-replication", volumeName,
-                                     "%s::%s" % (userAtHost, remoteVolumeName),
-                                     "delete"]
+    command = _getGlusterVolCmd() + [
+        "geo-replication",
+        volumeName,
+        "%s::%s" % (userAtHost, remoteVolumeName),
+        "delete",
+    ]
     try:
         _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
@@ -1683,34 +1853,44 @@ def _parseVolumeHealInfo(tree):
         brick['status'] = el.find('status').text
         brick['hostUuid'] = el.get('hostUuid')
         if brick['status'] == 'Connected':
-            brick['numberOfEntries'] = (
-                el.find('totalNumberOfEntries').text)
+            brick['numberOfEntries'] = el.find('totalNumberOfEntries').text
         healInfo['bricks'].append(brick)
     return healInfo
 
 
 @gluster_mgmt_api
 def volumeResetBrickStart(volumeName, existingBrick):
-    command = _getGlusterVolCmd() + ["reset-brick", volumeName,
-                                     existingBrick, "start"]
+    command = _getGlusterVolCmd() + [
+        "reset-brick",
+        volumeName,
+        existingBrick,
+        "start",
+    ]
     try:
         _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeResetBrickStartFailedException(rc=e.rc,
-                                                             err=e.err)
+        raise ge.GlusterVolumeResetBrickStartFailedException(
+            rc=e.rc, err=e.err
+        )
     return True
 
 
 @gluster_mgmt_api
 def volumeResetBrickCommitForce(volumeName, existingBrick):
-    command = _getGlusterVolCmd() + ["reset-brick", volumeName,
-                                     existingBrick, existingBrick, "commit",
-                                     "force"]
+    command = _getGlusterVolCmd() + [
+        "reset-brick",
+        volumeName,
+        existingBrick,
+        existingBrick,
+        "commit",
+        "force",
+    ]
     try:
         _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeResetBrickCommitForceFailedException(rc=e.rc,
-                                                                   err=e.err)
+        raise ge.GlusterVolumeResetBrickCommitForceFailedException(
+            rc=e.rc, err=e.err
+        )
     return True
 
 
@@ -1721,8 +1901,9 @@ def globalVolumeOptions():
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeGetGlobalOptionsFailedException(rc=e.rc,
-                                                              err=e.err)
+        raise ge.GlusterVolumeGetGlobalOptionsFailedException(
+            rc=e.rc, err=e.err
+        )
     return _parseGlobalVolumeOptions(xmltree)
 
 

@@ -14,7 +14,6 @@ from vdsm.common.cpuarch import PAGE_SIZE_BYTES
 from vdsm.common.time import monotonic_time
 from vdsm.common import unixrpc
 
-
 throttledlog.throttle('MomNotAvailable', 100)
 throttledlog.throttle('MomNotAvailableKSM', 100)
 
@@ -36,8 +35,10 @@ class ThrottledClient(object):
         def method(*args, **kwargs):
             now = monotonic_time()
 
-            if not self._active and \
-               self._last_active + THROTTLE_INTERVAL < now:
+            if (
+                not self._active
+                and self._last_active + THROTTLE_INTERVAL < now
+            ):
                 with self._lock:
                     if self._last_active + THROTTLE_INTERVAL < now:
                         self._active = True
@@ -71,10 +72,9 @@ class MomClient(object):
             return
 
         self.log.info("MOM: Using named unix socket: %s", self._sock_path)
-        self._mom = ThrottledClient(unixrpc.UnixXmlRpcClient(
-            self._sock_path,
-            CONNECTION_TIMEOUT_SEC
-        ))
+        self._mom = ThrottledClient(
+            unixrpc.UnixXmlRpcClient(self._sock_path, CONNECTION_TIMEOUT_SEC)
+        )
 
     def getKsmStats(self):
         """
@@ -96,7 +96,7 @@ class MomClient(object):
             throttledlog.warning(
                 'MomNotAvailableKSM',
                 "MOM not available, KSM stats will be missing. Error: %s",
-                str(e)
+                str(e),
             )
 
         return ret
@@ -107,8 +107,7 @@ class MomClient(object):
             self._mom.setPolicy(policyStr)
         except (ThrottledClient.Inactive, AttributeError, socket.error) as e:
             self.log.warning(
-                "MOM not available, Policy could not be set. Error: %s",
-                str(e)
+                "MOM not available, Policy could not be set. Error: %s", str(e)
             )
 
     def setPolicyParameters(self, key_value_store):
@@ -121,16 +120,17 @@ class MomClient(object):
 
         # Python bool values are defined in 00-defines.policy so need no
         # conversion here
-        policy_string = "\n".join(["(set %s %r)" % (k, v)
-                                   for k, v in self._policy.items()])
+        policy_string = "\n".join(
+            ["(set %s %r)" % (k, v) for k, v in self._policy.items()]
+        )
 
         try:
-            self._mom.setNamedPolicy(config.get("mom", "tuning_policy"),
-                                     policy_string)
+            self._mom.setNamedPolicy(
+                config.get("mom", "tuning_policy"), policy_string
+            )
         except (ThrottledClient.Inactive, AttributeError, socket.error) as e:
             self.log.warning(
-                "MOM not available, Policy could not be set. Error: %s",
-                str(e)
+                "MOM not available, Policy could not be set. Error: %s", str(e)
             )
 
     def getStatus(self):
@@ -141,8 +141,6 @@ class MomClient(object):
                 return 'inactive'
         except (ThrottledClient.Inactive, AttributeError, socket.error) as e:
             throttledlog.warning(
-                'MomNotAvailable',
-                "MOM not available. Error: %s",
-                str(e)
+                'MomNotAvailable', "MOM not available. Error: %s", str(e)
             )
             return 'inactive'

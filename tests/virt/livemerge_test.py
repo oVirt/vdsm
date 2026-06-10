@@ -84,6 +84,7 @@ class FakeCleanupThread(CleanupThread):
     TODO: use VM/Storage methods instead of these so we can
     test for changes in the real code.
     """
+
     @recorded
     def tryPivot(self):
         pass
@@ -120,15 +121,18 @@ def test_cleanup_done():
     assert t.__calls__ == [
         ('update_base_size', (), {}),
         ('tryPivot', (), {}),
-        ('teardown_top_volume', (), {})
+        ('teardown_top_volume', (), {}),
     ]
 
 
-@pytest.mark.parametrize("error", [
-    JobNotReadyError("fake-job-id"),
-    JobPivotError("fake-job-id", "fake libvirt error"),
-    RuntimeError("unexpected error, bug?")
-])
+@pytest.mark.parametrize(
+    "error",
+    [
+        JobNotReadyError("fake-job-id"),
+        JobPivotError("fake-job-id", "fake libvirt error"),
+        RuntimeError("unexpected error, bug?"),
+    ],
+)
 def test_cleanup_retry(monkeypatch, error):
     def tryPivot(arg):
         raise error
@@ -158,7 +162,8 @@ class Config:
 
     def __init__(self, name):
         self.values = yaml.safe_load(
-            read_data(os.path.join(name, "values.yml")))
+            read_data(os.path.join(name, "values.yml"))
+        )
         self.xmls = read_files(os.path.join(name, '*.xml'))
 
 
@@ -171,7 +176,8 @@ class RunningVM(Vm):
         self._domain = DomainDescriptor(config.xmls["00-before.xml"])
         self.id = self._domain.id
         self._md_desc = metadata.Descriptor.from_xml(
-            config.xmls["00-before.xml"])
+            config.xmls["00-before.xml"]
+        )
 
         drive = config.values["drive"]
         self._devices = {
@@ -179,7 +185,8 @@ class RunningVM(Vm):
                 storage.Drive(
                     **drive,
                     volumeChain=xml_chain(config.xmls["00-before.xml"]),
-                    log=self.log)
+                    log=self.log
+                )
             ]
         }
 
@@ -256,7 +263,7 @@ class FakeDomain:
             'bandwidth': 0,
             'cur': 0,
             'end': 1024**3,
-            'type': job_type
+            'type': job_type,
         }
 
         # The test should simulate commit-ready once the active commit
@@ -397,7 +404,7 @@ def test_active_merge(monkeypatch):
             "end": "0",
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -434,7 +441,7 @@ def test_active_merge(monkeypatch):
             "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -454,7 +461,7 @@ def test_active_merge(monkeypatch):
             "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -471,7 +478,7 @@ def test_active_merge(monkeypatch):
             "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -501,7 +508,7 @@ def test_active_merge(monkeypatch):
             "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -513,8 +520,7 @@ def test_active_merge(monkeypatch):
 
     # Check that actual chain reported by libvirt matches vdsm chain.
     vdsm_chain = [vol['volumeID'] for vol in drive.volumeChain]
-    libvirt_chain = [
-        vol.uuid for vol in vm.query_drive_volume_chain(drive)]
+    libvirt_chain = [vol.uuid for vol in vm.query_drive_volume_chain(drive)]
 
     # syncVolumeChain func should get chain without leaf as "actualChain" arg.
     expected_vdsm_chain = set(x for x in vdsm_chain if x != top_id)
@@ -632,7 +638,8 @@ def test_active_merge_pivot_failure(monkeypatch):
 
     # Inject libvirt error to fail pivot attempt.
     vm._dom.errors["blockJobAbort"] = fake.libvirt_error(
-        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error"
+    )
 
     # Trigger cleanup and pivot attempt.
     vm.query_jobs()
@@ -748,7 +755,8 @@ def test_internal_merge():
     assert vm.query_jobs() == {}
 
     simulate_base_needs_extend(
-        vm, sd_id, img_id, top_id, base_id, active=False)
+        vm, sd_id, img_id, top_id, base_id, active=False
+    )
 
     vm.merge(**merge_params)
 
@@ -777,7 +785,7 @@ def test_internal_merge():
             "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -793,7 +801,7 @@ def test_internal_merge():
             "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -810,7 +818,7 @@ def test_internal_merge():
             "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -834,7 +842,7 @@ def test_internal_merge():
             "end": "0",
             "id": job_id,
             "imgUUID": img_id,
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -848,8 +856,7 @@ def test_internal_merge():
 
     # Get current and actual chain.
     vdsm_chain = [vol['volumeID'] for vol in drive.volumeChain]
-    libvirt_chain = [
-        vol.uuid for vol in vm.query_drive_volume_chain(drive)]
+    libvirt_chain = [vol.uuid for vol in vm.query_drive_volume_chain(drive)]
 
     # Check actual chain matches expected chain - actual chain is ordered.
     assert libvirt_chain == new_chain
@@ -866,7 +873,7 @@ def test_internal_merge():
         "sdUUID": sd_id,
         "imgUUID": img_id,
         "volUUID": top_id,
-        "baseUUID": base_id
+        "baseUUID": base_id,
     }
 
     # Check imageSyncVolumeChain was called with correct arguments.
@@ -1200,7 +1207,7 @@ def test_active_merge_canceled_during_commit():
             "end": "1073741824",
             "id": job_id,
             "imgUUID": merge_params["driveSpec"]["imageID"],
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -1261,7 +1268,8 @@ def test_active_merge_canceled_during_cleanup(monkeypatch):
 
         def fail(drive, flags=0):
             raise fake.libvirt_error(
-                [libvirt.VIR_ERR_INTERNAL_ERROR], "fake libvirt error")
+                [libvirt.VIR_ERR_INTERNAL_ERROR], "fake libvirt error"
+            )
 
         c.setattr(vm._dom, "blockJobAbort", fail)
 
@@ -1313,7 +1321,8 @@ def test_block_job_info_error(monkeypatch):
     assert vm.query_jobs() == {}
 
     simulate_base_needs_extend(
-        vm, sd_id, img_id, top_id, base_id, active=False)
+        vm, sd_id, img_id, top_id, base_id, active=False
+    )
 
     vm.merge(**merge_params)
 
@@ -1328,7 +1337,8 @@ def test_block_job_info_error(monkeypatch):
         # Simulate failing blockJobInfo call.
         def blockJobInfo(*args, **kwargs):
             raise fake.libvirt_error(
-                [libvirt.VIR_ERR_INTERNAL_ERROR], "Block job info failed")
+                [libvirt.VIR_ERR_INTERNAL_ERROR], "Block job info failed"
+            )
 
         mc.setattr(FakeDomain, "blockJobInfo", blockJobInfo)
 
@@ -1342,7 +1352,7 @@ def test_block_job_info_error(monkeypatch):
                 "end": "0",
                 "id": job_id,
                 "imgUUID": merge_params["driveSpec"]["imageID"],
-                "jobType": "block"
+                "jobType": "block",
             }
         }
 
@@ -1356,7 +1366,7 @@ def test_block_job_info_error(monkeypatch):
             "end": "1073741824",
             "id": job_id,
             "imgUUID": merge_params["driveSpec"]["imageID"],
-            "jobType": "block"
+            "jobType": "block",
         }
     }
 
@@ -1374,11 +1384,13 @@ def test_merge_commit_error(monkeypatch):
     assert vm.query_jobs() == {}
 
     simulate_base_needs_extend(
-        vm, sd_id, img_id, top_id, base_id, active=False)
+        vm, sd_id, img_id, top_id, base_id, active=False
+    )
 
     def commit_error(*args, **kwargs):
         raise fake.libvirt_error(
-            [libvirt.VIR_ERR_INTERNAL_ERROR], "Block commit failed")
+            [libvirt.VIR_ERR_INTERNAL_ERROR], "Block commit failed"
+        )
 
     monkeypatch.setattr(FakeDomain, "blockCommit", commit_error)
 
@@ -1409,7 +1421,8 @@ def test_merge_job_already_exists(monkeypatch):
     assert vm.query_jobs() == {}
 
     simulate_base_needs_extend(
-        vm, sd_id, img_id, top_id, base_id, active=False)
+        vm, sd_id, img_id, top_id, base_id, active=False
+    )
 
     # Calling merge twice will fail the second call with same block
     # job already tracked from first call.
@@ -1446,7 +1459,8 @@ def test_merge_base_too_small(monkeypatch):
 
 
 def simulate_base_needs_extend(
-        vm, sd_id, img_id, top_id, base_id, active=True):
+    vm, sd_id, img_id, top_id, base_id, active=True
+):
     base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
 
     # Set required to maximum value before base need extension. For active
@@ -1524,8 +1538,9 @@ def metadata_chain(xml):
             "leaseOffset": int(node.find("./leaseOffset").text),
             "leasePath": node.find("./leasePath").text,
             "path": node.find("./path").text,
-            "volumeID": node.find("./volumeID").text
-        } for node in nodes
+            "volumeID": node.find("./volumeID").text,
+        }
+        for node in nodes
     ]
 
 

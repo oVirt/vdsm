@@ -7,7 +7,6 @@ import time
 from vdsm.storage import constants as sc
 from vdsm.storage import exception
 
-
 # SIZE property was deprecated in metadata v5, but we still need this key to
 # read and write legacy metadata. To make sure no other code use it and it's
 # used only by metadata code, move it here and make it private.
@@ -95,8 +94,7 @@ def parse(lines):
 def dump(lines):
     md, errors = parse(lines)
     if errors:
-        logging.warning(
-            "Invalid metadata found errors=%s", errors)
+        logging.warning("Invalid metadata found errors=%s", errors)
         md["status"] = sc.VOL_STATUS_INVALID
     else:
         md["status"] = sc.VOL_STATUS_OK
@@ -111,10 +109,22 @@ class VolumeMetadata(object):
 
     log = logging.getLogger('storage.volumemetadata')
 
-    def __init__(self, domain, image, parent, capacity, format, type, voltype,
-                 disktype, description="", legality=sc.ILLEGAL_VOL, ctime=None,
-                 generation=sc.DEFAULT_GENERATION,
-                 sequence=sc.DEFAULT_SEQUENCE):
+    def __init__(
+        self,
+        domain,
+        image,
+        parent,
+        capacity,
+        format,
+        type,
+        voltype,
+        disktype,
+        description="",
+        legality=sc.ILLEGAL_VOL,
+        ctime=None,
+        generation=sc.DEFAULT_GENERATION,
+        sequence=sc.DEFAULT_SEQUENCE,
+    ):
         # Storage domain UUID
         self.domain = domain
         # Image UUID
@@ -156,7 +166,8 @@ class VolumeMetadata(object):
         metadata, errors = parse(lines)
         if errors:
             raise exception.InvalidMetadata(
-                "lines={} errors={}".format(lines, errors))
+                "lines={} errors={}".format(lines, errors)
+            )
         return cls(**metadata)
 
     @property
@@ -204,7 +215,9 @@ class VolumeMetadata(object):
         if not isinstance(value, int):
             raise AssertionError(
                 "Invalid value for metadata property {!r}: {!r}".format(
-                    property, value))
+                    property, value
+                )
+            )
         return value
 
     @classmethod
@@ -214,9 +227,11 @@ class VolumeMetadata(object):
         # support older engine that may send such values, or old disks
         # with long description.
         if len(desc) > sc.DESCRIPTION_SIZE:
-            cls.log.warning("Description is too long, truncating to %d bytes",
-                            sc.DESCRIPTION_SIZE)
-            desc = desc[:sc.DESCRIPTION_SIZE]
+            cls.log.warning(
+                "Description is too long, truncating to %d bytes",
+                sc.DESCRIPTION_SIZE,
+            )
+            desc = desc[: sc.DESCRIPTION_SIZE]
         return desc
 
     def storage_format(self, domain_version, **overrides):

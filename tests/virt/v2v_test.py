@@ -29,40 +29,43 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 import vmfakecon as fake
 
 
-FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
-                            os.path.abspath('fake-virt-v2v'))
-FAKE_SSH_ADD = CommandPath('fake-ssh-add',
-                           os.path.abspath('fake-ssh-add'))
-FAKE_SSH_AGENT = CommandPath('fake-ssh-agent',
-                             os.path.abspath('fake-ssh-agent'))
+FAKE_VIRT_V2V = CommandPath('fake-virt-v2v', os.path.abspath('fake-virt-v2v'))
+FAKE_SSH_ADD = CommandPath('fake-ssh-add', os.path.abspath('fake-ssh-add'))
+FAKE_SSH_AGENT = CommandPath(
+    'fake-ssh-agent', os.path.abspath('fake-ssh-agent')
+)
 
 
 def legacylistAllDomains():
-    raise fake.Error(libvirt.VIR_ERR_NO_SUPPORT,
-                     'Method not supported')
+    raise fake.Error(libvirt.VIR_ERR_NO_SUPPORT, 'Method not supported')
 
 
 def legacylistAllDomainsWrongRaise():
-    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
-                     'Domain not exists')
+    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN, 'Domain not exists')
 
 
 def lookupByNameFailure(name):
-    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
-                     'Domain not exists')
+    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN, 'Domain not exists')
 
 
 def lookupByIDFailure(id):
-    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
-                     'Domain not exists')
+    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN, 'Domain not exists')
 
 
 class FakeIRS(object):
     @recorded
     def prepareImage(self, domainId, poolId, imageId, volumeId):
-        return {'status': {'code': 0},
-                'path': os.path.join('/rhev/data-center', poolId, domainId,
-                                     'images', imageId, volumeId)}
+        return {
+            'status': {'code': 0},
+            'path': os.path.join(
+                '/rhev/data-center',
+                poolId,
+                domainId,
+                'images',
+                imageId,
+                volumeId,
+            ),
+        }
 
     @recorded
     def teardownImage(self, domainId, poolId, imageId):
@@ -136,22 +139,24 @@ class v2vTests(TestCaseBase):
         self.volume_id_a = '00000000-0000-0000-0000-000000000002'
         self.image_id_b = '00000000-0000-0000-0000-000000000003'
         self.volume_id_b = '00000000-0000-0000-0000-000000000004'
-        self.vpx_url = 'vpx://adminr%40vsphere@0.0.0.0/ovirt/' \
-                       '0.0.0.0?no_verify=1'
+        self.vpx_url = (
+            'vpx://adminr%40vsphere@0.0.0.0/ovirt/' '0.0.0.0?no_verify=1'
+        )
         self.xen_url = 'xen+ssh://user@host.com'
 
-        self.vminfo = {'vmName': self.vm_name,
-                       'poolID': self.pool_id,
-                       'domainID': self.domain_id,
-                       'disks': [{'imageID': self.image_id_a,
-                                  'volumeID': self.volume_id_a},
-                                 {'imageID': self.image_id_b,
-                                  'volumeID': self.volume_id_b}]}
+        self.vminfo = {
+            'vmName': self.vm_name,
+            'poolID': self.pool_id,
+            'domainID': self.domain_id,
+            'disks': [
+                {'imageID': self.image_id_a, 'volumeID': self.volume_id_a},
+                {'imageID': self.image_id_b, 'volumeID': self.volume_id_b},
+            ],
+        }
 
         self._vms = [MockVirDomain(*spec) for spec in VM_SPECS]
 
-        self._vms_with_snapshot = [MockVirDomain(*spec)for spec in
-                                   VM_SPECS]
+        self._vms_with_snapshot = [MockVirDomain(*spec) for spec in VM_SPECS]
         self._vms_with_snapshot[4].setCurrentSnapshot(True)
 
     def tearDown(self):
@@ -161,17 +166,17 @@ class v2vTests(TestCaseBase):
         def _connect(uri, username, passwd):
             return MockVirConnect(vms=self._vms_with_snapshot)
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
-            vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
-                                       None)['vmList']
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
+            vms = v2v.get_external_vms(
+                'esx://mydomain', 'user', ProtectedPassword('password'), None
+            )['vmList']
 
         # Make sure that VM nr. 4 is now in the returned list
         # (the one with snapshot, see setUp())
         assert len(vms) == len(VM_SPECS)
-        assert self._vms_with_snapshot[4].ID not in \
-            [vm['vmId'] for vm in vms]
+        assert self._vms_with_snapshot[4].ID not in [vm['vmId'] for vm in vms]
 
         specs = list(VM_SPECS)
         for vm, spec in zip(vms, specs):
@@ -187,15 +192,15 @@ class v2vTests(TestCaseBase):
         # Add a non-existent name to check that nothing bad happens.
         names.append('Some nonexistent name')
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
-            vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
-                                       names)['vmList']
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
+            vms = v2v.get_external_vms(
+                'esx://mydomain', 'user', ProtectedPassword('password'), names
+            )['vmList']
 
         assert len(vms) == len(vmIDs)
-        assert self._vms_with_snapshot[4].ID not in \
-            [vm['vmId'] for vm in vms]
+        assert self._vms_with_snapshot[4].ID not in [vm['vmId'] for vm in vms]
 
         for vm, vmID in zip(vms, vmIDs):
             spec = VM_SPECS[vmID]
@@ -206,14 +211,14 @@ class v2vTests(TestCaseBase):
         def _connect(uri, username, passwd):
             return MockVirConnect(vms=self._vms)
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
             vms = v2v.get_external_vm_names(
-                'esx://mydomain', 'user',
-                ProtectedPassword('password'))['vmNames']
+                'esx://mydomain', 'user', ProtectedPassword('password')
+            )['vmNames']
 
-        assert sorted(vms) == \
-            sorted(spec.name for spec in VM_SPECS)
+        assert sorted(vms) == sorted(spec.name for spec in VM_SPECS)
 
     def testGetExternalVMsWithXMLDescFailure(self):
         specs = list(VM_SPECS)
@@ -229,11 +234,12 @@ class v2vTests(TestCaseBase):
         def _connect(uri, username, passwd):
             return MockVirConnect(vms=fake_vms)
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
-            vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
-                                       None)['vmList']
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
+            vms = v2v.get_external_vms(
+                'esx://mydomain', 'user', ProtectedPassword('password'), None
+            )['vmList']
 
         assert len(vms) == len(specs)
 
@@ -247,11 +253,12 @@ class v2vTests(TestCaseBase):
             mock.listAllDomains = legacylistAllDomains
             return mock
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
-            vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
-                                       None)['vmList']
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
+            vms = v2v.get_external_vms(
+                'esx://mydomain', 'user', ProtectedPassword('password'), None
+            )['vmList']
             assert len(vms) == len(self._vms)
 
     def testLegacyGetExternalVMsFailure(self):
@@ -260,18 +267,24 @@ class v2vTests(TestCaseBase):
             mock.listAllDomains = legacylistAllDomainsWrongRaise
             return mock
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
             with pytest.raises(libvirt.libvirtError):
-                v2v.get_external_vms('esx://mydomain', 'user',
-                                     ProtectedPassword('password'),
-                                     None)
+                v2v.get_external_vms(
+                    'esx://mydomain',
+                    'user',
+                    ProtectedPassword('password'),
+                    None,
+                )
 
-    @permutations([
-        # (methodname, fakemethod, active)
-        ['lookupByName', lookupByNameFailure, True],
-        ['lookupByID', lookupByIDFailure, False]
-    ])
+    @permutations(
+        [
+            # (methodname, fakemethod, active)
+            ['lookupByName', lookupByNameFailure, True],
+            ['lookupByID', lookupByIDFailure, False],
+        ]
+    )
     def testLookupFailure(self, methodname, fakemethod, active):
         def _connect(uri, username, passwd):
             mock = MockVirConnect(vms=self._vms)
@@ -279,32 +292,35 @@ class v2vTests(TestCaseBase):
             setattr(mock, methodname, fakemethod)
             return mock
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
-            vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
-                                       None)['vmList']
-            assert sorted(vm['vmName'] for vm in vms) == \
-                sorted(spec.name for spec in VM_SPECS
-                       if spec.active == active)
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
+            vms = v2v.get_external_vms(
+                'esx://mydomain', 'user', ProtectedPassword('password'), None
+            )['vmList']
+            assert sorted(vm['vmName'] for vm in vms) == sorted(
+                spec.name for spec in VM_SPECS if spec.active == active
+            )
 
     def testOutputParser(self):
-        output = (b'[   0.0] Opening the source -i libvirt ://roo...\n'
-                  b'[   1.0] Creating an overlay to protect the f...\n'
-                  b'[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n'
-                  b'    (0/100%)\r'
-                  b'some messages\r'
-                  b'    (25/100%)\r'
-                  b'more messages\n'
-                  b'    (50/100%)\r'
-                  b'much much more messages\r\n'
-                  b'    (100/100%)\r'
-                  b'[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n'
-                  b'    (0/100%)\r'
-                  b'    (50/100%)\r'
-                  b'    (100/100%)\r'
-                  b'[ 256.0] Creating output metadata'
-                  b'[ 256.0] Finishing off')
+        output = (
+            b'[   0.0] Opening the source -i libvirt ://roo...\n'
+            b'[   1.0] Creating an overlay to protect the f...\n'
+            b'[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n'
+            b'    (0/100%)\r'
+            b'some messages\r'
+            b'    (25/100%)\r'
+            b'more messages\n'
+            b'    (50/100%)\r'
+            b'much much more messages\r\n'
+            b'    (100/100%)\r'
+            b'[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n'
+            b'    (0/100%)\r'
+            b'    (50/100%)\r'
+            b'    (100/100%)\r'
+            b'[ 256.0] Creating output metadata'
+            b'[ 256.0] Finishing off'
+        )
 
         parser = v2v.OutputParser()
         events = list(parser.parse(io.BytesIO(output)))
@@ -317,26 +333,29 @@ class v2vTests(TestCaseBase):
             (v2v.ImportProgress(2, 2, 'Copying disk 2/2')),
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(50)),
-            (v2v.DiskProgress(100))]
+            (v2v.DiskProgress(100)),
+        ]
 
     def testOutputParser2(self):
-        output = bytes('[   0.0] Opening the source -i libvirt ://roo...\n'
-                       '[   1.0] Creating an overlay to protect the f...\n'
-                       '[  88.0] Copying disk 1/2\n'
-                       '▝   0% [----------------------------------------]\r'
-                       'some messages\r'
-                       '▍  25% [***********-----------------------------]\r'
-                       'more messages\n'
-                       '▐  50% [********************--------------------]\r'
-                       'much much more messages\r\n'
-                       '█ 100% [****************************************]\r'
-                       '[ 180.0] Copying disk 2/2\n'
-                       '▝   0% [----------------------------------------]\r'
-                       '▃  50% [*********************-------------------]\r'
-                       '█ 100% [****************************************]\r'
-                       '[ 256.0] Creating output metadata\n'
-                       '[ 256.0] Finishing off',
-                       encoding='utf-8')
+        output = bytes(
+            '[   0.0] Opening the source -i libvirt ://roo...\n'
+            '[   1.0] Creating an overlay to protect the f...\n'
+            '[  88.0] Copying disk 1/2\n'
+            '▝   0% [----------------------------------------]\r'
+            'some messages\r'
+            '▍  25% [***********-----------------------------]\r'
+            'more messages\n'
+            '▐  50% [********************--------------------]\r'
+            'much much more messages\r\n'
+            '█ 100% [****************************************]\r'
+            '[ 180.0] Copying disk 2/2\n'
+            '▝   0% [----------------------------------------]\r'
+            '▃  50% [*********************-------------------]\r'
+            '█ 100% [****************************************]\r'
+            '[ 256.0] Creating output metadata\n'
+            '[ 256.0] Finishing off',
+            encoding='utf-8',
+        )
 
         parser = v2v.OutputParser()
         events = list(parser.parse(io.BytesIO(output)))
@@ -349,7 +368,8 @@ class v2vTests(TestCaseBase):
             (v2v.ImportProgress(2, 2, 'Copying disk 2/2')),
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(50)),
-            (v2v.DiskProgress(100))]
+            (v2v.DiskProgress(100)),
+        ]
 
     def testGetExternalVMsWithoutDisksInfo(self):
         def internal_error(name):
@@ -362,18 +382,21 @@ class v2vTests(TestCaseBase):
         def _connect(uri, username, passwd):
             return mock
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
-            vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
-                                       None)['vmList']
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
+            vms = v2v.get_external_vms(
+                'esx://mydomain', 'user', ProtectedPassword('password'), None
+            )['vmList']
         assert len(vms) == 0
 
-    @permutations([
-        # exc
-        [v2v.V2VError],
-        [v2v.ClientError],
-    ])
+    @permutations(
+        [
+            # exc
+            [v2v.V2VError],
+            [v2v.ClientError],
+        ]
+    )
     def testGetConvertedVMErrorFlow(self, exc):
         def _raise_error(*args, **kwargs):
             raise exc()
@@ -388,8 +411,9 @@ class v2vTests(TestCaseBase):
         disk = vm['disks'][0]
         if spec.has_disk_volume:
             assert disk['dev'] == 'sda'
-            assert disk['alias'] == \
-                '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name
+            assert (
+                disk['alias'] == '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name
+            )
         else:
             assert disk['dev'] == 'sdb'
             assert disk['alias'] == BLOCK_DEV_PATH
@@ -400,8 +424,9 @@ class v2vTests(TestCaseBase):
         assert vm['vmId'] == spec.uuid
         assert vm['memSize'] == 2048
         assert vm['smp'] == 1
-        assert len(vm['disks']) == \
-            int(spec.has_disk_volume) + int(spec.has_disk_block)
+        assert len(vm['disks']) == int(spec.has_disk_volume) + int(
+            spec.has_disk_block
+        )
         assert len(vm['networks']) == 1
         assert vm['has_snapshots'] == spec.has_snapshots
 
@@ -422,11 +447,12 @@ class v2vTests(TestCaseBase):
         def _connect(uri, username, passwd):
             return MockVirConnect(vms=self._vms)
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
-            vms = v2v.get_external_vms(self.xen_url, 'user',
-                                       ProtectedPassword('password'),
-                                       None)['vmList']
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
+            vms = v2v.get_external_vms(
+                self.xen_url, 'user', ProtectedPassword('password'), None
+            )['vmList']
 
         assert len(vms) == len(VM_SPECS)
         assert BLOCK_DEV_PATH == vms[4]['disks'][0]['alias']
@@ -438,11 +464,12 @@ class v2vTests(TestCaseBase):
             conn.setType('Xen')
             return conn
 
-        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
-                                _connect)]):
-            vms = v2v.get_external_vms(self.xen_url, 'user',
-                                       ProtectedPassword('password'),
-                                       None)['vmList']
+        with MonkeyPatchScope(
+            [(libvirtconnection, 'open_connection', _connect)]
+        ):
+            vms = v2v.get_external_vms(
+                self.xen_url, 'user', ProtectedPassword('password'), None
+            )['vmList']
 
         # Import of VMs with block devices is not supported for Xen source
         # so the VMs RHEL_4 and RHEL_5 should not be in the list.
@@ -454,8 +481,7 @@ class v2vTests(TestCaseBase):
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     @MonkeyPatch(v2v, '_LOG_DIR', None)
     def testSuccessfulImportOVA(self):
-        with temporary_ovf_dir() as ovapath, \
-                namedTemporaryDir() as v2v._LOG_DIR:
+        with temporary_ovf_dir() as ovapath, namedTemporaryDir() as v2v._LOG_DIR:
             v2v.convert_ova(ovapath, self.vminfo, self.job_id, FakeIRS())
             job = v2v._jobs[self.job_id]
             job.wait()
@@ -463,24 +489,37 @@ class v2vTests(TestCaseBase):
             assert job.status == v2v.STATUS.DONE
 
     def testV2VOutput(self):
-        cmd = [FAKE_VIRT_V2V.cmd,
-               '-v',
-               '-x',
-               '-ic', self.vpx_url,
-               '-o', 'vdsm',
-               '-of', 'raw',
-               '-oa', 'sparse',
-               '-oo', 'vdsm-image-uuid=%s' % self.image_id_a,
-               '-oo', 'vdsm-vol-uuid=%s' % self.volume_id_a,
-               '-oo', 'vdsm-image-uuid=%s' % self.image_id_b,
-               '-oo', 'vdsm-vol-uuid=%s' % self.volume_id_b,
-               '--ip', '/tmp/mypass',
-               '-oo', 'vdsm-vm-uuid=%s' % self.job_id,
-               '-oo', 'vdsm-ovf-output=%s' % '/usr/local/var/run/vdsm/v2v',
-               '--machine-readable',
-               '-os', '/rhev/data-center/%s/%s' % (self.pool_id,
-                                                   self.domain_id),
-               self.vm_name]
+        cmd = [
+            FAKE_VIRT_V2V.cmd,
+            '-v',
+            '-x',
+            '-ic',
+            self.vpx_url,
+            '-o',
+            'vdsm',
+            '-of',
+            'raw',
+            '-oa',
+            'sparse',
+            '-oo',
+            'vdsm-image-uuid=%s' % self.image_id_a,
+            '-oo',
+            'vdsm-vol-uuid=%s' % self.volume_id_a,
+            '-oo',
+            'vdsm-image-uuid=%s' % self.image_id_b,
+            '-oo',
+            'vdsm-vol-uuid=%s' % self.volume_id_b,
+            '--ip',
+            '/tmp/mypass',
+            '-oo',
+            'vdsm-vm-uuid=%s' % self.job_id,
+            '-oo',
+            'vdsm-ovf-output=%s' % '/usr/local/var/run/vdsm/v2v',
+            '--machine-readable',
+            '-os',
+            '/rhev/data-center/%s/%s' % (self.pool_id, self.domain_id),
+            self.vm_name,
+        ]
 
         rc, output, error = exec_cmd(cmd)
         assert rc == 0
@@ -495,23 +534,24 @@ class v2vTests(TestCaseBase):
     @MonkeyPatch(v2v, '_V2V_DIR', None)
     @MonkeyPatch(v2v, '_LOG_DIR', None)
     def _commonConvertExternalVM(self, url):
-        with namedTemporaryDir() as v2v._V2V_DIR, \
-                namedTemporaryDir() as v2v._LOG_DIR:
-            v2v.convert_external_vm(url,
-                                    'root',
-                                    ProtectedPassword('mypassword'),
-                                    self.vminfo,
-                                    self.job_id,
-                                    FakeIRS())
+        with namedTemporaryDir() as v2v._V2V_DIR, namedTemporaryDir() as v2v._LOG_DIR:
+            v2v.convert_external_vm(
+                url,
+                'root',
+                ProtectedPassword('mypassword'),
+                self.vminfo,
+                self.job_id,
+                FakeIRS(),
+            )
             job = v2v._jobs[self.job_id]
             job.wait()
 
             assert job.status == v2v.STATUS.DONE
 
     def testSimpleExecCmd(self):
-        p = v2v._simple_exec_cmd(['cat'],
-                                 stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE)
+        p = v2v._simple_exec_cmd(
+            ['cat'], stdin=subprocess.PIPE, stdout=subprocess.PIPE
+        )
         msg = "test\ntest"
         p.stdin.write(msg.encode())
         p.stdin.close()
@@ -519,9 +559,11 @@ class v2vTests(TestCaseBase):
         out = p.stdout.read()
         assert out == msg.encode()
 
-        p = v2v._simple_exec_cmd(['/bin/sh', '-c', 'echo -en "%s" >&2' % msg],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT)
+        p = v2v._simple_exec_cmd(
+            ['/bin/sh', '-c', 'echo -en "%s" >&2' % msg],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
         p.wait()
         out = p.stdout.read()
         assert out == msg.encode()
@@ -590,12 +632,11 @@ class PipelineProcTests(TestCaseBase):
 
     def testRun(self):
         msg = 'foo\nbar'
-        p1 = v2v._simple_exec_cmd(['echo', '-n', msg],
-                                  stdout=subprocess.PIPE)
+        p1 = v2v._simple_exec_cmd(['echo', '-n', msg], stdout=subprocess.PIPE)
         with terminating(p1):
-            p2 = v2v._simple_exec_cmd(['cat'],
-                                      stdin=p1.stdout,
-                                      stdout=subprocess.PIPE)
+            p2 = v2v._simple_exec_cmd(
+                ['cat'], stdin=p1.stdout, stdout=subprocess.PIPE
+            )
             with terminating(p2):
                 p = v2v.PipelineProc(p1, p2)
                 assert p.pids == [p1.pid, p2.pid]
@@ -606,37 +647,39 @@ class PipelineProcTests(TestCaseBase):
                 out = p.stdout.read()
                 assert out == msg.encode()
 
-    @permutations([
-        # (cmd1, cmd2, returncode)
-        ['false', 'true', 1],
-        ['true', 'false', 1],
-        ['true', 'true', 0],
-    ])
+    @permutations(
+        [
+            # (cmd1, cmd2, returncode)
+            ['false', 'true', 1],
+            ['true', 'false', 1],
+            ['true', 'true', 0],
+        ]
+    )
     def testReturncode(self, cmd1, cmd2, returncode):
-        p1 = v2v._simple_exec_cmd([cmd1],
-                                  stdout=subprocess.PIPE)
+        p1 = v2v._simple_exec_cmd([cmd1], stdout=subprocess.PIPE)
         with terminating(p1):
-            p2 = v2v._simple_exec_cmd([cmd2],
-                                      stdin=p1.stdout,
-                                      stdout=subprocess.PIPE)
+            p2 = v2v._simple_exec_cmd(
+                [cmd2], stdin=p1.stdout, stdout=subprocess.PIPE
+            )
             with terminating(p2):
                 p = v2v.PipelineProc(p1, p2)
                 p.wait(self.PROC_WAIT_TIMEOUT)
                 assert p.returncode == returncode
 
-    @permutations([
-        # (cmd1, cmd2)
-        [['sleep', str(3 * SHORT_SLEEP)], ['sleep', str(SHORT_SLEEP)]],
-        [['sleep', str(SHORT_SLEEP)], ['sleep', str(3 * SHORT_SLEEP)]],
-        [['sleep', str(3 * SHORT_SLEEP)], ['sleep', str(3 * SHORT_SLEEP)]],
-    ])
+    @permutations(
+        [
+            # (cmd1, cmd2)
+            [['sleep', str(3 * SHORT_SLEEP)], ['sleep', str(SHORT_SLEEP)]],
+            [['sleep', str(SHORT_SLEEP)], ['sleep', str(3 * SHORT_SLEEP)]],
+            [['sleep', str(3 * SHORT_SLEEP)], ['sleep', str(3 * SHORT_SLEEP)]],
+        ]
+    )
     def testWait(self, cmd1, cmd2):
-        p1 = v2v._simple_exec_cmd(cmd1,
-                                  stdout=subprocess.PIPE)
+        p1 = v2v._simple_exec_cmd(cmd1, stdout=subprocess.PIPE)
         with terminating(p1):
-            p2 = v2v._simple_exec_cmd(cmd2,
-                                      stdin=p1.stdout,
-                                      stdout=subprocess.PIPE)
+            p2 = v2v._simple_exec_cmd(
+                cmd2, stdin=p1.stdout, stdout=subprocess.PIPE
+            )
             with terminating(p2):
                 p = v2v.PipelineProc(p1, p2)
                 ret = p.wait(2 * SHORT_SLEEP)
@@ -648,7 +691,8 @@ class PipelineProcTests(TestCaseBase):
         p1 = v2v._simple_exec_cmd(cmd, stdout=subprocess.PIPE)
         with terminating(p1):
             p2 = v2v._simple_exec_cmd(
-                cmd, stdin=p1.stdout, stdout=subprocess.PIPE)
+                cmd, stdin=p1.stdout, stdout=subprocess.PIPE
+            )
             with terminating(p2):
                 # Wait for the processes to finish.
                 time.sleep(2 * SHORT_SLEEP)
@@ -663,7 +707,8 @@ class PipelineProcTests(TestCaseBase):
         p1 = v2v._simple_exec_cmd(cmd1, stdout=subprocess.PIPE)
         with terminating(p1):
             p2 = v2v._simple_exec_cmd(
-                cmd2, stdin=p1.stdout, stdout=subprocess.PIPE)
+                cmd2, stdin=p1.stdout, stdout=subprocess.PIPE
+            )
             with terminating(p2):
                 p = v2v.PipelineProc(p1, p2)
                 # Processes finish at different times but before the timeout.
@@ -683,8 +728,9 @@ class MockVirConnectTests(TestCaseBase):
 
     def test_list_defined_domains(self):
         vms = self._mock.listDefinedDomains()
-        assert sorted(vms) == \
-            sorted(spec.name for spec in VM_SPECS if not spec.active)
+        assert sorted(vms) == sorted(
+            spec.name for spec in VM_SPECS if not spec.active
+        )
 
     def test_list_domains_id(self):
         vms = self._mock.listDomainsID()

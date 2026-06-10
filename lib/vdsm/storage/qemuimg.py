@@ -14,7 +14,8 @@ from vdsm.config import config
 from vdsm.storage import operation
 
 _qemuimg = cmdutils.CommandPath(
-    "qemu-img", "/usr/local/bin/qemu-img", "/usr/bin/qemu-img")
+    "qemu-img", "/usr/local/bin/qemu-img", "/usr/bin/qemu-img"
+)
 
 _log = logging.getLogger("storage.qemuimg")
 
@@ -53,8 +54,10 @@ def supports_compat(compat):
 
 
 class InvalidOutput(cmdutils.Error):
-    msg = ("Commmand {self.cmd} returned invalid output: {self.out}: "
-           "{self.reason}")
+    msg = (
+        "Commmand {self.cmd} returned invalid output: {self.out}: "
+        "{self.reason}"
+    )
 
     def __init__(self, cmd, out, reason):
         self.cmd = cmd
@@ -62,8 +65,9 @@ class InvalidOutput(cmdutils.Error):
         self.reason = reason
 
 
-def info(image, format=None, unsafe=False, trusted_image=True,
-         backing_chain=False):
+def info(
+    image, format=None, unsafe=False, trusted_image=True, backing_chain=False
+):
     cmd = [_qemuimg.cmd, "info", "--output", "json"]
 
     if format:
@@ -105,7 +109,8 @@ def info(image, format=None, unsafe=False, trusted_image=True,
         info = _parse_qemuimg_json(out, list if backing_chain else dict)
     except ValueError as e:
         raise InvalidOutput(
-            cmd, out, "Failed to process qemu-img output: %s" % e)
+            cmd, out, "Failed to process qemu-img output: %s" % e
+        )
 
     chain = info if backing_chain else [info]
     for node in chain:
@@ -116,8 +121,15 @@ def info(image, format=None, unsafe=False, trusted_image=True,
     return info
 
 
-def measure(image, format=None, output_format=None, backing=True,
-            is_block=False, base=None, unsafe=False):
+def measure(
+    image,
+    format=None,
+    output_format=None,
+    backing=True,
+    is_block=False,
+    base=None,
+    unsafe=False,
+):
     cmd = [_qemuimg.cmd, "measure", "--output", "json"]
 
     if unsafe:
@@ -150,7 +162,8 @@ def measure(image, format=None, output_format=None, backing=True,
                 # this later to support longer sub chain.
                 if actual_base != base:
                     raise ValueError(
-                        f"Invalid base {base}, actual {actual_base}")
+                        f"Invalid base {base}, actual {actual_base}"
+                    )
 
                 base_node = {
                     "driver": top["backing-filename-format"],
@@ -178,8 +191,16 @@ def measure(image, format=None, output_format=None, backing=True,
     return qemu_measure
 
 
-def create(image, size=None, format=None, qcow2Compat=None,
-           backing=None, backingFormat=None, preallocation=None, unsafe=False):
+def create(
+    image,
+    size=None,
+    format=None,
+    qcow2Compat=None,
+    backing=None,
+    backingFormat=None,
+    preallocation=None,
+    unsafe=False,
+):
     cmd = [_qemuimg.cmd, "create"]
     cwdPath = None
 
@@ -198,8 +219,12 @@ def create(image, size=None, format=None, qcow2Compat=None,
         cmd.extend(("-F", backingFormat))
 
     if preallocation:
-        cmd.extend(("-o", "preallocation=" +
-                    _get_preallocation(preallocation, format)))
+        cmd.extend(
+            (
+                "-o",
+                "preallocation=" + _get_preallocation(preallocation, format),
+            )
+        )
 
     if unsafe:
         cmd.append('-u')
@@ -233,18 +258,30 @@ def check(image, format=None):
     except ValueError:
         raise InvalidOutput(cmd, out, "Failed to process qemu-img output")
     if "leaks" in qemu_check:
-        _log.warning("%d leaked clusters found on the image",
-                     qemu_check["leaks"])
+        _log.warning(
+            "%d leaked clusters found on the image", qemu_check["leaks"]
+        )
     try:
         return {"offset": qemu_check["image-end-offset"]}
     except KeyError:
         raise InvalidOutput(cmd, out, "unable to parse qemu-img check output")
 
 
-def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
-            dstQcow2Compat=None, backing=None, backingFormat=None,
-            preallocation=None, compressed=False, unordered_writes=False,
-            create=True, bitmaps=False, target_is_zero=False):
+def convert(
+    srcImage,
+    dstImage,
+    srcFormat=None,
+    dstFormat=None,
+    dstQcow2Compat=None,
+    backing=None,
+    backingFormat=None,
+    preallocation=None,
+    compressed=False,
+    unordered_writes=False,
+    create=True,
+    bitmaps=False,
+    target_is_zero=False,
+):
     """
     Arguments:
         unordered_writes (bool): Allow out-of-order writes to the destination.
@@ -406,7 +443,7 @@ class ProgressCommand(object):
         last_progress = valid_progress.rsplit(b'\r', 1)[-1]
 
         # No need to keep old progress information around
-        del out[:idx + 1]
+        del out[: idx + 1]
 
         m = self.REGEXPR.match(last_progress)
         if m is None:
@@ -490,9 +527,12 @@ def bitmap_merge(src_image, src_bitmap, src_fmt, dst_image, dst_bitmap):
     cmd = [
         _qemuimg.cmd,
         "bitmap",
-        "--merge", src_bitmap,
-        "-F", src_fmt,
-        "-b", src_image,
+        "--merge",
+        src_bitmap,
+        "-F",
+        src_fmt,
+        "-b",
+        src_image,
         dst_image,
         dst_bitmap,
     ]
@@ -521,7 +561,8 @@ def default_qcow2_compat():
         raise exception.InvalidConfiguration(
             reason="Unsupported value for irs:qcow2_compat",
             qcow2_compat=value,
-            supported_values=_QCOW2_COMPAT_SUPPORTED)
+            supported_values=_QCOW2_COMPAT_SUPPORTED,
+        )
     return value
 
 
@@ -541,15 +582,20 @@ def _validate_qcow2_compat(value):
 
 
 def _get_preallocation(value, format):
-    if value not in (PREALLOCATION.OFF,
-                     PREALLOCATION.FALLOC,
-                     PREALLOCATION.FULL,
-                     PREALLOCATION.METADATA):
+    if value not in (
+        PREALLOCATION.OFF,
+        PREALLOCATION.FALLOC,
+        PREALLOCATION.FULL,
+        PREALLOCATION.METADATA,
+    ):
         raise ValueError("Invalid preallocation type %r" % value)
-    if (value == PREALLOCATION.METADATA and
-            format not in (FORMAT.QCOW2, FORMAT.QCOW)):
-        raise ValueError("Unsupported preallocation mode %r for format %r" %
-                         (value, format))
+    if value == PREALLOCATION.METADATA and format not in (
+        FORMAT.QCOW2,
+        FORMAT.QCOW,
+    ):
+        raise ValueError(
+            "Unsupported preallocation mode %r for format %r" % (value, format)
+        )
     return value
 
 

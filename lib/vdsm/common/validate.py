@@ -51,5 +51,5 @@ def normalize_pci_address(domain, bus, slot, function):
         'domain': '{:0=#06x}'.format(int(domain, base=base)),
         'bus': '{:0=#04x}'.format(int(bus, base=base)),
         'slot': '{:0=#04x}'.format(int(slot, base=base)),
-        'function': '{:0=#02x}'.format(int(function, base=base))
+        'function': '{:0=#02x}'.format(int(function, base=base)),
     }

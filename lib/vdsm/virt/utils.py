@@ -29,8 +29,7 @@ _COMMANDS_LOG_DIR = os.path.join(P_VDSM_LOG, 'commands')
 log = logging.getLogger('virt.utils')
 
 
-VolumeSize = namedtuple("VolumeSize",
-                        ["apparentsize", "truesize"])
+VolumeSize = namedtuple("VolumeSize", ["apparentsize", "truesize"])
 
 
 def isVdsmImage(drive):
@@ -60,6 +59,7 @@ class ExpiringCache(object):
 
     Expired keys are removed on the first attempt to access them.
     """
+
     def __init__(self, ttl, clock=monotonic_time):
         self._ttl = ttl
         self._clock = clock
@@ -96,9 +96,10 @@ class ExpiringCache(object):
         now = self._clock()
         with self._lock:
             expired_keys = [
-                key for key, (expiration, _)
-                in self._items.items()
-                if expiration <= now]
+                key
+                for key, (expiration, _) in self._items.items()
+                if expiration <= now
+            ]
             for key in expired_keys:
                 del self._items[key]
 
@@ -151,7 +152,7 @@ class DynamicBoundedSemaphore(object):
         self._bound = value
 
     def acquire(self, blocking=True):
-        """ Same behavior as threading.BoundedSemaphore.acquire """
+        """Same behavior as threading.BoundedSemaphore.acquire"""
         rc = False
         with self._cond:
             # to enable runtime adjustment of semaphore bound
@@ -168,7 +169,7 @@ class DynamicBoundedSemaphore(object):
     __enter__ = acquire
 
     def release(self):
-        """ Same behavior as threading.BoundedSemaphore.release """
+        """Same behavior as threading.BoundedSemaphore.release"""
         with self._cond:
             if self._value >= self._bound:
                 raise ValueError("Dynamic Semaphore released too many times")
@@ -184,7 +185,7 @@ class DynamicBoundedSemaphore(object):
 
     @bound.setter
     def bound(self, value):
-        """ Dynamically updates semaphore bound.
+        """Dynamically updates semaphore bound.
 
         When the specified value is larger than the previous bound,
         it releases the semaphore the required number of times (and possibly
@@ -321,7 +322,7 @@ def sasl_enabled():
 
 
 class LoggingError(cmdutils.Error):
-    msg = ('Command {self.cmd} failed with rc={self.rc} log={self.log_path!r}')
+    msg = 'Command {self.cmd} failed with rc={self.rc} log={self.log_path!r}'
 
     def __init__(self, cmd, rc, log_path):
         super().__init__(cmd, rc, None, None)
@@ -378,12 +379,14 @@ def run_logging(args, log_tag=None):
     log_tag = '' if log_tag is None else '-%s' % log_tag
     suffix = ''.join(random.choice(string.ascii_lowercase) for _ in range(4))
     cmd_log_path = os.path.join(
-        _COMMANDS_LOG_DIR, 'virtcmd-%s%s-%s-%s.log' % (
-            command, log_tag, timestamp, suffix))
+        _COMMANDS_LOG_DIR,
+        'virtcmd-%s%s-%s-%s.log' % (command, log_tag, timestamp, suffix),
+    )
     try:
         os.makedirs(_COMMANDS_LOG_DIR, mode=0o750, exist_ok=True)
         cmd_log_file = os.open(
-            cmd_log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, mode=0o640)
+            cmd_log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, mode=0o640
+        )
     except OSError:
         log.exception('Failed to open log file')
         cmd_log_path = None
@@ -392,10 +395,7 @@ def run_logging(args, log_tag=None):
         stderr = cmd_log_file
         log.debug('Running command %r with logs in %s', args, cmd_log_path)
 
-    p = start(args,
-              stdin=subprocess.PIPE,
-              stdout=stdout,
-              stderr=stderr)
+    p = start(args, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr)
 
     with terminating(p):
         p.communicate()

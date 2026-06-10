@@ -55,7 +55,6 @@ class FakeMaster:
                 "version": 1,
                 "disks": [("/other/xleases", 100 * MiB)],
             },
-
             # A volume lease in the master domain.
             {
                 "lockspace": "master-domain-uuid",
@@ -63,7 +62,6 @@ class FakeMaster:
                 "version": 1,
                 "disks": [("/master/leases", 100 * MiB)],
             },
-
             # The cluster lease in the master domain.
             {
                 "lockspace": "master-domain-uuid",
@@ -204,7 +202,8 @@ def test_temporary_error(panic):
 
         # Simulate a temporary error checking lease.
         e = sanlock.SanlockException(
-            errno.EBUSY, "Inquire error", "Device or resource busy")
+            errno.EBUSY, "Inquire error", "Device or resource busy"
+        )
         master.error = se.SanlockInquireError(e.errno, str(e))
 
         # Wait for next 3 checks
@@ -231,7 +230,8 @@ def test_max_errors(panic):
     try:
         # Simulate a temporary error checking lease.
         e = sanlock.SanlockException(
-            errno.EBUSY, "Inquire error", "Device or resource busy")
+            errno.EBUSY, "Inquire error", "Device or resource busy"
+        )
         master.error = se.SanlockInquireError(e.errno, str(e))
 
         # Next check should trigger a panic.

@@ -51,8 +51,10 @@ def main(*args):
     elif config_method == "devices":
         return config_with_devices(args)
     else:
-        print("Unknown configuration method %s, use either 'filter' or "
-              "'devices'." % config_method)
+        print(
+            "Unknown configuration method %s, use either 'filter' or "
+            "'devices'." % config_method
+        )
         return CANNOT_CONFIG
 
 
@@ -65,10 +67,8 @@ def config_with_filter(args):
         current_filter = lvm_config.getlist("devices", "filter")
 
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_wwids,
-        wanted_wwids)
+        current_filter, wanted_filter, current_wwids, wanted_wwids
+    )
 
     # This is the expected condition on a correctly configured host.
     if advice.action == lvmfilter.UNNEEDED:
@@ -135,9 +135,11 @@ def parse_args(args):
     parser = argparse.ArgumentParser(prog="vdsm-tool config-lvm-filter")
 
     parser.add_argument(
-        "-y", "--assume-yes",
+        "-y",
+        "--assume-yes",
         action="store_true",
-        help="Automatically answer yes for all questions")
+        help="Automatically answer yes for all questions",
+    )
 
     return parser.parse_args(args[1:])
 
@@ -158,11 +160,13 @@ def _print_recommended_filter(wanted_filter):
     print()
     print("  " + lvmfilter.format_option(wanted_filter))
     print()
-    print("""\
+    print(
+        """\
 This filter allows LVM to access the local devices used by the
 hypervisor, but not shared storage owned by Vdsm. If you add a new
 device to the volume group, you will need to edit the filter manually.
-    """)
+    """
+    )
 
 
 def _print_current_filter(current_filter):
@@ -181,15 +185,18 @@ def _print_wanted_blacklist(wanted_wwids):
 
 
 def _print_success():
-    print("""\
+    print(
+        """\
 Configuration completed successfully!
 
 Please reboot to verify the configuration.
-    """)
+    """
+    )
 
 
 def _print_filter_warning():
-    print("""\
+    print(
+        """\
 WARNING: The current LVM filter does not match the recommended filter,
 Vdsm cannot configure the filter automatically.
 
@@ -201,14 +208,17 @@ Make sure /etc/multipath/conf.d/vdsm_blacklist.conf is set with the
 recommended 'blacklist' section.
 
 It is recommended to reboot to verify the new configuration.
-    """)
+    """
+    )
 
 
 def _print_devices_info(vgs):
-    print("""\
+    print(
+        """\
 Configuring LVM system.devices.
 Devices for following VGs will be imported:
-    """)
+    """
+    )
     print(f" {', '.join(vgs)}")
     print()
 

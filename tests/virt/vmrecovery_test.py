@@ -52,14 +52,19 @@ def _error(*args, **kwargs):
 class TestAllDomains(TestCaseBase):
 
     def setUp(self):
-        self.vm_uuids = ('a', 'b',)
+        self.vm_uuids = (
+            'a',
+            'b',
+        )
         self.vm_is_ext = [False] * len(self.vm_uuids)
         self.cif = fake.ClientIF()
         self.conn = FakeConnection()
 
-        self.patch = Patch([
-            (libvirtconnection, 'get', lambda *args, **kwargs: self.conn),
-        ])
+        self.patch = Patch(
+            [
+                (libvirtconnection, 'get', lambda *args, **kwargs: self.conn),
+            ]
+        )
         self.patch.apply()
 
         # must be after patch.apply()
@@ -77,30 +82,27 @@ class TestAllDomains(TestCaseBase):
 
     def test_recover_few_domains(self):
         recovery.all_domains(self.cif)
-        assert set(self.cif.vmRequests.keys()) == \
-            set(self.vm_uuids)
-        assert self.vm_is_ext == \
-            [conf['external'] for conf, _ in self.cif.vmRequests.values()]
+        assert set(self.cif.vmRequests.keys()) == set(self.vm_uuids)
+        assert self.vm_is_ext == [
+            conf['external'] for conf, _ in self.cif.vmRequests.values()
+        ]
 
-    @permutations([
-        # create_fn
-        (_raise,),
-        (_error,),
-    ])
+    @permutations(
+        [
+            # create_fn
+            (_raise,),
+            (_error,),
+        ]
+    )
     def test_recover_failures(self, create_fn):
         """
         We find VMs to recover through libvirt, but Vdsm fail to create
         its Vm objects. We should then destroy those VMs.
         """
-        with MonkeyPatchScope([
-            (self.cif, 'createVm', create_fn)
-        ]):
+        with MonkeyPatchScope([(self.cif, 'createVm', create_fn)]):
             recovery.all_domains(self.cif)
-        assert self.cif.vmRequests == \
-            {}
-        assert all(
-            vm.destroyed for vm in self.conn.domains.values()
-        )
+        assert self.cif.vmRequests == {}
+        assert all(vm.destroyed for vm in self.conn.domains.values())
 
     def test_domain_error(self):
         """
@@ -109,8 +111,7 @@ class TestAllDomains(TestCaseBase):
         """
         self.conn.domains['a'].XMLDesc = _raise
         recovery.all_domains(self.cif)
-        assert set(self.cif.vmRequests.keys()) == \
-            set(('b',))
+        assert set(self.cif.vmRequests.keys()) == set(('b',))
 
     def test_recover_and_destroy_failure(self):
         """
@@ -120,21 +121,22 @@ class TestAllDomains(TestCaseBase):
         gracefully
         """
         self.conn.domains['b'].destroy = _raise
-        with MonkeyPatchScope([
-            (self.cif, 'createVm', _error)
-        ]):
+        with MonkeyPatchScope([(self.cif, 'createVm', _error)]):
             recovery.all_domains(self.cif)
-        assert self.cif.vmRequests == \
-            {}
+        assert self.cif.vmRequests == {}
         assert self.conn.domains['a'].destroyed
         assert not self.conn.domains['b'].destroyed
 
     def test_external_vm(self):
-        vm_infos = (('a', True), ('b', False),)
+        vm_infos = (
+            ('a', True),
+            ('b', False),
+        )
         self.conn.domains = _make_domains_collection(vm_infos)
         recovery.all_domains(self.cif)
-        assert set(self.cif.vmRequests.keys()) == \
-            set(vm_id for vm_id, _ in vm_infos)
+        assert set(self.cif.vmRequests.keys()) == set(
+            vm_id for vm_id, _ in vm_infos
+        )
 
         for vm_id, vm_is_ext in vm_infos:
             conf, _ = self.cif.vmRequests[vm_id]
@@ -171,14 +173,14 @@ class TestAllDomains(TestCaseBase):
         but Vdsm fail to create its Vm objects.
         We should then destroy the non-external VMs.
         """
-        vm_infos = (('a', True), ('b', False),)
+        vm_infos = (
+            ('a', True),
+            ('b', False),
+        )
         self.conn.domains = _make_domains_collection(vm_infos)
-        with MonkeyPatchScope([
-            (self.cif, 'createVm', _error)
-        ]):
+        with MonkeyPatchScope([(self.cif, 'createVm', _error)]):
             recovery.all_domains(self.cif)
-        assert self.cif.vmRequests == \
-            {}
+        assert self.cif.vmRequests == {}
         for vm_id, vm_is_ext in vm_infos:
             vm_obj = self.conn.domains[vm_id]
             expect_destroy = not vm_is_ext
@@ -187,13 +189,14 @@ class TestAllDomains(TestCaseBase):
     def test_lookup_external_vms(self):
         vm_ext = [True] * len(self.vm_uuids)
         self.conn.domains = _make_domains_collection(
-            list(zip(self.vm_uuids, vm_ext)))
+            list(zip(self.vm_uuids, vm_ext))
+        )
         self.cif.unknown_vm_ids = list(self.vm_uuids)
         recovery.lookup_external_vms(self.cif)
-        assert set(self.cif.vmRequests.keys()) == \
-            set(self.vm_uuids)
-        assert vm_ext == \
-            [conf['external'] for conf, _ in self.cif.vmRequests.values()]
+        assert set(self.cif.vmRequests.keys()) == set(self.vm_uuids)
+        assert vm_ext == [
+            conf['external'] for conf, _ in self.cif.vmRequests.values()
+        ]
 
     def test_lookup_external_vms_fails(self):
         """
@@ -201,12 +204,12 @@ class TestAllDomains(TestCaseBase):
         """
         vm_ext = [True] * len(self.vm_uuids)
         self.conn.domains = _make_domains_collection(
-            list(zip(self.vm_uuids, vm_ext)))
+            list(zip(self.vm_uuids, vm_ext))
+        )
         self.conn.domains['a'].XMLDesc = _raise
         self.cif.unknown_vm_ids = list(self.vm_uuids)
         recovery.lookup_external_vms(self.cif)
-        assert set(self.cif.vmRequests.keys()) == \
-            set(('b',))
+        assert set(self.cif.vmRequests.keys()) == set(('b',))
 
 
 class FakeConnection(object):
@@ -231,19 +234,14 @@ def _make_domain_xml(vm_uuid, vm_name=None, external=False):
         return _MINIMAL_EXTERNAL_DOMAIN_TEMPLATE.format(
             vm_uuid=vm_uuid, vm_name=vm_name
         )
-    return _MINIMAL_DOMAIN_TEMPLATE.format(
-        vm_uuid=vm_uuid, vm_name=vm_name
-    )
+    return _MINIMAL_DOMAIN_TEMPLATE.format(vm_uuid=vm_uuid, vm_name=vm_name)
 
 
 def _make_domains_collection(vm_uuids):
     return {
         vm_uuid: fake.Domain(
             vmId=vm_uuid,
-            xml=_make_domain_xml(
-                vm_uuid,
-                external=external
-            ),
+            xml=_make_domain_xml(vm_uuid, external=external),
         )
         for vm_uuid, external in vm_uuids
     }

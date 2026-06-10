@@ -32,11 +32,11 @@ import vdsm.virt.jobs
 
 
 class ImagePreparingError(Exception):
-    ''' Error preparing image '''
+    '''Error preparing image'''
 
 
 class ImageTearingDownError(Exception):
-    ''' Error tearing down image '''
+    '''Error tearing down image'''
 
 
 class Job(vdsm.virt.jobs.Job):
@@ -44,10 +44,7 @@ class Job(vdsm.virt.jobs.Job):
     def __init__(self, vm_id, job_id, sp_id, images, irs):
         super(Job, self).__init__(job_id, 'seal_vm')
         self._vm_id = vm_id
-        self._images = [
-            SealImageInfo(image, sp_id, irs)
-            for image in images
-        ]
+        self._images = [SealImageInfo(image, sp_id, irs) for image in images]
 
     def _run(self):
         with prepared(self._images):
@@ -73,26 +70,34 @@ class SealImageInfo(properties.Owner):
         return self._path
 
     def prepare(self):
-        res = self._irs.prepareImage(self.sd_id,
-                                     self._sp_id,
-                                     self.img_id,
-                                     self.vol_id,
-                                     allowIllegal=True)
+        res = self._irs.prepareImage(
+            self.sd_id,
+            self._sp_id,
+            self.img_id,
+            self.vol_id,
+            allowIllegal=True,
+        )
         if res['status']['code']:
-            raise ImagePreparingError("Cannot prepare image %s: %s" %
-                                      (self, res['status']['message']))
+            raise ImagePreparingError(
+                "Cannot prepare image %s: %s"
+                % (self, res['status']['message'])
+            )
 
         self._path = res['path']
 
     def teardown(self):
-        res = self._irs.teardownImage(self.sd_id,
-                                      self._sp_id,
-                                      self.img_id)
+        res = self._irs.teardownImage(self.sd_id, self._sp_id, self.img_id)
         if res['status']['code']:
-            raise ImageTearingDownError("Cannot tear down image %s: %s" %
-                                        (self, res['status']['message']))
+            raise ImageTearingDownError(
+                "Cannot tear down image %s: %s"
+                % (self, res['status']['message'])
+            )
 
     def __repr__(self):
-        return ("<%s sd_id=%s img_id=%s vol_id=%s at 0x%s>" %
-                (self.__class__.__name__, self.sd_id, self.img_id, self.vol_id,
-                 id(self)))
+        return "<%s sd_id=%s img_id=%s vol_id=%s at 0x%s>" % (
+            self.__class__.__name__,
+            self.sd_id,
+            self.img_id,
+            self.vol_id,
+            id(self),
+        )

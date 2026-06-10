@@ -21,13 +21,14 @@ from vdsm.virt import guestagenthelpers
 from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
 
-from libvirt import \
-    VIR_DOMAIN_GUEST_INFO_USERS,  \
-    VIR_DOMAIN_GUEST_INFO_OS, \
-    VIR_DOMAIN_GUEST_INFO_TIMEZONE, \
-    VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
-    VIR_DOMAIN_GUEST_INFO_FILESYSTEM, \
-    VIR_DOMAIN_GUEST_INFO_DISKS
+from libvirt import (
+    VIR_DOMAIN_GUEST_INFO_USERS,
+    VIR_DOMAIN_GUEST_INFO_OS,
+    VIR_DOMAIN_GUEST_INFO_TIMEZONE,
+    VIR_DOMAIN_GUEST_INFO_HOSTNAME,
+    VIR_DOMAIN_GUEST_INFO_FILESYSTEM,
+    VIR_DOMAIN_GUEST_INFO_DISKS,
+)
 
 """
 Periodic scheduler that polls QEMU Guest Agent for information.
@@ -70,10 +71,10 @@ _THROTTLING_INTERVAL = 60
 # These values are needed internaly and are not defined by libvirt. Beware
 # that the values cannot colide with those for VIR_DOMAIN_GUEST_INFO_*
 # constants!
-VDSM_GUEST_INFO = (1 << 30)
-VDSM_GUEST_INFO_NETWORK = (1 << 31)
-VDSM_GUEST_INFO_DRIVERS = (1 << 32)
-VDSM_GUEST_INFO_CPUS = (1 << 33)
+VDSM_GUEST_INFO = 1 << 30
+VDSM_GUEST_INFO_NETWORK = 1 << 31
+VDSM_GUEST_INFO_DRIVERS = 1 << 32
+VDSM_GUEST_INFO_CPUS = 1 << 33
 
 _QEMU_COMMANDS = {
     VDSM_GUEST_INFO_CPUS: _QEMU_VCPUS_COMMAND,
@@ -88,34 +89,42 @@ _QEMU_COMMANDS = {
 }
 
 _QEMU_COMMAND_PERIODS = {
-    VDSM_GUEST_INFO:
-        config.getint('guest_agent', 'qga_info_period'),
-    VDSM_GUEST_INFO_CPUS:
-        config.getint('guest_agent', 'qga_cpu_info_period'),
-    VDSM_GUEST_INFO_DRIVERS:
-        config.getint('guest_agent', 'qga_sysinfo_period'),
-    VDSM_GUEST_INFO_NETWORK:
-        config.getint('guest_agent', 'qga_sysinfo_period'),
-    VIR_DOMAIN_GUEST_INFO_DISKS:
-        config.getint('guest_agent', 'qga_disk_info_period'),
-    VIR_DOMAIN_GUEST_INFO_FILESYSTEM:
-        config.getint('guest_agent', 'qga_disk_info_period'),
-    VIR_DOMAIN_GUEST_INFO_HOSTNAME:
-        config.getint('guest_agent', 'qga_sysinfo_period'),
-    VIR_DOMAIN_GUEST_INFO_OS:
-        config.getint('guest_agent', 'qga_sysinfo_period'),
-    VIR_DOMAIN_GUEST_INFO_TIMEZONE:
-        config.getint('guest_agent', 'qga_sysinfo_period'),
-    VIR_DOMAIN_GUEST_INFO_USERS:
-        config.getint('guest_agent', 'qga_active_users_period'),
+    VDSM_GUEST_INFO: config.getint('guest_agent', 'qga_info_period'),
+    VDSM_GUEST_INFO_CPUS: config.getint('guest_agent', 'qga_cpu_info_period'),
+    VDSM_GUEST_INFO_DRIVERS: config.getint(
+        'guest_agent', 'qga_sysinfo_period'
+    ),
+    VDSM_GUEST_INFO_NETWORK: config.getint(
+        'guest_agent', 'qga_sysinfo_period'
+    ),
+    VIR_DOMAIN_GUEST_INFO_DISKS: config.getint(
+        'guest_agent', 'qga_disk_info_period'
+    ),
+    VIR_DOMAIN_GUEST_INFO_FILESYSTEM: config.getint(
+        'guest_agent', 'qga_disk_info_period'
+    ),
+    VIR_DOMAIN_GUEST_INFO_HOSTNAME: config.getint(
+        'guest_agent', 'qga_sysinfo_period'
+    ),
+    VIR_DOMAIN_GUEST_INFO_OS: config.getint(
+        'guest_agent', 'qga_sysinfo_period'
+    ),
+    VIR_DOMAIN_GUEST_INFO_TIMEZONE: config.getint(
+        'guest_agent', 'qga_sysinfo_period'
+    ),
+    VIR_DOMAIN_GUEST_INFO_USERS: config.getint(
+        'guest_agent', 'qga_active_users_period'
+    ),
 }
 
 _DISK_DEVICE_RE = re.compile('^(/dev/[hsv]d[a-z]+)[0-9]+$')
 
-CHANNEL_CONNECTED = \
+CHANNEL_CONNECTED = (
     libvirt.VIR_CONNECT_DOMAIN_EVENT_AGENT_LIFECYCLE_STATE_CONNECTED
-CHANNEL_DISCONNECTED = \
+)
+CHANNEL_DISCONNECTED = (
     libvirt.VIR_CONNECT_DOMAIN_EVENT_AGENT_LIFECYCLE_STATE_DISCONNECTED
+)
 CHANNEL_UNKNOWN = -1
 
 
@@ -139,6 +148,7 @@ def channel_state_to_str(state):
 @virdomain.expose("guestInfo", "interfaceAddresses", "guestVcpus")
 class QemuGuestAgentDomain(object):
     """Wrapper object exposing libvirt API."""
+
     def __init__(self, vm):
         self._vm = vm
 
@@ -161,11 +171,13 @@ class QemuGuestAgentPoller(object):
         self._cif = cif
         self.log = log
         self._scheduler = scheduler
-        self._executor = executor.Executor(name="qgapoller",
-                                           workers_count=_WORKERS,
-                                           max_tasks=_TASKS,
-                                           scheduler=scheduler,
-                                           max_workers=_MAX_WORKERS)
+        self._executor = executor.Executor(
+            name="qgapoller",
+            workers_count=_WORKERS,
+            max_tasks=_TASKS,
+            scheduler=scheduler,
+            max_workers=_MAX_WORKERS,
+        )
         self._operations = []
         self._capabilities_lock = threading.Lock()
         self._capabilities = {}
@@ -180,13 +192,16 @@ class QemuGuestAgentPoller(object):
         self._channel_state_hint = defaultdict(lambda: CHANNEL_UNKNOWN)
         self._channel_state_lock = threading.Lock()
         self._initial_interval = config.getint(
-            'guest_agent', 'qga_initial_info_interval')
+            'guest_agent', 'qga_initial_info_interval'
+        )
         self.log.info('Using libvirt for querying QEMU-GA')
 
     def start(self):
         if not config.getboolean('guest_agent', 'enable_qga_poller'):
-            self.log.info('Not starting QEMU-GA poller. It is disabled in'
-                          ' configuration')
+            self.log.info(
+                'Not starting QEMU-GA poller. It is disabled in'
+                ' configuration'
+            )
             return
         self._operation = periodic.Operation(
             self._poller,
@@ -194,18 +209,19 @@ class QemuGuestAgentPoller(object):
             self._scheduler,
             timeout=_TASK_TIMEOUT,
             executor=self._executor,
-            exclusive=True)
+            exclusive=True,
+        )
         self.log.info("Starting QEMU-GA poller")
         self._executor.start()
         self._operation.start()
 
     def stop(self):
-        """"Stop the QEMU-GA poller execution"""
+        """ "Stop the QEMU-GA poller execution"""
         self.log.info("Stopping QEMU-GA poller")
         self._operation.stop()
 
     def _empty_caps(self):
-        """ Dictionary for storing capabilities """
+        """Dictionary for storing capabilities"""
         return {
             'version': None,
             'commands': [],
@@ -226,7 +242,11 @@ class QemuGuestAgentPoller(object):
         if self.get_caps(vm_id) != caps:
             self.log.info(
                 "New QEMU-GA capabilities for vm_id=%s, qemu-ga=%s,"
-                " commands=%r", vm_id, caps['version'], caps['commands'])
+                " commands=%r",
+                vm_id,
+                caps['version'],
+                caps['commands'],
+            )
             with self._capabilities_lock:
                 self._capabilities[vm_id] = caps
 
@@ -282,7 +302,8 @@ class QemuGuestAgentPoller(object):
             channel_state_to_str(self._channel_state[vm_id]),
             prev_state,
             channel_state_to_str(state),
-            state)
+            state,
+        )
         if not isinstance(state, int):
             raise TypeError('Expected int for "state" argument')
         if state not in (CHANNEL_CONNECTED, CHANNEL_DISCONNECTED):
@@ -306,8 +327,9 @@ class QemuGuestAgentPoller(object):
             int_state = CHANNEL_DISCONNECTED
         else:
             raise ValueError('Invalid state value "%r"' % state)
-        self.log.debug('Stored channel state hint for vm_id=%s, hint=%s',
-                       vm_id, state)
+        self.log.debug(
+            'Stored channel state hint for vm_id=%s, hint=%s', vm_id, state
+        )
         self._channel_state_hint[vm_id] = int_state
 
     def call_qga_command(self, vm, command, args=None):
@@ -323,13 +345,19 @@ class QemuGuestAgentPoller(object):
             if command not in caps['commands']:
                 self.log.debug(
                     'Not sending QEMU-GA command \'%s\' to vm_id=\'%s\','
-                    ' command is not supported', command, vm.id)
+                    ' command is not supported',
+                    command,
+                    vm.id,
+                )
                 return None
         # See if the agent is connected before sending anything
         if self._channel_state[vm.id] != CHANNEL_CONNECTED:
             self.log.debug(
                 'Not sending QEMU-GA command \'%s\' to vm_id=\'%s\','
-                ' agent is not connected', command, vm.id)
+                ' agent is not connected',
+                command,
+                vm.id,
+            )
             return None
 
         cmd = {'execute': command}
@@ -339,13 +367,17 @@ class QemuGuestAgentPoller(object):
         try:
             self.log.debug(
                 'Calling QEMU-GA command for vm_id=\'%s\', command: %s',
-                vm.id, cmd)
+                vm.id,
+                cmd,
+            )
             ret = vm.qemu_agent_command(cmd, _COMMAND_TIMEOUT, 0)
             self.log.debug('Call returned: %r', ret)
         except virdomain.NotConnectedError:
             self.log.debug(
-                'Not querying QEMU-GA because domain is not running ' +
-                'for vm-id=%s', vm.id)
+                'Not querying QEMU-GA because domain is not running '
+                + 'for vm-id=%s',
+                vm.id,
+            )
             return None
         except libvirt.libvirtError:
             # Most likely the QEMU-GA is not installed or is unresponsive
@@ -356,14 +388,14 @@ class QemuGuestAgentPoller(object):
             parsed = json.loads(ret)
         except ValueError:
             self.log.exception(
-                'Failed to parse string returned by QEMU-GA: %r', ret)
+                'Failed to parse string returned by QEMU-GA: %r', ret
+            )
             return None
         if 'error' in parsed:
             self.log.error('Error received from QEMU-GA: %r', ret)
             return None
         if 'return' not in parsed:
-            self.log.error(
-                'Invalid response from QEMU-GA: %r', ret)
+            self.log.error('Invalid response from QEMU-GA: %r', ret)
             return None
         return parsed['return']
 
@@ -385,8 +417,7 @@ class QemuGuestAgentPoller(object):
                     # Finally, the agent is up!
                     self.reset_failure(vm.id)
             else:
-                self.log.debug(
-                    'Not querying QEMU-GA yet, domain not running')
+                self.log.debug('Not querying QEMU-GA yet, domain not running')
                 return
         # This is a best-effort check for non-local networks. We cannot
         # guarantee the network is up or working, but this should handle most
@@ -406,7 +437,8 @@ class QemuGuestAgentPoller(object):
                 break
         if not have_some:
             self.update_guest_info(
-                vm.id, self._qga_call_network_interfaces(vm))
+                vm.id, self._qga_call_network_interfaces(vm)
+            )
             self.set_last_check(vm.id, VDSM_GUEST_INFO_NETWORK, now)
 
     def _poller(self):
@@ -431,20 +463,25 @@ class QemuGuestAgentPoller(object):
                 self.log.debug(
                     '%s channel state hint for vm_id=%s, hint=%r',
                     'Accepted' if hint_accepted else 'Rejected',
-                    vm_id, channel_state_to_str(hint))
+                    vm_id,
+                    channel_state_to_str(hint),
+                )
 
             # Ensure we know guest agent's capabilities
             self._on_boot(vm_obj, now)
             if not self._runnable_on_vm(vm_obj):
                 self.log.debug(
                     'Skipping vm-id=%s in this run and not querying QEMU-GA',
-                    vm_id)
+                    vm_id,
+                )
                 continue
             caps = self.get_caps(vm_id)
             # Update capabilities -- if we just got the caps above then this
             # will fall through
-            if (now - self.last_check(vm_id, VDSM_GUEST_INFO)
-                    >= _QEMU_COMMAND_PERIODS[VDSM_GUEST_INFO]):
+            if (
+                now - self.last_check(vm_id, VDSM_GUEST_INFO)
+                >= _QEMU_COMMAND_PERIODS[VDSM_GUEST_INFO]
+            ):
                 self._qga_capability_check(vm_obj, now)
                 caps = self.get_caps(vm_id)
             if caps['version'] is None:
@@ -456,30 +493,42 @@ class QemuGuestAgentPoller(object):
             for command in _QEMU_COMMANDS.keys():
                 if _QEMU_COMMANDS[command] not in caps['commands']:
                     continue
-                after_hotplug = \
-                    (command == VIR_DOMAIN_GUEST_INFO_FILESYSTEM or
-                     command == VIR_DOMAIN_GUEST_INFO_DISKS) and \
-                    vm_obj.last_disk_hotplug() is not None and \
-                    (now - vm_obj.last_disk_hotplug() >=
-                        _HOTPLUG_CHECK_PERIOD) and \
-                    (self.last_check(vm_id, command) <
-                        vm_obj.last_disk_hotplug() + _HOTPLUG_CHECK_PERIOD)
-                if now - self.last_check(vm_id, command) \
-                        < _QEMU_COMMAND_PERIODS[command] and \
-                        not after_hotplug:
+                after_hotplug = (
+                    (
+                        command == VIR_DOMAIN_GUEST_INFO_FILESYSTEM
+                        or command == VIR_DOMAIN_GUEST_INFO_DISKS
+                    )
+                    and vm_obj.last_disk_hotplug() is not None
+                    and (
+                        now - vm_obj.last_disk_hotplug()
+                        >= _HOTPLUG_CHECK_PERIOD
+                    )
+                    and (
+                        self.last_check(vm_id, command)
+                        < vm_obj.last_disk_hotplug() + _HOTPLUG_CHECK_PERIOD
+                    )
+                )
+                if (
+                    now - self.last_check(vm_id, command)
+                    < _QEMU_COMMAND_PERIODS[command]
+                    and not after_hotplug
+                ):
                     continue
                 # Commands that have special handling go here
                 if command == VDSM_GUEST_INFO_CPUS:
                     self.update_guest_info(
-                        vm_id, self._qga_call_get_vcpus(vm_obj))
+                        vm_id, self._qga_call_get_vcpus(vm_obj)
+                    )
                     self.set_last_check(vm_id, command, now)
                 elif command == VDSM_GUEST_INFO_DRIVERS:
                     self.update_guest_info(
-                        vm_id, self._qga_call_get_devices(vm_obj))
+                        vm_id, self._qga_call_get_devices(vm_obj)
+                    )
                     self.set_last_check(vm_id, command, now)
                 elif command == VDSM_GUEST_INFO_NETWORK:
                     self.update_guest_info(
-                        vm_id, self._qga_call_network_interfaces(vm_obj))
+                        vm_id, self._qga_call_network_interfaces(vm_obj)
+                    )
                     self.set_last_check(vm_id, command, now)
                 # Commands handled by libvirt guestInfo() go here
                 else:
@@ -502,22 +551,25 @@ class QemuGuestAgentPoller(object):
     def _libvirt_get_guest_info(self, vm, types):
         guest_info = {}
         self.log.debug(
-            'libvirt: fetching guest info vm_id=%r types=%s',
-            vm.id, bin(types))
+            'libvirt: fetching guest info vm_id=%r types=%s', vm.id, bin(types)
+        )
         try:
             # Note: The timeout here is really for each command that will be
             #       invoked and not for the guestInfo() call as whole.
             with vm.qga_context(_COMMAND_TIMEOUT):
                 info = QemuGuestAgentDomain(vm).guestInfo(types, 0)
         except (exception.NonResponsiveGuestAgent, libvirt.libvirtError) as e:
-            self.log.info('Failed to get guest info for vm=%s, error: %s',
-                          vm.id, e)
+            self.log.info(
+                'Failed to get guest info for vm=%s, error: %s', vm.id, e
+            )
             self.set_failure(vm.id)
             return {}
         except virdomain.NotConnectedError:
             self.log.debug(
-                'Not querying QEMU-GA because domain is not running ' +
-                'for vm-id=%s', vm.id)
+                'Not querying QEMU-GA because domain is not running '
+                + 'for vm-id=%s',
+                vm.id,
+            )
             return {}
         # Disks Info
         if 'disk.count' in info:
@@ -536,12 +588,15 @@ class QemuGuestAgentPoller(object):
         if 'os.id' in info:
             if info.get('os.id') == _GUEST_OS_WINDOWS:
                 guest_info.update(
-                    guestagenthelpers.translate_windows_osinfo(info))
+                    guestagenthelpers.translate_windows_osinfo(info)
+                )
             else:
                 guest_info.update(
-                    guestagenthelpers.translate_linux_osinfo(info))
+                    guestagenthelpers.translate_linux_osinfo(info)
+                )
             self.fake_apps_list(
-                vm.id, info['os.id'], info['os.kernel-release'])
+                vm.id, info['os.id'], info['os.kernel-release']
+            )
         # Timezone
         if 'timezone.offset' in info:
             guest_info['guestTimezone'] = {
@@ -555,8 +610,8 @@ class QemuGuestAgentPoller(object):
                 prefix = 'user.%d' % i
                 if info.get(prefix + '.domain', '') != '':
                     users.append(
-                        info[prefix + '.name'] + '@' +
-                        info[prefix + '.domain'])
+                        info[prefix + '.name'] + '@' + info[prefix + '.domain']
+                    )
                 else:
                     users.append(info[prefix + '.name'])
             guest_info['username'] = ', '.join(users)
@@ -566,8 +621,9 @@ class QemuGuestAgentPoller(object):
         mapping = {}
         for di in range(info.get('disk.count')):
             disk_prefix = 'disk.{:d}.'.format(di)
-            if ((disk_prefix + 'name') in info and
-                    (disk_prefix + 'serial') in info):
+            if (disk_prefix + 'name') in info and (
+                disk_prefix + 'serial'
+            ) in info:
                 serial = info[disk_prefix + 'serial']
                 mapping[serial] = {'name': info[disk_prefix + 'name']}
         return {'diskMapping': mapping}
@@ -582,7 +638,9 @@ class QemuGuestAgentPoller(object):
             except ValueError:
                 self.log.warning(
                     'Invalid message returned to call \'%s\': %r',
-                    _QEMU_FSINFO_COMMAND, info)
+                    _QEMU_FSINFO_COMMAND,
+                    info,
+                )
                 continue
             # Skip stats with missing info. This is e.g. the case of System
             # Reserved volumes on Windows.
@@ -593,15 +651,18 @@ class QemuGuestAgentPoller(object):
                 continue
             for di in range(info.get(prefix + 'disk.count')):
                 disk_prefix = '{}disk.{:d}.'.format(prefix, di)
-                if (disk_prefix + 'serial') in info and \
-                        (disk_prefix + 'device') in info:
+                if (disk_prefix + 'serial') in info and (
+                    disk_prefix + 'device'
+                ) in info:
                     dev = info[disk_prefix + 'device']
                     m = _DISK_DEVICE_RE.match(dev)
                     if m is not None:
                         dev = m.group(1)
                         self.log.debug(
                             'Stripping partition number: %s -> %s',
-                            info[disk_prefix + 'device'], dev)
+                            info[disk_prefix + 'device'],
+                            dev,
+                        )
                     mapping[info[disk_prefix + 'serial']] = {'name': dev}
         if store_disk_mapping:
             return {'disksUsage': disks, 'diskMapping': mapping}
@@ -609,7 +670,7 @@ class QemuGuestAgentPoller(object):
             return {'disksUsage': disks}
 
     def fake_apps_list(self, vm_id, os_id=None, kernel_release=None):
-        """ Create fake appsList entry in guest info """
+        """Create fake appsList entry in guest info"""
         apps = []
         caps = self.get_caps(vm_id)
         if os_id is not None and os_id != _GUEST_OS_WINDOWS:
@@ -691,8 +752,8 @@ class QemuGuestAgentPoller(object):
         if ret is not None:
             caps['version'] = ret['version']
             caps['commands'] = set(
-                [c['name'] for c in ret['supported_commands']
-                    if c['enabled']])
+                [c['name'] for c in ret['supported_commands'] if c['enabled']]
+            )
         self.log.debug('QEMU-GA caps (vm_id=%s): %r', vm.id, caps)
         old_caps = self.get_caps(vm.id)
         self.update_caps(vm.id, caps)
@@ -701,10 +762,12 @@ class QemuGuestAgentPoller(object):
         if info is None or 'appsList' not in info:
             self.fake_apps_list(vm.id)
         # Change state if it is the first time we see qemu-ga
-        new_caps = old_caps['version'] is None and \
-            caps['version'] is not None
+        new_caps = old_caps['version'] is None and caps['version'] is not None
         guest_starting = vm.guestAgent.guestStatus in (
-            None, vmstatus.POWERING_UP, vmstatus.REBOOT_IN_PROGRESS)
+            None,
+            vmstatus.POWERING_UP,
+            vmstatus.REBOOT_IN_PROGRESS,
+        )
         if new_caps and guest_starting:
             # Qemu-ga is running so the guest has to be already up
             vm.guestAgent.guestStatus = vmstatus.UP
@@ -722,16 +785,20 @@ class QemuGuestAgentPoller(object):
             self.log.debug('Requesting NIC info for vm=%s', vm.id)
             with vm.qga_context(_COMMAND_TIMEOUT):
                 interfaces = QemuGuestAgentDomain(vm).interfaceAddresses(
-                    libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
+                    libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT
+                )
         except (exception.NonResponsiveGuestAgent, libvirt.libvirtError) as e:
-            self.log.info('Failed to get guest info for vm=%s, error: %s',
-                          vm.id, e)
+            self.log.info(
+                'Failed to get guest info for vm=%s, error: %s', vm.id, e
+            )
             self.set_failure(vm.id)
             return {}
         except virdomain.NotConnectedError:
             self.log.debug(
-                'Not querying QEMU-GA because domain is not running ' +
-                'for vm-id=%s', vm.id)
+                'Not querying QEMU-GA because domain is not running '
+                + 'for vm-id=%s',
+                vm.id,
+            )
             return {}
         for ifname, ifparams in interfaces.items():
             iface = {
@@ -783,14 +850,17 @@ class QemuGuestAgentPoller(object):
             with vm.qga_context(_COMMAND_TIMEOUT):
                 vcpus = QemuGuestAgentDomain(vm).guestVcpus()
         except (exception.NonResponsiveGuestAgent, libvirt.libvirtError) as e:
-            self.log.info('Failed to get guest CPU info for vm=%s, error: %s',
-                          vm.id, e)
+            self.log.info(
+                'Failed to get guest CPU info for vm=%s, error: %s', vm.id, e
+            )
             self.set_failure(vm.id)
             return {}
         except virdomain.NotConnectedError:
             self.log.debug(
                 'Not querying QEMU-GA for guest CPU info because domain'
-                'is not running for vm-id=%s', vm.id)
+                'is not running for vm-id=%s',
+                vm.id,
+            )
             return {}
         if vcpus is None:
             self.log.info('Guest CPU count was not returned for vm=%s', vm.id)

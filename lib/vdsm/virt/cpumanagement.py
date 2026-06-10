@@ -66,7 +66,9 @@ def on_vm_destroy(vm_obj):
         return
     vm_obj.log.debug(
         'Removing %s policy VM (freeing cpus=%r)',
-        vm_obj.cpu_policy(), vm_obj.pinned_cpus())
+        vm_obj.cpu_policy(),
+        vm_obj.pinned_cpus(),
+    )
     _assign_shared(vm_obj.cif)
 
 
@@ -98,27 +100,34 @@ def _assign_shared(cif, target_vm=None):
                 continue
             try:
                 for vcpu in range(vm.get_number_of_cpus()):
-                    if (vm.cpu_policy() == CPU_POLICY_MANUAL and
-                            vcpu in vm.manually_pinned_cpus()):
+                    if (
+                        vm.cpu_policy() == CPU_POLICY_MANUAL
+                        and vcpu in vm.manually_pinned_cpus()
+                    ):
                         continue
                     vm.log.debug(
                         'configuring vCPU=%d with cpuset="%s"',
-                        vcpu, shared_str)
+                        vcpu,
+                        shared_str,
+                    )
                     try:
                         vm.pin_vcpu(vcpu, cpuset)
                     except virdomain.NotConnectedError:
                         vm.log.warning(
-                            "Cannot reconfigure CPUs, domain not connected.")
+                            "Cannot reconfigure CPUs, domain not connected."
+                        )
                     except libvirt.libvirtError as e:
                         if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                             vm.log.warning(
                                 'Cannot reconfigure CPUs,'
-                                ' domain does not exist anymore.')
+                                ' domain does not exist anymore.'
+                            )
                         else:
                             raise
             except:
                 vm.log.exception(
-                    'Failed to update CPU set of the VM to match shared pool')
+                    'Failed to update CPU set of the VM to match shared pool'
+                )
                 # Even if this VM failed, proceed and try to configure shared
                 # pool for other VMs.
 
@@ -186,8 +195,10 @@ def replace_cpu_pinning(vm, dom, target_vcpupin):
     if cputune is not None:
         for vcpu in vmxml.find_all(cputune, 'vcpupin'):
             vcpu_id = int(vcpu.get('vcpu'))
-            if (vm.cpu_policy() == CPU_POLICY_MANUAL
-                    and vcpu_id in vm.manually_pinned_cpus()):
+            if (
+                vm.cpu_policy() == CPU_POLICY_MANUAL
+                and vcpu_id in vm.manually_pinned_cpus()
+            ):
                 continue
             cputune.remove(vcpu)
     # Reconfigure CPU pinning based on the call parameter
@@ -204,8 +215,7 @@ def replace_cpu_pinning(vm, dom, target_vcpupin):
         for vcpupin in vmxml.find_all(cputune, 'vcpupin'):
             vcpu_id = int(vcpupin.get('vcpu'))
             if vcpu_id >= 0 and vcpu_id < len(target_vcpupin):
-                vcpupin.set('cpuset',
-                            str(target_vcpupin[vcpu_id]))
+                vcpupin.set('cpuset', str(target_vcpupin[vcpu_id]))
                 target_vcpupin[vcpu_id] = None
         # Now create elements for pinning that was not there before.
         # This should happen only for pinning that was removed above. It
@@ -238,8 +248,10 @@ def _shared_pool(cif, online_cpus, core_cpus):
         if vm.cpu_policy() in (CPU_POLICY_NONE, CPU_POLICY_MANUAL):
             continue
         blocked = set().union(*vm.pinned_cpus().values())
-        if vm.cpu_policy() == CPU_POLICY_ISOLATE_THREADS or \
-                vm.cpu_policy() == CPU_POLICY_SIBLINGS:
+        if (
+            vm.cpu_policy() == CPU_POLICY_ISOLATE_THREADS
+            or vm.cpu_policy() == CPU_POLICY_SIBLINGS
+        ):
             for cpu in blocked.copy():
                 blocked |= set(_siblings(core_cpus, cpu))
         shared -= blocked

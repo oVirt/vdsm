@@ -47,9 +47,10 @@ class CommandPath(object):
                 if self._search_path:
                     self._cmd = shutil.which(self.name)
                 if self._cmd is None:
-                    raise OSError(errno.ENOENT,
-                                  os.strerror(errno.ENOENT) + ': ' +
-                                  self.name)
+                    raise OSError(
+                        errno.ENOENT,
+                        os.strerror(errno.ENOENT) + ': ' + self.name,
+                    )
         return self._cmd
 
     def __repr__(self):
@@ -111,8 +112,12 @@ def exec_cmd(cmd, env=None):
     logging.debug(command_log_line(cmd))
 
     p = subprocess.Popen(
-        cmd, close_fds=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        env=env)
+        cmd,
+        close_fds=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+    )
 
     out, err = p.communicate()
 
@@ -122,8 +127,10 @@ def exec_cmd(cmd, env=None):
 
 
 class Error(errors.Base):
-    msg = ("Command {self.cmd} failed with rc={self.rc} out={self.out!r} "
-           "err={self.err!r}")
+    msg = (
+        "Command {self.cmd} failed with rc={self.rc} out={self.out!r} "
+        "err={self.err!r}"
+    )
 
     def __init__(self, cmd, rc, out, err):
         self.cmd = cmd
@@ -207,11 +214,15 @@ def receive(p, timeout=None, bufsize=io.DEFAULT_BUFFER_SIZE):
                 poller.unregister(fd)
 
     while fds:
-        log.debug("Waiting for process (pid=%d, remaining=%s)",
-                  p.pid, remaining)
+        log.debug(
+            "Waiting for process (pid=%d, remaining=%s)", p.pid, remaining
+        )
         # Unlike all other time apis, poll is using milliseconds
-        remaining_msec = (int(remaining * 1000)
-                          if deadline and remaining is not None else None)
+        remaining_msec = (
+            int(remaining * 1000)
+            if deadline and remaining is not None
+            else None
+        )
         try:
             ready = poller.poll(remaining_msec)
         except select.error as e:
@@ -270,12 +281,19 @@ def _wait(p, deadline=None):
     log.debug("Process (pid=%d) terminated", p.pid)
 
 
-def wrap_command(command, with_ioclass=None, ioclassdata=None,
-                 with_nice=None, with_setsid=False, with_sudo=False,
-                 reset_cpu_affinity=True):
+def wrap_command(
+    command,
+    with_ioclass=None,
+    ioclassdata=None,
+    with_nice=None,
+    with_setsid=False,
+    with_sudo=False,
+    reset_cpu_affinity=True,
+):
     if with_ioclass is not None:
-        command = ionice(command, ioclass=with_ioclass,
-                         ioclassdata=ioclassdata)
+        command = ionice(
+            command, ioclass=with_ioclass, ioclassdata=ioclassdata
+        )
 
     if with_nice is not None:
         command = nice(command, nice=with_nice)

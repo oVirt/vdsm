@@ -27,15 +27,23 @@ class GlusterHook(GlusterApiBase):
     def read(self, glusterCmd, hookLevel, hookName):
         return self._gluster.hookRead(glusterCmd, hookLevel, hookName)
 
-    def update(self, glusterCmd, hookLevel, hookName, hookData,
-               hookChecksum):
-        return self._gluster.hookUpdate(glusterCmd, hookLevel, hookName,
-                                        hookData, hookChecksum)
+    def update(self, glusterCmd, hookLevel, hookName, hookData, hookChecksum):
+        return self._gluster.hookUpdate(
+            glusterCmd, hookLevel, hookName, hookData, hookChecksum
+        )
 
-    def add(self, glusterCmd, hookLevel, hookName, hookData, hookChecksum,
-            enable=False):
-        return self._gluster.hookAdd(glusterCmd, hookLevel, hookName,
-                                     hookData, hookChecksum, enable)
+    def add(
+        self,
+        glusterCmd,
+        hookLevel,
+        hookName,
+        hookData,
+        hookChecksum,
+        enable=False,
+    ):
+        return self._gluster.hookAdd(
+            glusterCmd, hookLevel, hookName, hookData, hookChecksum, enable
+        )
 
     def remove(self, glusterCmd, hookLevel, hookName):
         return self._gluster.hookRemove(glusterCmd, hookLevel, hookName)
@@ -72,10 +80,12 @@ class GlusterHost(GlusterApiBase):
     def vdoVolumeList(self, options=None):
         return self._gluster.vdoVolumeList()
 
-    def createBrick(self, name, mountPoint, devList, fsType=None,
-                    raidParams={}):
-        return self._gluster.createBrick(name, mountPoint,
-                                         devList, fsType, raidParams)
+    def createBrick(
+        self, name, mountPoint, devList, fsType=None, raidParams={}
+    ):
+        return self._gluster.createBrick(
+            name, mountPoint, devList, fsType, raidParams
+        )
 
     def processesStop(self):
         return self._gluster.processesStop()
@@ -113,11 +123,25 @@ class GlusterVolume(GlusterApiBase):
     def list(self, volumeName=None, remoteServer=None):
         return self._gluster.volumesList(volumeName, remoteServer)
 
-    def create(self, volumeName, brickList, replicaCount=0, stripeCount=0,
-               transportList=[], force=False, arbiter=False):
-        return self._gluster.volumeCreate(volumeName, brickList, replicaCount,
-                                          stripeCount, transportList, force,
-                                          arbiter)
+    def create(
+        self,
+        volumeName,
+        brickList,
+        replicaCount=0,
+        stripeCount=0,
+        transportList=[],
+        force=False,
+        arbiter=False,
+    ):
+        return self._gluster.volumeCreate(
+            volumeName,
+            brickList,
+            replicaCount,
+            stripeCount,
+            transportList,
+            force,
+            arbiter,
+        )
 
     def start(self, volumeName, force=False):
         return self._gluster.volumeStart(volumeName, force)
@@ -137,35 +161,42 @@ class GlusterVolume(GlusterApiBase):
     def reset(self, volumeName, option='', force=False):
         return self._gluster.volumeReset(volumeName, option, force)
 
-    def addBrick(self, volumeName, brickList, replicaCount=0, stripeCount=0,
-                 force=False):
-        return self._gluster.volumeBrickAdd(volumeName, brickList,
-                                            replicaCount, stripeCount, force)
+    def addBrick(
+        self, volumeName, brickList, replicaCount=0, stripeCount=0, force=False
+    ):
+        return self._gluster.volumeBrickAdd(
+            volumeName, brickList, replicaCount, stripeCount, force
+        )
 
     def removeBrickStart(self, volumeName, brickList, replicaCount=0):
-        return self._gluster.volumeRemoveBrickStart(volumeName, brickList,
-                                                    replicaCount)
+        return self._gluster.volumeRemoveBrickStart(
+            volumeName, brickList, replicaCount
+        )
 
     def removeBrickStop(self, volumeName, brickList, replicaCount=0):
-        return self._gluster.volumeRemoveBrickStop(volumeName, brickList,
-                                                   replicaCount)
+        return self._gluster.volumeRemoveBrickStop(
+            volumeName, brickList, replicaCount
+        )
 
     def removeBrickStatus(self, volumeName, brickList, replicaCount=0):
-        return self._gluster.volumeRemoveBrickStatus(volumeName, brickList,
-                                                     replicaCount)
+        return self._gluster.volumeRemoveBrickStatus(
+            volumeName, brickList, replicaCount
+        )
 
     def removeBrickCommit(self, volumeName, brickList, replicaCount=0):
-        return self._gluster.volumeRemoveBrickCommit(volumeName, brickList,
-                                                     replicaCount)
+        return self._gluster.volumeRemoveBrickCommit(
+            volumeName, brickList, replicaCount
+        )
 
     def removeBrickForce(self, volumeName, brickList, replicaCount=0):
-        return self._gluster.volumeRemoveBrickForce(volumeName, brickList,
-                                                    replicaCount)
+        return self._gluster.volumeRemoveBrickForce(
+            volumeName, brickList, replicaCount
+        )
 
     def replaceBrickCommitForce(self, volumeName, existingBrick, newBrick):
-        return self._gluster.volumeReplaceBrickCommitForce(volumeName,
-                                                           existingBrick,
-                                                           newBrick)
+        return self._gluster.volumeReplaceBrickCommitForce(
+            volumeName, existingBrick, newBrick
+        )
 
     def profileInfo(self, volumeName, nfs=False):
         return self._gluster.volumeProfileInfo(volumeName, nfs)
@@ -177,8 +208,9 @@ class GlusterVolume(GlusterApiBase):
         return self._gluster.volumeProfileStop(volumeName)
 
     def rebalanceStart(self, volumeName, rebalanceType="", force=False):
-        return self._gluster.volumeRebalanceStart(volumeName, rebalanceType,
-                                                  force)
+        return self._gluster.volumeRebalanceStart(
+            volumeName, rebalanceType, force
+        )
 
     def rebalanceStop(self, volumeName, force=False):
         return self._gluster.volumeRebalanceStop(volumeName, force)
@@ -186,86 +218,127 @@ class GlusterVolume(GlusterApiBase):
     def rebalanceStatus(self, volumeName):
         return self._gluster.volumeRebalanceStatus(volumeName)
 
-    def geoRepSessionStart(self, volumeName, remoteHost,
-                           remoteVolumeName, remoteUserName=None, force=False):
-        return self._gluster.volumeGeoRepSessionStart(volumeName,
-                                                      remoteHost,
-                                                      remoteVolumeName,
-                                                      remoteUserName,
-                                                      force)
+    def geoRepSessionStart(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        force=False,
+    ):
+        return self._gluster.volumeGeoRepSessionStart(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName, force
+        )
 
-    def geoRepSessionStop(self, volumeName, remoteHost,
-                          remoteVolumeName, remoteUserName=None, force=False):
-        return self._gluster.volumeGeoRepSessionStop(volumeName,
-                                                     remoteHost,
-                                                     remoteVolumeName,
-                                                     remoteUserName,
-                                                     force)
+    def geoRepSessionStop(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        force=False,
+    ):
+        return self._gluster.volumeGeoRepSessionStop(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName, force
+        )
 
-    def geoRepSessionStatus(self, volumeName, remoteHost,
-                            remoteVolumeName, remoteUserName=None):
-        return self._gluster.volumeGeoRepSessionStatus(volumeName,
-                                                       remoteHost,
-                                                       remoteVolumeName,
-                                                       remoteUserName)
+    def geoRepSessionStatus(
+        self, volumeName, remoteHost, remoteVolumeName, remoteUserName=None
+    ):
+        return self._gluster.volumeGeoRepSessionStatus(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName
+        )
 
-    def geoRepSessionList(self, volumeName=None, remoteHost=None,
-                          remoteVolumeName=None, remoteUserName=None):
-        return self._gluster.volumeGeoRepSessionList(volumeName,
-                                                     remoteHost,
-                                                     remoteVolumeName,
-                                                     remoteUserName)
+    def geoRepSessionList(
+        self,
+        volumeName=None,
+        remoteHost=None,
+        remoteVolumeName=None,
+        remoteUserName=None,
+    ):
+        return self._gluster.volumeGeoRepSessionList(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName
+        )
 
-    def geoRepSessionPause(self, volumeName, remoteHost,
-                           remoteVolumeName, remoteUserName=None, force=False):
-        return self._gluster.volumeGeoRepSessionPause(volumeName,
-                                                      remoteHost,
-                                                      remoteVolumeName,
-                                                      remoteUserName,
-                                                      force)
+    def geoRepSessionPause(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        force=False,
+    ):
+        return self._gluster.volumeGeoRepSessionPause(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName, force
+        )
 
-    def geoRepSessionResume(self, volumeName, remoteHost,
-                            remoteVolumeName, remoteUserName=None,
-                            force=False):
-        return self._gluster.volumeGeoRepSessionResume(volumeName,
-                                                       remoteHost,
-                                                       remoteVolumeName,
-                                                       remoteUserName,
-                                                       force)
+    def geoRepSessionResume(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        force=False,
+    ):
+        return self._gluster.volumeGeoRepSessionResume(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName, force
+        )
 
-    def geoRepConfigList(self, volumeName, remoteHost, remoteVolumeName,
-                         remoteUserName=None):
-        return self._gluster.volumeGeoRepConfigList(volumeName, remoteHost,
-                                                    remoteVolumeName,
-                                                    remoteUserName)
+    def geoRepConfigList(
+        self, volumeName, remoteHost, remoteVolumeName, remoteUserName=None
+    ):
+        return self._gluster.volumeGeoRepConfigList(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName
+        )
 
-    def geoRepConfigSet(self, volumeName, remoteHost, remoteVolumeName,
-                        optionName, optionValue, remoteUserName=None):
-        return self._gluster.volumeGeoRepConfigSet(volumeName, remoteHost,
-                                                   remoteVolumeName,
-                                                   optionName, optionValue,
-                                                   remoteUserName)
+    def geoRepConfigSet(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        optionName,
+        optionValue,
+        remoteUserName=None,
+    ):
+        return self._gluster.volumeGeoRepConfigSet(
+            volumeName,
+            remoteHost,
+            remoteVolumeName,
+            optionName,
+            optionValue,
+            remoteUserName,
+        )
 
-    def geoRepConfigReset(self, volumeName, remoteHost,
-                          remoteVolumeName, optionName, remoteUserName=None):
-        return self._gluster.volumeGeoRepConfigReset(volumeName,
-                                                     remoteHost,
-                                                     remoteVolumeName,
-                                                     optionName,
-                                                     remoteUserName)
+    def geoRepConfigReset(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        optionName,
+        remoteUserName=None,
+    ):
+        return self._gluster.volumeGeoRepConfigReset(
+            volumeName,
+            remoteHost,
+            remoteVolumeName,
+            optionName,
+            remoteUserName,
+        )
 
-    def snapshotCreate(self, volumeName,
-                       snapName, snapDescription=None,
-                       force=False):
-        return self._gluster.volumeSnapshotCreate(volumeName, snapName,
-                                                  snapDescription, force)
+    def snapshotCreate(
+        self, volumeName, snapName, snapDescription=None, force=False
+    ):
+        return self._gluster.volumeSnapshotCreate(
+            volumeName, snapName, snapDescription, force
+        )
 
     def snapshotDeleteAll(self, volumeName):
         return self._gluster.volumeSnapshotDeleteAll(volumeName)
 
     def snapshotConfigSet(self, volumeName, optionName, optionValue):
-        return self._gluster.volumeSnapshotConfigSet(volumeName, optionName,
-                                                     optionValue)
+        return self._gluster.volumeSnapshotConfigSet(
+            volumeName, optionName, optionValue
+        )
 
     def snapshotConfigList(self, volumeName):
         return self._gluster.volumeSnapshotConfigList(volumeName)
@@ -279,31 +352,30 @@ class GlusterVolume(GlusterApiBase):
     def geoRepKeysUpdate(self, userName, geoRepPubKeys):
         return self._gluster.geoRepKeysUpdate(userName, geoRepPubKeys)
 
-    def geoRepMountBrokerSetup(self, remoteUserName, remoteGroupName,
-                               remoteVolumeName, partial=False):
-        return self._gluster.geoRepMountBrokerSetup(remoteUserName,
-                                                    remoteGroupName,
-                                                    remoteVolumeName,
-                                                    partial)
-
-    def geoRepSessionCreate(self, volumeName, remoteHost, remotVolumeName,
-                            remoteUserName=None, force=False):
-        return self._gluster.volumeGeoRepSessionCreate(
-            volumeName,
-            remoteHost,
-            remotVolumeName,
-            remoteUserName,
-            force
+    def geoRepMountBrokerSetup(
+        self, remoteUserName, remoteGroupName, remoteVolumeName, partial=False
+    ):
+        return self._gluster.geoRepMountBrokerSetup(
+            remoteUserName, remoteGroupName, remoteVolumeName, partial
         )
 
-    def geoRepSessionDelete(self, volumeName, remoteHost,
-                            remoteVolumeName,
-                            remoteUserName=None):
+    def geoRepSessionCreate(
+        self,
+        volumeName,
+        remoteHost,
+        remotVolumeName,
+        remoteUserName=None,
+        force=False,
+    ):
+        return self._gluster.volumeGeoRepSessionCreate(
+            volumeName, remoteHost, remotVolumeName, remoteUserName, force
+        )
+
+    def geoRepSessionDelete(
+        self, volumeName, remoteHost, remoteVolumeName, remoteUserName=None
+    ):
         return self._gluster.volumeGeoRepSessionDelete(
-            volumeName,
-            remoteHost,
-            remoteVolumeName,
-            remoteUserName
+            volumeName, remoteHost, remoteVolumeName, remoteUserName
         )
 
     def volumeEmptyCheck(self, volumeName):
@@ -319,12 +391,12 @@ class GlusterVolume(GlusterApiBase):
         return self._gluster.snapshotScheduleReset()
 
     def resetBrickStart(self, volumeName, existingBrick):
-        return self._gluster.volumeResetBrickStart(volumeName,
-                                                   existingBrick)
+        return self._gluster.volumeResetBrickStart(volumeName, existingBrick)
 
     def resetBrickCommitForce(self, volumeName, existingBrick):
-        return self._gluster.volumeResetBrickCommitForce(volumeName,
-                                                         existingBrick)
+        return self._gluster.volumeResetBrickCommitForce(
+            volumeName, existingBrick
+        )
 
     def globalVolumeOptions(self):
         return self._gluster.globalVolumeOptions()

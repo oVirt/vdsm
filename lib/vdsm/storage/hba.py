@@ -29,7 +29,7 @@ NODE_NAME = "node_name"
 
 
 class Error(Exception):
-    """ hba operation failed """
+    """hba operation failed"""
 
 
 @misc.samplingmethod
@@ -40,7 +40,8 @@ def rescan():
     log.info("Scanning FC devices")
     try:
         with utils.stopwatch(
-                "Scanning FC devices", level=logging.INFO, log=log):
+            "Scanning FC devices", level=logging.INFO, log=log
+        ):
             supervdsm.getProxy().hbaRescan()
     except Error as e:
         log.error("Scanning FC devices failed: %s", e)
@@ -53,9 +54,8 @@ def _rescan():
     timeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
 
     p = commands.start(
-        [constants.EXT_FC_SCAN],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        [constants.EXT_FC_SCAN], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
     try:
         out, err = p.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -66,8 +66,9 @@ def _rescan():
         raise Error("Timeout scanning (pid=%s)" % p.pid)
 
     if p.returncode != 0:
-        raise Error("Scan failed with rc=%s out=%r err=%r"
-                    % (p.returncode, out, err))
+        raise Error(
+            "Scan failed with rc=%s out=%r err=%r" % (p.returncode, out, err)
+        )
 
 
 def getiSCSIInitiators():
@@ -104,7 +105,7 @@ def getModelDesc(fch, host):
             with open(desc_path) as desc_file:
                 model_desc = desc_file.read().strip()
         except IOError:
-            pass   # retry
+            pass  # retry
 
     return (model_name, model_desc)
 

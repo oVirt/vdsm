@@ -92,12 +92,11 @@ from vdsm.virt import vmxml
 from . import core
 from . import hwclass
 
-
 log = logging.getLogger("virt.lease")
 
 
 class Error(errors.Base):
-    """ Base class for lease errors """
+    """Base class for lease errors"""
 
 
 class CannotPrepare(Error):
@@ -120,6 +119,7 @@ class Device(core.Base):
     """
     VM lease device.
     """
+
     __slots__ = ("lease_id", "sd_id", "path", "offset")
 
     @classmethod
@@ -173,24 +173,29 @@ class Device(core.Base):
         lease = vmxml.Element('lease')
         lease.appendChildWithArgs('key', text=self.lease_id)
         lease.appendChildWithArgs('lockspace', text=self.sd_id)
-        lease.appendChildWithArgs('target', path=self.path,
-                                  offset=str(self.offset))
+        lease.appendChildWithArgs(
+            'target', path=self.path, offset=str(self.offset)
+        )
         return lease
 
     def __repr__(self):
-        return ("<lease.Device sd_id={self.sd_id}, "
-                "lease_id={self.lease_id}, "
-                "path={self.path}, "
-                "offset={self.offset} "
-                "at {addr:#x}>").format(self=self, addr=id(self))
+        return (
+            "<lease.Device sd_id={self.sd_id}, "
+            "lease_id={self.lease_id}, "
+            "path={self.path}, "
+            "offset={self.offset} "
+            "at {addr:#x}>"
+        ).format(self=self, addr=id(self))
 
 
 def is_attached_to(device, xml_string):
     # TODO: verify also path and offset? not sure what should we do it we
     # find a lease with correct sd_id and lease_id, but wrong path and
     # offset.
-    xpath = ("./devices/lease[key='{device.lease_id}']"
-             "[lockspace='{device.sd_id}']").format(device=device)
+    xpath = (
+        "./devices/lease[key='{device.lease_id}']"
+        "[lockspace='{device.sd_id}']"
+    ).format(device=device)
     dom = ET.fromstring(xml_string)
     return bool(dom.findall(xpath))
 
@@ -238,9 +243,11 @@ def find_conf(vm_conf, lease):
     """
     devices = vm_conf["devices"][:]
     for conf in devices:
-        if (conf['type'] == hwclass.LEASE and
-                conf['sd_id'] == lease.sd_id and
-                conf['lease_id'] == lease.lease_id):
+        if (
+            conf['type'] == hwclass.LEASE
+            and conf['sd_id'] == lease.sd_id
+            and conf['lease_id'] == lease.lease_id
+        ):
             return conf
     raise LookupError("No conf for %r" % lease)
 
@@ -286,9 +293,10 @@ def _is_prepared(device):
 
 def update_lease_element_from_info(lease_element, info, params, log):
     target = vmxml.find_first(lease_element, 'target')
-    for (key, placeholder) in (
-            ('path', 'LEASE-PATH'),
-            ('offset', 'LEASE-OFFSET')):
+    for key, placeholder in (
+        ('path', 'LEASE-PATH'),
+        ('offset', 'LEASE-OFFSET'),
+    ):
         value = target.attrib.get(key, None)
         if value is None or value.startswith(placeholder):
             old_value = target.attrib[key]
@@ -296,8 +304,12 @@ def update_lease_element_from_info(lease_element, info, params, log):
             if old_value != info[key]:
                 log.info(
                     'lease %s:%s %s: %r -> %r',
-                    params['sd_id'], params['lease_id'],
-                    key, old_value, info[key])
+                    params['sd_id'],
+                    params['lease_id'],
+                    key,
+                    old_value,
+                    info[key],
+                )
 
 
 def find_drive_lease_info(sd_id, lease_id, drive_objs):
@@ -306,8 +318,10 @@ def find_drive_lease_info(sd_id, lease_id, drive_objs):
         for vol_info in volume_chain[-1:]:
             # TODO: is this matching safe enough?
             # vm.findDriveByUUIDs uses also the imageID
-            if (vol_info['domainID'] == sd_id and
-                    vol_info['volumeID'] == lease_id):
+            if (
+                vol_info['domainID'] == sd_id
+                and vol_info['volumeID'] == lease_id
+            ):
                 drive_obj.log.info('Using drive lease: %s', vol_info)
                 return {
                     'path': vol_info['leasePath'],

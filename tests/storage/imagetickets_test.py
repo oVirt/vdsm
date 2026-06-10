@@ -95,11 +95,14 @@ def test_get_ticket_error(fake_connection):
     assert "Not found" in str(e.value)
 
 
-@pytest.mark.parametrize("content_type", [
-    "text/plain",
-    "text/plain; unknown=unknown",
-    "text/plain; charset=unknown",
-])
+@pytest.mark.parametrize(
+    "content_type",
+    [
+        "text/plain",
+        "text/plain; unknown=unknown",
+        "text/plain; charset=unknown",
+    ],
+)
 def test_parse_text_plain_charset(fake_connection, content_type):
     fake_response = FakeResponse(status=404, data=b'Not found error')
     fake_response.headers["content-type"] = content_type
@@ -110,11 +113,14 @@ def test_parse_text_plain_charset(fake_connection, content_type):
     assert "Not found error" in str(e.value)
 
 
-@pytest.mark.parametrize("method, args", [
-    ["add_ticket", [{}]],
-    ["extend_ticket", ["uuid", 300]],
-    ["remove_ticket", ["uuid"]],
-])
+@pytest.mark.parametrize(
+    "method, args",
+    [
+        ["add_ticket", [{}]],
+        ["extend_ticket", ["uuid", 300]],
+        ["remove_ticket", ["uuid"]],
+    ],
+)
 def test_not_supported(invalid_socket, method, args):
     with pytest.raises(se.ImageDaemonUnsupported):
         func = getattr(imagetickets, method)
@@ -153,8 +159,7 @@ def test_extend_ticket(fake_connection):
     imagetickets.extend_ticket("uuid", timeout)
     body = '{"timeout": ' + str(timeout) + '}'
     expected = [
-        ("request", ("PATCH", "/tickets/uuid"),
-         {"body": body.encode("utf8")}),
+        ("request", ("PATCH", "/tickets/uuid"), {"body": body.encode("utf8")}),
     ]
 
     assert fake_connection.__calls__ == expected
@@ -195,9 +200,9 @@ def test_res_read_error(fake_connection):
         assert err_msg in e.value
 
 
-@pytest.mark.parametrize("exc_type", [
-    http.client.HTTPException, socket.error, OSError
-])
+@pytest.mark.parametrize(
+    "exc_type", [http.client.HTTPException, socket.error, OSError]
+)
 def test_image_tickets_error(fake_connection, exc_type):
     ticket = create_ticket(uuid="uuid")
 
@@ -223,8 +228,14 @@ def test_request_with_zero_content_length(fake_connection):
         imagetickets.get_ticket("uuid")
 
 
-def create_ticket(uuid, ops=("read", "write"), timeout=300,
-                  size=GiB, path="/path/to/image", filename=None):
+def create_ticket(
+    uuid,
+    ops=("read", "write"),
+    timeout=300,
+    size=GiB,
+    path="/path/to/image",
+    filename=None,
+):
     ticket = {
         "uuid": uuid,
         "timeout": timeout,

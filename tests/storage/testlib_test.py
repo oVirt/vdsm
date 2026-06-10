@@ -34,6 +34,7 @@ from vdsm.storage import sd
 
 # Test fake file environment
 
+
 def test_no_fakelvm():
     with fake_file_env() as env:
         assert not hasattr(env, 'lvm')
@@ -79,12 +80,15 @@ def test_default_domain_version(env_type):
         assert 3 == env.sd_manifest.getVersion()
 
 
-@pytest.mark.parametrize("env_type, sd_version", [
-    ("file", 3),
-    ("file", 4),
-    ("block", 3),
-    ("block", 4),
-])
+@pytest.mark.parametrize(
+    "env_type, sd_version",
+    [
+        ("file", 3),
+        ("file", 4),
+        ("block", 3),
+        ("block", 4),
+    ],
+)
 def test_domain_version(env_type, sd_version):
     with fake_env(env_type, sd_version=sd_version) as env:
         assert sd_version == env.sd_manifest.getVersion()
@@ -96,9 +100,11 @@ def test_volume_structure():
         vol_id = make_uuid()
         make_file_volume(env.sd_manifest, 0, img_id, vol_id)
         image_dir = env.sd_manifest.getImagePath(img_id)
-        files = (vol_id,
-                 vol_id + sc.LEASE_FILEEXT,
-                 vol_id + fileVolume.META_FILEEXT)
+        files = (
+            vol_id,
+            vol_id + sc.LEASE_FILEEXT,
+            vol_id + fileVolume.META_FILEEXT,
+        )
         for f in files:
             path = os.path.join(image_dir, f)
             assert os.path.exists(path)
@@ -130,6 +136,7 @@ def test_volume_metadata_io_file_env():
 
 
 # Test fake block environment
+
 
 def test_repopath_location():
     with fake_block_env() as env:
@@ -173,18 +180,22 @@ def test_volume_type_block_env(vol_type):
         img_id = make_uuid()
         vol_id = make_uuid()
         make_block_volume(
-            env.lvm, env.sd_manifest, 0, img_id, vol_id, vol_type=vol_type)
+            env.lvm, env.sd_manifest, 0, img_id, vol_id, vol_type=vol_type
+        )
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
         assert vol.getVolType() == sc.type2name(vol_type)
 
 
-@pytest.mark.parametrize("size_param", [
-    MiB,
-    2 * MiB - 1,
-    1,
-    sc.VG_EXTENT_SIZE - 1,
-    sc.VG_EXTENT_SIZE + 1,
-])
+@pytest.mark.parametrize(
+    "size_param",
+    [
+        MiB,
+        2 * MiB - 1,
+        1,
+        sc.VG_EXTENT_SIZE - 1,
+        sc.VG_EXTENT_SIZE + 1,
+    ],
+)
 def test_volume_size_alignment(size_param):
     with fake_block_env() as env:
         sd_id = env.sd_manifest.sdUUID
@@ -228,15 +239,16 @@ def test_volume_accessibility():
 
         assert os.path.isfile(env.lvm.lvPath(sd_id, vol_id))
 
-        domain_path = os.path.join(env.sd_manifest.domaindir,
-                                   sd.DOMAIN_IMAGES,
-                                   img_id,
-                                   vol_id)
-        repo_path = os.path.join(env.sd_manifest.getRepoPath(),
-                                 sd_id,
-                                 sd.DOMAIN_IMAGES,
-                                 img_id,
-                                 vol_id)
+        domain_path = os.path.join(
+            env.sd_manifest.domaindir, sd.DOMAIN_IMAGES, img_id, vol_id
+        )
+        repo_path = os.path.join(
+            env.sd_manifest.getRepoPath(),
+            sd_id,
+            sd.DOMAIN_IMAGES,
+            img_id,
+            vol_id,
+        )
         assert repo_path != domain_path
         # The links to the dev are created only when producing the volume.
         assert not os.path.isfile(domain_path)
@@ -247,6 +259,7 @@ def test_volume_accessibility():
 
 
 # Test chain verification
+
 
 @pytest.mark.parametrize("storage_type", ["file", "block"])
 def test_make_qemu_chain(storage_type):
@@ -301,6 +314,7 @@ class OtherFakeLock(FakeGuardedLock):
 
 # Test FakeGuardedLock
 
+
 def test_properties():
     a = FakeGuardedLock('ns', 'name', 'mode', [])
     assert 'ns' == a.ns
@@ -323,10 +337,13 @@ def test_different_types_sortable():
     assert [a, b] == sorted([b, a])
 
 
-@pytest.mark.parametrize("a, b", [
-    (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
-    (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
-])
+@pytest.mark.parametrize(
+    "a, b",
+    [
+        (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
+        (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
+    ],
+)
 def test_less_than(a, b):
     ns_a, name_a, mode_a = a
     ns_b, name_b, mode_b = b
@@ -356,8 +373,10 @@ def test_mode_ignored_for_sorting():
 
 def test_acquire_and_release():
     log = []
-    expected = [('acquire', 'ns', 'name', 'mode'),
-                ('release', 'ns', 'name', 'mode')]
+    expected = [
+        ('acquire', 'ns', 'name', 'mode'),
+        ('release', 'ns', 'name', 'mode'),
+    ]
     lock = FakeGuardedLock('ns', 'name', 'mode', log)
     lock.acquire()
     assert expected[:1] == log
@@ -366,6 +385,7 @@ def test_acquire_and_release():
 
 
 # Test Aborting
+
 
 def test_aborting_flow():
     aborting = Aborting(5)

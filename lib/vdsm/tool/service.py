@@ -20,17 +20,18 @@ def execCmd(argv, raw=True, *args, **kwargs):
     return _execCmd(argv, raw=raw, *args, **kwargs)
 
 
-_SYSTEMCTL = CommandPath("systemctl",
-                         "/bin/systemctl",
-                         "/usr/bin/systemctl",
-                         )
+_SYSTEMCTL = CommandPath(
+    "systemctl",
+    "/bin/systemctl",
+    "/usr/bin/systemctl",
+)
 
 _srvNameAlts = {
     'iscsid': ['iscsid', 'open-iscsi'],
     'libvirtd': ['libvirtd', 'libvirt-bin'],
     'multipathd': ['multipathd', 'multipath-tools'],
     'network': ['network', 'networking'],
-    'smb': ['smb', 'samba']
+    'smb': ['smb', 'samba'],
 }
 
 _srvStartAlts = []
@@ -70,6 +71,7 @@ try:
 except OSError:
     pass
 else:
+
     def _systemctlNative(systemctlFun):
         @functools.wraps(systemctlFun)
         def wrapper(srvName):
@@ -77,7 +79,8 @@ else:
             rc, out, err = execCmd(cmd)
             if rc != 0:
                 raise ServiceOperationError(
-                    "Error listing unit files", out, err)
+                    "Error listing unit files", out, err
+                )
             fullName = srvName.encode('utf-8')
             # If unit file type was specified, don't override it.
             if srvName.count('.') < 1:
@@ -85,8 +88,10 @@ else:
             for line in out.splitlines():
                 if fullName == line.split(b" ", 1)[0]:
                     return systemctlFun(fullName.decode('utf-8'))
-            raise ServiceNotExistError("%s is not native systemctl service" %
-                                       srvName)
+            raise ServiceNotExistError(
+                "%s is not native systemctl service" % srvName
+            )
+
         return wrapper
 
     @_systemctlNative
@@ -151,10 +156,12 @@ def _runAlts(alts, srvName, *args, **kwarg):
                     return 0
                 else:
                     raise ServiceOperationError(
-                        "%s failed" % alt.__name__, out, err)
+                        "%s failed" % alt.__name__, out, err
+                    )
     raise ServiceNotExistError(
-        'Tried all alternatives but failed:\n%s' %
-        ('\n'.join(str(err) for errs in errors.values() for err in errs)))
+        'Tried all alternatives but failed:\n%s'
+        % ('\n'.join(str(err) for errs in errors.values() for err in errs))
+    )
 
 
 @expose("service-start")

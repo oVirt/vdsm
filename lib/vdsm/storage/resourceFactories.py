@@ -23,6 +23,7 @@ class LvmActivation(object):
     the close() calls lvm.deactivateLVs() to release the DM mappings
     for this volume.
     """
+
     def __init__(self, vg, lv, lockType):
         self._vg = vg
         self._lv = lv
@@ -61,6 +62,7 @@ class ImageResource(object):
     """
     Represents resource for image's volumes.
     """
+
     def __init__(self, volResourcesList):
         self.volResourcesList = volResourcesList
 
@@ -74,16 +76,19 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
     """
     This factory produce resources for images
     """
+
     # Resource timeouts are in seconds. It's written in ms in the config for
     # backward competability reasons
-    resource_default_timeout = config.getint('irs',
-                                             'prepare_image_timeout') / 1000.0
+    resource_default_timeout = (
+        config.getint('irs', 'prepare_image_timeout') / 1000.0
+    )
 
     def __init__(self, sdUUID):
         rm.SimpleResourceFactory.__init__(self)
         self.sdUUID = sdUUID
-        self.volumeResourcesNamespace = rm.getNamespace(sc.VOLUME_NAMESPACE,
-                                                        self.sdUUID)
+        self.volumeResourcesNamespace = rm.getNamespace(
+            sc.VOLUME_NAMESPACE, self.sdUUID
+        )
 
     def __getResourceCandidatesList(self, resourceName, lockType):
         """
@@ -99,11 +104,15 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
         # Get the list of the volumes
         repoPath = os.path.join(sc.REPO_DATA_CENTER, dom.getPools()[0])
         try:
-            chain = image.Image(repoPath).getChain(sdUUID=self.sdUUID,
-                                                   imgUUID=resourceName)
+            chain = image.Image(repoPath).getChain(
+                sdUUID=self.sdUUID, imgUUID=resourceName
+            )
         except se.ImageDoesNotExistInSD:
-            log.debug("Image %s does not exist in domain %s",
-                      resourceName, self.sdUUID)
+            log.debug(
+                "Image %s does not exist in domain %s",
+                resourceName,
+                self.sdUUID,
+            )
             return []
 
         # check if the chain is build above a template, or it is a standalone
@@ -136,21 +145,27 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
                 if len(volUUIDChain) > 0:
                     volRes = rm.acquireResource(
                         self.volumeResourcesNamespace,
-                        template, rm.SHARED,
-                        timeout=self.resource_default_timeout)
+                        template,
+                        rm.SHARED,
+                        timeout=self.resource_default_timeout,
+                    )
                 else:
                     volRes = rm.acquireResource(
                         self.volumeResourcesNamespace,
-                        template, lockType,
-                        timeout=self.resource_default_timeout)
+                        template,
+                        lockType,
+                        timeout=self.resource_default_timeout,
+                    )
                 volResourcesList.append(volRes)
 
             # Acquire 'lockType' volume locks
             for volUUID in volUUIDChain:
                 volRes = rm.acquireResource(
                     self.volumeResourcesNamespace,
-                    volUUID, lockType,
-                    timeout=self.resource_default_timeout)
+                    volUUID,
+                    lockType,
+                    timeout=self.resource_default_timeout,
+                )
 
                 volResourcesList.append(volRes)
         except (rm.RequestTimedOutError, se.ResourceAcqusitionFailed) as e:
@@ -170,6 +185,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
         return volResourcesList
 
     def createResource(self, resourceName, lockType):
-        volResourcesList = self.__getResourceCandidatesList(resourceName,
-                                                            lockType)
+        volResourcesList = self.__getResourceCandidatesList(
+            resourceName, lockType
+        )
         return ImageResource(volResourcesList)

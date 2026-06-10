@@ -70,12 +70,18 @@ def readblock(name, offset, size):
     baseoffset = offset
 
     while left > 0:
-        (iounit, count, iooffset) = _alignData(left, offset)
+        iounit, count, iooffset = _alignData(left, offset)
 
-        cmd = [constants.EXT_DD, "iflag=%s" % DIRECTFLAG, "skip=%d" % iooffset,
-               "bs=%d" % iounit, "if=%s" % name, "count=%s" % count]
+        cmd = [
+            constants.EXT_DD,
+            "iflag=%s" % DIRECTFLAG,
+            "skip=%d" % iooffset,
+            "bs=%d" % iounit,
+            "if=%s" % name,
+            "count=%s" % count,
+        ]
 
-        (rc, out, err) = execCmd(cmd, raw=True)
+        rc, out, err = execCmd(cmd, raw=True)
         if rc:
             raise se.MiscBlockReadException(name, offset, size)
         if not validateDDBytes(err.splitlines(), iounit * count):
@@ -91,7 +97,7 @@ def validateDDBytes(ddstderr, size):
     log.debug("err: %s, size: %s" % (ddstderr, size))
     try:
         size = int(size)
-    except (ValueError, ):
+    except (ValueError,):
         raise se.InvalidParameterException("size", str(size))
 
     if len(ddstderr) != 3:
@@ -99,7 +105,7 @@ def validateDDBytes(ddstderr, size):
 
     try:
         xferred = int(ddstderr[2].split()[0])
-    except (ValueError, ):
+    except (ValueError,):
         raise se.InvalidParameterException("ddstderr", ddstderr[2])
 
     if xferred != size:
@@ -191,8 +197,10 @@ def validateSize(capacity, name):
     not be converted to integer.
     """
     if not isinstance(capacity, str):
-        log.error("Number of blocks as int is not supported, use size in "
-                  "bytes as string")
+        log.error(
+            "Number of blocks as int is not supported, use size in "
+            "bytes as string"
+        )
         raise se.InvalidParameterException(name, capacity)
     return validateN(capacity, name)
 
@@ -274,8 +282,9 @@ class DynamicBarrier(object):
     def exit(self):
         with self._cond:
             if not self._busy:
-                raise AssertionError("Attempt to exit a barrier without "
-                                     "entering")
+                raise AssertionError(
+                    "Attempt to exit a barrier without " "entering"
+                )
             self._busy = False
             self._cond.notifyAll()
 
@@ -296,6 +305,7 @@ class SamplingMethod(object):
     Supporting parameters or exception passing to all functions would
     make the code much more complex for no reason.
     """
+
     _log = logging.getLogger("storage.samplingmethod")
 
     def __init__(self, func):
@@ -312,14 +322,19 @@ class SamplingMethod(object):
 
     def __call__(self, *args, **kwargs):
         if self.__funcParent is None:
-            if (hasattr(self.__func, "func_code") and
-                    self.__func.__code__.co_varnames == 'self'):
+            if (
+                hasattr(self.__func, "func_code")
+                and self.__func.__code__.co_varnames == 'self'
+            ):
                 self.__funcParent = args[0].__class__.__name__
             else:
                 self.__funcParent = self.__func.__module__
 
-        self._log.debug("Trying to enter sampling method (%s.%s)",
-                        self.__funcParent, self.__funcName)
+        self._log.debug(
+            "Trying to enter sampling method (%s.%s)",
+            self.__funcParent,
+            self.__funcName,
+        )
         if self.__barrier.enter():
             try:
                 self._log.debug("Got in to sampling method")
@@ -339,6 +354,7 @@ def samplingmethod(func):
     @wraps(func)
     def helper(*args, **kwargs):
         return sm(*args, **kwargs)
+
     return helper
 
 
@@ -376,8 +392,10 @@ class Event(object):
                     if func is None:
                         continue
                 try:
-                    self._log.debug("Calling registered method `%s`",
-                                    logutils.funcName(func))
+                    self._log.debug(
+                        "Calling registered method `%s`",
+                        logutils.funcName(func),
+                    )
                     if self._sync:
                         func(*args, **kwargs)
                     else:
@@ -385,7 +403,8 @@ class Event(object):
                 except:
                     self._log.exception(
                         "Could not run registered method because of an "
-                        "exception")
+                        "exception"
+                    )
 
         self._log.debug("Event emitted")
 
@@ -409,8 +428,9 @@ def killall(name, signum, group=False):
     knownPgs = set()
     pidList = proc.pgrep(name)
     if len(pidList) == 0:
-        raise OSError(errno.ESRCH,
-                      "Could not find processes named `%s`" % name)
+        raise OSError(
+            errno.ESRCH, "Could not find processes named `%s`" % name
+        )
 
     for pid in pidList:
         try:

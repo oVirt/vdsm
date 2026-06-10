@@ -15,8 +15,9 @@ def on_centos(ver=''):
 
 def on_rhel(ver=''):
     with open('/etc/redhat-release') as f:
-        return 'Red Hat Enterprise Linux release {}'.format(
-            ver) in f.readline()
+        return (
+            'Red Hat Enterprise Linux release {}'.format(ver) in f.readline()
+        )
 
 
 def on_fedora(ver=''):

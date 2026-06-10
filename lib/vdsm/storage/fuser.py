@@ -12,7 +12,7 @@ def fuser(path, mountPoint=False):
         cmd.append("-m")
 
     cmd.append(path)
-    (rc, out, err) = misc.execCmd(cmd, raw=True)
+    rc, out, err = misc.execCmd(cmd, raw=True)
     if rc != 0:
         return []
 

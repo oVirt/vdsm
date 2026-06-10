@@ -17,7 +17,6 @@ from vdsm.common import concurrent
 from vdsm.common.define import doneCode
 from vdsm.executor import TaskQueue
 
-
 # The corresponding queue is used only for OVF upload and download.
 # If the queue has more than 10 waiting connections there is something
 # wrong and it doesn't help anything to queue more connections.
@@ -42,6 +41,7 @@ class Server(object):
         """
         Serve clients until stopped
         """
+
         def threaded_start():
             self.log.info("Server running")
             self.server.timeout = 1
@@ -52,12 +52,12 @@ class Server(object):
                     self.server.handle_request()
                 except Exception as e:
                     if e.args[0] != EINTR:
-                        self.log.error("http handler exception",
-                                       exc_info=True)
+                        self.log.error("http handler exception", exc_info=True)
             self.log.info("Server stopped")
 
-        self._thread = concurrent.thread(threaded_start, name='http',
-                                         log=self.log)
+        self._thread = concurrent.thread(
+            threaded_start, name='http', log=self.log
+        )
         self._thread.start()
 
     def add_socket(self, connected_socket, socket_address):
@@ -94,26 +94,28 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
             length = self._getLength()
             img = self._createImage()
             startEvent = threading.Event()
-            methodArgs = {'fileObj': self.wfile,
-                          'length': length}
+            methodArgs = {'fileObj': self.wfile, 'length': length}
 
-            uploadFinishedEvent, operationEndCallback = \
+            uploadFinishedEvent, operationEndCallback = (
                 self._createEventWithCallback()
+            )
 
             # Optional header
             volUUID = self.headers.get(self.HEADER_VOLUME)
 
-            response = img.uploadToStream(methodArgs,
-                                          operationEndCallback,
-                                          startEvent, volUUID)
+            response = img.uploadToStream(
+                methodArgs, operationEndCallback, startEvent, volUUID
+            )
 
             if response['status']['code'] == 0:
                 self.send_response(http.client.PARTIAL_CONTENT)
-                self.send_header(self.HEADER_CONTENT_TYPE,
-                                 'application/octet-stream')
+                self.send_header(
+                    self.HEADER_CONTENT_TYPE, 'application/octet-stream'
+                )
                 self.send_header(self.HEADER_CONTENT_LENGTH, length)
-                self.send_header(self.HEADER_CONTENT_RANGE,
-                                 "bytes 0-%d" % (length - 1))
+                self.send_header(
+                    self.HEADER_CONTENT_RANGE, "bytes 0-%d" % (length - 1)
+                )
                 self.send_header(self.HEADER_TASK_ID, response['uuid'])
                 self.end_headers()
                 startEvent.set()
@@ -125,30 +127,32 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
             # This is an expected exception, so traceback is unneeded
             self.send_error(e.httpStatusCode, e.errorMessage)
         except Exception:
-            self.send_error(http.client.INTERNAL_SERVER_ERROR,
-                            "error during execution",
-                            exc_info=True)
+            self.send_error(
+                http.client.INTERNAL_SERVER_ERROR,
+                "error during execution",
+                exc_info=True,
+            )
 
     def do_PUT(self):
         try:
             contentLength = self._getIntHeader(
-                self.HEADER_CONTENT_LENGTH,
-                http.client.LENGTH_REQUIRED)
+                self.HEADER_CONTENT_LENGTH, http.client.LENGTH_REQUIRED
+            )
 
             img = self._createImage()
 
-            methodArgs = {'fileObj': self.rfile,
-                          'length': contentLength}
+            methodArgs = {'fileObj': self.rfile, 'length': contentLength}
 
-            uploadFinishedEvent, operationEndCallback = \
+            uploadFinishedEvent, operationEndCallback = (
                 self._createEventWithCallback()
+            )
 
             # Optional header
             volUUID = self.headers.get(self.HEADER_VOLUME)
 
-            response = img.downloadFromStream(methodArgs,
-                                              operationEndCallback,
-                                              volUUID)
+            response = img.downloadFromStream(
+                methodArgs, operationEndCallback, volUUID
+            )
 
             if response['status']['code'] == 0:
                 while not uploadFinishedEvent.is_set():
@@ -162,9 +166,11 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
         except RequestException as e:
             self.send_error(e.httpStatusCode, e.errorMessage)
         except Exception:
-            self.send_error(http.client.INTERNAL_SERVER_ERROR,
-                            "error during execution",
-                            exc_info=True)
+            self.send_error(
+                http.client.INTERNAL_SERVER_ERROR,
+                "error during execution",
+                exc_info=True,
+            )
 
     def _createImage(self):
         # Required headers
@@ -175,8 +181,8 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
             raise RequestException(
                 http.client.BAD_REQUEST,
                 "missing or empty required header(s):"
-                " spUUID=%s sdUUID=%s imgUUID=%s"
-                % (spUUID, sdUUID, imgUUID))
+                " spUUID=%s sdUUID=%s imgUUID=%s" % (spUUID, sdUUID, imgUUID),
+            )
 
         return API.Image(imgUUID, spUUID, sdUUID)
 
@@ -203,8 +209,8 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
         value = self.headers.get(headerName)
         if not value:
             raise RequestException(
-                missingError,
-                "missing header %s" % headerName)
+                missingError, "missing header %s" % headerName
+            )
         return value
 
     def _getInt(self, value):
@@ -212,19 +218,20 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
             return int(value)
         except ValueError:
             raise RequestException(
-                http.client.BAD_REQUEST,
-                "not int value %r" % value)
+                http.client.BAD_REQUEST, "not int value %r" % value
+            )
 
     def _getLength(self):
-        value = self._getRequiredHeader(self.HEADER_RANGE,
-                                        http.client.BAD_REQUEST)
+        value = self._getRequiredHeader(
+            self.HEADER_RANGE, http.client.BAD_REQUEST
+        )
 
         m = re.match(r'^bytes=0-(\d+)$', value)
         if m is None:
             raise RequestException(
                 http.client.BAD_REQUEST,
-                "Unsupported range: %r , expected: bytes=0-last_byte" %
-                value)
+                "Unsupported range: %r , expected: bytes=0-last_byte" % value,
+            )
 
         last_byte = m.group(1)
         return self._getInt(last_byte) + 1
@@ -239,16 +246,13 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
             self.send_response(error)
             self.end_headers()
         except Exception:
-            self.log.error("failed to return response",
-                           exc_info=True)
+            self.log.error("failed to return response", exc_info=True)
 
     def _send_error_response(self, response):
         self.send_response(http.client.INTERNAL_SERVER_ERROR)
         json_response = json.dumps(response).encode("utf-8")
-        self.send_header(self.HEADER_CONTENT_TYPE,
-                         'application/json')
-        self.send_header(self.HEADER_CONTENT_LENGTH,
-                         len(json_response))
+        self.send_header(self.HEADER_CONTENT_TYPE, 'application/json')
+        self.send_header(self.HEADER_CONTENT_LENGTH, len(json_response))
         self.end_headers()
         self.wfile.write(json_response)
 
@@ -279,8 +283,9 @@ class ThreadedServer(HTTPServer):
         if sock is self._STOP:
             return
         self.log.info("Starting request handler for %s:%d", addr[0], addr[1])
-        t = concurrent.thread(self._process_requests, args=(sock, addr),
-                              log=self.log)
+        t = concurrent.thread(
+            self._process_requests, args=(sock, addr), log=self.log
+        )
         t.start()
 
     def server_close(self):
@@ -292,8 +297,11 @@ class ThreadedServer(HTTPServer):
         try:
             self.requestHandler(sock, addr, self)
         except Exception:
-            self.log.exception("Unhandled exception in request handler for "
-                               "%s:%d", addr[0], addr[1])
+            self.log.exception(
+                "Unhandled exception in request handler for " "%s:%d",
+                addr[0],
+                addr[1],
+            )
         finally:
             self._shutdown_connection(sock)
         self.log.info("Request handler for %s:%d stopped", addr[0], addr[1])
@@ -307,7 +315,7 @@ class ThreadedServer(HTTPServer):
             sock.close()
 
 
-class HttpDetector():
+class HttpDetector:
     log = logging.getLogger("HttpDetector")
     NAME = "http"
     HTTP_VERBS = (b"PUT /", b"GET /")

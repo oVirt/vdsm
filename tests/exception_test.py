@@ -41,8 +41,9 @@ class TestContextException(VdsmTestCase):
 
     def test_context_reason_and_kwargs(self):
         e = ContextException("not hot enough", temperature=42)
-        self.assertEqual(e.context,
-                         dict(reason="not hot enough", temperature=42))
+        self.assertEqual(
+            e.context, dict(reason="not hot enough", temperature=42)
+        )
 
     def test_str(self):
         e = ContextException("not hot enough", temperature=42)

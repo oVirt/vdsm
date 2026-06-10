@@ -23,6 +23,7 @@ def _getLibvirtConnStubFromFile(file):
     class ConnStub:
         def getCapabilities(self):
             return _get_caps_data(file)
+
     return ConnStub()
 
 
@@ -53,47 +54,68 @@ def test_libvirt_cpuset_spec():
     assert cpuset == (False, False, True, False, True, False)
 
 
-@MonkeyPatch(libvirtconnection, 'get',
-             lambda: _getLibvirtConnStubFromFile(
-                 'caps_libvirt_intel_E5649.out'))
+@MonkeyPatch(
+    libvirtconnection,
+    'get',
+    lambda: _getLibvirtConnStubFromFile('caps_libvirt_intel_E5649.out'),
+)
 @MonkeyPatch(numa, 'memory_by_cell', lambda x: {'total': '1', 'free': '1'})
 def test_shared_pool():
     # 2 sockets, 6 cores per socket, 2 threads per core
     numa.update()
     core_cpus = numa.core_cpus()
     online_cpus = list(range(24))
-    cif = FakeClientIF({
-        0: FakeVM(cpumanagement.CPU_POLICY_NONE, {
-            # included in shared pool
-            0: frozenset([2]),
-            1: frozenset([14]),
-        }),
-        1: FakeVM(cpumanagement.CPU_POLICY_MANUAL, {
-            # included in shared pool
-            0: frozenset([0]),
-            1: frozenset([1]),
-        }),
-        2: FakeVM(cpumanagement.CPU_POLICY_DEDICATED, {
-            0: frozenset([12]),
-            1: frozenset([13]),
-        }),
-        3: FakeVM(cpumanagement.CPU_POLICY_ISOLATE_THREADS, {
-            0: frozenset([4]),  # blocks also 16
-            1: frozenset([6]),  # blocks also 18
-        }),
-        4: FakeVM(cpumanagement.CPU_POLICY_SIBLINGS, {
-            0: frozenset([8]),
-            1: frozenset([10]),
-            2: frozenset([20]),  # blocks also 22
-        }),
-    })
+    cif = FakeClientIF(
+        {
+            0: FakeVM(
+                cpumanagement.CPU_POLICY_NONE,
+                {
+                    # included in shared pool
+                    0: frozenset([2]),
+                    1: frozenset([14]),
+                },
+            ),
+            1: FakeVM(
+                cpumanagement.CPU_POLICY_MANUAL,
+                {
+                    # included in shared pool
+                    0: frozenset([0]),
+                    1: frozenset([1]),
+                },
+            ),
+            2: FakeVM(
+                cpumanagement.CPU_POLICY_DEDICATED,
+                {
+                    0: frozenset([12]),
+                    1: frozenset([13]),
+                },
+            ),
+            3: FakeVM(
+                cpumanagement.CPU_POLICY_ISOLATE_THREADS,
+                {
+                    0: frozenset([4]),  # blocks also 16
+                    1: frozenset([6]),  # blocks also 18
+                },
+            ),
+            4: FakeVM(
+                cpumanagement.CPU_POLICY_SIBLINGS,
+                {
+                    0: frozenset([8]),
+                    1: frozenset([10]),
+                    2: frozenset([20]),  # blocks also 22
+                },
+            ),
+        }
+    )
     pool = cpumanagement._shared_pool(cif, online_cpus, core_cpus)
     assert pool == {0, 1, 2, 3, 5, 7, 9, 11, 14, 15, 17, 19, 21, 23}
 
 
-@MonkeyPatch(libvirtconnection, 'get',
-             lambda: _getLibvirtConnStubFromFile(
-                 'caps_libvirt_intel_E5649.out'))
+@MonkeyPatch(
+    libvirtconnection,
+    'get',
+    lambda: _getLibvirtConnStubFromFile('caps_libvirt_intel_E5649.out'),
+)
 @MonkeyPatch(numa, 'memory_by_cell', lambda x: {'total': '1', 'free': '1'})
 def test_siblings():
     # 2 sockets, 6 cores per socket, 2 threads per core
@@ -103,9 +125,11 @@ def test_siblings():
     assert cpumanagement._siblings(cpus, 8) == frozenset([20])
 
 
-@MonkeyPatch(libvirtconnection, 'get',
-             lambda: _getLibvirtConnStubFromFile(
-                 'caps_libvirt_intel_E31220.out'))
+@MonkeyPatch(
+    libvirtconnection,
+    'get',
+    lambda: _getLibvirtConnStubFromFile('caps_libvirt_intel_E31220.out'),
+)
 @MonkeyPatch(numa, 'memory_by_cell', lambda x: {'total': '1', 'free': '1'})
 def test_siblings_no_smt():
     # 1 socket, 4 cores per socket, 1 threads per core

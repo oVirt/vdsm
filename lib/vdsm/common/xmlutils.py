@@ -24,7 +24,8 @@ def tostring(element, pretty=False):
     # found in python 3.6
     stream = io.BytesIO()
     etree.ElementTree(element).write(
-        stream, encoding='utf-8', xml_declaration=True)
+        stream, encoding='utf-8', xml_declaration=True
+    )
     return stream.getvalue().decode('utf-8')
 
 

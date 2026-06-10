@@ -16,12 +16,14 @@ from .marks import requires_root
 def test_proc_info_used(tmpdir):
     path = str(tmpdir.join("file"))
     with open(path, "w") as f:
-        assert list(lsof.proc_info(path)) == [{
-            "command": "pytest",
-            "fd": f.fileno(),
-            "pid": os.getpid(),
-            "user": pwd.getpwuid(os.getuid())[0]
-        }]
+        assert list(lsof.proc_info(path)) == [
+            {
+                "command": "pytest",
+                "fd": f.fileno(),
+                "pid": os.getpid(),
+                "user": pwd.getpwuid(os.getuid())[0],
+            }
+        ]
 
 
 @requires_root

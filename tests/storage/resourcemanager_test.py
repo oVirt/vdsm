@@ -24,6 +24,7 @@ class NullResourceFactory(rm.SimpleResourceFactory):
     """
     A resource factory that has no resources. Used for testing.
     """
+
     def resourceExists(self, name):
         return False
 
@@ -32,6 +33,7 @@ class ErrorResourceFactory(rm.SimpleResourceFactory):
     """
     A resource factory that has no resources. Used for testing.
     """
+
     def createResource(self, name, lockType):
         raise Exception("EPIC FAIL!! LOLZ!!")
 
@@ -133,7 +135,8 @@ class TestResourceManager:
 
     def testErrorInFactory(self, tmp_manager):
         req = rm._registerResource(
-            "error", "resource", rm.EXCLUSIVE, lambda req, res: 1)
+            "error", "resource", rm.EXCLUSIVE, lambda req, res: 1
+        )
         assert req.canceled()
 
     def testRegisterInvalidNamespace(self, tmp_manager):
@@ -148,9 +151,11 @@ class TestResourceManager:
             resources.append(res)
 
         exclusive1 = rm.acquireResource(
-            "failAfterSwitch", "resource", rm.EXCLUSIVE)
+            "failAfterSwitch", "resource", rm.EXCLUSIVE
+        )
         sharedReq1 = rm._registerResource(
-            "failAfterSwitch", "resource", rm.SHARED, callback)
+            "failAfterSwitch", "resource", rm.SHARED, callback
+        )
         exclusive1.release()
         assert sharedReq1.canceled()
         assert resources[0] is None
@@ -222,9 +227,11 @@ class TestResourceManager:
             requests.insert(0, req)
 
         req1 = rm._registerResource(
-            "string", "resource", rm.EXCLUSIVE, callback)
+            "string", "resource", rm.EXCLUSIVE, callback
+        )
         req2 = rm._registerResource(
-            "string", "resource", rm.EXCLUSIVE, callback)
+            "string", "resource", rm.EXCLUSIVE, callback
+        )
 
         assert req1 != req2
         assert hash(req1) != hash(req2)
@@ -258,7 +265,8 @@ class TestResourceManager:
 
         blocker = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
         req = rm._registerResource(
-            "string", "resource", rm.EXCLUSIVE, callback)
+            "string", "resource", rm.EXCLUSIVE, callback
+        )
 
         req.cancel()
 
@@ -284,7 +292,8 @@ class TestResourceManager:
 
         blocker = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
         req = rm._registerResource(
-            "string", "resource", rm.EXCLUSIVE, callback)
+            "string", "resource", rm.EXCLUSIVE, callback
+        )
 
         req.cancel()
 
@@ -296,7 +305,8 @@ class TestResourceManager:
             raise Exception("BUY MILK!")
 
         req = rm._registerResource(
-            "string", "resource", rm.EXCLUSIVE, callback)
+            "string", "resource", rm.EXCLUSIVE, callback
+        )
         req.wait()
 
     def testRereleaseResource(self, tmp_manager):
@@ -312,15 +322,20 @@ class TestResourceManager:
 
         exclusive1 = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
         sharedReq1 = rm._registerResource(
-            "string", "resource", rm.SHARED, callback)
+            "string", "resource", rm.SHARED, callback
+        )
         sharedReq2 = rm._registerResource(
-            "string", "resource", rm.SHARED, callback)
+            "string", "resource", rm.SHARED, callback
+        )
         exclusiveReq1 = rm._registerResource(
-            "string", "resource", rm.EXCLUSIVE, callback)
+            "string", "resource", rm.EXCLUSIVE, callback
+        )
         sharedReq3 = rm._registerResource(
-            "string", "resource", rm.SHARED, callback)
+            "string", "resource", rm.SHARED, callback
+        )
         sharedReq4 = rm._registerResource(
-            "string", "resource", rm.SHARED, callback)
+            "string", "resource", rm.SHARED, callback
+        )
 
         assert not sharedReq1.granted()
         assert not sharedReq2.granted()
@@ -356,15 +371,20 @@ class TestResourceManager:
 
         exclusive1 = rm.acquireResource(namespace, "resource", rm.EXCLUSIVE)
         sharedReq1 = rm._registerResource(
-            namespace, "resource", rm.SHARED, callback)
+            namespace, "resource", rm.SHARED, callback
+        )
         sharedReq2 = rm._registerResource(
-            namespace, "resource", rm.SHARED, callback)
+            namespace, "resource", rm.SHARED, callback
+        )
         exclusive2 = rm._registerResource(
-            namespace, "resource", rm.EXCLUSIVE, callback)
+            namespace, "resource", rm.EXCLUSIVE, callback
+        )
         exclusive3 = rm._registerResource(
-            namespace, "resource", rm.EXCLUSIVE, callback)
+            namespace, "resource", rm.EXCLUSIVE, callback
+        )
         sharedReq3 = rm._registerResource(
-            namespace, "resource", rm.SHARED, callback)
+            namespace, "resource", rm.SHARED, callback
+        )
 
         assert exclusive1.read() == "resource:exclusive"
         exclusive1.release()
@@ -460,13 +480,17 @@ class TestResourceManager:
 
         exclusive1 = rm.acquireResource("storage", "resource", rm.EXCLUSIVE)
         sharedReq1 = rm._registerResource(
-            "storage", "resource", rm.SHARED, callback)
+            "storage", "resource", rm.SHARED, callback
+        )
         sharedReq2 = rm._registerResource(
-            "storage", "resource", rm.SHARED, callback)
+            "storage", "resource", rm.SHARED, callback
+        )
         exclusiveReq1 = rm._registerResource(
-            "storage", "resource", rm.EXCLUSIVE, callback)
+            "storage", "resource", rm.EXCLUSIVE, callback
+        )
         exclusiveReq2 = rm._registerResource(
-            "storage", "resource", rm.EXCLUSIVE, callback)
+            "storage", "resource", rm.EXCLUSIVE, callback
+        )
 
         assert not sharedReq1.granted()
         assert not sharedReq2.granted()
@@ -498,11 +522,14 @@ class TestResourceManager:
             resources.append(res)
 
         exclusiveReq1 = rm._registerResource(
-            "storage", "resource", rm.EXCLUSIVE, callback)
+            "storage", "resource", rm.EXCLUSIVE, callback
+        )
         exclusiveReq2 = rm._registerResource(
-            "storage", "resource", rm.EXCLUSIVE, callback)
+            "storage", "resource", rm.EXCLUSIVE, callback
+        )
         exclusiveReq3 = rm._registerResource(
-            "storage", "resource", rm.EXCLUSIVE, callback)
+            "storage", "resource", rm.EXCLUSIVE, callback
+        )
 
         assert exclusiveReq1.granted()
         assert not exclusiveReq2.canceled()
@@ -538,10 +565,12 @@ class TestResourceManager:
 
         def register():
             time.sleep(rnd.randint(0, 4))
-            rm._registerResource("string",
-                                 "resource",
-                                 lockTranslator[rnd.randint(0, 1)],
-                                 callback)
+            rm._registerResource(
+                "string",
+                "resource",
+                lockTranslator[rnd.randint(0, 1)],
+                callback,
+            )
             threadLimit.release()
 
         def releaseShared(req, res):
@@ -612,10 +641,13 @@ class TestLock:
         assert a.name == 'name'
         assert a.mode == 'mode'
 
-    @pytest.mark.parametrize('a, b', [
-        (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
-        (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
-    ])
+    @pytest.mark.parametrize(
+        'a, b',
+        [
+            (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
+            (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
+        ],
+    )
     def test_less_than(self, a, b):
         b = rm.Lock(*b)
         a = rm.Lock(*a)
@@ -642,9 +674,13 @@ class TestLock:
         lock = rm.Lock('ns_A', 'name_A', rm.SHARED)
         expected = []
         lock.acquire()
-        expected.append(('acquireResource',
-                         (lock.ns, lock.name, lock.mode),
-                         {"timeout": None}))
+        expected.append(
+            (
+                'acquireResource',
+                (lock.ns, lock.name, lock.mode),
+                {"timeout": None},
+            )
+        )
         assert expected == rm._manager.__calls__
         lock.release()
         expected.append(('releaseResource', (lock.ns, lock.name), {}))
@@ -660,7 +696,7 @@ class TestLock:
                 (
                     'acquireResource',
                     (lock.ns, lock.name, lock.mode),
-                    {"timeout": None}
+                    {"timeout": None},
                 )
             ]
             rm._manager.__calls__.clear()
@@ -685,13 +721,9 @@ class TestLock:
             (
                 'acquireResource',
                 (lock.ns, lock.name, lock.mode),
-                {"timeout": None}
+                {"timeout": None},
             ),
-            (
-                'releaseResource',
-                (lock.ns, lock.name),
-                {}
-            )
+            ('releaseResource', (lock.ns, lock.name), {}),
         ]
 
     def test_with_release_error(self, monkeypatch):
@@ -771,16 +803,29 @@ class TestResourceOwner:
         owner.releaseAll()
         assert owner_object.actions == []
 
-    @pytest.mark.parametrize('old_locktype, new_locktype', [
-        pytest.param(rm.SHARED, rm.SHARED,
-                     id="double acquire for shared lock"),
-        pytest.param(rm.EXCLUSIVE, rm.EXCLUSIVE,
-                     id="double acquire for exclusive lock"),
-        pytest.param(rm.SHARED, rm.EXCLUSIVE,
-                     id="switch from shared to exclusive lock"),
-        pytest.param(rm.EXCLUSIVE, rm.SHARED,
-                     id="switch from exclusive to shared lock"),
-    ])
+    @pytest.mark.parametrize(
+        'old_locktype, new_locktype',
+        [
+            pytest.param(
+                rm.SHARED, rm.SHARED, id="double acquire for shared lock"
+            ),
+            pytest.param(
+                rm.EXCLUSIVE,
+                rm.EXCLUSIVE,
+                id="double acquire for exclusive lock",
+            ),
+            pytest.param(
+                rm.SHARED,
+                rm.EXCLUSIVE,
+                id="switch from shared to exclusive lock",
+            ),
+            pytest.param(
+                rm.EXCLUSIVE,
+                rm.SHARED,
+                id="switch from exclusive to shared lock",
+            ),
+        ],
+    )
     def test_acquire_twice(self, old_locktype, new_locktype, tmp_manager):
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)
@@ -797,10 +842,13 @@ class TestResourceOwner:
         assert "resource" in error_str
         assert "fake_id" in error_str
 
-    @pytest.mark.parametrize('locktype', [
-        rm.SHARED,
-        rm.EXCLUSIVE,
-    ])
+    @pytest.mark.parametrize(
+        'locktype',
+        [
+            rm.SHARED,
+            rm.EXCLUSIVE,
+        ],
+    )
     def test_acquire_missing_resource(self, locktype, tmp_manager):
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)
@@ -812,10 +860,13 @@ class TestResourceOwner:
         assert "no_such_resource" in error_str
         assert "null" in error_str
 
-    @pytest.mark.parametrize('locktype', [
-        rm.SHARED,
-        rm.EXCLUSIVE,
-    ])
+    @pytest.mark.parametrize(
+        'locktype',
+        [
+            rm.SHARED,
+            rm.EXCLUSIVE,
+        ],
+    )
     def test_acquire_error(self, locktype, tmp_manager):
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)

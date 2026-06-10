@@ -12,9 +12,9 @@ def test_empty_parser():
     assert parser.pop_frame() is None
 
 
-@pytest.mark.parametrize("command", [
-    Command.CONNECT, Command.SEND, Command.DISCONNECT
-])
+@pytest.mark.parametrize(
+    "command", [Command.CONNECT, Command.SEND, Command.DISCONNECT]
+)
 def test_parsing_simple_frame(command):
     parser = Parser()
     parser.parse(Frame(command).encode())
@@ -25,13 +25,16 @@ def test_parsing_simple_frame(command):
     assert parsed_frame.body == b""
 
 
-@pytest.mark.parametrize("headers", [
-    {},
-    {"abc": "def"},
-    {"abc": "def", "geh": "xyz"},
-    {u"\u0105b\u0107": "def"},
-    {"abc": "with\nescaped:chars"},
-])
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {},
+        {"abc": "def"},
+        {"abc": "def", "geh": "xyz"},
+        {u"\u0105b\u0107": "def"},
+        {"abc": "with\nescaped:chars"},
+    ],
+)
 def test_parsing_frame_with_headers(headers):
     parser = Parser()
     frame = Frame(Command.CONNECT, headers)
@@ -43,10 +46,7 @@ def test_parsing_frame_with_headers(headers):
     assert parsed_frame.body == b""
 
 
-@pytest.mark.parametrize("body", [
-    b"zorro",
-    u"\u0105b\u0107".encode("utf-8")
-])
+@pytest.mark.parametrize("body", [b"zorro", u"\u0105b\u0107".encode("utf-8")])
 def test_parsing_frame_with_headers_and_body(body):
     parser = Parser()
     frame = Frame(Command.CONNECT, {"abc": "def"}, body)
@@ -114,16 +114,21 @@ def test_parser_should_raise_for_frames_with_invalid_content_length():
     assert "Frame doesn't end with NULL byte" in str(err.value)
 
 
-@pytest.mark.parametrize("encoded_frame", [
-    b"CONNECT\nabc:def\ncontent-length:5\n\nzorro\x00",
-    b"CONNECT\nabc:def\n\nzorro\x00",
-])
+@pytest.mark.parametrize(
+    "encoded_frame",
+    [
+        b"CONNECT\nabc:def\ncontent-length:5\n\nzorro\x00",
+        b"CONNECT\nabc:def\n\nzorro\x00",
+    ],
+)
 def test_parser_should_wait_until_frame_is_fully_transfered(encoded_frame):
     parser = Parser()
 
     # When iterating over bytes in py3 you get ints, not byte slices,
     # so we need to use this quirky way of obtaining single-byte slices
-    single_bytes = [encoded_frame[i:i + 1] for i in range(len(encoded_frame))]
+    single_bytes = [
+        encoded_frame[i : i + 1] for i in range(len(encoded_frame))
+    ]
 
     for byte in single_bytes[:-1]:
         parser.parse(byte)

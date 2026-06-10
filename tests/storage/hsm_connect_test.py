@@ -67,48 +67,73 @@ def fake_hsm(monkeypatch):
     """
     monkeypatch.setattr(hsm, 'sdCache', FakeStorageDomainCache())
     monkeypatch.setattr(hsm.vars, 'task', task.Task("fake-task-id"))
-    monkeypatch.setattr(storageServer, 'ConnectionFactory',
-                        FakeConnectionFactory())
+    monkeypatch.setattr(
+        storageServer, 'ConnectionFactory', FakeConnectionFactory()
+    )
     return FakeConnectHSM()
 
 
-@pytest.mark.parametrize("conn_type,expected_calls", [
-    (sd.NFS_DOMAIN, [('invalidateStorage', (), {})]),
-    (sd.POSIXFS_DOMAIN, [('invalidateStorage', (), {})]),
-    (sd.GLUSTERFS_DOMAIN, [('invalidateStorage', (), {})]),
-    (sd.LOCALFS_DOMAIN, [('invalidateStorage', (), {})]),
-    (sd.ISCSI_DOMAIN, [('refreshStorage', (), {}),
-                       ('invalidateStorage', (), {})]),
-    (sd.FCP_DOMAIN, [('refreshStorage', (), {}),
-                     ('invalidateStorage', (), {})]),
-])
+@pytest.mark.parametrize(
+    "conn_type,expected_calls",
+    [
+        (sd.NFS_DOMAIN, [('invalidateStorage', (), {})]),
+        (sd.POSIXFS_DOMAIN, [('invalidateStorage', (), {})]),
+        (sd.GLUSTERFS_DOMAIN, [('invalidateStorage', (), {})]),
+        (sd.LOCALFS_DOMAIN, [('invalidateStorage', (), {})]),
+        (
+            sd.ISCSI_DOMAIN,
+            [('refreshStorage', (), {}), ('invalidateStorage', (), {})],
+        ),
+        (
+            sd.FCP_DOMAIN,
+            [('refreshStorage', (), {}), ('invalidateStorage', (), {})],
+        ),
+    ],
+)
 def test_refresh_storage_once(fake_hsm, conn_type, expected_calls):
-    connections = [{'id': '1', 'connection': 'test', 'port': '3660'},
-                   {'id': '2', 'connection': 'test2', 'port': '3660'},
-                   {'id': '3', 'connection': 'test3', 'port': '3660'}]
+    connections = [
+        {'id': '1', 'connection': 'test', 'port': '3660'},
+        {'id': '2', 'connection': 'test2', 'port': '3660'},
+        {'id': '3', 'connection': 'test3', 'port': '3660'},
+    ]
     fake_hsm.connectStorageServer(conn_type, 'SPUID', connections)
 
     calls = getattr(hsm.sdCache, "__calls__", [])
     assert calls == expected_calls
 
 
-@pytest.mark.parametrize("conn_type,connections", [
-    (sd.NFS_DOMAIN,
-     [{'id': '1', 'connection': '/my_sd', 'protocol_version': '3'}]),
-    (sd.ISCSI_DOMAIN,
-     [{'id': '2', 'connection': 'test', 'port': '3660'}]),
-    (sd.FCP_DOMAIN,
-     [{'id': '3', 'connection': 'test'}]),
-    (sd.NFS_DOMAIN,
-     [{'id': '4', 'connection': '/my_sd', 'protocol_version': '3'},
-      {'id': '5', 'connection': '/my_sd2', 'protocol_version': '3'}]),
-    (sd.ISCSI_DOMAIN,
-     [{'id': '6', 'connection': 'test', 'port': '3660'},
-      {'id': '7', 'connection': 'test2', 'port': '3660'}]),
-    (sd.FCP_DOMAIN,
-     [{'id': '8', 'connection': 'test'},
-      {'id': '9', 'connection': 'test2'}]),
-])
+@pytest.mark.parametrize(
+    "conn_type,connections",
+    [
+        (
+            sd.NFS_DOMAIN,
+            [{'id': '1', 'connection': '/my_sd', 'protocol_version': '3'}],
+        ),
+        (sd.ISCSI_DOMAIN, [{'id': '2', 'connection': 'test', 'port': '3660'}]),
+        (sd.FCP_DOMAIN, [{'id': '3', 'connection': 'test'}]),
+        (
+            sd.NFS_DOMAIN,
+            [
+                {'id': '4', 'connection': '/my_sd', 'protocol_version': '3'},
+                {'id': '5', 'connection': '/my_sd2', 'protocol_version': '3'},
+            ],
+        ),
+        (
+            sd.ISCSI_DOMAIN,
+            [
+                {'id': '6', 'connection': 'test', 'port': '3660'},
+                {'id': '7', 'connection': 'test2', 'port': '3660'},
+            ],
+        ),
+        (
+            sd.FCP_DOMAIN,
+            [
+                {'id': '8', 'connection': 'test'},
+                {'id': '9', 'connection': 'test2'},
+            ],
+        ),
+    ],
+)
 def test_connect(fake_hsm, conn_type, connections):
     fake_hsm.connectStorageServer(conn_type, 'SPUID', connections)
 
@@ -117,32 +142,59 @@ def test_connect(fake_hsm, conn_type, connections):
         assert sc[con["id"]].connected
 
 
-@pytest.mark.parametrize("conn_type", [
-    sd.NFS_DOMAIN, sd.ISCSI_DOMAIN
-])
+@pytest.mark.parametrize("conn_type", [sd.NFS_DOMAIN, sd.ISCSI_DOMAIN])
 def test_failed_connection(fake_hsm, conn_type):
     connections = [
-        {'id': 'success-1', 'connection': '/my_sd', 'protocol_version': '3',
-         'iqn': None, 'vfsType': None, 'mountOptions': None,
-         'nfsVersion': 'AUTO', 'nfsRetrans': None, 'nfsTimeo': None,
-         'iface': None, 'netIfaceName': None, 'port': '3660'},
-        {'id': 'failing-1', 'connection': '/my_sd2', 'protocol_version': '3',
-         'iqn': None, 'vfsType': None, 'mountOptions': None,
-         'nfsVersion': 'AUTO', 'nfsRetrans': None, 'nfsTimeo': None,
-         'iface': None, 'netIfaceName': None, 'port': '3660'},
-        {'id': 'success-2', 'connection': '/my_sd3', 'protocol_version': '3',
-         'iqn': None, 'vfsType': None, 'mountOptions': None,
-         'nfsVersion': 'AUTO', 'nfsRetrans': None, 'nfsTimeo': None,
-         'iface': None, 'netIfaceName': None, 'port': '3660'}
+        {
+            'id': 'success-1',
+            'connection': '/my_sd',
+            'protocol_version': '3',
+            'iqn': None,
+            'vfsType': None,
+            'mountOptions': None,
+            'nfsVersion': 'AUTO',
+            'nfsRetrans': None,
+            'nfsTimeo': None,
+            'iface': None,
+            'netIfaceName': None,
+            'port': '3660',
+        },
+        {
+            'id': 'failing-1',
+            'connection': '/my_sd2',
+            'protocol_version': '3',
+            'iqn': None,
+            'vfsType': None,
+            'mountOptions': None,
+            'nfsVersion': 'AUTO',
+            'nfsRetrans': None,
+            'nfsTimeo': None,
+            'iface': None,
+            'netIfaceName': None,
+            'port': '3660',
+        },
+        {
+            'id': 'success-2',
+            'connection': '/my_sd3',
+            'protocol_version': '3',
+            'iqn': None,
+            'vfsType': None,
+            'mountOptions': None,
+            'nfsVersion': 'AUTO',
+            'nfsRetrans': None,
+            'nfsTimeo': None,
+            'iface': None,
+            'netIfaceName': None,
+            'port': '3660',
+        },
     ]
     result = fake_hsm.connectStorageServer(conn_type, 'SPUID', connections)
     expected = {
-        'statuslist':
-            [
-                {'status': 0, 'id': 'success-1'},
-                {'status': 100, 'id': 'failing-1'},
-                {'status': 0, 'id': 'success-2'}
-            ]
+        'statuslist': [
+            {'status': 0, 'id': 'success-1'},
+            {'status': 100, 'id': 'failing-1'},
+            {'status': 0, 'id': 'success-2'},
+        ]
     }
     assert expected == result
     sc = storageServer.ConnectionFactory.connections

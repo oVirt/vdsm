@@ -10,7 +10,6 @@ from . import hwclass
 from . import lookup
 from . import storage
 
-
 _PAYLOAD_PATH = 'PAYLOAD:'
 
 
@@ -98,7 +97,8 @@ def get_metadata(drive):
     attrs = {'devtype': hwclass.DISK, 'name': drive.name}
     data = core.get_metadata_values(drive)
     core.update_metadata_from_object(
-        data, drive, METADATA_KEYS + METADATA_NESTED_KEYS)
+        data, drive, METADATA_KEYS + METADATA_NESTED_KEYS
+    )
     if 'GUID' in data and 'imageID' not in data:
         # For forward compatibility of the engine with LUN disks.
         data['imageID'] = data['GUID']
@@ -112,8 +112,10 @@ def _update_source_params(params, disk_type, source):
     elif disk_type == 'block':
         path = source.attrib.get('dev')
         reservations = vmxml.find_first(source, 'reservations', None)
-        if (reservations is not None and
-                reservations.attrib.get('managed') == 'yes'):
+        if (
+            reservations is not None
+            and reservations.attrib.get('managed') == 'yes'
+        ):
             params['managed_reservation'] = True
     elif disk_type == 'file':
         path = source.attrib.get('file', '')
@@ -121,8 +123,7 @@ def _update_source_params(params, disk_type, source):
         path = source.attrib.get('name')
         params['protocol'] = source.attrib.get('protocol')
         params['hosts'] = [
-            host.attrib.copy()
-            for host in vmxml.find_all(source, 'host')
+            host.attrib.copy() for host in vmxml.find_all(source, 'host')
         ]
     params['path'] = path
 
@@ -187,10 +188,7 @@ def _update_iotune_params(params, dev):
     if iotune is None:
         return
 
-    iotune_params = {
-        setting.tag: int(setting.text)
-        for setting in iotune
-    }
+    iotune_params = {setting.tag: int(setting.text) for setting in iotune}
     if iotune_params:
         params['iotune'] = iotune_params
 
@@ -262,8 +260,9 @@ def change_disk(disk_element, disk_devices, log):
         update_disk_element_from_object(disk_element, vm_drive, log)
 
 
-def update_disk_element_from_object(disk_element, vm_drive, log,
-                                    replace_attribs=False):
+def update_disk_element_from_object(
+    disk_element, vm_drive, log, replace_attribs=False
+):
     # key: (old_value, new_value)
     changes = {}
 
@@ -310,8 +309,10 @@ def update_disk_element_from_object(disk_element, vm_drive, log,
     try:
         vmxml.find_first(source, 'seclabel')
     except vmxml.NotFound:
-        if disk_type == storage.DISK_TYPE.NETWORK and \
-                source.attrib.get('protocol') != 'gluster':
+        if (
+            disk_type == storage.DISK_TYPE.NETWORK
+            and source.attrib.get('protocol') != 'gluster'
+        ):
             # skip for non-gluster drives (CINDER) as per LibvirtVmXmlBuilder
             pass
         else:
@@ -326,5 +327,5 @@ def _log_changes(log, device, device_id, changes):
             continue
 
         log.info(
-            '%s %r %s: %r -> %r',
-            device, device_id, key, old_value, new_value)
+            '%s %r %s: %r -> %r', device, device_id, key, old_value, new_value
+        )

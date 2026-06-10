@@ -5,14 +5,16 @@ from vdsm.common import exception
 
 
 class JsonRpcErrorBase(exception.ContextException):
-    """ Base class for JSON RPC errors """
+    """Base class for JSON RPC errors"""
 
 
 class JsonRpcParseError(JsonRpcErrorBase):
     code = -32700
-    msg = ("Invalid JSON was received by the server. "
-           "An error occurred on the server while parsing "
-           "the JSON text.")
+    msg = (
+        "Invalid JSON was received by the server. "
+        "An error occurred on the server while parsing "
+        "the JSON text."
+    )
 
 
 class JsonRpcInvalidRequestError(JsonRpcErrorBase):
@@ -22,8 +24,7 @@ class JsonRpcInvalidRequestError(JsonRpcErrorBase):
 
 class JsonRpcMethodNotFoundError(JsonRpcErrorBase):
     code = -32601
-    msg = ("The method does not exist or is not "
-           "available")
+    msg = "The method does not exist or is not " "available"
 
 
 class JsonRpcInvalidParamsError(JsonRpcErrorBase):

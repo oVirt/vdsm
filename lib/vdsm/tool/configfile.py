@@ -21,6 +21,7 @@ def context(func):
         if not args[0]._context:
             raise RuntimeError("Must be called from a managed context.")
         func(*args, **kwargs)
+
     return inner
 
 
@@ -59,17 +60,17 @@ class ConfigFile(object):
     lineComment parameter indicates the content of comment.
     """
 
-    def __init__(self,
-                 filename,
-                 version,
-                 sectionStart='## beginning of configuration section by vdsm',
-                 sectionEnd='## end of configuration section by vdsm',
-                 prefix='# VDSM backup',
-                 lineComment='by vdsm'):
+    def __init__(
+        self,
+        filename,
+        version,
+        sectionStart='## beginning of configuration section by vdsm',
+        sectionEnd='## end of configuration section by vdsm',
+        prefix='# VDSM backup',
+        lineComment='by vdsm',
+    ):
         if not os.path.exists(filename):
-            raise OSError(
-                'No such file or directory: %s' % (filename, )
-            )
+            raise OSError('No such file or directory: %s' % (filename,))
 
         self._filename = filename
         self._context = False
@@ -98,13 +99,15 @@ class ConfigFile(object):
         with io.open(self._filename, 'r', encoding='utf8') as f:
             for line in f:
                 if self._remove:
-                    if (self._rmstate == BEFORE and
-                            line.startswith(self._sectionStart)):
+                    if self._rmstate == BEFORE and line.startswith(
+                        self._sectionStart
+                    ):
 
                         self._rmstate = WITHIN
 
-                    elif (self._rmstate == WITHIN and
-                            line.startswith(self._sectionEnd)):
+                    elif self._rmstate == WITHIN and line.startswith(
+                        self._sectionEnd
+                    ):
 
                         self._rmstate = AFTER
                         continue
@@ -112,7 +115,7 @@ class ConfigFile(object):
                 if not self._remove or self._rmstate != WITHIN:
                     if self._prefixRemove:
                         if line.startswith(self._prefix):
-                            line = line[len(self._prefix):]
+                            line = line[len(self._prefix) :]
                     if self._prefixAdd:
                         line = self._prefix + line
                     # remove this if at 4.0. see  'Backward compatibility'
@@ -227,6 +230,7 @@ class ParserWrapper(object):
     configparser is for parsing of ini files. Use this
     class for files with no sections.
     """
+
     def __init__(self, defaults=None):
         self.wrapped = configparser.RawConfigParser(defaults=defaults)
 
@@ -244,6 +248,4 @@ class ParserWrapper(object):
 
     def read(self, path):
         with io.open(path, 'r', encoding='utf8') as f:
-            return self.wrapped.read_file(
-                io.StringIO(u'[root]\n' + f.read())
-            )
+            return self.wrapped.read_file(io.StringIO(u'[root]\n' + f.read()))

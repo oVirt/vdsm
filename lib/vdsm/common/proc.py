@@ -31,24 +31,62 @@ def pidstat(pid):
         procNameStart = statline.find("(")
         procNameEnd = statline.rfind(")")
         res.append(int(statline[:procNameStart]))
-        res.append(statline[procNameStart + 1:procNameEnd])
-        args = statline[procNameEnd + 2:].split()
+        res.append(statline[procNameStart + 1 : procNameEnd])
+        args = statline[procNameEnd + 2 :].split()
         res.append(args[0])
         res.extend([int(item) for item in args[1:]])
         # Only 44 fields are documented in man page while /proc/pid/stat has 52
         # The rest of the fields contain the process memory layout and
         # exit_code, which are not relevant for our use.
-        return _STAT(*res[:len(_STAT._fields)])
+        return _STAT(*res[: len(_STAT._fields)])
 
 
-_STAT = namedtuple('stat', ('pid', 'comm', 'state', 'ppid', 'pgrp', 'session',
-                            'tty_nr', 'tpgid', 'flags', 'minflt', 'cminflt',
-                            'majflt', 'cmajflt', 'utime', 'stime', 'cutime',
-                            'cstime', 'priority', 'nice', 'num_threads',
-                            'itrealvalue', 'starttime', 'vsize', 'rss',
-                            'rsslim', 'startcode', 'endcode', 'startstack',
-                            'kstkesp', 'kstkeip', 'signal', 'blocked',
-                            'sigignore', 'sigcatch', 'wchan', 'nswap',
-                            'cnswap', 'exit_signal', 'processor',
-                            'rt_priority', 'policy', 'delayacct_blkio_ticks',
-                            'guest_time', 'cguest_time'))
+_STAT = namedtuple(
+    'stat',
+    (
+        'pid',
+        'comm',
+        'state',
+        'ppid',
+        'pgrp',
+        'session',
+        'tty_nr',
+        'tpgid',
+        'flags',
+        'minflt',
+        'cminflt',
+        'majflt',
+        'cmajflt',
+        'utime',
+        'stime',
+        'cutime',
+        'cstime',
+        'priority',
+        'nice',
+        'num_threads',
+        'itrealvalue',
+        'starttime',
+        'vsize',
+        'rss',
+        'rsslim',
+        'startcode',
+        'endcode',
+        'startstack',
+        'kstkesp',
+        'kstkeip',
+        'signal',
+        'blocked',
+        'sigignore',
+        'sigcatch',
+        'wchan',
+        'nswap',
+        'cnswap',
+        'exit_signal',
+        'processor',
+        'rt_priority',
+        'policy',
+        'delayacct_blkio_ticks',
+        'guest_time',
+        'cguest_time',
+    ),
+)

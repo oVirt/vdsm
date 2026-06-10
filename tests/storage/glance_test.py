@@ -42,7 +42,8 @@ def glance_image(request):
     """
     try:
         out = curlImgWrap.get(
-            request.param + "?sort_key=size&sort_dir=asc&limit=1")
+            request.param + "?sort_key=size&sort_dir=asc&limit=1"
+        )
     except curlImgWrap.CurlError:
         return pytest.skip("Glance server is not reachable")
 
@@ -75,7 +76,8 @@ def test_image_size(glance_image):
 @pytest.mark.integration
 def test_image_download(monkeypatch, tmpdir, glance_image):
     monkeypatch.setattr(
-        constants, "EXT_CURL_IMG_WRAP", "../lib/vdsm/storage/curl-img-wrap")
+        constants, "EXT_CURL_IMG_WRAP", "../lib/vdsm/storage/curl-img-wrap"
+    )
 
     img_dest = str(tmpdir.join(glance_image["id"]))
     glance.download_image(img_dest, glance_image["url"])

@@ -23,29 +23,32 @@ class TestReplacePlaceholders(XMLTestCase):
     def test_replace_values(self):
         xml_str = read_data('sysinfo_snippet_template.xml')
         dom = xmlutils.fromstring(xml_str)
-        with MonkeyPatchScope([
-            (osinfo, 'version', self._version),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (osinfo, 'version', self._version),
+            ]
+        ):
             domxml_preprocess.replace_placeholders(
-                dom, cpuarch.X86_64, serial='test-serial')
+                dom, cpuarch.X86_64, serial='test-serial'
+            )
         self.assertXMLEqual(
             xmlutils.tostring(dom, pretty=True),
-            read_data('sysinfo_snippet_filled.xml')
+            read_data('sysinfo_snippet_filled.xml'),
         )
 
     def test_skip_without_placeholders(self):
         # any domain without placeholders is fine, picked random one
         xml_str = read_data('vm_hosted_engine_42.xml')
         dom = xmlutils.fromstring(xml_str)
-        with MonkeyPatchScope([
-            (osinfo, 'version', self._version),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (osinfo, 'version', self._version),
+            ]
+        ):
             domxml_preprocess.replace_placeholders(
-                dom, cpuarch.X86_64, serial='test-serial')
-        self.assertXMLEqual(
-            xmlutils.tostring(dom, pretty=True),
-            xml_str
-        )
+                dom, cpuarch.X86_64, serial='test-serial'
+            )
+        self.assertXMLEqual(xmlutils.tostring(dom, pretty=True), xml_str)
 
     def _version(self):
         return {
@@ -63,12 +66,11 @@ class TestReplaceDiskXML(XMLTestCase):
         """
         dom, disk_devs = self._make_env()
         domxml_preprocess.update_disks_xml_from_objs(
-            FakeVM(self.log), dom, disk_devs)
+            FakeVM(self.log), dom, disk_devs
+        )
         self.assertXMLEqual(
-            extract_device_snippet(
-                'disk',
-                dom=dom),
-            read_data('disk_updated_snippet.xml')
+            extract_device_snippet('disk', dom=dom),
+            read_data('disk_updated_snippet.xml'),
         )
 
     def test_replace_disks_xml(self):
@@ -76,7 +78,7 @@ class TestReplaceDiskXML(XMLTestCase):
         domxml_preprocess.replace_disks_xml(dom, disk_devs)
         self.assertXMLEqual(
             xmlutils.tostring(dom, pretty=True),
-            read_data('domain_disk_block.xml')
+            read_data('domain_disk_block.xml'),
         )
 
     def test_replace_cdrom_withoutource_file(self):
@@ -101,11 +103,12 @@ class TestReplaceDiskXML(XMLTestCase):
             vmdevices.storage.Drive(self.log, **cdrom_params),
         ]
         domxml_preprocess.update_disks_xml_from_objs(
-            FakeVM(self.log), dom, disk_devs)
+            FakeVM(self.log), dom, disk_devs
+        )
         cdrom_elem = dom.find('./devices/disk[@device="cdrom"]')
         self.assertXMLEqual(
             xmlutils.tostring(cdrom_elem, pretty=True),
-            cdrom_xml.format(file_src="file='' ")
+            cdrom_xml.format(file_src="file='' "),
         )
 
     def test_replace_cdrom_with_minimal_drive(self):
@@ -133,11 +136,11 @@ class TestReplaceDiskXML(XMLTestCase):
             vmdevices.storage.Drive(self.log, **cdrom_params),
         ]
         domxml_preprocess.update_disks_xml_from_objs(
-            FakeVM(self.log), dom, disk_devs)
+            FakeVM(self.log), dom, disk_devs
+        )
         cdrom_elem = dom.find('./devices/disk[@device="cdrom"]')
         self.assertXMLEqual(
-            xmlutils.tostring(cdrom_elem, pretty=True),
-            cdrom_xml
+            xmlutils.tostring(cdrom_elem, pretty=True), cdrom_xml
         )
 
     def test_with_sysprep_floppy(self):
@@ -155,12 +158,13 @@ class TestReplaceDiskXML(XMLTestCase):
             'device': 'floppy',
             'path': 'PAYLOAD:',
             'propagateErrors': 'off',
-            'type': 'disk'
+            'type': 'disk',
         }
         floppy_obj = vmdevices.storage.Drive(self.log, **floppy_params)
         disk_devs = [floppy_obj]
         domxml_preprocess.update_disks_xml_from_objs(
-            FakeVM(self.log), dom, disk_devs)
+            FakeVM(self.log), dom, disk_devs
+        )
 
         floppy_elem = dom.find('./devices/disk[@device="floppy"]')
         self.assertXMLEqual(
@@ -194,7 +198,9 @@ class TestReplaceDiskXML(XMLTestCase):
           <boot order='1'/>
           <alias name='scsi0-0-0-0'/>
           <address type='drive' controller='0' bus='0' target='0' unit='0'/>
-        </disk>'''.format(path=disk_path)
+        </disk>'''.format(
+            path=disk_path
+        )
         disk_params = vmdevices.storagexml.parse(
             xmlutils.fromstring(disk_xml), disk_meta
         )
@@ -213,7 +219,7 @@ class TestReplaceDiskXML(XMLTestCase):
         )
         disk_devs = [
             vmdevices.storage.Drive(self.log, **cdrom_params),
-            vmdevices.storage.Drive(self.log, **disk_params)
+            vmdevices.storage.Drive(self.log, **disk_params),
         ]
         return dom, disk_devs
 
@@ -233,11 +239,14 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
         """
         dom = xmlutils.fromstring(read_data('domain_disk_file.xml'))
 
-        with MonkeyPatchScope([
-            (hooks, 'before_device_create', self._hook),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (hooks, 'before_device_create', self._hook),
+            ]
+        ):
             domxml_preprocess.replace_device_xml_with_hooks_xml(
-                dom, 'test', {})
+                dom, 'test', {}
+            )
 
         assert self._hook_params == []
 
@@ -249,11 +258,14 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
         dom_disk_file_str = read_data('vm_replace_md_base.xml')
         dom = xmlutils.fromstring(dom_disk_file_str)
 
-        with MonkeyPatchScope([
-            (hooks, 'before_device_create', self._hook),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (hooks, 'before_device_create', self._hook),
+            ]
+        ):
             domxml_preprocess.replace_device_xml_with_hooks_xml(
-                dom, 'test', {})
+                dom, 'test', {}
+            )
 
         addr = (
             '<address bus="0x00" domain="0x0000"'
@@ -269,9 +281,10 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
     <filterref filter="vdsm-no-mac-spoofing" />
     <bandwidth />
 </interface>
-'''.format(addr=addr)
-        assert self._hook_params == \
-            [(expected_xml, {}, {})]
+'''.format(
+            addr=addr
+        )
+        assert self._hook_params == [(expected_xml, {}, {})]
 
 
 class TestReplaceLeaseXML(XMLTestCase):
@@ -282,7 +295,8 @@ class TestReplaceLeaseXML(XMLTestCase):
         self.xml_str = read_data('hostedengine_lease.xml')
         self.dom = xmlutils.fromstring(self.xml_str)
         self.disk_devs = domxml_preprocess._make_disk_devices(
-            self.xml_str, self.log)
+            self.xml_str, self.log
+        )
 
         self.driveVolInfo = {
             'leasePath': '/fake/drive/lease/path',
@@ -291,11 +305,11 @@ class TestReplaceLeaseXML(XMLTestCase):
         self.vmVolInfo = {
             # from XML
             'leasePath': 'LEASE-PATH:'
-                         '9eaa286e-37d6-429e-a46b-63bec1dd4868:'
-                         '4f0a775f-ed16-4832-ab9f-f0427f33ab92',
+            '9eaa286e-37d6-429e-a46b-63bec1dd4868:'
+            '4f0a775f-ed16-4832-ab9f-f0427f33ab92',
             'leaseOffset': 'LEASE-OFFSET:'
-                           '9eaa286e-37d6-429e-a46b-63bec1dd4868:'
-                           '4f0a775f-ed16-4832-ab9f-f0427f33ab92',
+            '9eaa286e-37d6-429e-a46b-63bec1dd4868:'
+            '4f0a775f-ed16-4832-ab9f-f0427f33ab92',
         }
 
     def test_no_leases(self):
@@ -306,23 +320,25 @@ class TestReplaceLeaseXML(XMLTestCase):
         xml_str = read_data('vm_compat41.xml')
         self.assertXMLEqual(
             extract_device_snippet('lease', xml_str=xml_str),
-            u'''<?xml version='1.0' encoding='utf-8'?><devices />'''
+            u'''<?xml version='1.0' encoding='utf-8'?><devices />''',
         )
 
         dom = xmlutils.fromstring(xml_str)
-        disk_devs = domxml_preprocess._make_disk_devices(
-            xml_str, self.log)
+        disk_devs = domxml_preprocess._make_disk_devices(xml_str, self.log)
         disk_devs = self._inject_volume_chain(
-            disk_devs, self.driveVolInfo,
+            disk_devs,
+            self.driveVolInfo,
             domainID='unknwonDomainID',
-            volumeID='unknownVolumeID')
+            volumeID='unknownVolumeID',
+        )
 
         domxml_preprocess.update_leases_xml_from_disk_objs(
-            self.vm, dom, disk_devs)
+            self.vm, dom, disk_devs
+        )
 
         self.assertXMLEqual(
             extract_device_snippet('lease', dom=dom),
-            u'''<?xml version='1.0' encoding='utf-8'?><devices />'''
+            u'''<?xml version='1.0' encoding='utf-8'?><devices />''',
         )
 
     def test_drive_lease(self):
@@ -330,10 +346,12 @@ class TestReplaceLeaseXML(XMLTestCase):
         we fill the drive lease. Happy path.
         """
         disk_devs = self._inject_volume_chain(
-            self.disk_devs, self.driveVolInfo)
+            self.disk_devs, self.driveVolInfo
+        )
 
         domxml_preprocess.update_leases_xml_from_disk_objs(
-            self.vm, self.dom, disk_devs)
+            self.vm, self.dom, disk_devs
+        )
 
         xml_str = xmlutils.tostring(self.dom)
         self._check_leases(xml_str, [self.driveVolInfo])
@@ -346,7 +364,8 @@ class TestReplaceLeaseXML(XMLTestCase):
         """
 
         domxml_preprocess.update_leases_xml_from_disk_objs(
-            self.vm, self.dom, self.disk_devs)
+            self.vm, self.dom, self.disk_devs
+        )
 
         xml_str = xmlutils.tostring(self.dom)
         self._check_leases(xml_str, [self.vmVolInfo])
@@ -357,12 +376,15 @@ class TestReplaceLeaseXML(XMLTestCase):
         """
 
         disk_devs = self._inject_volume_chain(
-            self.disk_devs, self.driveVolInfo,
+            self.disk_devs,
+            self.driveVolInfo,
             domainID='unknwonDomainID',
-            volumeID='unknownVolumeID')
+            volumeID='unknownVolumeID',
+        )
 
         domxml_preprocess.update_leases_xml_from_disk_objs(
-            self.vm, self.dom, disk_devs)
+            self.vm, self.dom, disk_devs
+        )
 
         xml_str = xmlutils.tostring(self.dom)
         self._check_leases(xml_str, [self.vmVolInfo])
@@ -377,8 +399,9 @@ class TestReplaceLeaseXML(XMLTestCase):
             assert target.attrib['path'] == str(vol_info['leasePath'])
             assert target.attrib['offset'] == str(vol_info['leaseOffset'])
 
-    def _inject_volume_chain(self, disk_devs, volInfo,
-                             domainID=None, volumeID=None):
+    def _inject_volume_chain(
+        self, disk_devs, volInfo, domainID=None, volumeID=None
+    ):
         drives = []
         for drive in disk_devs:
             if drive.device != 'disk':

@@ -27,8 +27,9 @@ class SchemaInconsistencyFormatter(logging.Formatter):
         message = u"With message: {}".format(msg).rstrip()
         ctx_string = u"With context: {}".format(api.context_string(None))
         if len(relevant_frames) > 0:
-            backtrace_json = json.dumps(relevant_frames, indent=2,
-                                        separators=(",", ":"))
+            backtrace_json = json.dumps(
+                relevant_frames, indent=2, separators=(",", ":")
+            )
             backtrace_dump = backtrace_json.replace("  ", "\t")
             backtrace = u"With backtrace: {}".format(backtrace_dump)
         else:
@@ -53,7 +54,7 @@ class SchemaInconsistencyFormatter(logging.Formatter):
         frame_visitors = {
             "_check_primitive_type": SIF._check_primitive_type_visitor,
             "_verify_complex_type": SIF._verify_complex_type_visitor,
-            "_verify_object_type": SIF._verify_object_type_visitor
+            "_verify_object_type": SIF._verify_object_type_visitor,
         }
         frames = []
         for entry in inspect.stack():
@@ -76,17 +77,13 @@ class SchemaInconsistencyFormatter(logging.Formatter):
         call_arg_keys = list(localz.get("arg", {}).keys())
         return {
             "schema_type_name": schema_type_name,
-            "call_arg_keys": call_arg_keys
+            "call_arg_keys": call_arg_keys,
         }
 
     @staticmethod
     def _check_primitive_type_visitor(localz):
-        return {
-            "schema_type_type": localz.get("t", "<unknown>")
-        }
+        return {"schema_type_type": localz.get("t", "<unknown>")}
 
     @staticmethod
     def _verify_complex_type_visitor(localz):
-        return {
-            "schema_type_type": localz.get("t_type", "<unknown>")
-        }
+        return {"schema_type_type": localz.get("t_type", "<unknown>")}

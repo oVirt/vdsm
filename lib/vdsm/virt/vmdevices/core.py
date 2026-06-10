@@ -14,7 +14,6 @@ from vdsm.virt.utils import cleanup_guest_socket
 
 from . import compat
 
-
 _CONSOLE_EXTENSION = '.sock'
 
 
@@ -23,9 +22,21 @@ class SkipDevice(Exception):
 
 
 class Base(vmxml.Device):
-    __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
-                 'log', '_deviceXML', 'type', 'custom',
-                 'is_hostdevice', 'vmid', '_conf', 'hotunplug_event')
+    __slots__ = (
+        'deviceType',
+        'device',
+        'alias',
+        'specParams',
+        'deviceId',
+        'log',
+        '_deviceXML',
+        'type',
+        'custom',
+        'is_hostdevice',
+        'vmid',
+        '_conf',
+        'hotunplug_event',
+    )
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
@@ -89,15 +100,22 @@ class Base(vmxml.Device):
             try:
                 setattr(self, attr, value)
             except AttributeError:  # skip read-only properties
-                self.log.debug('Ignoring param (%s, %s) in %s', attr, value,
-                               self.__class__.__name__)
+                self.log.debug(
+                    'Ignoring param (%s, %s) in %s',
+                    attr,
+                    value,
+                    self.__class__.__name__,
+                )
         self._deviceXML = None
         self.is_hostdevice = False
         self.hotunplug_event = threading.Event()
 
     def __str__(self):
-        attrs = [':'.join((a, str(getattr(self, a, None)))) for a in dir(self)
-                 if not a.startswith('__')]
+        attrs = [
+            ':'.join((a, str(getattr(self, a, None))))
+            for a in dir(self)
+            if not a.startswith('__')
+        ]
         return ' '.join(attrs)
 
     def config(self):
@@ -167,8 +185,7 @@ class Base(vmxml.Device):
 def console_path(dom, vmid):
     if dom.attrib.get('type') == 'unix':
         path = os.path.join(
-            constants.P_OVIRT_VMCONSOLES,
-            vmid + _CONSOLE_EXTENSION
+            constants.P_OVIRT_VMCONSOLES, vmid + _CONSOLE_EXTENSION
         )
     else:
         path = None
@@ -290,11 +307,7 @@ def find_device_guest_address(dev):
 
 
 def parse_device_attrs(dev, attrs):
-    return {
-        key: dev.attrib.get(key)
-        for key in attrs
-        if dev.attrib.get(key)
-    }
+    return {key: dev.attrib.get(key) for key in attrs if dev.attrib.get(key)}
 
 
 def get_metadata_attrs(dev_obj, dev_class):
@@ -313,9 +326,7 @@ def get_metadata_attrs(dev_obj, dev_class):
 
 def get_metadata_values(dev):
     data = {}
-    ATTRS = (
-        'deviceId',
-    )
+    ATTRS = ('deviceId',)
     update_metadata_from_object(data, dev, ATTRS)
     return data
 

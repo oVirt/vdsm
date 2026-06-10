@@ -56,8 +56,15 @@ class IRS(object):
             return response.error_raw(error.code, error.msg)
         return response.success(result=None)
 
-    def measure(self, sdUUID, imgUUID, volUUID, dest_format, backing=True,
-                baseUUID=None):
+    def measure(
+        self,
+        sdUUID,
+        imgUUID,
+        volUUID,
+        dest_format,
+        backing=True,
+        baseUUID=None,
+    ):
         # Return fake measure set up by the test. Not setting up anyting will
         # fail; this is a good way to simulate measure error.
         measure = self.measure_info[(volUUID, baseUUID)]
@@ -74,18 +81,15 @@ class IRS(object):
         # NOTE: The real API return strings.
         return response.success(
             apparentsize=str(vol_info['apparentsize']),
-            truesize=str(vol_info['truesize']))
+            truesize=str(vol_info['truesize']),
+        )
 
     def lease_info(storage_id, lease_id):
-        return {
-            'result': {
-                'path': '/fake/path',
-                'offset': 0
-            }
-        }
+        return {'result': {'path': '/fake/path', 'offset': 0}}
 
     def prepareImage(
-            self, sdUUID, spUUID, imgUUID, leafUUID, allowIllegal=False):
+        self, sdUUID, spUUID, imgUUID, leafUUID, allowIllegal=False
+    ):
         key = (sdUUID, imgUUID, leafUUID)
         path = "/run/storage/{}/{}/{}".format(sdUUID, imgUUID, leafUUID)
         self.prepared_volumes[key] = {"path": path}
@@ -95,7 +99,7 @@ class IRS(object):
                 "type": self.sd_types.get(sdUUID, storage.DISK_TYPE.FILE),
                 "path": path,
             },
-            imgVolumesInfo=None
+            imgVolumesInfo=None,
         )
 
     def teardownImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
@@ -204,11 +208,13 @@ class ClientIF(object):
         self.bindings = {}
         self._recovery = False
         self.unknown_vm_ids = []
-        self._scheduler = schedule.Scheduler(name="test.Scheduler",
-                                             clock=monotonic_time)
+        self._scheduler = schedule.Scheduler(
+            name="test.Scheduler", clock=monotonic_time
+        )
         self._scheduler.start()
         self.qga_poller = qemuguestagent.QemuGuestAgentPoller(
-            self, self.log, self._scheduler)
+            self, self.log, self._scheduler
+        )
 
     def createVm(self, vmParams, vmRecover=False):
         self.vmRequests[vmParams['vmId']] = (vmParams, vmRecover)
@@ -239,12 +245,16 @@ class ClientIF(object):
 
 
 class Domain(object):
-    def __init__(self, xml='',
-                 virtError=libvirt.VIR_ERR_OK,
-                 errorMessage="",
-                 domState=libvirt.VIR_DOMAIN_RUNNING,
-                 domReason=0,
-                 vmId='', vm=None):
+    def __init__(
+        self,
+        xml='',
+        virtError=libvirt.VIR_ERR_OK,
+        errorMessage="",
+        domState=libvirt.VIR_DOMAIN_RUNNING,
+        domReason=0,
+        vmId='',
+        vm=None,
+    ):
         if not xml and vm is not None:
             xml = vm.conf.get('xml', '')
         self._xml = xml
@@ -284,7 +294,7 @@ class Domain(object):
 
     def info(self):
         self._failIfRequested()
-        return (self.domState, )
+        return (self.domState,)
 
     def XMLDesc(self, flags=0):
         return self._xml
@@ -309,8 +319,10 @@ class Domain(object):
         self._metadata = xml
 
     def schedulerParameters(self):
-        return {'vcpu_quota': vm._NO_CPU_QUOTA,
-                'vcpu_period': vm._NO_CPU_PERIOD}
+        return {
+            'vcpu_quota': vm._NO_CPU_QUOTA,
+            'vcpu_period': vm._NO_CPU_PERIOD,
+        }
 
     def setBlockIoTune(self, name, io_tune, flags):
         self._io_tune[name] = io_tune
@@ -357,9 +369,7 @@ class Domain(object):
 
     def memoryStats(self):
         self._failIfRequested()
-        return {
-            'rss': 4 * MiB
-        }
+        return {'rss': 4 * MiB}
 
     def destroy(self):
         self.destroyed = True
@@ -404,7 +414,8 @@ class GuestAgent(object):
             'disksUsage': [],
             'netIfaces': [],
             'memoryStats': {},
-            'guestCPUCount': -1}
+            'guestCPUCount': -1,
+        }
 
     def stop(self):
         pass
@@ -436,8 +447,9 @@ def default_domain_xml(vm_id='TESTING', features='', devices='', metadata=''):
 
     def xmlsnippet(content, tag):
         if content:
-            snippet = ('<{tag}>{content}</{tag}>'.
-                       format(tag=tag, content=content))
+            snippet = '<{tag}>{content}</{tag}>'.format(
+                tag=tag, content=content
+            )
         else:
             snippet = '<{tag}/>'.format(tag=tag)
         return snippet
@@ -449,7 +461,7 @@ def default_domain_xml(vm_id='TESTING', features='', devices='', metadata=''):
         vm_id=vm_id,
         features=features_xml,
         devices=devices_xml,
-        metadata=metadata_xml
+        metadata=metadata_xml,
     )
 
 
@@ -461,19 +473,36 @@ def fake_domain_descriptor_init(self, xmlStr, xml_source=XmlSource.LIBVIRT):
 
 
 @contextmanager
-def VM(params=None, devices=None, runCpu=False,
-       arch=cpuarch.X86_64, status=None,
-       cif=None, create_device_objects=False,
-       post_copy=None, recover=False, vmid=None,
-       resume_behavior=None, pause_code=None, pause_time_offset=None,
-       features='', xmldevices='', metadata=''):
+def VM(
+    params=None,
+    devices=None,
+    runCpu=False,
+    arch=cpuarch.X86_64,
+    status=None,
+    cif=None,
+    create_device_objects=False,
+    post_copy=None,
+    recover=False,
+    vmid=None,
+    resume_behavior=None,
+    pause_code=None,
+    pause_time_offset=None,
+    features='',
+    xmldevices='',
+    metadata='',
+):
     with namedTemporaryDir() as tmpDir:
-        with MonkeyPatchScope([
+        with MonkeyPatchScope(
+            [
                 (constants, 'P_VDSM_RUN', tmpDir),
                 (libvirtconnection, 'get', Connection),
-                (domain_descriptor.DomainDescriptor, '__init__',
-                 fake_domain_descriptor_init),
-        ]):
+                (
+                    domain_descriptor.DomainDescriptor,
+                    '__init__',
+                    fake_domain_descriptor_init,
+                ),
+            ]
+        ):
             if params is None:
                 params = {}
             if vmid is None:
@@ -484,7 +513,7 @@ def VM(params=None, devices=None, runCpu=False,
                     vm_id=vmid,
                     features=features,
                     devices=xmldevices,
-                    metadata=metadata
+                    metadata=metadata,
                 )
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, params, recover=recover)
@@ -506,8 +535,9 @@ def VM(params=None, devices=None, runCpu=False,
                 fake._resume_behavior = resume_behavior
             fake._pause_code = pause_code
             if pause_time_offset is not None:
-                fake._pause_time = (vdsm.common.time.monotonic_time() -
-                                    pause_time_offset)
+                fake._pause_time = (
+                    vdsm.common.time.monotonic_time() - pause_time_offset
+                )
             sampling.stats_cache.add(fake.id)
             yield fake
 
@@ -523,6 +553,7 @@ def run_with_vms(func, vm_specs):
         with VM(**kwargs) as vm:
             vms.append(vm)
             make_vms()
+
     make_vms()
 
 
@@ -541,18 +572,30 @@ class SuperVdsm(object):
         self.prepared_path_group = group
 
     def setPortMirroring(self, network, nic_name):
-        self.mirrored_networks.append((network, nic_name,))
+        self.mirrored_networks.append(
+            (
+                network,
+                nic_name,
+            )
+        )
 
     def unsetPortMirroring(self, network, nic_name):
-        self.mirrored_networks.remove((network, nic_name,))
+        self.mirrored_networks.remove(
+            (
+                network,
+                nic_name,
+            )
+        )
 
 
 class SampleWindow:
     def __init__(self):
-        self._samples = [(0, 1, 19590000000, 1),
-                         (1, 1, 10710000000, 1),
-                         (2, 1, 19590000000, 0),
-                         (3, 1, 19590000000, 2)]
+        self._samples = [
+            (0, 1, 19590000000, 1),
+            (1, 1, 10710000000, 1),
+            (2, 1, 19590000000, 0),
+            (3, 1, 19590000000, 2),
+        ]
 
     def stats(self):
         return [], self._samples, 15

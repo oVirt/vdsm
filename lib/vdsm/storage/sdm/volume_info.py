@@ -17,11 +17,13 @@ class VolumeInfo(properties.Owner):
     A volume is prepared in read-write mode.
     While performing operations, the volume is not set as illegal.
     """
+
     sd_id = properties.UUID(required=True)
     img_id = properties.UUID(required=True)
     vol_id = properties.UUID(required=True)
-    generation = properties.Integer(required=False, minval=0,
-                                    maxval=sc.MAX_GENERATION)
+    generation = properties.Integer(
+        required=False, minval=0, maxval=sc.MAX_GENERATION
+    )
 
     def __init__(self, params, host_id):
         self.sd_id = params.get('sd_id')
@@ -34,12 +36,17 @@ class VolumeInfo(properties.Owner):
     @property
     def locks(self):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
-        ret = [rm.Lock(sc.STORAGE, self.sd_id, rm.SHARED),
-               rm.Lock(img_ns, self.img_id, rm.EXCLUSIVE)]
+        ret = [
+            rm.Lock(sc.STORAGE, self.sd_id, rm.SHARED),
+            rm.Lock(img_ns, self.img_id, rm.EXCLUSIVE),
+        ]
         dom = sdCache.produce_manifest(self.sd_id)
         if dom.hasVolumeLeases():
-            ret.append(volume.VolumeLease(self._host_id, self.sd_id,
-                                          self.img_id, self.vol_id))
+            ret.append(
+                volume.VolumeLease(
+                    self._host_id, self.sd_id, self.img_id, self.vol_id
+                )
+            )
         return ret
 
     @property
@@ -54,8 +61,9 @@ class VolumeInfo(properties.Owner):
         return self._vol
 
     def volume_operation(self):
-        return self.volume.operation(requested_gen=self.generation,
-                                     set_illegal=False)
+        return self.volume.operation(
+            requested_gen=self.generation, set_illegal=False
+        )
 
     @contextmanager
     def prepare(self):

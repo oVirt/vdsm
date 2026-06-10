@@ -17,8 +17,9 @@ class ExternalDataKind(Enum):
 
 
 class ExternalData(object):
-    Data = namedtuple("Data", ["stable_data", "current_data",
-                               "monitor_hash", "engine_hash"])
+    Data = namedtuple(
+        "Data", ["stable_data", "current_data", "monitor_hash", "engine_hash"]
+    )
 
     @staticmethod
     def secure_hash(data):
@@ -27,10 +28,12 @@ class ExternalData(object):
         return sha256.hexdigest()
 
     def __init__(self, kind, log, read_function, initial_data, engine_hash):
-        self._data = ExternalData.Data(stable_data=initial_data,
-                                       current_data=initial_data,
-                                       monitor_hash=hash(initial_data),
-                                       engine_hash=engine_hash)
+        self._data = ExternalData.Data(
+            stable_data=initial_data,
+            current_data=initial_data,
+            monitor_hash=hash(initial_data),
+            engine_hash=engine_hash,
+        )
         self._kind = kind
         self._lock = threading.Lock()
         self._log = log
@@ -75,8 +78,7 @@ class ExternalData(object):
                 error = e
         if error is not None:
             raise exception.ExternalDataFailed(
-                reason="Failed to read %s data" % self._kind,
-                exception=error
+                reason="Failed to read %s data" % self._kind, exception=error
             )
         monitor_hash = self._monitor.data_hash()
         if new_data is None:
@@ -85,7 +87,7 @@ class ExternalData(object):
             if stable_data is not self._data.stable_data:
                 data = self._data._replace(
                     stable_data=stable_data,
-                    engine_hash=ExternalData.secure_hash(stable_data)
+                    engine_hash=ExternalData.secure_hash(stable_data),
                 )
             else:
                 # No change at all
@@ -96,12 +98,11 @@ class ExternalData(object):
                 stable_data=new_data,
                 current_data=new_data,
                 monitor_hash=monitor_hash,
-                engine_hash=ExternalData.secure_hash(new_data)
+                engine_hash=ExternalData.secure_hash(new_data),
             )
         else:
             # New unstable data, store it but don't report it
             data = self._data._replace(
-                current_data=new_data,
-                monitor_hash=monitor_hash
+                current_data=new_data, monitor_hash=monitor_hash
             )
         return data

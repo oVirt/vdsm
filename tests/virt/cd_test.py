@@ -151,12 +151,12 @@ def recovering_vm(device_xml, device_metadata):
     Fake VM in recovery state.
     """
     with fake.VM(
-            cif=ClientIF(),
-            devices=[{"type": "file", "device": "cdrom"}],
-            create_device_objects=True,
-            recover=True,
-            xmldevices=device_xml,
-            metadata=device_metadata
+        cif=ClientIF(),
+        devices=[{"type": "file", "device": "cdrom"}],
+        create_device_objects=True,
+        recover=True,
+        xmldevices=device_xml,
+        metadata=device_metadata,
     ) as fakevm:
         fakevm._dom = fake.Domain()
         # Real start of fake VM would fail.
@@ -184,7 +184,8 @@ def rec_vm_after_change():
     VM has been also changed.
     """
     with recovering_vm(
-            LOADED_NEW_CD_DEVICE_XML, LOADING_CD_METADATA_XML) as vm:
+        LOADED_NEW_CD_DEVICE_XML, LOADING_CD_METADATA_XML
+    ) as vm:
         yield vm
 
 
@@ -215,18 +216,19 @@ def rec_vm_after_eject_no_pdiv():
     VM has also been ejected, but metadata has no PDIV about CD being ejected.
     """
     with recovering_vm(
-            EMPTY_CD_DEVICE_XML, EJECTING_CD_NO_PDIV_METADATA_XML) as vm:
+        EMPTY_CD_DEVICE_XML, EJECTING_CD_NO_PDIV_METADATA_XML
+    ) as vm:
         yield vm
 
 
 @pytest.fixture
 def vm_with_cd():
     with fake.VM(
-            cif=ClientIF(),
-            devices=[{"type": "file", "device": hwclass.DISK}],
-            create_device_objects=True,
-            xmldevices=LOADED_CD_DEVICE_XML,
-            metadata=LOADED_CD_METADATA_XML
+        cif=ClientIF(),
+        devices=[{"type": "file", "device": hwclass.DISK}],
+        create_device_objects=True,
+        xmldevices=LOADED_CD_DEVICE_XML,
+        metadata=LOADED_CD_METADATA_XML,
     ) as fakevm:
         fakevm._dom = fake.Domain()
 
@@ -281,7 +283,9 @@ def test_change_loaded_cd(tmpdir, vm_with_cd):
 <disk type="file" device="cdrom">
     <source file="{}" />
     <target dev="sdc" bus="sata" />
-</disk>""".format(cd_path)
+</disk>""".format(
+        cd_path
+    )
     assert normalized(expected_dev_xml) == normalized(vm_with_cd._dom.devXml)
 
 
@@ -309,13 +313,15 @@ def test_change_cd_metadata_success(vm_with_cd):
     vm_with_cd._add_cd_change(block_dev, LOADING_DRIVE_SPEC)
 
     with vm_with_cd._md_desc.device(
-            devtype=hwclass.DISK, name=block_dev) as dev:
+        devtype=hwclass.DISK, name=block_dev
+    ) as dev:
         assert dev == LOADING_METADATA
 
     # Finish CD change - remove change metadata and update CD PDIV.
     vm_with_cd._apply_cd_change(block_dev)
     with vm_with_cd._md_desc.device(
-            devtype=hwclass.DISK, name=block_dev) as dev:
+        devtype=hwclass.DISK, name=block_dev
+    ) as dev:
         assert dev == LOADING_PDIV
 
 
@@ -329,13 +335,15 @@ def test_change_cd_metadata_fail(vm_with_cd):
     vm_with_cd._add_cd_change(block_dev, LOADING_DRIVE_SPEC)
 
     with vm_with_cd._md_desc.device(
-            devtype=hwclass.DISK, name=block_dev) as dev:
+        devtype=hwclass.DISK, name=block_dev
+    ) as dev:
         assert dev == LOADING_METADATA
 
     # Failure, discard cd change.
     vm_with_cd._discard_cd_change(block_dev)
     with vm_with_cd._md_desc.device(
-            devtype=hwclass.DISK, name=block_dev) as dev:
+        devtype=hwclass.DISK, name=block_dev
+    ) as dev:
         assert dev == CD_PDIV
 
 
@@ -358,10 +366,10 @@ def test_change_cd_loading():
     device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
 
     with fake.VM(
-            cif=ClientIF(),
-            create_device_objects=True,
-            xmldevices=EMPTY_CD_DEVICE_XML,
-            metadata=EMPTY_CD_METADATA_XML
+        cif=ClientIF(),
+        create_device_objects=True,
+        xmldevices=EMPTY_CD_DEVICE_XML,
+        metadata=EMPTY_CD_METADATA_XML,
     ) as fakevm:
         fakevm._dom = fake.Domain()
         fakevm.changeCD(cdrom_spec)
@@ -446,7 +454,9 @@ def test_cd_xml_on_file_storage(tmpdir, vm_with_cd):
 <disk type="file" device="cdrom">
     <source file="/run/storage/{}/{}/{}" />
     <target dev="sdc" bus="sata" />
-</disk>""".format(sd_id, img_id, vol_id)
+</disk>""".format(
+        sd_id, img_id, vol_id
+    )
     cd_xml = vm_with_cd._dom.devXml
     assert normalized(expected_dev_xml) == normalized(cd_xml)
 
@@ -481,7 +491,9 @@ def test_cd_xml_on_block_storage(tmpdir, vm_with_cd):
 <disk type="block" device="cdrom">
     <source dev="/run/storage/{}/{}/{}" />
     <target dev="sdc" bus="sata" />
-</disk>""".format(sd_id, img_id, vol_id)
+</disk>""".format(
+        sd_id, img_id, vol_id
+    )
     cd_xml = vm_with_cd._dom.devXml
     assert normalized(expected_dev_xml) == normalized(cd_xml)
 
@@ -504,10 +516,10 @@ def test_change_cd_failed_libvirt():
     device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
 
     with fake.VM(
-            cif=ClientIF(),
-            create_device_objects=True,
-            xmldevices=EMPTY_CD_DEVICE_XML,
-            metadata=EMPTY_CD_METADATA_XML
+        cif=ClientIF(),
+        create_device_objects=True,
+        xmldevices=EMPTY_CD_DEVICE_XML,
+        metadata=EMPTY_CD_METADATA_XML,
     ) as fakevm:
         fakevm._dom = fake.Domain(virtError=libvirt.VIR_ERR_XML_ERROR)
 
@@ -551,10 +563,10 @@ def test_change_cd_failed_libvirt_and_discard_cd_change(monkeypatch):
     monkeypatch.setattr(vm.Vm, "_discard_cd_change", failing_discard_cd_change)
 
     with fake.VM(
-            cif=ClientIF(),
-            create_device_objects=True,
-            xmldevices=EMPTY_CD_DEVICE_XML,
-            metadata=EMPTY_CD_METADATA_XML
+        cif=ClientIF(),
+        create_device_objects=True,
+        xmldevices=EMPTY_CD_DEVICE_XML,
+        metadata=EMPTY_CD_METADATA_XML,
     ) as fakevm:
         fakevm._dom = fake.Domain(virtError=libvirt.VIR_ERR_XML_ERROR)
 
@@ -634,10 +646,10 @@ def test_change_cd_apply_cd_change_failed(monkeypatch):
     device = drivename.make(new_cdrom_spec["iface"], new_cdrom_spec["index"])
 
     with fake.VM(
-            cif=ClientIF(),
-            create_device_objects=True,
-            xmldevices=EMPTY_CD_DEVICE_XML,
-            metadata=EMPTY_CD_METADATA_XML
+        cif=ClientIF(),
+        create_device_objects=True,
+        xmldevices=EMPTY_CD_DEVICE_XML,
+        metadata=EMPTY_CD_METADATA_XML,
     ) as fakevm:
         fakevm._dom = fake.Domain()
 
@@ -647,8 +659,7 @@ def test_change_cd_apply_cd_change_failed(monkeypatch):
         def failing_apply_cd_change(self, device):
             raise Exception("Apply CD change failed")
 
-        monkeypatch.setattr(
-            vm.Vm, "_apply_cd_change", failing_apply_cd_change)
+        monkeypatch.setattr(vm.Vm, "_apply_cd_change", failing_apply_cd_change)
 
         # Change CD. Apply cd change to metadata will fail, but as we already
         # succeeded to change CD, we ignore this error. The old disk should be
@@ -697,13 +708,14 @@ def test_cd_recovery_before_cd_change(rec_vm_before_change):
     volume = (
         LOADING_PDIV["domainID"],
         LOADING_PDIV["imageID"],
-        LOADING_PDIV["volumeID"]
+        LOADING_PDIV["volumeID"],
     )
     assert volume not in rec_vm_before_change.cif.irs.prepared_volumes
 
     # Check that metadata looks like before changing CD.
     with rec_vm_before_change._md_desc.device(
-            devtype=hwclass.DISK, name=device) as dev:
+        devtype=hwclass.DISK, name=device
+    ) as dev:
         _assert_pdiv(CD_PDIV, dev)
         assert "change" not in dev
 
@@ -738,20 +750,17 @@ def test_cd_recovery_after_cd_change(rec_vm_after_change):
     # starts. Wait little bit for recovery.
     wait_for_recovery(rec_vm_after_change)
 
-    old_volume = (
-        CD_PDIV["domainID"],
-        CD_PDIV["imageID"],
-        CD_PDIV["volumeID"]
-    )
+    old_volume = (CD_PDIV["domainID"], CD_PDIV["imageID"], CD_PDIV["volumeID"])
     new_volume = (
         LOADING_PDIV["domainID"],
         LOADING_PDIV["imageID"],
-        LOADING_PDIV["volumeID"]
+        LOADING_PDIV["volumeID"],
     )
     assert old_volume not in rec_vm_after_change.cif.irs.prepared_volumes
     assert new_volume in rec_vm_after_change.cif.irs.prepared_volumes
     with rec_vm_after_change._md_desc.device(
-            devtype=hwclass.DISK, name=device) as dev:
+        devtype=hwclass.DISK, name=device
+    ) as dev:
         _assert_pdiv(LOADING_PDIV, dev)
         assert "change" not in dev
 
@@ -781,16 +790,13 @@ def test_cd_recovery_before_cd_eject(rec_vm_before_eject):
     wait_for_recovery(rec_vm_before_eject)
 
     # Check that the CD image was not torn down.
-    volume = (
-        CD_PDIV["domainID"],
-        CD_PDIV["imageID"],
-        CD_PDIV["volumeID"]
-    )
+    volume = (CD_PDIV["domainID"], CD_PDIV["imageID"], CD_PDIV["volumeID"])
     assert volume in rec_vm_before_eject.cif.irs.prepared_volumes
 
     # Check that metadata looks like before ejecting CD.
     with rec_vm_before_eject._md_desc.device(
-            devtype=hwclass.DISK, name=device) as dev:
+        devtype=hwclass.DISK, name=device
+    ) as dev:
         _assert_pdiv(CD_PDIV, dev)
         assert "change" not in dev
 
@@ -819,14 +825,11 @@ def test_cd_recovery_after_cd_eject(rec_vm_after_eject):
     # starts. Wait little bit for recovery.
     wait_for_recovery(rec_vm_after_eject)
 
-    volume = (
-        CD_PDIV["domainID"],
-        CD_PDIV["imageID"],
-        CD_PDIV["volumeID"]
-    )
+    volume = (CD_PDIV["domainID"], CD_PDIV["imageID"], CD_PDIV["volumeID"])
     assert volume not in rec_vm_after_eject.cif.irs.prepared_volumes
     with rec_vm_after_eject._md_desc.device(
-            devtype=hwclass.DISK, name=device) as dev:
+        devtype=hwclass.DISK, name=device
+    ) as dev:
         assert dev == {}
 
 
@@ -856,16 +859,13 @@ def test_cd_recovery_after_cd_eject_no_pdiv(rec_vm_after_eject_no_pdiv):
     # starts. Wait little bit for recovery.
     wait_for_recovery(rec_vm_after_eject_no_pdiv)
 
-    volume = (
-        CD_PDIV["domainID"],
-        CD_PDIV["imageID"],
-        CD_PDIV["volumeID"]
-    )
+    volume = (CD_PDIV["domainID"], CD_PDIV["imageID"], CD_PDIV["volumeID"])
     # As there are no metadata about ejected CD, we cannot tear it down during
     # recovery.
     assert volume in rec_vm_after_eject_no_pdiv.cif.irs.prepared_volumes
     with rec_vm_after_eject_no_pdiv._md_desc.device(
-            devtype=hwclass.DISK, name=device) as dev:
+        devtype=hwclass.DISK, name=device
+    ) as dev:
         # No real device was found, recovery was skipped.
         expected = {
             "change": {

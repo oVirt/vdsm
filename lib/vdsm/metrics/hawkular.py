@@ -37,22 +37,23 @@ def stop():
 
 
 def send(report):
-    metrics_list = [_get_gauge_metric(name, value)
-                    for name, value in report.items()]
+    metrics_list = [
+        _get_gauge_metric(name, value) for name, value in report.items()
+    ]
     _queue.append(metrics_list)
     with _cond:
         _cond.notify()
 
 
 def _get_gauge_metric(name, value):
-    return metrics.create_metric(metrics.MetricType.Gauge, name,
-                                 metrics.create_datapoint(float(value)))
+    return metrics.create_metric(
+        metrics.MetricType.Gauge, name, metrics.create_datapoint(float(value))
+    )
 
 
 def _run(address):
     global _running
-    client = metrics.HawkularMetricsClient(tenant_id="oVirt",
-                                           host=address)
+    client = metrics.HawkularMetricsClient(tenant_id="oVirt", host=address)
     while True:
         with _cond:
             while not _queue:

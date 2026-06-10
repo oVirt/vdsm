@@ -20,8 +20,8 @@ from vdsm.storage import sd
 from vdsm.storage.volume import Qcow2BitmapInfo
 
 from . import qemuio
-from . marks import requires_unprivileged_user
-from . storagetestlib import chmod
+from .marks import requires_unprivileged_user
+from .storagetestlib import chmod
 
 BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 PREALLOCATED_VOL_SIZE = 10 * MiB
@@ -38,20 +38,20 @@ DETECT_BLOCK_SIZE = [
 @pytest.fixture(
     params=[
         pytest.param(
-            (BACKENDS["mount-512"], sc.HOSTS_512_1M, 3),
-            id="mount-512-1m-v3"),
+            (BACKENDS["mount-512"], sc.HOSTS_512_1M, 3), id="mount-512-1m-v3"
+        ),
         pytest.param(
-            (BACKENDS["mount-512"], sc.HOSTS_512_1M, 4),
-            id="mount-512-1m-v4"),
+            (BACKENDS["mount-512"], sc.HOSTS_512_1M, 4), id="mount-512-1m-v4"
+        ),
         pytest.param(
-            (BACKENDS["mount-512"], sc.HOSTS_512_1M, 5),
-            id="mount-512-1m-v5"),
+            (BACKENDS["mount-512"], sc.HOSTS_512_1M, 5), id="mount-512-1m-v5"
+        ),
         pytest.param(
-            (BACKENDS["mount-4k"], sc.HOSTS_4K_1M, 5),
-            id="mount-4k-1m-v5"),
+            (BACKENDS["mount-4k"], sc.HOSTS_4K_1M, 5), id="mount-4k-1m-v5"
+        ),
         pytest.param(
-            (BACKENDS["mount-4k"], sc.HOSTS_4K_2M, 5),
-            id="mount-4k-2m-v5"),
+            (BACKENDS["mount-4k"], sc.HOSTS_4K_2M, 5), id="mount-4k-2m-v5"
+        ),
     ]
 )
 def user_mount(request):
@@ -62,12 +62,9 @@ def user_mount(request):
 
 @pytest.fixture(
     params=[
-        pytest.param(
-            (BACKENDS["mount-512"], 2000, 5), id="mount-512-1m-v5"),
-        pytest.param(
-            (BACKENDS["mount-4k"], 250, 5), id="mount-4k-1m-v5"),
-        pytest.param(
-            (BACKENDS["mount-4k"], 500, 5), id="mount-4k-2m-v5"),
+        pytest.param((BACKENDS["mount-512"], 2000, 5), id="mount-512-1m-v5"),
+        pytest.param((BACKENDS["mount-4k"], 250, 5), id="mount-4k-1m-v5"),
+        pytest.param((BACKENDS["mount-4k"], 500, 5), id="mount-4k-2m-v5"),
     ]
 )
 def user_mount_v5(request):
@@ -78,13 +75,15 @@ def user_mount_v5(request):
 
 @pytest.fixture
 def user_domain(
-        user_mount, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task):
+    user_mount, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task
+):
     return create_user_domain(tmp_repo, user_mount)
 
 
 @pytest.fixture
 def user_domain_v5(
-        user_mount_v5, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task):
+    user_mount_v5, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task
+):
     return create_user_domain(tmp_repo, user_mount_v5)
 
 
@@ -94,20 +93,24 @@ def create_user_domain(tmp_repo, user_mount):
         version=user_mount.domain_version,
         block_size=user_mount.block_size,
         max_hosts=user_mount.max_hosts,
-        remote_path=user_mount.path)
+        remote_path=user_mount.path,
+    )
 
 
-@pytest.mark.parametrize("version,block_size", [
-    # Before version 5 only 512 bytes is supported.
-    (3, sc.BLOCK_SIZE_4K),
-    (3, sc.BLOCK_SIZE_AUTO),
-    (3, 42),
-    (4, sc.BLOCK_SIZE_4K),
-    (4, sc.BLOCK_SIZE_AUTO),
-    (4, 42),
-    # Version 5 allows 4k and automatic detection.
-    (5, 42),
-])
+@pytest.mark.parametrize(
+    "version,block_size",
+    [
+        # Before version 5 only 512 bytes is supported.
+        (3, sc.BLOCK_SIZE_4K),
+        (3, sc.BLOCK_SIZE_AUTO),
+        (3, 42),
+        (4, sc.BLOCK_SIZE_4K),
+        (4, sc.BLOCK_SIZE_AUTO),
+        (4, 42),
+        # Version 5 allows 4k and automatic detection.
+        (5, 42),
+    ],
+)
 def test_unsupported_block_size_rejected(version, block_size):
     # Note: assumes that validation is done before trying to reach storage.
     with pytest.raises(se.InvalidParameterException):
@@ -118,7 +121,8 @@ def test_unsupported_block_size_rejected(version, block_size):
             remotePath="/path",
             version=version,
             storageType=sd.LOCALFS_DOMAIN,
-            block_size=block_size)
+            block_size=block_size,
+        )
 
 
 @pytest.mark.parametrize("domain_version", [3, 4])
@@ -126,9 +130,8 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     remote_path = str(tmpdir.mkdir("domain"))
 
     dom = tmp_repo.create_localfs_domain(
-        name="domain",
-        version=domain_version,
-        remote_path=remote_path)
+        name="domain", version=domain_version, remote_path=remote_path
+    )
 
     lease = sd.DEFAULT_LEASE_PARAMS
     expected = {
@@ -139,8 +142,9 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
         sd.DMDK_LEASE_RETRIES: lease[sd.DMDK_LEASE_RETRIES],
         sd.DMDK_LEASE_TIME_SEC: lease[sd.DMDK_LEASE_TIME_SEC],
         sd.DMDK_LOCK_POLICY: "",
-        sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
-            lease[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+        sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC: lease[
+            sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC
+        ],
         sd.DMDK_POOLS: [tmp_repo.pool_id],
         sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
         sd.DMDK_SDUUID: dom.sdUUID,
@@ -158,7 +162,8 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
 
 @pytest.mark.parametrize("detect_block_size", DETECT_BLOCK_SIZE)
 def test_create_domain_metadata_v5(
-        user_mount_v5, tmp_repo, fake_access, detect_block_size):
+    user_mount_v5, tmp_repo, fake_access, detect_block_size
+):
 
     if detect_block_size:
         block_size = sc.BLOCK_SIZE_AUTO
@@ -170,10 +175,12 @@ def test_create_domain_metadata_v5(
         version=5,
         block_size=block_size,
         max_hosts=user_mount_v5.max_hosts,
-        remote_path=user_mount_v5.path)
+        remote_path=user_mount_v5.path,
+    )
 
     alignment = clusterlock.alignment(
-        user_mount_v5.block_size, user_mount_v5.max_hosts)
+        user_mount_v5.block_size, user_mount_v5.max_hosts
+    )
 
     lease = sd.DEFAULT_LEASE_PARAMS
     expected = {
@@ -186,8 +193,9 @@ def test_create_domain_metadata_v5(
         sd.DMDK_LEASE_RETRIES: lease[sd.DMDK_LEASE_RETRIES],
         sd.DMDK_LEASE_TIME_SEC: lease[sd.DMDK_LEASE_TIME_SEC],
         sd.DMDK_LOCK_POLICY: "",
-        sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
-            lease[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+        sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC: lease[
+            sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC
+        ],
         sd.DMDK_POOLS: [tmp_repo.pool_id],
         sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
         sd.DMDK_SDUUID: dom.sdUUID,
@@ -204,7 +212,8 @@ def test_create_domain_metadata_v5(
 
 
 def test_create_storage_domain_block_size_mismatch(
-        user_mount_v5, tmp_repo, fake_access):
+    user_mount_v5, tmp_repo, fake_access
+):
     # Select the wrong block size for current storage.
     if user_mount_v5.block_size == sc.BLOCK_SIZE_512:
         block_size = sc.BLOCK_SIZE_4K
@@ -217,11 +226,13 @@ def test_create_storage_domain_block_size_mismatch(
             version=5,
             block_size=block_size,
             max_hosts=user_mount_v5.max_hosts,
-            remote_path=user_mount_v5.path)
+            remote_path=user_mount_v5.path,
+        )
 
 
 def test_create_instance_block_size_mismatch(
-        user_domain_v5, tmp_repo, fake_access):
+    user_domain_v5, tmp_repo, fake_access
+):
     # Change metadata to report the wrong block size for current storage.
     if user_domain_v5.block_size == sc.BLOCK_SIZE_512:
         bad_block_size = sc.BLOCK_SIZE_4K
@@ -245,7 +256,8 @@ def test_domain_lease(tmpdir, tmp_repo, fake_access, domain_version):
 
 @pytest.mark.parametrize("detect_block_size", DETECT_BLOCK_SIZE)
 def test_domain_lease_v5(
-        user_mount_v5, tmp_repo, fake_access, detect_block_size):
+    user_mount_v5, tmp_repo, fake_access, detect_block_size
+):
     if detect_block_size:
         block_size = sc.BLOCK_SIZE_AUTO
     else:
@@ -256,10 +268,12 @@ def test_domain_lease_v5(
         version=5,
         block_size=block_size,
         max_hosts=user_mount_v5.max_hosts,
-        remote_path=user_mount_v5.path)
+        remote_path=user_mount_v5.path,
+    )
 
     alignment = clusterlock.alignment(
-        user_mount_v5.block_size, user_mount_v5.max_hosts)
+        user_mount_v5.block_size, user_mount_v5.max_hosts
+    )
 
     lease = dom.getClusterLease()
     assert lease.name == "SDM"
@@ -287,7 +301,8 @@ def test_volume_life_cycle(monkeypatch, user_domain):
             volUUID=vol_uuid,
             desc=vol_desc,
             srcImgUUID=sc.BLANK_UUID,
-            srcVolUUID=sc.BLANK_UUID)
+            srcVolUUID=sc.BLANK_UUID,
+        )
 
     # test create volume
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
@@ -354,7 +369,8 @@ def test_volume_metadata(user_domain):
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
-        volUUID=vol_uuid)
+        volUUID=vol_uuid,
+    )
 
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
     meta_path = vol.getMetaVolumePath()
@@ -395,7 +411,8 @@ def test_volume_create_raw_prealloc(user_domain, local_fallocate):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
@@ -406,7 +423,8 @@ def test_volume_create_raw_prealloc(user_domain, local_fallocate):
         path=path,
         format=qemuimg.FORMAT.RAW,
         virtual_size=PREALLOCATED_VOL_SIZE,
-        qemu_info=qemu_info)
+        qemu_info=qemu_info,
+    )
 
     assert qemu_info['actual-size'] == PREALLOCATED_VOL_SIZE
 
@@ -423,7 +441,8 @@ def test_volume_create_raw_prealloc(user_domain, local_fallocate):
 
 @pytest.mark.parametrize("initial_size", [0, INITIAL_VOL_SIZE])
 def test_volume_create_raw_prealloc_initial_size_ignored(
-        user_domain, local_fallocate, initial_size):
+    user_domain, local_fallocate, initial_size
+):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
 
@@ -437,7 +456,8 @@ def test_volume_create_raw_prealloc_initial_size_ignored(
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
-        initial_size=initial_size)
+        initial_size=initial_size,
+    )
 
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
@@ -448,7 +468,8 @@ def test_volume_create_raw_prealloc_initial_size_ignored(
         path=path,
         format=qemuimg.FORMAT.RAW,
         virtual_size=PREALLOCATED_VOL_SIZE,
-        qemu_info=qemu_info)
+        qemu_info=qemu_info,
+    )
 
     # Initial_size is ignored since we stopped using qemu-img preallocation.
     assert qemu_info['actual-size'] == PREALLOCATED_VOL_SIZE
@@ -465,14 +486,26 @@ def test_volume_create_raw_prealloc_initial_size_ignored(
 
 
 @pytest.mark.parametrize("domain_version", [4, 5])
-@pytest.mark.parametrize("vol_format,prealloc", [
-    (sc.RAW_FORMAT, sc.SPARSE_VOL),
-    (sc.COW_FORMAT, sc.PREALLOCATED_VOL),
-    (sc.COW_FORMAT, sc.SPARSE_VOL),
-])
+@pytest.mark.parametrize(
+    "vol_format,prealloc",
+    [
+        (sc.RAW_FORMAT, sc.SPARSE_VOL),
+        (sc.COW_FORMAT, sc.PREALLOCATED_VOL),
+        (sc.COW_FORMAT, sc.SPARSE_VOL),
+    ],
+)
 def test_volume_create_initial_size_not_supported(
-        tmpdir, tmp_repo, tmp_db, fake_access, fake_task, local_fallocate,
-        fake_rescan, vol_format, prealloc, domain_version):
+    tmpdir,
+    tmp_repo,
+    tmp_db,
+    fake_access,
+    fake_task,
+    local_fallocate,
+    fake_rescan,
+    vol_format,
+    prealloc,
+    domain_version,
+):
     dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
 
     img_uuid = str(uuid.uuid4())
@@ -489,7 +522,8 @@ def test_volume_create_initial_size_not_supported(
             desc="Test volume",
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
-            initial_size=INITIAL_VOL_SIZE)
+            initial_size=INITIAL_VOL_SIZE,
+        )
 
 
 def test_volume_create_raw_sparse(user_domain, local_fallocate):
@@ -505,7 +539,8 @@ def test_volume_create_raw_sparse(user_domain, local_fallocate):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
@@ -516,7 +551,8 @@ def test_volume_create_raw_sparse(user_domain, local_fallocate):
         path=path,
         format=qemuimg.FORMAT.RAW,
         virtual_size=SPARSE_VOL_SIZE,
-        qemu_info=qemu_info)
+        qemu_info=qemu_info,
+    )
 
     # Recent qemu-img always allocates the first filesystem block (4096 bytes).
     # https://github.com/qemu/qemu/commit/3a20013fbb26
@@ -534,9 +570,9 @@ def test_volume_create_raw_sparse(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
-@pytest.mark.parametrize("disktype", [
-    sc.LEGACY_V2V_DATA_DISKTYPE, sc.LEGACY_DATA_DISKTYPE
-])
+@pytest.mark.parametrize(
+    "disktype", [sc.LEGACY_V2V_DATA_DISKTYPE, sc.LEGACY_DATA_DISKTYPE]
+)
 def test_volume_create_with_legacy_disk_types(user_domain, disktype):
     # validate that creating and reading volume info with legacy disk types
     # works, so we can copy existing disks with legacy DISKTYPE.
@@ -552,7 +588,8 @@ def test_volume_create_with_legacy_disk_types(user_domain, disktype):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
@@ -574,7 +611,8 @@ def test_volume_create_cow_sparse(user_domain, local_fallocate):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
@@ -585,7 +623,8 @@ def test_volume_create_cow_sparse(user_domain, local_fallocate):
         path=path,
         format=qemuimg.FORMAT.QCOW2,
         virtual_size=SPARSE_VOL_SIZE,
-        qemu_info=qemu_info)
+        qemu_info=qemu_info,
+    )
 
     # Check the volume specific actual size is fragile,
     # will easily break on CI or when qemu change the implementation.
@@ -617,7 +656,8 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
         volUUID=parent_vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     parent_vol = user_domain.produceVolume(parent_img_uuid, parent_vol_uuid)
     parent_vol.setShared()
@@ -633,7 +673,8 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=parent_vol.imgUUID,
-        srcVolUUID=parent_vol.volUUID)
+        srcVolUUID=parent_vol.volUUID,
+    )
     vol = user_domain.produceVolume(parent_img_uuid, vol_uuid)
 
     path = vol.getVolumePath()
@@ -644,7 +685,8 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
         format=qemuimg.FORMAT.QCOW2,
         virtual_size=SPARSE_VOL_SIZE,
         qemu_info=qemu_info,
-        backing_file=parent_vol.volUUID)
+        backing_file=parent_vol.volUUID,
+    )
 
     # Check the volume specific actual size is fragile,
     # will easily break on CI or when qemu change the implementation.
@@ -679,11 +721,13 @@ def test_volume_create_cow_prealloc(user_domain, local_fallocate):
         volUUID=ref_uuid,
         desc="Reference volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     ref_vol = user_domain.produceVolume(img_uuid, ref_uuid)
-    init_offset = qemuimg.check(
-        ref_vol.getVolumePath(), format=format)["offset"]
+    init_offset = qemuimg.check(ref_vol.getVolumePath(), format=format)[
+        "offset"
+    ]
 
     # Create preallocated volume
     user_domain.createVolume(
@@ -695,7 +739,8 @@ def test_volume_create_cow_prealloc(user_domain, local_fallocate):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
@@ -706,7 +751,8 @@ def test_volume_create_cow_prealloc(user_domain, local_fallocate):
         path=path,
         format=format,
         virtual_size=PREALLOCATED_VOL_SIZE,
-        qemu_info=qemu_info)
+        qemu_info=qemu_info,
+    )
 
     # We do not control the allocation in the range between 0 bytes and the
     # initial image offset, so we need to remove those bytes from the
@@ -730,14 +776,25 @@ def test_volume_create_cow_prealloc(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
-@pytest.mark.parametrize("initial_size, expected_exception", [
-    # initial size, expected exception
-    [-1, se.InvalidParameterException],
-    [PREALLOCATED_VOL_SIZE + 1, se.VolumeCreationError]
-])
+@pytest.mark.parametrize(
+    "initial_size, expected_exception",
+    [
+        # initial size, expected exception
+        [-1, se.InvalidParameterException],
+        [PREALLOCATED_VOL_SIZE + 1, se.VolumeCreationError],
+    ],
+)
 def test_volume_create_raw_prealloc_invalid_initial_size(
-        tmpdir, tmp_repo, tmp_db, fake_access, fake_task, local_fallocate,
-        fake_rescan, initial_size, expected_exception):
+    tmpdir,
+    tmp_repo,
+    tmp_db,
+    fake_access,
+    fake_task,
+    local_fallocate,
+    fake_rescan,
+    initial_size,
+    expected_exception,
+):
     dom = tmp_repo.create_localfs_domain(name="domain", version=5)
 
     img_uuid = str(uuid.uuid4())
@@ -754,7 +811,8 @@ def test_volume_create_raw_prealloc_invalid_initial_size(
             desc="Test volume",
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
-            initial_size=initial_size)
+            initial_size=initial_size,
+        )
 
 
 def test_create_snapshot_size(user_domain, local_fallocate):
@@ -775,7 +833,8 @@ def test_create_snapshot_size(user_domain, local_fallocate):
         volUUID=parent_vol_uuid,
         desc="Test parent volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     parent_vol = user_domain.produceVolume(img_uuid, parent_vol_uuid)
 
@@ -792,7 +851,8 @@ def test_create_snapshot_size(user_domain, local_fallocate):
             volUUID=vol_uuid,
             desc="Volume with smaller size",
             srcImgUUID=parent_vol.imgUUID,
-            srcVolUUID=parent_vol.volUUID)
+            srcVolUUID=parent_vol.volUUID,
+        )
 
     # Verify that snapshot can be larger than parent.
 
@@ -805,7 +865,8 @@ def test_create_snapshot_size(user_domain, local_fallocate):
         volUUID=vol_uuid,
         desc="Extended volume",
         srcImgUUID=parent_vol.imgUUID,
-        srcVolUUID=parent_vol.volUUID)
+        srcVolUUID=parent_vol.volUUID,
+    )
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
     # Verify volume sizes obtained from metadata
@@ -832,7 +893,8 @@ def test_volume_metadata_capacity_corrupted(user_domain, local_fallocate):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
     # corrupt the metadata capacity manually
@@ -860,7 +922,8 @@ def test_volume_sync_metadata(user_domain, local_fallocate):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
 
     # corrupt the metadata capacity manually
@@ -886,13 +949,10 @@ def test_dump_sd_metadata(monkeypatch, tmp_repo, user_mount, user_domain):
         "role": sd.REGULAR_DOMAIN,
         "type": "LOCALFS",
         "uuid": user_domain.sdUUID,
-        "version": str(user_domain.getVersion())
+        "version": str(user_domain.getVersion()),
     }
 
-    assert user_domain.dump() == {
-        "metadata": expected_metadata,
-        "volumes": {}
-    }
+    assert user_domain.dump() == {"metadata": expected_metadata, "volumes": {}}
 
 
 def test_dump_sd_volumes(monkeypatch, tmp_repo, user_mount, user_domain):
@@ -926,7 +986,7 @@ def test_dump_sd_volumes(monkeypatch, tmp_repo, user_mount, user_domain):
         "role": sd.REGULAR_DOMAIN,
         "type": "LOCALFS",
         "uuid": user_domain.sdUUID,
-        "version": str(user_domain.getVersion())
+        "version": str(user_domain.getVersion()),
     }
 
     if user_domain.getVersion() >= 5:
@@ -951,21 +1011,19 @@ def test_dump_sd_volumes(monkeypatch, tmp_repo, user_mount, user_domain):
             "parent": sc.BLANK_UUID,
             "truesize": vol_size.truesize,
             "type": "SPARSE",
-            "voltype": "LEAF"
+            "voltype": "LEAF",
         }
     }
 
     assert user_domain.dump() == {
         "metadata": expected_metadata,
-        "volumes": expected_volumes_metadata
+        "volumes": expected_volumes_metadata,
     }
 
 
 def test_dump_sd_volumes_invalid_md(
-        monkeypatch,
-        tmp_repo,
-        user_mount,
-        user_domain):
+    monkeypatch, tmp_repo, user_mount, user_domain
+):
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -1003,7 +1061,7 @@ def test_dump_sd_volumes_invalid_md(
         "role": sd.REGULAR_DOMAIN,
         "type": "LOCALFS",
         "uuid": user_domain.sdUUID,
-        "version": str(user_domain.getVersion())
+        "version": str(user_domain.getVersion()),
     }
 
     # Return volume info with INVALID status.
@@ -1015,22 +1073,20 @@ def test_dump_sd_volumes_invalid_md(
             "status": sc.VOL_STATUS_INVALID,
             "generation": sc.DEFAULT_GENERATION,
             "sequence": sc.DEFAULT_SEQUENCE,
-            "image": img_uuid
+            "image": img_uuid,
         }
     }
 
     assert user_domain.dump() == {
         "metadata": expected_metadata,
-        "volumes": expected_volumes_metadata
+        "volumes": expected_volumes_metadata,
     }
 
 
 @requires_unprivileged_user
 def test_dump_sd_volumes_no_md_access(
-        monkeypatch,
-        tmp_repo,
-        user_mount,
-        user_domain):
+    monkeypatch, tmp_repo, user_mount, user_domain
+):
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -1048,7 +1104,8 @@ def test_dump_sd_volumes_no_md_access(
             volUUID=vol_uuid,
             desc="test",
             srcImgUUID=sc.BLANK_UUID,
-            srcVolUUID=sc.BLANK_UUID)
+            srcVolUUID=sc.BLANK_UUID,
+        )
 
     # Make the meta file inaccessible for parsing.
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
@@ -1066,7 +1123,7 @@ def test_dump_sd_volumes_no_md_access(
         "role": sd.REGULAR_DOMAIN,
         "type": "LOCALFS",
         "uuid": user_domain.sdUUID,
-        "version": str(user_domain.getVersion())
+        "version": str(user_domain.getVersion()),
     }
 
     # Return volume info with INVALID status.
@@ -1076,21 +1133,19 @@ def test_dump_sd_volumes_no_md_access(
             "apparentsize": vol_size.apparentsize,
             "truesize": vol_size.truesize,
             "status": sc.VOL_STATUS_INVALID,
-            "image": img_uuid
+            "image": img_uuid,
         }
     }
 
     assert result == {
         "metadata": expected_metadata,
-        "volumes": expected_volumes_metadata
+        "volumes": expected_volumes_metadata,
     }
 
 
 def test_dump_sd_volumes_failed_size_query(
-        monkeypatch,
-        tmp_repo,
-        user_mount,
-        user_domain):
+    monkeypatch, tmp_repo, user_mount, user_domain
+):
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -1108,12 +1163,15 @@ def test_dump_sd_volumes_failed_size_query(
             volUUID=vol_uuid,
             desc="test",
             srcImgUUID=sc.BLANK_UUID,
-            srcVolUUID=sc.BLANK_UUID)
+            srcVolUUID=sc.BLANK_UUID,
+        )
 
     # Make volume size query raise an exception.
     with monkeypatch.context() as mc:
+
         def bad_vol_size():
             raise Exception()
+
         mc.setattr(fileSD.FileStorageDomain, "getVolumeSize", bad_vol_size)
         result = user_domain.dump()
 
@@ -1127,7 +1185,7 @@ def test_dump_sd_volumes_failed_size_query(
         "role": sd.REGULAR_DOMAIN,
         "type": "LOCALFS",
         "uuid": user_domain.sdUUID,
-        "version": str(user_domain.getVersion())
+        "version": str(user_domain.getVersion()),
     }
 
     # Return the parsed metadata with INVALID volume status for the bad size.
@@ -1145,21 +1203,19 @@ def test_dump_sd_volumes_failed_size_query(
             "status": sc.VOL_STATUS_INVALID,
             "parent": sc.BLANK_UUID,
             "type": "SPARSE",
-            "voltype": "LEAF"
+            "voltype": "LEAF",
         }
     }
 
     assert result == {
         "metadata": expected_metadata,
-        "volumes": expected_volumes_metadata
+        "volumes": expected_volumes_metadata,
     }
 
 
 def test_dump_sd_volumes_removed_image(
-        monkeypatch,
-        tmp_repo,
-        user_mount,
-        user_domain):
+    monkeypatch, tmp_repo, user_mount, user_domain
+):
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -1196,12 +1252,13 @@ def test_dump_sd_volumes_removed_image(
         "role": sd.REGULAR_DOMAIN,
         "type": "LOCALFS",
         "uuid": user_domain.sdUUID,
-        "version": str(user_domain.getVersion())
+        "version": str(user_domain.getVersion()),
     }
 
     # Dump the volume metadata and state it as removed.
     vol_size = user_domain.getVolumeSize(
-        sc.REMOVED_IMAGE_PREFIX + img_uuid, vol_uuid)
+        sc.REMOVED_IMAGE_PREFIX + img_uuid, vol_uuid
+    )
     expected_volumes_metadata = {
         vol_uuid: {
             "apparentsize": vol_size.apparentsize,
@@ -1218,13 +1275,13 @@ def test_dump_sd_volumes_removed_image(
             "parent": sc.BLANK_UUID,
             "truesize": vol_size.truesize,
             "type": "SPARSE",
-            "voltype": "LEAF"
+            "voltype": "LEAF",
         }
     }
 
     assert user_domain.dump() == {
         "metadata": expected_metadata,
-        "volumes": expected_volumes_metadata
+        "volumes": expected_volumes_metadata,
     }
 
 
@@ -1241,10 +1298,10 @@ def test_create_illegal_volume(user_domain, local_fallocate):
         desc="test",
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
-        legal=False)
+        legal=False,
+    )
 
-    vol = user_domain.produceVolume(
-        image_id, vol_id)
+    vol = user_domain.produceVolume(image_id, vol_id)
 
     assert vol.getLegality() == sc.ILLEGAL_VOL
 
@@ -1267,10 +1324,10 @@ def test_create_snapshot_cloning_bitmaps(user_domain, local_fallocate):
         volUUID=parent_vol_uuid,
         desc="test",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
-    parent_vol = user_domain.produceVolume(
-        parent_img_uuid, parent_vol_uuid)
+    parent_vol = user_domain.produceVolume(parent_img_uuid, parent_vol_uuid)
     parent_vol_path = parent_vol.getVolumePath()
 
     # Add new bitmaps to base volume
@@ -1293,25 +1350,16 @@ def test_create_snapshot_cloning_bitmaps(user_domain, local_fallocate):
         desc="Test volume",
         srcImgUUID=parent_vol.imgUUID,
         srcVolUUID=parent_vol.volUUID,
-        add_bitmaps=True
+        add_bitmaps=True,
     )
 
-    vol = user_domain.produceVolume(
-        parent_img_uuid, vol_uuid)
+    vol = user_domain.produceVolume(parent_img_uuid, vol_uuid)
     vol_path = vol.getVolumePath()
     info = qemuimg.info(vol_path)
 
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ["auto"],
-            "name": bitmap_names[0],
-            "granularity": 65536
-        },
-        {
-            "flags": ["auto"],
-            "name": bitmap_names[1],
-            "granularity": 65536
-        },
+        {"flags": ["auto"], "name": bitmap_names[0], "granularity": 65536},
+        {"flags": ["auto"], "name": bitmap_names[1], "granularity": 65536},
     ]
 
     qemuInfo = vol.getQemuImageInfo()
@@ -1339,7 +1387,8 @@ def test_create_snapshot_with_new_bitmap(user_domain, local_fallocate):
         volUUID=base_id,
         desc="test",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     base = user_domain.produceVolume(img_id, base_id)
 
@@ -1366,16 +1415,8 @@ def test_create_snapshot_with_new_bitmap(user_domain, local_fallocate):
 
     # Old bitmap cloned to top volume, and new bitmap added.
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ["auto"],
-            "name": "old-bitmap",
-            "granularity": 65536
-        },
-        {
-            "flags": ["auto"],
-            "name": "new-bitmap",
-            "granularity": 65536
-        },
+        {"flags": ["auto"], "name": "old-bitmap", "granularity": 65536},
+        {"flags": ["auto"], "name": "new-bitmap", "granularity": 65536},
     ]
 
     qemuInfo = top.getQemuImageInfo()
@@ -1403,7 +1444,8 @@ def test_create_volume_with_new_bitmap(user_domain, local_fallocate):
         desc="test",
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
-        bitmap='new-bitmap')
+        bitmap='new-bitmap',
+    )
 
     vol = user_domain.produceVolume(img_id, vol_id)
 
@@ -1411,11 +1453,7 @@ def test_create_volume_with_new_bitmap(user_domain, local_fallocate):
 
     # Old bitmap cloned to top volume, and new bitmap added.
     assert info['format-specific']['data']['bitmaps'] == [
-        {
-            "flags": ["auto"],
-            "name": "new-bitmap",
-            "granularity": 65536
-        },
+        {"flags": ["auto"], "name": "new-bitmap", "granularity": 65536},
     ]
 
     qemuInfo = vol.getQemuImageInfo()
@@ -1440,10 +1478,10 @@ def test_fail_add_bitmaps_to_v3_domain(user_domain, local_fallocate):
         volUUID=parent_vol_uuid,
         desc="test",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
-    parent_vol = user_domain.produceVolume(
-        parent_img_uuid, parent_vol_uuid)
+    parent_vol = user_domain.produceVolume(parent_img_uuid, parent_vol_uuid)
 
     vol_uuid = str(uuid.uuid4())
     with pytest.raises(se.UnsupportedOperation):
@@ -1458,7 +1496,7 @@ def test_fail_add_bitmaps_to_v3_domain(user_domain, local_fallocate):
             desc="Test volume",
             srcImgUUID=parent_vol.imgUUID,
             srcVolUUID=parent_vol.volUUID,
-            add_bitmaps=True
+            add_bitmaps=True,
         )
 
 
@@ -1482,7 +1520,8 @@ def test_fail_create_bitmap_with_v3_domain(user_domain, local_fallocate):
 
 
 def verify_volume_file(
-        path, format, virtual_size, qemu_info, backing_file=None):
+    path, format, virtual_size, qemu_info, backing_file=None
+):
     assert qemu_info['format'] == format
     assert qemu_info['virtual-size'] == virtual_size
 
@@ -1518,4 +1557,5 @@ class Config(object):
     def __repr__(self):
         rep = "path: {}, block size: {}, max hosts: {}, domain version: {}"
         return rep.format(
-            self.path, self.block_size, self.max_hosts, self.domain_version)
+            self.path, self.block_size, self.max_hosts, self.domain_version
+        )

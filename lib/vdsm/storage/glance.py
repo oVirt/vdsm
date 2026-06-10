@@ -68,8 +68,10 @@ class ApiVersionError(errors.Base):
 
 
 class ImageSizeError(errors.Base):
-    msg = ("Unable to get image size: {self.reason}, url={self.url},"
-           "headers={self.headers}, response={self.response}")
+    msg = (
+        "Unable to get image size: {self.reason}, url={self.url},"
+        "headers={self.headers}, response={self.response}"
+    )
 
     def __init__(self, reason, url, headers, response):
         self.reason = reason
@@ -131,15 +133,17 @@ def download_image(image_path, url, headers=None):
         url = url + "/file"
 
     with utils.stopwatch(
-            "Downloading {} to {}".format(url, image_path),
-            level=logging.INFO,
-            log=log):
+        "Downloading {} to {}".format(url, image_path),
+        level=logging.INFO,
+        log=log,
+    ):
         curlImgWrap.download(url, image_path, headers)
 
 
 def upload_image(image_path, url, headers=None):
     with utils.stopwatch(
-            "Uploading {} to {}".format(image_path, url),
-            level=logging.INFO,
-            log=log):
+        "Uploading {} to {}".format(image_path, url),
+        level=logging.INFO,
+        log=log,
+    ):
         curlImgWrap.upload(url, image_path, headers)

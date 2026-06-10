@@ -58,17 +58,23 @@ class TestSysfs(VdsmTestCase):
 
     def test_read_password(self):
         with temporaryPath(data=b"password") as path:
-            self.assertEqual(sysfs.read_password(path),
-                             password.ProtectedPassword("password"))
+            self.assertEqual(
+                sysfs.read_password(path),
+                password.ProtectedPassword("password"),
+            )
 
     def test_read_password_strip(self):
         with temporaryPath(data=b" password\n ") as path:
-            self.assertEqual(sysfs.read_password(path),
-                             password.ProtectedPassword("password"))
+            self.assertEqual(
+                sysfs.read_password(path),
+                password.ProtectedPassword("password"),
+            )
 
     def test_read_password_missing_default(self):
-        self.assertEqual(sysfs.read_password("/no/such/path", ""),
-                         password.ProtectedPassword(""))
+        self.assertEqual(
+            sysfs.read_password("/no/such/path", ""),
+            password.ProtectedPassword(""),
+        )
 
     def test_read_password_missing_no_default(self):
         with self.assertRaises(EnvironmentError):

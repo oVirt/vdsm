@@ -12,8 +12,7 @@ from vdsm.tool import confmeta
 class TestConfmeta(VdsmTestCase):
 
     def test_owned_by_vdsm(self):
-        data = (b"#REVISION: 1\n"
-                b"#PRIVATE: NO\n")
+        data = b"#REVISION: 1\n" b"#PRIVATE: NO\n"
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, 1)
@@ -27,8 +26,7 @@ class TestConfmeta(VdsmTestCase):
             self.assertEqual(md.private, False)
 
     def test_owned_by_sysadmin(self):
-        data = (b"#REVISION: 1\n"
-                b"#PRIVATE: YES\n")
+        data = b"#REVISION: 1\n" b"#PRIVATE: YES\n"
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, 1)
@@ -56,87 +54,83 @@ class TestConfmeta(VdsmTestCase):
             self.assertEqual(md.private, False)
 
     def test_no_metadata(self):
-        data = (b"# There is no metadata here\n"
-                b"Actual file data...\n")
+        data = b"# There is no metadata here\n" b"Actual file data...\n"
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, None)
             self.assertEqual(md.private, False)
 
     def test_order_does_not_matter(self):
-        data = (b"# A comment\n"
-                b"#PRIVATE: NO\n"
-                b"# Another comment\n"
-                b"#REVISION: 1\n"
-                b"# Last comment\n"
-                b"Actual file data...")
+        data = (
+            b"# A comment\n"
+            b"#PRIVATE: NO\n"
+            b"# Another comment\n"
+            b"#REVISION: 1\n"
+            b"# Last comment\n"
+            b"Actual file data..."
+        )
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, 1)
             self.assertEqual(md.private, False)
 
     def test_ignore_file_body(self):
-        data = (b"#REVISION: 1\n"
-                b"#PRIVATE: YES\n"
-                b"REVISION: 2\n"
-                b"PRIVATE: NO\n")
+        data = (
+            b"#REVISION: 1\n"
+            b"#PRIVATE: YES\n"
+            b"REVISION: 2\n"
+            b"PRIVATE: NO\n"
+        )
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, 1)
             self.assertEqual(md.private, True)
 
     def test_must_start_with_metadata(self):
-        data = (b"There is no metadata here\n"
-                b"#REVISION: 1\n"
-                b"#PRIVATE: YES\n")
+        data = (
+            b"There is no metadata here\n" b"#REVISION: 1\n" b"#PRIVATE: YES\n"
+        )
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, None)
             self.assertEqual(md.private, False)
 
     def test_ignore_unknonwn_tags(self):
-        data = (b"#UNKNOWN: VALUE\n"
-                b"#REVISION: 1\n"
-                b"#PRIVATE: YES\n")
+        data = b"#UNKNOWN: VALUE\n" b"#REVISION: 1\n" b"#PRIVATE: YES\n"
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, 1)
             self.assertEqual(md.private, True)
 
     def test_last_value_win(self):
-        data = (b"#REVISION: 4\n"
-                b"#REVISION: 3\n"
-                b"#PRIVATE: YES\n")
+        data = b"#REVISION: 4\n" b"#REVISION: 3\n" b"#PRIVATE: YES\n"
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, 3)
             self.assertEqual(md.private, True)
 
     def test_no_whitespace(self):
-        data = (b"#REVISION:1\n"
-                b"#PRIVATE:NO\n")
+        data = b"#REVISION:1\n" b"#PRIVATE:NO\n"
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, 1)
             self.assertEqual(md.private, False)
 
     def test_extra_whitespace(self):
-        data = (b"#REVISION:  1   \n"
-                b"#PRIVATE:   NO  \n")
+        data = b"#REVISION:  1   \n" b"#PRIVATE:   NO  \n"
         with temporaryPath(data=data) as path:
             md = confmeta.read_metadata(path)
             self.assertEqual(md.revision, 1)
             self.assertEqual(md.private, False)
 
     def test_invalid_revision(self):
-        data = (b"#REVISION: invalid\n")
+        data = b"#REVISION: invalid\n"
         with temporaryPath(data=data) as path:
             with self.assertRaises(ValueError):
                 confmeta.read_metadata(path)
 
     def test_invalid_private(self):
-        data = (b"#REVISION: 1\n"
-                b"#PRIVATE:\n")
+        data = b"#REVISION: 1\n" b"#PRIVATE:\n"
         with temporaryPath(data=data) as path:
             with self.assertRaises(ValueError):
                 confmeta.read_metadata(path)
@@ -162,8 +156,8 @@ file body...
 """
         count = 100
         with temporaryPath(data=data) as path:
-            elapsed = timeit.timeit("bench()",
-                                    setup=setup % path,
-                                    number=count)
+            elapsed = timeit.timeit(
+                "bench()", setup=setup % path, number=count
+            )
 
         print("%.6f seconds (%.6f per op)" % (elapsed, elapsed / count))

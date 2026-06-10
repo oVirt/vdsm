@@ -21,7 +21,8 @@ class DevicesFromXMLTests(VdsmTestCase):
         self.vmid = 'testvmid'
 
     def test_no_devices(self):
-        dev_map = self.prepare_map(u'''<?xml version="1.0" encoding="utf-8"?>
+        dev_map = self.prepare_map(
+            u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
   <name>vmname</name>
   <uuid>{self.vmid}</uuid>
@@ -29,11 +30,13 @@ class DevicesFromXMLTests(VdsmTestCase):
     <ovirt:qos/>
   </metadata>
   <devices/>
-</domain>''')
+</domain>'''
+        )
         self._assert_empty_dev_map(dev_map)
 
     def test_unknown_devices(self):
-        dev_map = self.prepare_map(u'''<?xml version="1.0" encoding="utf-8"?>
+        dev_map = self.prepare_map(
+            u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
   <name>vmname</name>
   <uuid>{self.vmid}</uuid>
@@ -44,11 +47,13 @@ class DevicesFromXMLTests(VdsmTestCase):
     <foo/>
     <bar/>
   </devices>
-</domain>''')
+</domain>'''
+        )
         self._assert_empty_dev_map(dev_map)
 
     def test_skip_unknown_devices(self):
-        dev_map = self.prepare_map(u'''<?xml version="1.0" encoding="utf-8"?>
+        dev_map = self.prepare_map(
+            u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
   <name>vmname</name>
   <uuid>{self.vmid}</uuid>
@@ -62,7 +67,8 @@ class DevicesFromXMLTests(VdsmTestCase):
       <model heads="1" ram="65536" type="qxl" vgamem="16384" vram="32768"/>
     </video>
   </devices>
-</domain>''')
+</domain>'''
+        )
         for dev_type, dev_objs in dev_map.items():
             assert dev_objs == []
 
@@ -71,7 +77,8 @@ class DevicesFromXMLTests(VdsmTestCase):
         Some devices are needed for the VM, but Vdsm doesn't handle them,
         so we skip them as they are unknown
         """
-        dev_map = self.prepare_map(u'''<?xml version="1.0" encoding="utf-8"?>
+        dev_map = self.prepare_map(
+            u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
   <name>vmname</name>
   <uuid>{self.vmid}</uuid>
@@ -88,7 +95,8 @@ class DevicesFromXMLTests(VdsmTestCase):
       <model heads="1" ram="65536" type="qxl" vgamem="16384" vram="32768"/>
     </video>
   </devices>
-</domain>''')
+</domain>'''
+        )
         for dev_type, dev_objs in dev_map.items():
             assert dev_objs == []
 
@@ -127,7 +135,8 @@ class RestoreStateTests(VdsmTestCase):
         with dom_desc.metadata_descriptor() as md_desc:
 
             disk_params = make_params(
-                dom_desc.id, dom_desc, md_desc, self._log)
+                dom_desc.id, dom_desc, md_desc, self._log
+            )
 
         sda = find_drive_conf_by_name(disk_params, 'sda')
 

@@ -25,7 +25,6 @@ from vdsm.storage import volume
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-
 META_FILEEXT = ".meta"
 LEASE_FILEOFFSET = 0
 
@@ -63,8 +62,9 @@ class FileVolumeManifest(volume.VolumeManifest):
     align_size = MiB
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
-                                       volUUID)
+        volume.VolumeManifest.__init__(
+            self, repoPath, sdUUID, imgUUID, volUUID
+        )
 
     @property
     def oop(self):
@@ -140,7 +140,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         if not metaId:
             metaId = self.getMetadataId()
 
-        volPath, = metaId
+        (volPath,) = metaId
         metaPath = self.getMetaVolumePath(volPath)
 
         try:
@@ -161,7 +161,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         return self.getMetaParam(sc.PUUID)
 
     def getChildren(self):
-        """ Return children volume UUIDs.
+        """Return children volume UUIDs.
 
         This API is not suitable for use with a template's base volume.
         """
@@ -239,7 +239,7 @@ class FileVolumeManifest(volume.VolumeManifest):
 
     @classmethod
     def _putMetadata(cls, metaId, meta, **overrides):
-        volPath, = metaId
+        (volPath,) = metaId
         metaPath = cls.metaVolumePath(volPath)
 
         sd = sdCache.produce_manifest(meta.domain)
@@ -281,8 +281,12 @@ class FileVolumeManifest(volume.VolumeManifest):
 
     @classmethod
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
-        cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
-                      "metaId=%s", volUUID, sdUUID, metaId)
+        cls.log.debug(
+            "Initializing volume lease volUUID=%s sdUUID=%s, " "metaId=%s",
+            volUUID,
+            sdUUID,
+            metaId,
+        )
         volPath = metaId[0]
         leasePath = cls.leaseVolumePath(volPath)
         oop.getProcessPool(sdUUID).truncateFile(leasePath, LEASE_FILEOFFSET)
@@ -294,17 +298,20 @@ class FileVolumeManifest(volume.VolumeManifest):
             volUUID.encode("utf-8"),
             [(leasePath, LEASE_FILEOFFSET)],
             align=manifest.alignment,
-            sector=manifest.block_size)
+            sector=manifest.block_size,
+        )
 
     def _shareLease(self, dstImgPath):
         """
         Internal utility method used to share the template volume lease file
         with the images based on such template.
         """
-        self.log.debug("Share volume lease of %s to %s", self.volUUID,
-                       dstImgPath)
+        self.log.debug(
+            "Share volume lease of %s to %s", self.volUUID, dstImgPath
+        )
         dstLeasePath = self.getLeaseVolumePath(
-            os.path.join(dstImgPath, self.volUUID))
+            os.path.join(dstImgPath, self.volUUID)
+        )
         self.oop.utils.forceLink(self.getLeaseVolumePath(), dstLeasePath)
 
     def _share(self, dstImgPath):
@@ -317,8 +324,9 @@ class FileVolumeManifest(volume.VolumeManifest):
         self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
         self.oop.utils.forceLink(self.getVolumePath(), dstVolPath)
 
-        self.log.debug("Share volume metadata of %s to %s", self.volUUID,
-                       dstImgPath)
+        self.log.debug(
+            "Share volume metadata of %s to %s", self.volUUID, dstImgPath
+        )
         self.oop.utils.forceLink(self.getMetaVolumePath(), dstMetaPath)
 
         # Link the lease file if the domain uses sanlock
@@ -338,7 +346,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         volList = []
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
-            if (sd.produceVolume(imgUUID, volid).getImage() == imgUUID):
+            if sd.produceVolume(imgUUID, volid).getImage() == imgUUID:
                 volList.append(volid)
         return volList
 
@@ -384,8 +392,8 @@ class FileVolumeManifest(volume.VolumeManifest):
 
 
 class FileVolume(volume.Volume):
-    """ Actually represents a single volume (i.e. part of virtual disk).
-    """
+    """Actually represents a single volume (i.e. part of virtual disk)."""
+
     manifestClass = FileVolumeManifest
 
     @property
@@ -400,19 +408,22 @@ class FileVolume(volume.Volume):
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, *args):
         if len(args) == 1:  # Backward compatibility
-            volPath, = args
+            (volPath,) = args
             sdUUID = getDomUuidFromVolumePath(volPath)
         elif len(args) == 3:
-            (sdUUID, volUUID, volPath) = args
+            sdUUID, volUUID, volPath = args
         else:
-            raise TypeError("halfbakedVolumeRollback takes 1 or 3 "
-                            "arguments (%d given)" % len(args))
+            raise TypeError(
+                "halfbakedVolumeRollback takes 1 or 3 "
+                "arguments (%d given)" % len(args)
+            )
 
         metaVolPath = cls.manifestClass.metaVolumePath(volPath)
         cls.log.info("Halfbaked volume rollback for volPath=%s", volPath)
 
-        if oop.getProcessPool(sdUUID).fileUtils.pathExists(volPath) and not \
-                oop.getProcessPool(sdUUID).fileUtils.pathExists(metaVolPath):
+        if oop.getProcessPool(sdUUID).fileUtils.pathExists(
+            volPath
+        ) and not oop.getProcessPool(sdUUID).fileUtils.pathExists(metaVolPath):
             oop.getProcessPool(sdUUID).os.unlink(volPath)
 
     @classmethod
@@ -425,44 +436,74 @@ class FileVolume(volume.Volume):
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
 
     @classmethod
-    def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None,
-                add_bitmaps=False, bitmap=None):
+    def _create(
+        cls,
+        dom,
+        imgUUID,
+        volUUID,
+        capacity,
+        volFormat,
+        preallocate,
+        volParent,
+        srcImgUUID,
+        srcVolUUID,
+        volPath,
+        initial_size=None,
+        add_bitmaps=False,
+        bitmap=None,
+    ):
         """
         Class specific implementation of volumeCreate.
         """
         try:
             if volFormat == sc.RAW_FORMAT:
                 return cls._create_raw_volume(
-                    dom, volUUID, capacity, volPath, initial_size, preallocate)
+                    dom, volUUID, capacity, volPath, initial_size, preallocate
+                )
             else:
                 return cls._create_cow_volume(
-                    dom, volUUID, capacity, volPath, initial_size, preallocate,
-                    volParent, imgUUID, srcImgUUID, srcVolUUID,
-                    add_bitmaps=add_bitmaps, bitmap=bitmap)
+                    dom,
+                    volUUID,
+                    capacity,
+                    volPath,
+                    initial_size,
+                    preallocate,
+                    volParent,
+                    imgUUID,
+                    srcImgUUID,
+                    srcVolUUID,
+                    add_bitmaps=add_bitmaps,
+                    bitmap=bitmap,
+                )
         except cmdutils.Error as e:
             cls.log.error("Unexpected error: %s", e, exc_info=True)
             raise se.VolumeCreationError(volPath) from e
 
     @classmethod
     def _create_raw_volume(
-            cls, dom, vol_id, capacity, vol_path, initial_size, preallocate):
+        cls, dom, vol_id, capacity, vol_path, initial_size, preallocate
+    ):
         """
         Specific implementation of _create() for RAW volumes.
         All the exceptions are properly handled and logged in volume.create()
         """
         if initial_size is not None:
             if preallocate == sc.SPARSE_VOL:
-                cls.log.error("initial size is not supported for file-based "
-                              "sparse volumes")
+                cls.log.error(
+                    "initial size is not supported for file-based "
+                    "sparse volumes"
+                )
                 raise se.InvalidParameterException(
-                    "initial size", initial_size)
+                    "initial size", initial_size
+                )
 
             if initial_size > capacity:
-                cls.log.error("initial_size %d out of range 0-%s",
-                              initial_size, capacity)
+                cls.log.error(
+                    "initial_size %d out of range 0-%s", initial_size, capacity
+                )
                 raise se.InvalidParameterException(
-                    "initial size", initial_size)
+                    "initial size", initial_size
+                )
 
             # In the past engine called with initial_size=0 to deffer
             # preallocation to qemu-img convert, but we learned that this is a
@@ -471,8 +512,11 @@ class FileVolume(volume.Volume):
             # using -n so it does not affect image allocation.
             cls.log.warning("Ignoring initial_size=%s", initial_size)
 
-        cls.log.info("Request to create RAW volume %s with capacity = %s",
-                     vol_path, capacity)
+        cls.log.info(
+            "Request to create RAW volume %s with capacity = %s",
+            vol_path,
+            capacity,
+        )
 
         cls._truncate_volume(vol_path, 0, vol_id, dom)
 
@@ -491,27 +535,46 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _create_cow_volume(
-            cls, dom, vol_id, capacity, vol_path, initial_size, preallocate,
-            vol_parent, img_id, src_img_id, src_vol_id, add_bitmaps,
-            bitmap=None):
+        cls,
+        dom,
+        vol_id,
+        capacity,
+        vol_path,
+        initial_size,
+        preallocate,
+        vol_parent,
+        img_id,
+        src_img_id,
+        src_vol_id,
+        add_bitmaps,
+        bitmap=None,
+    ):
         """
         specific implementation of _create() for COW volumes.
         All the exceptions are properly handled and logged in volume.create()
         """
         if initial_size:
-            cls.log.error("initial size is not supported "
-                          "for file-based volumes")
+            cls.log.error(
+                "initial size is not supported " "for file-based volumes"
+            )
             raise se.InvalidParameterException("initial size", initial_size)
 
         cls._truncate_volume(vol_path, 0, vol_id, dom)
 
         if not vol_parent:
-            cls.log.info("Request to create COW volume %s with capacity = %s",
-                         vol_path, capacity)
+            cls.log.info(
+                "Request to create COW volume %s with capacity = %s",
+                vol_path,
+                capacity,
+            )
 
             format = sc.fmt2str(sc.COW_FORMAT)
-            cls._create_image(vol_path, capacity, format=format,
-                              qcow2_compat=dom.qcow2_compat())
+            cls._create_image(
+                vol_path,
+                capacity,
+                format=format,
+                qcow2_compat=dom.qcow2_compat(),
+            )
             if preallocate == sc.PREALLOCATED_VOL:
                 offset = qemuimg.check(vol_path, format=format)["offset"]
 
@@ -522,11 +585,18 @@ class FileVolume(volume.Volume):
                 cls._preallocate_volume(vol_path, capacity, offset=offset)
         else:
             # Create hardlink to template and its meta file
-            cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
-                         "with capacity %s",
-                         img_id, vol_id, src_img_id, src_vol_id, capacity)
+            cls.log.info(
+                "Request to create snapshot %s/%s of volume %s/%s "
+                "with capacity %s",
+                img_id,
+                vol_id,
+                src_img_id,
+                src_vol_id,
+                capacity,
+            )
             vol_parent.clone(
-                vol_path, sc.COW_FORMAT, capacity, add_bitmaps=add_bitmaps)
+                vol_path, sc.COW_FORMAT, capacity, add_bitmaps=add_bitmaps
+            )
 
         if bitmap:
             cls._silent_add_bitmap(vol_path, bitmap)
@@ -541,8 +611,11 @@ class FileVolume(volume.Volume):
     def _truncate_volume(cls, vol_path, capacity, vol_id, dom):
         try:
             oop.getProcessPool(dom.sdUUID).truncateFile(
-                vol_path, capacity, mode=sc.FILE_VOLUME_PERMISSIONS,
-                creatExcl=True)
+                vol_path,
+                capacity,
+                mode=sc.FILE_VOLUME_PERMISSIONS,
+                creatExcl=True,
+            )
         except OSError as e:
             if e.errno == errno.EEXIST:
                 raise se.VolumeAlreadyExists(vol_id)
@@ -552,15 +625,17 @@ class FileVolume(volume.Volume):
     def _create_image(cls, vol_path, size, format, qcow2_compat=None):
         # Always create sparse image, since qemu-img create uses
         # posix_fallocate() which is inefficient and harmful.
-        op = qemuimg.create(vol_path, size=size,
-                            format=format, qcow2Compat=qcow2_compat)
+        op = qemuimg.create(
+            vol_path, size=size, format=format, qcow2Compat=qcow2_compat
+        )
 
         # This is fast but it can get stuck if storage is inaccessible.
         with vars.task.abort_callback(op.abort):
             with utils.stopwatch(
-                    "Creating image {}".format(vol_path),
-                    level=logging.INFO,
-                    log=cls.log):
+                "Creating image {}".format(vol_path),
+                level=logging.INFO,
+                log=cls.log,
+            ):
                 op.run()
 
     @classmethod
@@ -568,21 +643,26 @@ class FileVolume(volume.Volume):
         if capacity <= offset:
             return
         op = fallocate.allocate(
-            vol_path, size=capacity - offset, offset=offset)
+            vol_path, size=capacity - offset, offset=offset
+        )
 
         # This is fast on NFS 4.2, GlusterFS, XFS and ext4, but can be
         # extremely slow on NFS < 4.2, writing zeroes to entire image.
         with vars.task.abort_callback(op.abort):
             with utils.stopwatch(
-                    "Preallocating volume {}".format(vol_path),
-                    level=logging.INFO,
-                    log=cls.log):
+                "Preallocating volume {}".format(vol_path),
+                level=logging.INFO,
+                log=cls.log,
+            ):
                 op.run()
 
     @classmethod
     def _set_permissions(cls, vol_path, dom):
-        cls.log.info("Changing volume %r permission to %04o",
-                     vol_path, sc.FILE_VOLUME_PERMISSIONS)
+        cls.log.info(
+            "Changing volume %r permission to %04o",
+            vol_path,
+            sc.FILE_VOLUME_PERMISSIONS,
+        )
         dom.oop.os.chmod(vol_path, sc.FILE_VOLUME_PERMISSIONS)
 
     def removeMetadata(self, metaId=None):
@@ -617,29 +697,38 @@ class FileVolume(volume.Volume):
             puuid = self.getParent()
             self.setParent(sc.BLANK_UUID)
             if puuid and puuid != sc.BLANK_UUID:
-                pvol = FileVolume(self.repoPath, self.sdUUID,
-                                  self.imgUUID, puuid)
+                pvol = FileVolume(
+                    self.repoPath, self.sdUUID, self.imgUUID, puuid
+                )
                 pvol.recheckIfLeaf()
         except Exception as e:
             eFound = e
-            self.log.warning("cannot finalize parent volume %s",
-                             puuid, exc_info=True)
+            self.log.warning(
+                "cannot finalize parent volume %s", puuid, exc_info=True
+            )
 
         try:
             self.oop.utils.rmFile(vol_path)
             self.oop.utils.rmFile(lease_path)
         except Exception as e:
             eFound = e
-            self.log.error("cannot delete volume %s at path: %s", self.volUUID,
-                           vol_path, exc_info=True)
+            self.log.error(
+                "cannot delete volume %s at path: %s",
+                self.volUUID,
+                vol_path,
+                exc_info=True,
+            )
 
         try:
             self.removeMetadata()
             return True
         except Exception as e:
             eFound = e
-            self.log.error("cannot remove volume's %s metadata",
-                           self.volUUID, exc_info=True)
+            self.log.error(
+                "cannot remove volume's %s metadata",
+                self.volUUID,
+                exc_info=True,
+            )
 
         raise eFound
 
@@ -672,9 +761,12 @@ class FileVolume(volume.Volume):
             sdUUID = getDomUuidFromVolumePath(oldPath)
             oop.getProcessPool(sdUUID).os.rename(oldPath, newPath)
         except Exception:
-            cls.log.error("Could not rollback "
-                          "volume rename (oldPath=%s newPath=%s)",
-                          oldPath, newPath, exc_info=True)
+            cls.log.error(
+                "Could not rollback " "volume rename (oldPath=%s newPath=%s)",
+                oldPath,
+                newPath,
+                exc_info=True,
+            )
 
     def rename(self, newUUID, recovery=True):
         """
@@ -691,26 +783,41 @@ class FileVolume(volume.Volume):
 
         if recovery:
             name = "Rename volume rollback: " + volPath
-            vars.task.pushRecovery(task.Recovery(name, "fileVolume",
-                                                 "FileVolume",
-                                                 "renameVolumeRollback",
-                                                 [volPath, self.volumePath]))
+            vars.task.pushRecovery(
+                task.Recovery(
+                    name,
+                    "fileVolume",
+                    "FileVolume",
+                    "renameVolumeRollback",
+                    [volPath, self.volumePath],
+                )
+            )
         self.log.info("Renaming %s to %s", self.volumePath, volPath)
         self.oop.os.rename(self.volumePath, volPath)
         if recovery:
             name = "Rename meta-volume rollback: " + metaPath
-            vars.task.pushRecovery(task.Recovery(name, "fileVolume",
-                                                 "FileVolume",
-                                                 "renameVolumeRollback",
-                                                 [metaPath, prevMetaPath]))
+            vars.task.pushRecovery(
+                task.Recovery(
+                    name,
+                    "fileVolume",
+                    "FileVolume",
+                    "renameVolumeRollback",
+                    [metaPath, prevMetaPath],
+                )
+            )
         self.log.info("Renaming %s to %s", prevMetaPath, metaPath)
         self.oop.os.rename(prevMetaPath, metaPath)
         if recovery:
             name = "Rename lease-volume rollback: " + leasePath
-            vars.task.pushRecovery(task.Recovery(name, "fileVolume",
-                                                 "FileVolume",
-                                                 "renameVolumeRollback",
-                                                 [leasePath, prevLeasePath]))
+            vars.task.pushRecovery(
+                task.Recovery(
+                    name,
+                    "fileVolume",
+                    "FileVolume",
+                    "renameVolumeRollback",
+                    [leasePath, prevLeasePath],
+                )
+            )
         self.log.info("Renaming %s to %s", prevLeasePath, leasePath)
         try:
             self.oop.os.rename(prevLeasePath, leasePath)
@@ -718,8 +825,9 @@ class FileVolume(volume.Volume):
             if e.errno != errno.ENOENT:
                 raise
 
-        self.renameLease((volPath, LEASE_FILEOFFSET), newUUID,
-                         recovery=recovery)
+        self.renameLease(
+            (volPath, LEASE_FILEOFFSET), newUUID, recovery=recovery
+        )
 
         self._manifest.volUUID = newUUID
         self._manifest.volumePath = volPath
@@ -743,24 +851,27 @@ class FileVolume(volume.Volume):
             return  # Nothing to do
         elif cur_capacity <= 0:
             raise se.StorageException(
-                "Volume capacity is impossible: %s" % cur_capacity)
+                "Volume capacity is impossible: %s" % cur_capacity
+            )
         elif new_capacity < cur_capacity:
             raise se.VolumeResizeValueError(new_capacity)
 
         if self.getType() == sc.PREALLOCATED_VOL:
-            self.log.info("Preallocating volume %s to %s",
-                          volPath, new_capacity)
+            self.log.info(
+                "Preallocating volume %s to %s", volPath, new_capacity
+            )
             op = fallocate.allocate(
-                volPath, new_capacity - cur_capacity, offset=cur_capacity)
+                volPath, new_capacity - cur_capacity, offset=cur_capacity
+            )
             with vars.task.abort_callback(op.abort):
                 with utils.stopwatch(
-                        "Preallocating volume {}".format(volPath),
-                        level=logging.INFO,
-                        log=self.log):
+                    "Preallocating volume {}".format(volPath),
+                    level=logging.INFO,
+                    log=self.log,
+                ):
                     op.run()
         else:
             # for sparse files we can just truncate to the correct size
             # also good fallback for failed preallocation
-            self.log.info("Truncating volume %s to %s",
-                          volPath, new_capacity)
+            self.log.info("Truncating volume %s to %s", volPath, new_capacity)
             self.oop.truncateFile(volPath, new_capacity)

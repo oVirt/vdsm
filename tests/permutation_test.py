@@ -32,9 +32,7 @@ def mysum(lst, strategy):
         return s
 
 
-SUM_PREMUTATIONS = (("recursive",),
-                    ("builtin",),
-                    ("loop",))
+SUM_PREMUTATIONS = (("recursive",), ("builtin",), ("loop",))
 
 
 @expandPermutations

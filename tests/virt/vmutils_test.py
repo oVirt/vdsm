@@ -48,6 +48,7 @@ class ExpiringCacheOperationTests(TestCaseBase):
     def test_delitem_missing_key(self):
         def _del(key):
             del self.cache[key]
+
         with pytest.raises(KeyError):
             _del('this key does not exist')
 
@@ -121,11 +122,10 @@ class ExceptionsTests(TestCaseBase):
         try:
             raise vm.MissingLibvirtDomainError()
         except vm.MissingLibvirtDomainError as e:
-            assert e.reason == \
+            assert e.reason == vmexitreason.LIBVIRT_DOMAIN_MISSING
+            assert str(e) == vmexitreason.exitReasons.get(
                 vmexitreason.LIBVIRT_DOMAIN_MISSING
-            assert str(e) == \
-                vmexitreason.exitReasons.get(
-                    vmexitreason.LIBVIRT_DOMAIN_MISSING)
+            )
 
 
 @expandPermutations
@@ -151,8 +151,10 @@ class DynamicSemaphoreTests(TestCaseBase):
 
     def assertNotAcquirable(self):
         success = self.sem.acquire(blocking=False)
-        assert not success, ('It should not be possible to obtain '
-                             'Dynamic Semaphore with value 0')
+        assert not success, (
+            'It should not be possible to obtain '
+            'Dynamic Semaphore with value 0'
+        )
 
     def test_basic_operations(self):
         self.assertAcquirable(times=self.INITIAL_BOUND)
@@ -257,7 +259,8 @@ class TestRunLogging(object):
     def test_log_content(self, tmp_path):
         with MonkeyPatchScope([(utils, '_COMMANDS_LOG_DIR', str(tmp_path))]):
             log_path = utils.run_logging(
-                ["sh", "-c", "echo out >&1; echo err >&2"])
+                ["sh", "-c", "echo out >&1; echo err >&2"]
+            )
             assert os.path.isabs(log_path)
             assert os.path.isfile(log_path)
             with open(log_path, 'rb') as f:

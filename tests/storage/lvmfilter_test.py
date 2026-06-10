@@ -13,7 +13,7 @@ from vdsm.storage import lvmfilter
 from vdsm.storage import constants as sc
 from vdsm.storage.lvmfilter import MountInfo
 
-from . marks import requires_root
+from .marks import requires_root
 
 TEST_DIR = os.path.dirname(__file__)
 FAKE_LSBLK = os.path.join(TEST_DIR, "fake-lsblk")
@@ -23,7 +23,8 @@ log = logging.getLogger("test")
 
 
 FakeDevice = collections.namedtuple(
-    "FakeDevice", "device, udev_link, mapper_link")
+    "FakeDevice", "device, udev_link, mapper_link"
+)
 
 
 @pytest.fixture
@@ -73,21 +74,39 @@ def fake_sys_block_info(monkeypatch, tmpdir):
     os.symlink(scsi, sys_device_link)
 
     monkeypatch.setattr(
-        lvmfilter, "SYS_BLOCK_DEVICE_PATTERN", str(tmpdir) + "/{}")
+        lvmfilter, "SYS_BLOCK_DEVICE_PATTERN", str(tmpdir) + "/{}"
+    )
 
 
-@pytest.mark.parametrize("plat,expected", [
-    ("rhel74", [
-        MountInfo("/dev/mapper/vg0-lv_home", "/home", "vg0", FAKE_DEVICES),
-        MountInfo("/dev/mapper/vg0-lv_root", "/", "vg0", FAKE_DEVICES),
-        MountInfo("/dev/mapper/vg0-lv_swap", "[SWAP]", "vg0", FAKE_DEVICES),
-    ]),
-    ("fedora", [
-        MountInfo("/dev/mapper/fedora-home", "/home", "vg0", FAKE_DEVICES),
-        MountInfo("/dev/mapper/fedora-root", "/", "vg0", FAKE_DEVICES),
-        MountInfo("/dev/mapper/fedora-swap", "[SWAP]", "vg0", FAKE_DEVICES),
-    ]),
-])
+@pytest.mark.parametrize(
+    "plat,expected",
+    [
+        (
+            "rhel74",
+            [
+                MountInfo(
+                    "/dev/mapper/vg0-lv_home", "/home", "vg0", FAKE_DEVICES
+                ),
+                MountInfo("/dev/mapper/vg0-lv_root", "/", "vg0", FAKE_DEVICES),
+                MountInfo(
+                    "/dev/mapper/vg0-lv_swap", "[SWAP]", "vg0", FAKE_DEVICES
+                ),
+            ],
+        ),
+        (
+            "fedora",
+            [
+                MountInfo(
+                    "/dev/mapper/fedora-home", "/home", "vg0", FAKE_DEVICES
+                ),
+                MountInfo("/dev/mapper/fedora-root", "/", "vg0", FAKE_DEVICES),
+                MountInfo(
+                    "/dev/mapper/fedora-swap", "[SWAP]", "vg0", FAKE_DEVICES
+                ),
+            ],
+        ),
+    ],
+)
 def test_find_lvm_mounts(monkeypatch, plat, expected):
     # Monkeypatch the module to run the fake-lsblk returning data collected on
     # on real platform.
@@ -113,18 +132,14 @@ def test_find_lvm_mounts(monkeypatch, plat, expected):
 
 def test_build_filter():
     mounts = [
-        MountInfo("/dev/mapper/vg0-lv_home",
-                  "/home",
-                  "vg0",
-                  ["/dev/sda2", "/dev/sdb2"]),
-        MountInfo("/dev/mapper/vg0-lv_root",
-                  "/",
-                  "vg0",
-                  ["/dev/sda2"]),
-        MountInfo("/dev/mapper/vg0-lv_swap",
-                  "[SWAP]",
-                  "vg0",
-                  ["/dev/sda2"]),
+        MountInfo(
+            "/dev/mapper/vg0-lv_home",
+            "/home",
+            "vg0",
+            ["/dev/sda2", "/dev/sdb2"],
+        ),
+        MountInfo("/dev/mapper/vg0-lv_root", "/", "vg0", ["/dev/sda2"]),
+        MountInfo("/dev/mapper/vg0-lv_swap", "[SWAP]", "vg0", ["/dev/sda2"]),
     ]
     lvm_filter = lvmfilter.build_filter(mounts)
     assert lvm_filter == ["a|^/dev/sda2$|", "a|^/dev/sdb2$|", "r|.*|"]
@@ -171,10 +186,8 @@ def test_analyze_no_filter():
     current_blacklist = None
     wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -185,10 +198,8 @@ def test_analyze_configured():
     current_filter = wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.UNNEEDED
     assert advice.filter is None
     assert advice.wwids is None
@@ -200,10 +211,8 @@ def test_analyze_missing_blacklist():
     current_blacklist = None
     wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -215,10 +224,8 @@ def test_analyze_different_order():
     current_filter = ["a|^/dev/sdb2$|", "a|^/dev/sda2$|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1", "wwid2"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.UNNEEDED
     assert advice.filter is None
     assert advice.wwids is None
@@ -231,10 +238,8 @@ def test_analyze_no_anchorces():
     current_filter = ["a|/dev/sda2|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -247,10 +252,8 @@ def test_analyze_missing_device():
     current_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1", "wwid2"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -264,10 +267,8 @@ def test_analyze_unknown_device():
     current_filter = ["a|^/dev/sda2$|", "a|^/dev/sdb2$|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -280,10 +281,8 @@ def test_analyze_extra_reject():
     current_filter = ["a|^/dev/sda2$|", "r|.*|", "r|/dev/foo|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -297,10 +296,8 @@ def test_analyze_invalid_filter_no_action():
     current_blacklist = wanted_blacklist = {"wwid1"}
     with pytest.raises(lvmfilter.InvalidFilter):
         lvmfilter.analyze(
-            current_filter,
-            wanted_filter,
-            current_blacklist,
-            wanted_blacklist)
+            current_filter, wanted_filter, current_blacklist, wanted_blacklist
+        )
 
 
 def test_analyze_invalid_filter_no_delimeter():
@@ -311,10 +308,8 @@ def test_analyze_invalid_filter_no_delimeter():
     current_blacklist = wanted_blacklist = {"wwid1"}
     with pytest.raises(lvmfilter.InvalidFilter):
         lvmfilter.analyze(
-            current_filter,
-            wanted_filter,
-            current_blacklist,
-            wanted_blacklist)
+            current_filter, wanted_filter, current_blacklist, wanted_blacklist
+        )
 
 
 def test_analyze_invalid_filter_empty_item():
@@ -325,10 +320,8 @@ def test_analyze_invalid_filter_empty_item():
     current_blacklist = wanted_blacklist = {"wwid1"}
     with pytest.raises(lvmfilter.InvalidFilter):
         lvmfilter.analyze(
-            current_filter,
-            wanted_filter,
-            current_blacklist,
-            wanted_blacklist)
+            current_filter, wanted_filter, current_blacklist, wanted_blacklist
+        )
 
 
 def test_resolve_devices_udev_links(fake_device):
@@ -378,10 +371,8 @@ def test_analyze_configure_replace_udev_link_with_device(fake_device):
     current_filter = ["a|^{}$|".format(fake_device.udev_link), "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -393,10 +384,8 @@ def test_analyze_configure_replace_udev_link_with_mapper_link(fake_dm_device):
     current_filter = ["a|^{}$|".format(fake_dm_device.udev_link), "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -417,10 +406,8 @@ def test_analyze_configure_different_item_order(fake_device, fake_dm_device):
     ]
     current_blacklist = wanted_blacklist = {"wwid1", "wwid2"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -438,10 +425,8 @@ def test_analyze_recommend_replace_udev_link_duplicate(fake_dm_device):
     ]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -454,10 +439,8 @@ def test_analyze_recommend_replace_unstable_device_no_anchors(fake_device):
     current_filter = ["a|{}|".format(fake_device.udev_link), "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -472,10 +455,8 @@ def test_analyze_recommend_links_do_not_match(tmpdir, fake_device):
     current_filter = ["a|^{}$|".format(other_device), "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -487,10 +468,8 @@ def test_analyze_recommend_reg_exp_in_path(fake_device):
     current_filter = ["a|^/dev/sda*$|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -503,10 +482,8 @@ def test_analyze_recommend_added_custom_device(fake_device):
     current_filter = ["a|^/dev/sda1$|", "a|^/dev/sda2$|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
@@ -523,22 +500,24 @@ def test_analyze_recommend_added_custom_udev_link(fake_device):
     ]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
-        current_filter,
-        wanted_filter,
-        current_blacklist,
-        wanted_blacklist)
+        current_filter, wanted_filter, current_blacklist, wanted_blacklist
+    )
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
     assert advice.wwids == wanted_blacklist
 
 
-@pytest.mark.parametrize("device,expected", [
-    ("fake-devices-standard", "253"),
-    ("fake-devices-non-standard", "252"),
-])
+@pytest.mark.parametrize(
+    "device,expected",
+    [
+        ("fake-devices-standard", "253"),
+        ("fake-devices-non-standard", "252"),
+    ],
+)
 def test_dm_major_number(monkeypatch, device, expected):
     monkeypatch.setattr(
-        lvmfilter, 'PROC_DEVICES', os.path.join(TEST_DIR, device))
+        lvmfilter, 'PROC_DEVICES', os.path.join(TEST_DIR, device)
+    )
     assert lvmfilter.dm_major_number() == expected
 
 
@@ -546,15 +525,16 @@ def test_dm_major_number_wrong_file_content(monkeypatch):
     monkeypatch.setattr(
         lvmfilter,
         'PROC_DEVICES',
-        os.path.join(TEST_DIR, "fake-lsblk.fedora.out"))
+        os.path.join(TEST_DIR, "fake-lsblk.fedora.out"),
+    )
     with pytest.raises(lvmfilter.NoDeviceMapperMajorNumber):
         lvmfilter.dm_major_number()
 
 
-@pytest.mark.parametrize("plat,devices,expected", [
-    ("el8", FAKE_DEVICES, {"/dev/sda"}),
-    ("node", FAKE_DEVICES, set())
-])
+@pytest.mark.parametrize(
+    "plat,devices,expected",
+    [("el8", FAKE_DEVICES, {"/dev/sda"}), ("node", FAKE_DEVICES, set())],
+)
 def test_find_disks(plat, devices, expected, monkeypatch):
     monkeypatch.setattr(lvmfilter, "LSBLK", FAKE_LSBLK)
     monkeypatch.setenv("FAKE_STDOUT", FAKE_LSBLK + "." + plat + ".out")
@@ -564,19 +544,11 @@ def test_find_disks(plat, devices, expected, monkeypatch):
 
 
 def test_find_wwids(monkeypatch, fake_sys_block_info):
-    disks = {
-        '/dev/sda': {
-            'name': '/dev/sda',
-            'type': 'disk'
-        }
-    }
+    disks = {'/dev/sda': {'name': '/dev/sda', 'type': 'disk'}}
     monkeypatch.setattr(lvmfilter, "find_disks", lambda x: disks)
 
     mounts = [
-        MountInfo("/dev/mapper/vg0-lv_root",
-                  "/",
-                  "vg0",
-                  ["/dev/sda2"]),
+        MountInfo("/dev/mapper/vg0-lv_root", "/", "vg0", ["/dev/sda2"]),
     ]
 
     udevadm_info = """\

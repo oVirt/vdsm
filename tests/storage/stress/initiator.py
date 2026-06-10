@@ -185,7 +185,8 @@ def main():
 
     logging.basicConfig(
         level=logging.DEBUG if args.debug else logging.INFO,
-        format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s")
+        format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s",
+    )
 
     cleanup()
 
@@ -203,18 +204,19 @@ def main():
     else:
         do_vdsm44(connections)
 
-    logging.info("Connecting completed in %.3fs",
-                 time.monotonic() - start)
+    logging.info("Connecting completed in %.3fs", time.monotonic() - start)
 
     list_sessions()
 
 
 def run_workers(func, connections, concurrency):
     with ThreadPoolExecutor(
-            max_workers=concurrency,
-            thread_name_prefix="worker") as executor:
-        jobs = [executor.submit(func, target, portal)
-                for target, portal in connections]
+        max_workers=concurrency, thread_name_prefix="worker"
+    ) as executor:
+        jobs = [
+            executor.submit(func, target, portal)
+            for target, portal in connections
+        ]
         for job in jobs:
             try:
                 job.result()
@@ -253,18 +255,20 @@ def run(args):
     logging.debug("Running command %s", args)
 
     start = time.monotonic()
-    p = subprocess.Popen(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     out, err = p.communicate()
 
     out = out.decode("utf-8").strip()
     err = err.decode("utf-8").strip()
 
-    logging.debug("Command completed in %.3fs: rc=%s out=%r err=%r",
-                  time.monotonic() - start, p.returncode, out, err)
+    logging.debug(
+        "Command completed in %.3fs: rc=%s out=%r err=%r",
+        time.monotonic() - start,
+        p.returncode,
+        out,
+        err,
+    )
 
     if p.returncode != 0:
         raise Error(args, p.returncode, out, err)
@@ -281,7 +285,8 @@ def parse_args():
         nargs='+',
         type=ipaddress.ip_address,
         help="Target interfaces ip addresses",
-        required=True)
+        required=True,
+    )
 
     p.add_argument(
         "-d",
@@ -289,33 +294,38 @@ def parse_args():
         nargs='+',
         default=[],
         type=ipaddress.ip_address,
-        help="Target interfaces disconnected for login")
+        help="Target interfaces disconnected for login",
+    )
 
     p.add_argument(
         "-p",
         dest='port',
         type=int,
         default=3260,
-        help="Target port (default is 3260)")
+        help="Target port (default is 3260)",
+    )
 
     p.add_argument(
         "-j",
         dest='concurrency',
         type=int,
         default=4,
-        help="Run login per connection at set concurrency (default is none)")
+        help="Run login per connection at set concurrency (default is none)",
+    )
 
     p.add_argument(
         "-t",
         "--type",
         default="vdsm44",
         choices=["vdsm44", "concurrent-login", "concurrent-add", "bulk-login"],
-        help="Login strategy")
+        help="Login strategy",
+    )
 
     p.add_argument(
         "--debug",
         action="store_true",
-        help="Show debug logs (default is false)")
+        help="Show debug logs (default is false)",
+    )
 
     return p.parse_args()
 
@@ -329,13 +339,20 @@ def discover_targets(args):
 
     for iface in args.interfaces:
         portal = ip_port(iface, args.port)
-        out = run([
-            "iscsiadm",
-            "--mode", "discoverydb",
-            "--type", "sendtargets",
-            "--interface", "default",
-            "--portal", portal,
-            "--discover"])
+        out = run(
+            [
+                "iscsiadm",
+                "--mode",
+                "discoverydb",
+                "--type",
+                "sendtargets",
+                "--interface",
+                "default",
+                "--portal",
+                portal,
+                "--discover",
+            ]
+        )
 
         discovery_delete(portal)
 
@@ -344,8 +361,11 @@ def discover_targets(args):
 
             address = ipaddress.ip_address(portal.split(":")[0])
             if address in args.disconnected:
-                logging.info("Setting %s as invalid address for target %s",
-                             address, target)
+                logging.info(
+                    "Setting %s as invalid address for target %s",
+                    address,
+                    target,
+                )
                 portal = INVALID_PORTAL
 
             connections.append((target, portal))
@@ -354,13 +374,20 @@ def discover_targets(args):
 
 
 def discovery_delete(portal):
-    run([
-        "iscsiadm",
-        "--mode", "discoverydb",
-        "--type", "sendtargets",
-        "--interface", "default",
-        "--portal", portal,
-        "--op=delete"])
+    run(
+        [
+            "iscsiadm",
+            "--mode",
+            "discoverydb",
+            "--type",
+            "sendtargets",
+            "--interface",
+            "default",
+            "--portal",
+            portal,
+            "--op=delete",
+        ]
+    )
 
 
 def login_all():
@@ -392,34 +419,57 @@ def cleanup():
 def new_node(target, portal):
     logging.info("Adding node for target %s portal %s", target, portal)
 
-    run([
-        "iscsiadm",
-        "--mode", "node",
-        "--targetname", target,
-        "--interface", "default",
-        "--portal", portal,
-        "--op=new"])
+    run(
+        [
+            "iscsiadm",
+            "--mode",
+            "node",
+            "--targetname",
+            target,
+            "--interface",
+            "default",
+            "--portal",
+            portal,
+            "--op=new",
+        ]
+    )
 
-    run([
-        "iscsiadm",
-        "--mode", "node",
-        "--targetname", target,
-        "--interface", "default",
-        "--portal", portal,
-        "--op=update",
-        "--name", "node.startup",
-        "--value", "manual"])
+    run(
+        [
+            "iscsiadm",
+            "--mode",
+            "node",
+            "--targetname",
+            target,
+            "--interface",
+            "default",
+            "--portal",
+            portal,
+            "--op=update",
+            "--name",
+            "node.startup",
+            "--value",
+            "manual",
+        ]
+    )
 
 
 def login(target, portal):
     logging.info("Login to target %s portal %s", target, portal)
-    run([
-        "iscsiadm",
-        "--mode", "node",
-        "--targetname", target,
-        "--interface", "default",
-        "--portal", portal,
-        "--login"])
+    run(
+        [
+            "iscsiadm",
+            "--mode",
+            "node",
+            "--targetname",
+            target,
+            "--interface",
+            "default",
+            "--portal",
+            portal,
+            "--login",
+        ]
+    )
 
 
 def logout():

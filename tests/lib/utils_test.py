@@ -34,11 +34,13 @@ class FakeMonotonicTime(object):
 
     def __init__(self, now):
         self.now = now
-        self.patch = Patch([
-            (vdsm.common.time, 'monotonic_time', self.monotonic_time),
-            (vdsm.common.function, 'monotonic_time', self.monotonic_time),
-            (time, 'sleep', self.sleep),
-        ])
+        self.patch = Patch(
+            [
+                (vdsm.common.time, 'monotonic_time', self.monotonic_time),
+                (vdsm.common.function, 'monotonic_time', self.monotonic_time),
+                (time, 'sleep', self.sleep),
+            ]
+        )
 
     def monotonic_time(self):
         return self.now
@@ -165,14 +167,21 @@ class TestRetry(TestCaseBase):
             return False
 
         def foo():
-            raise RuntimeError("If at first you don't succeed, try, try again."
-                               "Then quit. There's no point in being a damn"
-                               "fool about it.")
+            raise RuntimeError(
+                "If at first you don't succeed, try, try again."
+                "Then quit. There's no point in being a damn"
+                "fool about it."
+            )
             # W. C. Fields
 
         self.assertRaises(
-            RuntimeError, function.retry, foo, tries=(limit + 10), sleep=0,
-            stopCallback=stopCallback)
+            RuntimeError,
+            function.retry,
+            foo,
+            tries=(limit + 10),
+            sleep=0,
+            stopCallback=stopCallback,
+        )
         # Make sure we had the proper amount of iterations before failing
         self.assertEqual(counter[0], limit)
 
@@ -189,8 +198,9 @@ class TestRetry(TestCaseBase):
                 time.sleep(1)
                 raise RuntimeError
 
-            self.assertRaises(RuntimeError, function.retry, operation,
-                              timeout=3, sleep=1)
+            self.assertRaises(
+                RuntimeError, function.retry, operation, timeout=3, sleep=1
+            )
             self.assertEqual(vdsm.common.time.monotonic_time(), 3)
 
     @brokentest("sleep is not considered in deadline calculation")
@@ -204,8 +214,9 @@ class TestRetry(TestCaseBase):
                 time.sleep(1)
                 raise RuntimeError
 
-            self.assertRaises(RuntimeError, function.retry, operation,
-                              timeout=2, sleep=1)
+            self.assertRaises(
+                RuntimeError, function.retry, operation, timeout=2, sleep=1
+            )
             self.assertEqual(vdsm.common.time.monotonic_time(), 1)
 
     def testTimeoutSleepOnce(self):
@@ -222,8 +233,9 @@ class TestRetry(TestCaseBase):
                 counter[0] += 1
                 raise RuntimeError
 
-            self.assertRaises(RuntimeError, function.retry, operation,
-                              timeout=4, sleep=1)
+            self.assertRaises(
+                RuntimeError, function.retry, operation, timeout=4, sleep=1
+            )
             self.assertEqual(counter[0], 2)
             self.assertEqual(vdsm.common.time.monotonic_time(), 5)
 
@@ -235,8 +247,14 @@ class TestRetry(TestCaseBase):
             raise RuntimeError
 
         tries = 10
-        self.assertRaises(RuntimeError, function.retry, operation,
-                          tries=tries, timeout=0.0, sleep=0.0)
+        self.assertRaises(
+            RuntimeError,
+            function.retry,
+            operation,
+            tries=tries,
+            timeout=0.0,
+            sleep=0.0,
+        )
         self.assertEqual(counter[0], tries)
 
 
@@ -248,8 +266,9 @@ class TestGetCmdArgs(TestCaseBase):
         try:
             cmd_args = utils.getCmdArgs(sproc.pid)
             # let's ignore optional taskset at the beginning
-            self.assertEqual(cmd_args[-len(args):],
-                             tuple(a.encode() for a in args))
+            self.assertEqual(
+                cmd_args[-len(args) :], tuple(a.encode() for a in args)
+            )
         finally:
             sproc.kill()
             sproc.wait()
@@ -259,8 +278,9 @@ class TestGetCmdArgs(TestCaseBase):
         sproc = commands.start(args)
         sproc.kill()
         try:
-            test = lambda: self.assertEqual(utils.getCmdArgs(sproc.pid),
-                                            tuple())
+            test = lambda: self.assertEqual(
+                utils.getCmdArgs(sproc.pid), tuple()
+            )
             function.retry(AssertionError, test, tries=10, sleep=0.1)
         finally:
             sproc.wait()
@@ -284,10 +304,24 @@ class TestGeneralUtils(TestCaseBase):
         meminfo = utils.readMemInfo()
         # most common fields as per man 5 proc
         # add your own here
-        fields = ('MemTotal', 'MemFree', 'Buffers', 'Cached', 'SwapCached',
-                  'Active', 'Inactive', 'SwapTotal', 'SwapFree', 'Dirty',
-                  'Writeback', 'Mapped', 'Slab', 'VmallocTotal',
-                  'VmallocUsed', 'VmallocChunk')
+        fields = (
+            'MemTotal',
+            'MemFree',
+            'Buffers',
+            'Cached',
+            'SwapCached',
+            'Active',
+            'Inactive',
+            'SwapTotal',
+            'SwapFree',
+            'Dirty',
+            'Writeback',
+            'Mapped',
+            'Slab',
+            'VmallocTotal',
+            'VmallocUsed',
+            'VmallocChunk',
+        )
         for field in fields:
             self.assertIn(field, meminfo)
             self.assertTrue(isinstance(meminfo[field], int))
@@ -303,15 +337,22 @@ class TestGeneralUtils(TestCaseBase):
         self.assertEqual(meminfo['KernelStack'], 2760)
         self.assertEqual(meminfo['Inactive'], 1432748)
 
-    @permutations([
-        ([], []),
-        ((), []),
-        ((i for i in [1, 2, 3, 1, 3]), [1, 2, 3]),
-        (('a', 'a', 'b', 'c', 'a', 'd'), ['a', 'b', 'c', 'd']),
-        (['a', 'a', 'b', 'c', 'a', 'd'], ['a', 'b', 'c', 'd'])
-    ])
+    @permutations(
+        [
+            ([], []),
+            ((), []),
+            ((i for i in [1, 2, 3, 1, 3]), [1, 2, 3]),
+            (('a', 'a', 'b', 'c', 'a', 'd'), ['a', 'b', 'c', 'd']),
+            (['a', 'a', 'b', 'c', 'a', 'd'], ['a', 'b', 'c', 'd']),
+        ]
+    )
     def test_unique(self, iterable, unique_items):
-        self.assertEqual(utils.unique(iterable,), unique_items)
+        self.assertEqual(
+            utils.unique(
+                iterable,
+            ),
+            unique_items,
+        )
 
 
 class TestCallbackChain(TestCaseBase):
@@ -378,8 +419,9 @@ class TestTraceback(TestCaseBase):
             raise Exception
 
         self.assertRaises(Exception, fail)
-        self.assertEqual(log.messages,
-                         [(logging.ERROR, "message", {"exc_info": True})])
+        self.assertEqual(
+            log.messages, [(logging.ERROR, "message", {"exc_info": True})]
+        )
 
 
 class TestRollbackContext(TestCaseBase):
@@ -474,8 +516,10 @@ class TestRollbackContext(TestCaseBase):
         except self.OriginalException:
             return
         except self.UndoException:
-            self.fail("Wrong exception was raised - from undo function. \
-                        should have re-raised OriginalException")
+            self.fail(
+                "Wrong exception was raised - from undo function. \
+                        should have re-raised OriginalException"
+            )
         except Exception:
             self.fail("Wrong exception was raised")
 
@@ -492,8 +536,7 @@ class TestExecCmdAffinity(TestCaseBase):
     def testResetAffinityByDefault(self):
         proc = commands.start((EXT_SLEEP, '30s'))
         try:
-            self.assertEqual(taskset.get(proc.pid),
-                             taskset.get(os.getpid()))
+            self.assertEqual(taskset.get(proc.pid), taskset.get(os.getpid()))
         finally:
             proc.kill()
 
@@ -530,8 +573,9 @@ class TestExecCmdAffinity(TestCaseBase):
 
 class TestPickleCopy(TestCaseBase):
     def test_picklecopy_exact(self):
-        self.assertEqual(utils.picklecopy(VM_STATUS_DUMP),
-                         copy.deepcopy(VM_STATUS_DUMP))
+        self.assertEqual(
+            utils.picklecopy(VM_STATUS_DUMP), copy.deepcopy(VM_STATUS_DUMP)
+        )
 
     def test_picklecopy_faster(self):
         setup = """
@@ -539,23 +583,25 @@ import copy
 from vdsm import utils
 from vmTestsData import VM_STATUS_DUMP
 """
-        deepcopy = timeit.timeit('copy.deepcopy(VM_STATUS_DUMP)',
-                                 setup=setup,
-                                 number=1000)
-        picklecopy = timeit.timeit('utils.picklecopy(VM_STATUS_DUMP)',
-                                   setup=setup,
-                                   number=1000)
-        print("deepcopy: %.3f, picklecopy: %.3f"
-              % (deepcopy, picklecopy), end=" ")
+        deepcopy = timeit.timeit(
+            'copy.deepcopy(VM_STATUS_DUMP)', setup=setup, number=1000
+        )
+        picklecopy = timeit.timeit(
+            'utils.picklecopy(VM_STATUS_DUMP)', setup=setup, number=1000
+        )
+        print(
+            "deepcopy: %.3f, picklecopy: %.3f" % (deepcopy, picklecopy),
+            end=" ",
+        )
         self.assertLess(picklecopy, deepcopy)
 
 
 class UserError(Exception):
-    """ A special excpetion for testing errors during object life """
+    """A special excpetion for testing errors during object life"""
 
 
 class CloseError(Exception):
-    """ A special exception for testing errors during closing an object """
+    """A special exception for testing errors during closing an object"""
 
 
 class Closer:
@@ -585,14 +631,16 @@ class TestClosing(TestCaseBase):
 @expandPermutations
 class TestRound(TestCaseBase):
 
-    @permutations([
-        # n, size, result
-        (0, 1024, 0),
-        (1, 1024, 1024),
-        (3.14, 1024, 1024),
-        (1024, 1024, 1024),
-        (1025, 1024, 2048),
-    ])
+    @permutations(
+        [
+            # n, size, result
+            (0, 1024, 0),
+            (1, 1024, 1024),
+            (3.14, 1024, 1024),
+            (1024, 1024, 1024),
+            (1025, 1024, 2048),
+        ]
+    )
     def test_round(self, n, size, result):
         self.assertEqual(utils.round(n, size), result)
 
@@ -609,8 +657,9 @@ class TestStopwatch(TestCaseBase):
         level, message, kwargs = log.messages[0]
         print("Logged: %s" % message, end=" ")
         self.assertEqual(level, logging.DEBUG)
-        self.assertTrue(message.startswith("message"),
-                        "Unexpected message: %s" % message)
+        self.assertTrue(
+            message.startswith("message"), "Unexpected message: %s" % message
+        )
 
     def test_default_level_no_log(self):
         log = FakeLogger(logging.INFO)

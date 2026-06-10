@@ -6,6 +6,7 @@ import os
 
 try:
     import vdsm.gluster.apiwrapper as gapi
+
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
@@ -32,9 +33,13 @@ def schema_not_found():
 class SchemaValidation(TestCaseBase):
 
     # verbs not used in the engine and lacking definition in schema
-    IGNORED_CMDS = ['Image_downloadFromStream', 'Image_uploadToStream',
-                    'Volume_setSize', 'Volume_updateSize',
-                    'VM_getMigrationStatus']
+    IGNORED_CMDS = [
+        'Image_downloadFromStream',
+        'Image_uploadToStream',
+        'Volume_setSize',
+        'Volume_updateSize',
+        'VM_getMigrationStatus',
+    ]
 
     def test_verify_schema(self):
         apiobj = self._get_api('API')
@@ -54,8 +59,9 @@ class SchemaValidation(TestCaseBase):
                         longer.append('line [%d] %s' % (i + 1, line))
 
                 if len(longer) > 0:
-                    raise AssertionError('Lines longer than 80\n%s'
-                                         % '\n'.join(longer))
+                    raise AssertionError(
+                        'Lines longer than 80\n%s' % '\n'.join(longer)
+                    )
 
     def test_tabs_in_line(self):
         for fname in self._get_paths():
@@ -66,22 +72,26 @@ class SchemaValidation(TestCaseBase):
                         with_tabs.append('line [%d] %s' % (i + 1, line))
 
                 if len(with_tabs) > 0:
-                    raise AssertionError('Lines containing tabs\n%s'
-                                         % '\n'.join(with_tabs))
+                    raise AssertionError(
+                        'Lines containing tabs\n%s' % '\n'.join(with_tabs)
+                    )
 
     def _get_paths(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
 
-        for tail in ('vdsm-api.yml', 'vdsm-api-gluster.yml',
-                     'vdsm-events.yml'):
-            yield os.path.join(
-                dirName, '..', 'lib', 'vdsm', 'api', tail)
+        for tail in (
+            'vdsm-api.yml',
+            'vdsm-api-gluster.yml',
+            'vdsm-events.yml',
+        ):
+            yield os.path.join(dirName, '..', 'lib', 'vdsm', 'api', tail)
 
     def _validate(self, api_mod):
         with schema_not_found():
-            schema = vdsmapi.Schema.vdsm_api(strict_mode=True,
-                                             with_gluster=True)
+            schema = vdsmapi.Schema.vdsm_api(
+                strict_mode=True, with_gluster=True
+            )
 
             for class_name, class_obj in self._get_api_classes(api_mod):
                 apiObj = getattr(api_mod, class_name)
@@ -93,7 +103,8 @@ class SchemaValidation(TestCaseBase):
                     spec_class = 'Host'
 
                 for method_name, method_obj in inspect.getmembers(
-                        class_obj, inspect.ismethod):
+                    class_obj, inspect.ismethod
+                ):
                     cmd = '%s_%s' % (spec_class, method_name)
                     if cmd in self.IGNORED_CMDS:
                         continue
@@ -117,23 +128,27 @@ class SchemaValidation(TestCaseBase):
                     # inspect apiobj and gather args and default args
                     args = ctorArgs + self._get_args(method_obj)
                     default_args = ctor_defaults + self._get_default_args(
-                        method_obj)
+                        method_obj
+                    )
 
                     # check len equality
                     if len(args) != len(method_args):
-                        raise AssertionError(self._prep_msg(rep, method_args,
-                                                            args))
+                        raise AssertionError(
+                            self._prep_msg(rep, method_args, args)
+                        )
                     for marg in method_args:
                         # verify optional arg
                         if 'defaultvalue' in marg:
                             if marg.get('name') not in default_args:
                                 raise AssertionError(
-                                    self._prep_msg(rep, method_args, args))
+                                    self._prep_msg(rep, method_args, args)
+                                )
                             continue
                         # verify args from schema in apiobj args
                         if marg.get('name') not in args:
                             raise AssertionError(
-                                self._prep_msg(rep, method_args, args))
+                                self._prep_msg(rep, method_args, args)
+                            )
                     try:
                         # verify ret value with entry in command_info
                         ret = schema.get_ret_param(rep)
@@ -148,8 +163,9 @@ class SchemaValidation(TestCaseBase):
                         raise AssertionError('Missing ret %s' % rep.id)
 
     def _get_api_classes(self, api_mod):
-        for class_name, class_obj in inspect.getmembers(api_mod,
-                                                        inspect.isclass):
+        for class_name, class_obj in inspect.getmembers(
+            api_mod, inspect.isclass
+        ):
             if issubclass(class_obj, API.APIBase):
                 yield class_name, class_obj
 
@@ -161,7 +177,7 @@ class SchemaValidation(TestCaseBase):
     def _get_default_args(self, method_obj):
         argSpec = Sigargs(method_obj)
         if argSpec.defaults:
-            return argSpec.args[- len(argSpec.defaults):]
+            return argSpec.args[-len(argSpec.defaults) :]
         else:
             return []
 
@@ -169,9 +185,9 @@ class SchemaValidation(TestCaseBase):
         return '%s has different args: %s, %s' % (rep.id, method_args, args)
 
     def _get_api(self, selector):
-        if (selector == 'API'):
+        if selector == 'API':
             return API
-        elif (selector == 'gapi'):
+        elif selector == 'gapi':
             return gapi
         else:
             return None

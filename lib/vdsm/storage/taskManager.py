@@ -14,10 +14,12 @@ from vdsm.storage.threadPool import ThreadPool
 class TaskManager:
     log = logging.getLogger('storage.taskmanager')
 
-    def __init__(self,
-                 tpSize=config.getint('irs', 'thread_pool_size'),
-                 waitTimeout=3,
-                 maxTasks=config.getint('irs', 'max_tasks')):
+    def __init__(
+        self,
+        tpSize=config.getint('irs', 'thread_pool_size'),
+        waitTimeout=3,
+        maxTasks=config.getint('irs', 'max_tasks'),
+    ):
         self.tp = ThreadPool("tasks", tpSize, waitTimeout, maxTasks)
         self._tasks = {}
         self._unqueuedTasks = []
@@ -33,7 +35,8 @@ class TaskManager:
         with self._lock:
             if task.id in self._tasks:
                 raise se.AddTaskError(
-                    'Task id already in use: {0}'.format(task.id))
+                    'Task id already in use: {0}'.format(task.id)
+                )
 
             self.log.debug("queuing task: %s", task.id)
             self._tasks[task.id] = task
@@ -68,14 +71,12 @@ class TaskManager:
         return t
 
     def prepareForShutdown(self, wait=False):
-        """ Prepare to shutdown and stop all threads.
-        """
+        """Prepare to shutdown and stop all threads."""
         self.log.debug("Request to stop all threads (wait=%s)", wait)
         self.tp.joinAll(waitForThreads=wait)
 
     def getTaskStatus(self, taskID):
-        """ Internal return Task status for a given task.
-        """
+        """Internal return Task status for a given task."""
         self.log.debug("Entry. taskID: %s", taskID)
         t = self._getTask(taskID)
         status = t.deprecated_getStatus()
@@ -83,8 +84,7 @@ class TaskManager:
         return status
 
     def getAllTasksStatuses(self, tag=None):
-        """ Return Task status for all tasks by type.
-        """
+        """Return Task status for all tasks by type."""
         self.log.debug("Entry.")
         subRes = {}
         with self._lock:
@@ -94,9 +94,11 @@ class TaskManager:
                         subRes[taskID] = task.deprecated_getStatus()
                     except se.UnknownTask:
                         # Return statuses for existing tasks only.
-                        self.log.warn("Unknown task %s. "
-                                      "Maybe task was already cleared.",
-                                      taskID)
+                        self.log.warn(
+                            "Unknown task %s. "
+                            "Maybe task was already cleared.",
+                            taskID,
+                        )
         self.log.debug("Return: %s", subRes)
         return subRes
 
@@ -112,8 +114,10 @@ class TaskManager:
                     subRes[taskID] = task.getDetails()
                 except se.UnknownTask:
                     # Return info for existing tasks only.
-                    self.log.warn("Unknown task %s. Maybe task was already "
-                                  "cleared.", taskID)
+                    self.log.warn(
+                        "Unknown task %s. Maybe task was already " "cleared.",
+                        taskID,
+                    )
         self.log.debug("Return: %s", subRes)
         return subRes
 
@@ -129,8 +133,7 @@ class TaskManager:
         self.log.debug("Return")
 
     def stopTask(self, taskID, force=False):
-        """ Stop a task according to given uuid.
-        """
+        """Stop a task according to given uuid."""
         self.log.debug("Entry. taskID: %s", taskID)
         t = self._getTask(taskID)
         t.stop(force=force)
@@ -145,8 +148,7 @@ class TaskManager:
         self.log.debug("Return.")
 
     def clearTask(self, taskID):
-        """ Clear a task according to given uuid.
-        """
+        """Clear a task according to given uuid."""
         self.log.debug("Entry. taskID: %s", taskID)
         # TODO: Should we stop here implicitly ???
         t = self._getTask(taskID)
@@ -161,8 +163,7 @@ class TaskManager:
         self.log.debug("Return.")
 
     def getTaskInfo(self, taskID):
-        """ Return task's data according to given uuid.
-        """
+        """Return task's data according to given uuid."""
         self.log.debug("Entry. taskID: %s", taskID)
         t = self._getTask(taskID)
         info = t.getInfo()
@@ -170,8 +171,8 @@ class TaskManager:
         return info
 
     def getAllTasksInfo(self, tag=None):
-        """ Return Task info for all public tasks.
-            i.e - not internal.
+        """Return Task info for all public tasks.
+        i.e - not internal.
         """
         self.log.debug("Entry.")
         subRes = {}
@@ -182,9 +183,11 @@ class TaskManager:
                         subRes[taskID] = task.getInfo()
                     except se.UnknownTask:
                         # Return info for existing tasks only.
-                        self.log.warn("Unknown task %s. "
-                                      "Maybe task was already cleared.",
-                                      taskID)
+                        self.log.warn(
+                            "Unknown task %s. "
+                            "Maybe task was already cleared.",
+                            taskID,
+                        )
         self.log.debug("Return. Response: %s", subRes)
         return subRes
 
@@ -198,14 +201,16 @@ class TaskManager:
             self.log.debug("Loading dumped task %s", taskID)
             try:
                 t = Task.loadTask(store, taskID)
-                t.setPersistence(store,
-                                 str(t.persistPolicy),
-                                 str(t.cleanPolicy))
+                t.setPersistence(
+                    store, str(t.persistPolicy), str(t.cleanPolicy)
+                )
                 self._unqueuedTasks.append(t)
             except Exception:
-                self.log.error("taskManager: Skipping directory: %s",
-                               taskID,
-                               exc_info=True)
+                self.log.error(
+                    "taskManager: Skipping directory: %s",
+                    taskID,
+                    exc_info=True,
+                )
                 continue
 
     def recoverDumpedTasks(self):

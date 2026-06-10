@@ -28,7 +28,7 @@ class TestingJob(jobs.Job):
         self._aborted = True
 
     def _run(self):
-        assert (self.status == jobs.STATUS.RUNNING)
+        assert self.status == jobs.STATUS.RUNNING
         if self._exception:
             raise self._exception
 
@@ -100,11 +100,15 @@ class JobsTests(VdsmTestCase):
 
     def test_job_info(self):
         job = TestingJob()
-        self.assertEqual({'id': job.id,
-                          'status': jobs.STATUS.PENDING,
-                          'job_type': 'testing',
-                          'description': ''},
-                         job.info())
+        self.assertEqual(
+            {
+                'id': job.id,
+                'status': jobs.STATUS.PENDING,
+                'job_type': 'testing',
+                'description': '',
+            },
+            job.info(),
+        )
 
     def test_add_job(self):
         job = TestingJob()
@@ -132,45 +136,49 @@ class JobsTests(VdsmTestCase):
         jobs.add(foo)
         bar = BarJob()
         jobs.add(bar)
-        self.assertEqual({foo.id: foo.info(), bar.id: bar.info()},
-                         jobs.info())
+        self.assertEqual({foo.id: foo.info(), bar.id: bar.info()}, jobs.info())
 
     def test_get_jobs_info_by_type(self):
         foo = FooJob()
         jobs.add(foo)
         bar = BarJob()
         jobs.add(bar)
-        self.assertEqual({bar.id: bar.info()},
-                         jobs.info(job_type=bar.job_type))
+        self.assertEqual(
+            {bar.id: bar.info()}, jobs.info(job_type=bar.job_type)
+        )
 
     def test_get_jobs_info_by_uuid_single(self):
         foo = FooJob()
         jobs.add(foo)
         bar = BarJob()
         jobs.add(bar)
-        self.assertEqual({foo.id: foo.info()},
-                         jobs.info(job_ids=[foo.id]))
+        self.assertEqual({foo.id: foo.info()}, jobs.info(job_ids=[foo.id]))
 
     def test_get_jobs_info_by_uuid_multi(self):
         foo = FooJob()
         jobs.add(foo)
         bar = BarJob()
         jobs.add(bar)
-        self.assertEqual({foo.id: foo.info(), bar.id: bar.info()},
-                         jobs.info(job_ids=[foo.id, bar.id]))
+        self.assertEqual(
+            {foo.id: foo.info(), bar.id: bar.info()},
+            jobs.info(job_ids=[foo.id, bar.id]),
+        )
 
     def test_get_jobs_info_by_type_and_uuid(self):
         foo = FooJob()
         jobs.add(foo)
         bar = BarJob()
         jobs.add(bar)
-        self.assertEqual({}, jobs.info(job_type=bar.job_type,
-                                       job_ids=[foo.id]))
+        self.assertEqual(
+            {}, jobs.info(job_type=bar.job_type, job_ids=[foo.id])
+        )
 
-    @permutations([
-        [jobs.STATUS.PENDING, jobs.STATUS.ABORTED, False],
-        [jobs.STATUS.RUNNING, jobs.STATUS.ABORTING, True],
-    ])
+    @permutations(
+        [
+            [jobs.STATUS.PENDING, jobs.STATUS.ABORTED, False],
+            [jobs.STATUS.RUNNING, jobs.STATUS.ABORTING, True],
+        ]
+    )
     def test_abort_job(self, status, aborted_status, did_abort):
         job = TestingJob(status)
         jobs.add(job)
@@ -189,11 +197,13 @@ class JobsTests(VdsmTestCase):
         self.assertEqual(jobs.STATUS.ABORTED, job.status)
         self.validate_event_sent(job)
 
-    @permutations([
-        [jobs.STATUS.ABORTED, jobs.JobNotActive.name],
-        [jobs.STATUS.DONE, jobs.JobNotActive.name],
-        [jobs.STATUS.FAILED, jobs.JobNotActive.name]
-    ])
+    @permutations(
+        [
+            [jobs.STATUS.ABORTED, jobs.JobNotActive.name],
+            [jobs.STATUS.DONE, jobs.JobNotActive.name],
+            [jobs.STATUS.FAILED, jobs.JobNotActive.name],
+        ]
+    )
     def test_abort_from_invalid_state(self, status, err):
         job = TestingJob(status)
         jobs.add(job)
@@ -201,50 +211,56 @@ class JobsTests(VdsmTestCase):
         self.assertEqual(response.error(err), res)
 
     def test_abort_unknown_job(self):
-        self.assertEqual(response.error(jobs.NoSuchJob.name),
-                         jobs.abort('foo'))
+        self.assertEqual(
+            response.error(jobs.NoSuchJob.name), jobs.abort('foo')
+        )
 
     def test_abort_not_supported(self):
         job = jobs.Job(str(uuid.uuid4()))
         job._status = jobs.STATUS.RUNNING
         jobs.add(job)
-        self.assertEqual(response.error(jobs.AbortNotSupported.name),
-                         jobs.abort(job.id))
+        self.assertEqual(
+            response.error(jobs.AbortNotSupported.name), jobs.abort(job.id)
+        )
 
-    @permutations([
-        [jobs.STATUS.PENDING, True],
-        [jobs.STATUS.RUNNING, True],
-        [jobs.STATUS.ABORTED, False],
-        [jobs.STATUS.DONE, False],
-        [jobs.STATUS.FAILED, False]
-    ])
+    @permutations(
+        [
+            [jobs.STATUS.PENDING, True],
+            [jobs.STATUS.RUNNING, True],
+            [jobs.STATUS.ABORTED, False],
+            [jobs.STATUS.DONE, False],
+            [jobs.STATUS.FAILED, False],
+        ]
+    )
     def test_job_active(self, status, active):
         job = TestingJob(status)
         self.assertEqual(active, job.active)
 
-    @permutations([
-        [jobs.STATUS.ABORTED],
-        [jobs.STATUS.DONE],
-        [jobs.STATUS.FAILED]
-    ])
+    @permutations(
+        [[jobs.STATUS.ABORTED], [jobs.STATUS.DONE], [jobs.STATUS.FAILED]]
+    )
     def test_delete_inactive_job(self, status):
         job = TestingJob(status)
         jobs.add(job)
         self.assertEqual(response.success(), jobs.delete(job.id))
 
-    @permutations([
-        [jobs.STATUS.PENDING],
-        [jobs.STATUS.RUNNING],
-    ])
+    @permutations(
+        [
+            [jobs.STATUS.PENDING],
+            [jobs.STATUS.RUNNING],
+        ]
+    )
     def test_delete_active_job(self, status):
         job = TestingJob(status)
         jobs.add(job)
-        self.assertEqual(response.error(jobs.JobNotDone.name),
-                         jobs.delete(job.id))
+        self.assertEqual(
+            response.error(jobs.JobNotDone.name), jobs.delete(job.id)
+        )
 
     def test_delete_unknown_job(self):
-        self.assertEqual(response.error(jobs.NoSuchJob.name),
-                         jobs.delete('foo'))
+        self.assertEqual(
+            response.error(jobs.NoSuchJob.name), jobs.delete('foo')
+        )
 
     def test_job_get_progress(self):
         job = ProgressingJob()
@@ -287,11 +303,9 @@ class JobsTests(VdsmTestCase):
         self.assertEqual(jobs.STATUS.DONE, job.status)
         self.validate_event_sent(job)
 
-    @permutations([
-        [jobs.STATUS.RUNNING],
-        [jobs.STATUS.DONE],
-        [jobs.STATUS.FAILED]
-    ])
+    @permutations(
+        [[jobs.STATUS.RUNNING], [jobs.STATUS.DONE], [jobs.STATUS.FAILED]]
+    )
     def test_run_from_invalid_state(self, state):
         job = TestingJob(state)
         self.assertRaises(RuntimeError, job.run)
@@ -321,7 +335,7 @@ class JobsTests(VdsmTestCase):
         callable()
         self.assertNotIn(job.id, jobs.info())
 
-    @permutations(((None, ), (Exception(),)))
+    @permutations(((None,), (Exception(),)))
     def test_autodelete_when_finished(self, error):
         cfg = make_config([('jobs', 'autodelete_delay', '10')])
         job = AutodeleteJob(exception=error)

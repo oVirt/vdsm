@@ -17,6 +17,7 @@ class Lease(properties.Owner):
     """
     External sanlock lease.
     """
+
     sd_id = properties.UUID(required=True)
     lease_id = properties.UUID(required=True)
 
@@ -29,13 +30,15 @@ class JobMetadata(properties.Owner):
     """
     JobMetadata - stored on external leases
     """
+
     type = properties.Enum(required=True, values=("JOB"))
     generation = properties.Integer(
-        required=True, minval=0, maxval=sc.MAX_GENERATION)
+        required=True, minval=0, maxval=sc.MAX_GENERATION
+    )
     job_id = properties.UUID(required=True)
     job_status = properties.Enum(
-        required=True,
-        values=("PENDING", "FAILED", "SUCCEEDED", "FENCED"))
+        required=True, values=("PENDING", "FAILED", "SUCCEEDED", "FENCED")
+    )
 
     def __init__(self, params):
         self.type = params.get("type")
@@ -46,8 +49,9 @@ class JobMetadata(properties.Owner):
 
 class VolumeAttributes(properties.Owner):
 
-    generation = properties.Integer(required=False, minval=0,
-                                    maxval=sc.MAX_GENERATION)
+    generation = properties.Integer(
+        required=False, minval=0, maxval=sc.MAX_GENERATION
+    )
     description = properties.String(required=False)
 
     def __init__(self, params):
@@ -66,16 +70,17 @@ class VolumeAttributes(properties.Owner):
         self._validate_legality()
 
     def _is_empty(self):
-        return (self.description is None and
-                self.generation is None and
-                self.legality is None and
-                self.type is None)
+        return (
+            self.description is None
+            and self.generation is None
+            and self.legality is None
+            and self.type is None
+        )
 
     def _validate_type(self):
         if self.type is not None:
             if self.type != sc.type2name(sc.SHARED_VOL):
-                raise ValueError("Volume type not supported %s"
-                                 % self.type)
+                raise ValueError("Volume type not supported %s" % self.type)
 
     def _validate_legality(self):
         if self.legality is not None:
@@ -83,7 +88,9 @@ class VolumeAttributes(properties.Owner):
                 raise ValueError("Legality not supported %s" % self.legality)
 
     def __repr__(self):
-        values = ["%s=%r" % (key, value)
-                  for key, value in vars(self).items()
-                  if value is not None]
+        values = [
+            "%s=%r" % (key, value)
+            for key, value in vars(self).items()
+            if value is not None
+        ]
         return "<VolumeAttributes %s at 0x%x>" % (", ".join(values), id(self))

@@ -42,13 +42,24 @@ def get_stats(cif, sample, multipath=False):
 
     ret['memFree'] = _memFree() // MiB
     ret['swapTotal'], ret['swapFree'] = _readSwapTotalFree()
-    (ret['vmCount'], ret['vmActive'], ret['vmMigrating'],
-     ret['incomingVmMigrations'], ret['outgoingVmMigrations']) = \
-        _countVms(cif)
-    (tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec,
-        dummy, dummy, dummy) = time.gmtime(time.time())
+    (
+        ret['vmCount'],
+        ret['vmActive'],
+        ret['vmMigrating'],
+        ret['incomingVmMigrations'],
+        ret['outgoingVmMigrations'],
+    ) = _countVms(cif)
+    tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec, dummy, dummy, dummy = (
+        time.gmtime(time.time())
+    )
     ret['dateTime'] = '%02d-%02d-%02dT%02d:%02d:%02d GMT' % (
-        tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec)
+        tm_year,
+        tm_mon,
+        tm_day,
+        tm_hour,
+        tm_min,
+        tm_sec,
+    )
     ret['momStatus'] = cif.mom.getStatus()
     ret.update(cif.mom.getKsmStats())
     ret['netConfigDirty'] = str(cif._netConfigDirty)
@@ -87,10 +98,12 @@ def _memFree():
     Return the actual free mem on host.
     """
     meminfo = utils.readMemInfo()
-    return (meminfo['MemFree'] +
-            meminfo['Cached'] +
-            meminfo['Buffers'] +
-            meminfo['SReclaimable']) * KiB
+    return (
+        meminfo['MemFree']
+        + meminfo['Cached']
+        + meminfo['Buffers']
+        + meminfo['SReclaimable']
+    ) * KiB
 
 
 def _countVms(cif):
@@ -136,8 +149,8 @@ def _getHaInfo():
             stats = instance.get_all_stats(timeout=5)
             if 0 in stats:
                 i['globalMaintenance'] = stats[0].get(
-                    haClient.HAClient.GlobalMdFlags.MAINTENANCE,
-                    False)
+                    haClient.HAClient.GlobalMdFlags.MAINTENANCE, False
+                )
             if host_id in stats:
                 i['active'] = stats[host_id]['live-data']
                 i['score'] = stats[host_id]['score']
@@ -146,10 +159,12 @@ def _getHaInfo():
             if e.errno == errno.ENOENT:
                 logging.warning(
                     "Failed to retrieve Hosted Engine HA info, is Hosted "
-                    "Engine setup finished?")
+                    "Engine setup finished?"
+                )
             else:
                 logging.warning(
-                    "Failed to retrieve Hosted Engine HA info: %s", e)
+                    "Failed to retrieve Hosted Engine HA info: %s", e
+                )
         except Exception:
             logging.exception("Failed to retrieve Hosted Engine HA info")
     return i
