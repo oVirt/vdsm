@@ -21,8 +21,9 @@ from vdsm.storage import qemuimg
 
 class TestGetDomUuidFromVolumePath(object):
     def test(self):
-        testPath = os.path.join(sc.REPO_DATA_CENTER,
-                                "spUUID/sdUUID/images/imgUUID/volUUID")
+        testPath = os.path.join(
+            sc.REPO_DATA_CENTER, "spUUID/sdUUID/images/imgUUID/volUUID"
+        )
         assert fileVolume.getDomUuidFromVolumePath(testPath) == "sdUUID"
 
 
@@ -83,13 +84,16 @@ class TestFileVolumeManifest(object):
             base_vol = env.chain[0]
             assert (env.chain[1].volUUID,) == base_vol.getChildren()
 
-    @pytest.mark.parametrize("capacity, virtual_size, expected_capacity", [
-        # capacity, virtual_size, expected_capacity
-        (0, 128 * MiB, 128 * MiB),  # failed resize, repair capacity
-        (128 * MiB, 256 * MiB, 256 * MiB),  # invalid size, repair cap
-        (128 * MiB, 128 * MiB, 128 * MiB),  # normal case, no change
-        (256 * MiB, 128 * MiB, 256 * MiB),  # cap > actual, no change
-    ])
+    @pytest.mark.parametrize(
+        "capacity, virtual_size, expected_capacity",
+        [
+            # capacity, virtual_size, expected_capacity
+            (0, 128 * MiB, 128 * MiB),  # failed resize, repair capacity
+            (128 * MiB, 256 * MiB, 256 * MiB),  # invalid size, repair cap
+            (128 * MiB, 128 * MiB, 128 * MiB),  # normal case, no change
+            (256 * MiB, 128 * MiB, 256 * MiB),  # cap > actual, no change
+        ],
+    )
     def test_repair_capacity(self, capacity, virtual_size, expected_capacity):
         with self.make_volume(virtual_size, format=sc.COW_FORMAT) as vol:
             md = vol.getMetadata()
@@ -125,8 +129,16 @@ class TestFileVolumeManifest(object):
 
 
 @pytest.mark.parametrize("domain_version", [3, 4, 5])
-def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
-                               fake_rescan, tmp_db, fake_task, domain_version):
+def test_volume_size_unaligned(
+    monkeypatch,
+    tmpdir,
+    tmp_repo,
+    fake_access,
+    fake_rescan,
+    tmp_db,
+    fake_task,
+    domain_version,
+):
     dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
 
     img_uuid = str(uuid.uuid4())
@@ -145,7 +157,8 @@ def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
     vol = dom.produceVolume(img_uuid, vol_uuid)
     vol_path = vol.getVolumePath()
     qcow2_info = qemuimg.info(vol_path)
@@ -176,7 +189,8 @@ def test_extend_volume(tmp_repo, fake_access, fake_task):
         volUUID=vol_uuid,
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID)
+        srcVolUUID=sc.BLANK_UUID,
+    )
 
     # Produce and extend volume to the new capacity.
     vol = dom.produceVolume(img_uuid, vol_uuid)
@@ -227,18 +241,21 @@ metadata
 GREP_MATCH = "PUUID=8cae9a0f-f5c6-41c3-a275-25afe6cfa4b2"
 
 
-@pytest.mark.parametrize("metadata_contents, matched_lines", [
-    # grep one metadata file which has matching line
-    ((MD_WITH_PARENT,), [GREP_MATCH]),
-    # grep two metadata files which have matching line
-    ((MD_WITH_PARENT, MD_WITH_PARENT), [GREP_MATCH, GREP_MATCH]),
-    # grep two metadata files, one of them having matching line
-    ((MD_WITH_PARENT, MD_WITHOUT_PARENT), [GREP_MATCH]),
-    # grep metadata file which hasn't matching line
-    ((MD_WITHOUT_PARENT,), []),
-    # grep file which hasn't metadata format (or matadata are broken)
-    ((BROKEN_METADATA,), []),
-])
+@pytest.mark.parametrize(
+    "metadata_contents, matched_lines",
+    [
+        # grep one metadata file which has matching line
+        ((MD_WITH_PARENT,), [GREP_MATCH]),
+        # grep two metadata files which have matching line
+        ((MD_WITH_PARENT, MD_WITH_PARENT), [GREP_MATCH, GREP_MATCH]),
+        # grep two metadata files, one of them having matching line
+        ((MD_WITH_PARENT, MD_WITHOUT_PARENT), [GREP_MATCH]),
+        # grep metadata file which hasn't matching line
+        ((MD_WITHOUT_PARENT,), []),
+        # grep file which hasn't metadata format (or matadata are broken)
+        ((BROKEN_METADATA,), []),
+    ],
+)
 def test_grep_files(tmpdir, metadata_contents, matched_lines):
     paths = []
     for md in metadata_contents:
@@ -248,8 +265,9 @@ def test_grep_files(tmpdir, metadata_contents, matched_lines):
             f.write(md)
         paths.append(md_path)
 
-    matches = ["{}:{}".format(path, line)
-               for path, line in zip(paths, matched_lines)]
+    matches = [
+        "{}:{}".format(path, line) for path, line in zip(paths, matched_lines)
+    ]
 
     lines = fileVolume.grep_files(GREP_MATCH, paths)
     assert lines == matches

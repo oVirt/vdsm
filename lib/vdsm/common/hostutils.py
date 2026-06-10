@@ -14,13 +14,15 @@ def host_in_shutdown():
     '''
     try:
         system_bus = dbus.SystemBus()
-        systemd_bus = system_bus.get_object('org.freedesktop.systemd1',
-                                            '/org/freedesktop/systemd1')
+        systemd_bus = system_bus.get_object(
+            'org.freedesktop.systemd1', '/org/freedesktop/systemd1'
+        )
     except dbus.DBusException:
         return False
     else:
         jobs = systemd_bus.ListJobs(
-            dbus_interface='org.freedesktop.systemd1.Manager')
+            dbus_interface='org.freedesktop.systemd1.Manager'
+        )
 
         for job in jobs:
             if 'shutdown.target' in job and 'start' in job:

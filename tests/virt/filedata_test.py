@@ -56,12 +56,17 @@ def test_invalid_compression():
 def test_legacy_data():
     data = VariableData()
     # Data with line ends
-    data.store('''
+    data.store(
+        '''
 MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTEx
 MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=
-''')
-    assert data.data == b'11111111111111111111111111111111111111111111' + \
-        b'111111111111111111111111111111111111111111111111111'
+'''
+    )
+    assert (
+        data.data
+        == b'11111111111111111111111111111111111111111111'
+        + b'111111111111111111111111111111111111111111111111111'
+    )
 
 
 def test_compressed():
@@ -76,8 +81,9 @@ def test_compressed():
 FILE_DATA = 'hello'
 FILE_DATA_2 = 'world'
 ENCODED_DATA = 'aGVsbG8='
-ENCODED_DATA_BZ2 = \
+ENCODED_DATA_BZ2 = (
     '=0=QlpoOTFBWSZTWRkxZT0AAACBAAJEoAAhmmgzTQczi7kinChIDJiynoA='
+)
 DIRECTORY_MODE = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH
 UUID = '12345678-1234-1234-1234-1234567890ab'
 
@@ -106,28 +112,19 @@ def test_file_data_modified():
         assert data.last_modified() == os.stat(path).st_mtime
 
 
-@pytest.mark.parametrize("last_modified, is_none", [
-    pytest.param(
-        0,
-        False,
-        id="forced read"
-    ),
-    pytest.param(
-        time.time() - 0.1,  # file mtime may differ from system time a bit
-        False,
-        id="new data"
-    ),
-    pytest.param(
-        time.time() + 1000,
-        False,
-        id="future time"
-    ),
-    pytest.param(
-        None,
-        True,
-        id="current data"
-    ),
-])
+@pytest.mark.parametrize(
+    "last_modified, is_none",
+    [
+        pytest.param(0, False, id="forced read"),
+        pytest.param(
+            time.time() - 0.1,  # file mtime may differ from system time a bit
+            False,
+            id="new data",
+        ),
+        pytest.param(time.time() + 1000, False, id="future time"),
+        pytest.param(None, True, id="current data"),
+    ],
+)
 def test_file_data_conditional_read(last_modified, is_none):
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, 'test')
@@ -172,10 +169,17 @@ def temporary_directory(monkeypatch=None):
         subdirectory = os.path.join(directory, 'data')
         subpath = os.path.join(subdirectory, 'file2')
         if monkeypatch is not None:
-            monkeypatch.setattr(filedata.constants, 'P_LIBVIRT_SWTPM',
-                                os.path.dirname(directory))
-        yield Paths(directory=directory,
-                    path=path, subdirectory=subdirectory, subpath=subpath)
+            monkeypatch.setattr(
+                filedata.constants,
+                'P_LIBVIRT_SWTPM',
+                os.path.dirname(directory),
+            )
+        yield Paths(
+            directory=directory,
+            path=path,
+            subdirectory=subdirectory,
+            subpath=subpath,
+        )
 
 
 @contextmanager
@@ -231,8 +235,9 @@ def test_directory_data_modified():
     with directory_data() as d:
         data = filedata.DirectoryData(d.directory)
         data.retrieve()
-        assert data.last_modified() == \
-            max(os.stat(d.path).st_mtime, os.stat(d.subpath).st_mtime)
+        assert data.last_modified() == max(
+            os.stat(d.path).st_mtime, os.stat(d.subpath).st_mtime
+        )
 
 
 def test_directory_data_no_data():
@@ -258,6 +263,7 @@ def data_retriever(directory):
     def retriever(last_modified):
         encoded = data.retrieve(last_modified=last_modified)
         return encoded, data.last_modified()
+
     return retriever
 
 

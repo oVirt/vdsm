@@ -17,7 +17,9 @@ MINIMAL_DOM_XML = u"""<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
   <uuid>{uuid}</uuid>
   <metadata />
-</domain>""".format(uuid=BLANK_UUID)
+</domain>""".format(
+    uuid=BLANK_UUID
+)
 
 
 def setup_vm(vm):
@@ -38,13 +40,15 @@ class FakeDomain(object):
         cls,
         xml_string,
         prefix=xmlconstants.METADATA_VM_VDSM_PREFIX,
-        uri=xmlconstants.METADATA_VM_VDSM_URI
+        uri=xmlconstants.METADATA_VM_VDSM_URI,
     ):
         dom = cls()
         if xml_string:
             dom.setMetadata(
                 libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                xml_string, prefix, uri,
+                xml_string,
+                prefix,
+                uri,
             )
         return dom
 

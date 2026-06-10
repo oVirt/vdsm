@@ -28,6 +28,7 @@ def skipNoMOM(method):
         if not info['packages2'].get('mom'):
             pytest.skip('MOM is not installed')
         return method(self, *args, **kwargs)
+
     return wrapped
 
 
@@ -53,8 +54,10 @@ class MOMTest(TestCaseBase):
         # Set a simple MOM policy to change KSM parameters unconditionally.
         testPolicyStr = """
             (Host.Control "ksm_run" %d)
-            (Host.Control "ksm_pages_to_scan" %d)""" % \
-            (run, pages_to_scan)
+            (Host.Control "ksm_pages_to_scan" %d)""" % (
+            run,
+            pages_to_scan,
+        )
         status, msg = self.s.setMOMPolicy(testPolicyStr)
         self.assertEqual(status, SUCCESS, msg)
 
@@ -67,8 +70,11 @@ class MOMTest(TestCaseBase):
 
     def _statsOK(self, stats):
         try:
-            return stats['status'] == 'Up' and stats['balloonInfo'] \
+            return (
+                stats['status'] == 'Up'
+                and stats['balloonInfo']
                 and stats['memoryStats']
+            )
         except KeyError:
             return False
 
@@ -85,12 +91,11 @@ class MOMTest(TestCaseBase):
         # The initial value is max for shrink operation and
         # 0.95*max for grow operation.
         for stats in candidateStats:
-            initial = int(stats['balloonInfo']['balloon_max']) * \
-                balloonRatio.initial
+            initial = (
+                int(stats['balloonInfo']['balloon_max']) * balloonRatio.initial
+            )
             if int(stats['balloonInfo']['balloon_cur']) != initial:
-                status, msg = self.s.setBalloonTarget(
-                    stats['vmId'],
-                    initial)
+                status, msg = self.s.setBalloonTarget(stats['vmId'], initial)
                 self.assertEqual(status, SUCCESS, msg)
         return [stats['vmId'] for stats in candidateStats]
 
@@ -107,14 +112,10 @@ class MOMTest(TestCaseBase):
         # The initial value is max for shrink operation and
         # 0.95*max for grow operation.
         for stats in candidateStats:
-            status, msg = self.s.setCpuTuneQuota(
-                stats['vmId'],
-                vcpuQuota)
+            status, msg = self.s.setCpuTuneQuota(stats['vmId'], vcpuQuota)
             self.assertEqual(status, SUCCESS, msg)
 
-            status, msg = self.s.setCpuTunePeriod(
-                stats['vmId'],
-                vcpuPeriod)
+            status, msg = self.s.setCpuTunePeriod(stats['vmId'], vcpuPeriod)
             self.assertEqual(status, SUCCESS, msg)
 
     def _setPolicy(self, policy):
@@ -150,9 +151,11 @@ class MOMTest(TestCaseBase):
                     balloonMax = int(vmNewStats['balloonInfo']['balloon_max'])
                     balloonCur = int(vmNewStats['balloonInfo']['balloon_cur'])
                     self.assertTrue(
-                        balloonCur >= floor(balloonRatio.low * balloonMax))
+                        balloonCur >= floor(balloonRatio.low * balloonMax)
+                    )
                     self.assertTrue(
-                        balloonCur <= ceil(balloonRatio.high * balloonMax))
+                        balloonCur <= ceil(balloonRatio.high * balloonMax)
+                    )
 
     def _basicBalloon(self, balloonRatio, policy):
         vmCandidates = self._prepare(balloonRatio)
@@ -171,15 +174,17 @@ class MOMTest(TestCaseBase):
     @skipNoMOM
     @testValidation.slowtest
     def testBalloonShrink(self):
-        self._basicBalloon(self.BalloonRatio(1, 0.9475, 0.95),
-                           '60_test_balloon_shrink.policy')
+        self._basicBalloon(
+            self.BalloonRatio(1, 0.9475, 0.95), '60_test_balloon_shrink.policy'
+        )
 
     @testValidation.ValidateRunningAsRoot
     @skipNoMOM
     @testValidation.slowtest
     def testBalloonGrow(self):
-        self._basicBalloon(self.BalloonRatio(0.95, 0.9975, 1),
-                           '70_test_balloon_grow.policy')
+        self._basicBalloon(
+            self.BalloonRatio(0.95, 0.9975, 1), '70_test_balloon_grow.policy'
+        )
 
     @testValidation.ValidateRunningAsRoot
     @skipNoMOM

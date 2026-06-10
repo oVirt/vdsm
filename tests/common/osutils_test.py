@@ -28,6 +28,7 @@ class TestUninterruptiblePoll(TestCaseBase):
         def _repeatFakeSigchld():
             for i in range(self.RETRIES):
                 self._waitAndSigchld()
+
         intrThread = threading.Thread(target=_repeatFakeSigchld)
         intrThread.setDaemon(True)
         intrThread.start()
@@ -77,8 +78,9 @@ class TestUninterruptiblePoll(TestCaseBase):
         intrThread.start()
 
         try:
-            self.assertTrue(len(
-                osutils.uninterruptible_poll(poller.poll, -1)) > 0)
+            self.assertTrue(
+                len(osutils.uninterruptible_poll(poller.poll, -1)) > 0
+            )
         finally:
             os.close(myPipe)
 

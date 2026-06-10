@@ -11,11 +11,9 @@ class APIData(object):
 
 
 testPing_apidata = [
-    APIData('Global', 'ping', {
-        'status': {'code': 0, 'message': 'OK'}})
+    APIData('Global', 'ping', {'status': {'code': 0, 'message': 'OK'}})
 ]
 
 testPingError_apidata = [
-    APIData('Global', 'ping', {
-        'status': {'code': 1, 'message': 'Fake error'}})
+    APIData('Global', 'ping', {'status': {'code': 1, 'message': 'Fake error'}})
 ]

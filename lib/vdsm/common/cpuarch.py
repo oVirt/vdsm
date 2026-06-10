@@ -6,7 +6,6 @@ import platform
 
 from .config import config
 
-
 X86_64 = 'x86_64'
 PPC64 = 'ppc64'
 PPC64LE = 'ppc64le'
@@ -58,8 +57,7 @@ def effective():
     raises UnsupportedArchitecture exception.
     '''
     if config.getboolean('vars', 'fake_kvm_support'):
-        return _supported(
-            config.get('vars', 'fake_kvm_architecture'))
+        return _supported(config.get('vars', 'fake_kvm_architecture'))
     else:
         return real()
 

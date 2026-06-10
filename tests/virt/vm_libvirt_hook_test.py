@@ -166,8 +166,9 @@ _MODIFIED_XML = '''<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
 
 class TestMigrateHook:
 
-    def _test_hook(self, xml, modified_xml,
-                   domain='foo', event='migrate', phase='begin'):
+    def _test_hook(
+        self, xml, modified_xml, domain='foo', event='migrate', phase='begin'
+    ):
         stdin = io.StringIO(xml)
         stdout = io.StringIO()
         vm_libvirt_hook.main(domain, event, phase, stdin=stdin, stdout=stdout)

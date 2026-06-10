@@ -24,6 +24,6 @@ def status():
     for profiler in (cpu, memory):
         res[profiler.__name__] = {
             "enabled": profiler.is_enabled(),
-            "running": profiler.is_running()
+            "running": profiler.is_running(),
         }
     return res

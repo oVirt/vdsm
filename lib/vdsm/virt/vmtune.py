@@ -183,11 +183,9 @@ def io_tune_update_list(tunables, changes):
 
     for change in changes:
         old_id = None
-        if ("name" in change and
-                change["name"] in indexByName):
+        if "name" in change and change["name"] in indexByName:
             old_id = indexByName[change["name"]]
-        elif ("path" in change and
-                change["path"] in indexByPath):
+        elif "path" in change and change["path"] in indexByPath:
             old_id = indexByPath[change["path"]]
 
         if old_id is None:
@@ -202,18 +200,26 @@ def io_tune_update_list(tunables, changes):
 def _check_io_tune_categories(ioTuneParamsInfo):
     categories = ("bytes", "iops")
     for category in categories:
-        if ioTuneParamsInfo.get('total_' + category + '_sec', 0) and \
-                (ioTuneParamsInfo.get('read_' + category + '_sec', 0) or
-                 ioTuneParamsInfo.get('write_' + category + '_sec', 0)):
-            raise ValueError('A non-zero total value and non-zero'
-                             ' read/write value for %s_sec can not be'
-                             ' set at the same time' % category)
+        if ioTuneParamsInfo.get('total_' + category + '_sec', 0) and (
+            ioTuneParamsInfo.get('read_' + category + '_sec', 0)
+            or ioTuneParamsInfo.get('write_' + category + '_sec', 0)
+        ):
+            raise ValueError(
+                'A non-zero total value and non-zero'
+                ' read/write value for %s_sec can not be'
+                ' set at the same time' % category
+            )
 
 
 def validate_io_tune_params(params):
-    ioTuneParams = ('total_bytes_sec', 'read_bytes_sec',
-                    'write_bytes_sec', 'total_iops_sec',
-                    'write_iops_sec', 'read_iops_sec')
+    ioTuneParams = (
+        'total_bytes_sec',
+        'read_bytes_sec',
+        'write_bytes_sec',
+        'total_iops_sec',
+        'write_iops_sec',
+        'read_iops_sec',
+    )
     for key, value in params.items():
         try:
             if key in ioTuneParams:
@@ -223,11 +229,14 @@ def validate_io_tune_params(params):
             else:
                 raise Exception('parameter %s name is invalid' % key)
         except ValueError as e:
-            e.args = ('an integer is required for ioTune'
-                      ' parameter %s' % key,) + e.args[1:]
+            e.args = (
+                'an integer is required for ioTune' ' parameter %s' % key,
+            ) + e.args[1:]
             raise
         else:
-            raise ValueError('parameter %s value should be'
-                             ' equal or greater than zero' % key)
+            raise ValueError(
+                'parameter %s value should be'
+                ' equal or greater than zero' % key
+            )
 
     _check_io_tune_categories(params)

@@ -56,7 +56,7 @@ class ReadEventError(Exception):
 def checksum(data):
     csum = sum(bytearray(data))
     # Trim sum to be CHECKSUM_BYTES bytes long
-    return csum & (2**(CHECKSUM_BYTES * 8) - 1)
+    return csum & (2 ** (CHECKSUM_BYTES * 8) - 1)
 
 
 def packed_checksum(data):
@@ -83,13 +83,19 @@ class SPM_Extend_Message:
     log = logging.getLogger('storage.mailbox')
 
     def __init__(self, volumeData, newSize, callbackFunction=None):
-        if ('poolID' not in volumeData or
-                'domainID' not in volumeData or
-                'volumeID' not in volumeData):
-            self.log.error('create extend msg failed for volume: %s, size:'
-                           ' %d', '-'.join(volumeData.values()), newSize)
-            raise InvalidParameterException('volumeData dictionary',
-                                            volumeData)
+        if (
+            'poolID' not in volumeData
+            or 'domainID' not in volumeData
+            or 'volumeID' not in volumeData
+        ):
+            self.log.error(
+                'create extend msg failed for volume: %s, size:' ' %d',
+                '-'.join(volumeData.values()),
+                newSize,
+            )
+            raise InvalidParameterException(
+                'volumeData dictionary', volumeData
+            )
 
         if (newSize < 0) or (newSize > VOLUME_MAX_SIZE):
             raise InvalidParameterException('volumeSize', newSize)
@@ -112,8 +118,11 @@ class SPM_Extend_Message:
         # Pad payload with zeros
         self.payload = payload.ljust(MESSAGE_SIZE, b"0")
 
-        self.log.debug('new extend msg created: domain: %s, volume: %s',
-                       volumeData['domainID'], volumeData['volumeID'])
+        self.log.debug(
+            'new extend msg created: domain: %s, volume: %s',
+            volumeData['domainID'],
+            volumeData['volumeID'],
+        )
 
     def __getitem__(self, index):
         return self.payload[index]
@@ -121,11 +130,14 @@ class SPM_Extend_Message:
     def checkReply(self, reply):
         # Sanity check - Make sure reply is for current message
         sizeOffset = 5 + 2 * PACKED_UUID_SIZE
-        if (self.payload[0:sizeOffset] != reply[0:sizeOffset]):
-            self.log.error("SPM_Extend_Message: Reply message volume data "
-                           "(domainID + volumeID) differs from request "
-                           "message, reply : %s, orig: %s", reply,
-                           self.payload)
+        if self.payload[0:sizeOffset] != reply[0:sizeOffset]:
+            self.log.error(
+                "SPM_Extend_Message: Reply message volume data "
+                "(domainID + volumeID) differs from request "
+                "message, reply : %s, orig: %s",
+                reply,
+                self.payload,
+            )
             raise RuntimeError('Incorrect reply')
         # if self.payload[sizeOffset:sizeOffset + PACKED_UUID_SIZE] > \
         #        reply[sizeOffset:sizeOffset + PACKED_UUID_SIZE]):
@@ -144,14 +156,21 @@ class SPM_Extend_Message:
         volume = {}
         volume['poolID'] = pool.spUUID
         volume['domainID'] = unpack_uuid(
-            payload[sdOffset:sdOffset + PACKED_UUID_SIZE])
+            payload[sdOffset : sdOffset + PACKED_UUID_SIZE]
+        )
         volume['volumeID'] = unpack_uuid(
-            payload[volumeOffset:volumeOffset + PACKED_UUID_SIZE])
-        size = int(payload[sizeOffset:sizeOffset + SIZE_CHARS], 16)
+            payload[volumeOffset : volumeOffset + PACKED_UUID_SIZE]
+        )
+        size = int(payload[sizeOffset : sizeOffset + SIZE_CHARS], 16)
 
-        cls.log.info("processRequest: extending volume %s "
-                     "in domain %s (pool %s) to size %d", volume['volumeID'],
-                     volume['domainID'], volume['poolID'], size)
+        cls.log.info(
+            "processRequest: extending volume %s "
+            "in domain %s (pool %s) to size %d",
+            volume['volumeID'],
+            volume['domainID'],
+            volume['poolID'],
+            size,
+        )
 
         msg = None
         try:
@@ -159,10 +178,13 @@ class SPM_Extend_Message:
                 pool.extendVolume(volume['domainID'], volume['volumeID'], size)
                 msg = SPM_Extend_Message(volume, size)
             except:
-                cls.log.error("processRequest: Exception caught while trying "
-                              "to extend volume: %s in domain: %s",
-                              volume['volumeID'], volume['domainID'],
-                              exc_info=True)
+                cls.log.error(
+                    "processRequest: Exception caught while trying "
+                    "to extend volume: %s in domain: %s",
+                    volume['volumeID'],
+                    volume['domainID'],
+                    exc_info=True,
+                )
                 msg = SPM_Extend_Message(volume, 0)
         finally:
             pool.spmMailer.sendReply(msgID, msg)
@@ -173,8 +195,15 @@ class HSM_Mailbox:
 
     log = logging.getLogger('storage.mailbox')
 
-    def __init__(self, hostID, poolID, inbox, outbox, monitorInterval=2.0,
-                 eventInterval=0.5):
+    def __init__(
+        self,
+        hostID,
+        poolID,
+        inbox,
+        outbox,
+        monitorInterval=2.0,
+        eventInterval=0.5,
+    ):
         self._hostID = str(hostID)
         self._poolID = str(poolID)
         self._monitorInterval = monitorInterval
@@ -182,19 +211,32 @@ class HSM_Mailbox:
         self._queue = queue.Queue(-1)
         self._inbox = inbox
         if not os.path.exists(self._inbox):
-            self.log.error("HSM_Mailbox create failed - inbox %s does not "
-                           "exist" % repr(self._inbox))
-            raise RuntimeError("HSM_Mailbox create failed - inbox %s does not "
-                               "exist" % repr(self._inbox))
+            self.log.error(
+                "HSM_Mailbox create failed - inbox %s does not "
+                "exist" % repr(self._inbox)
+            )
+            raise RuntimeError(
+                "HSM_Mailbox create failed - inbox %s does not "
+                "exist" % repr(self._inbox)
+            )
         self._outbox = outbox
         if not os.path.exists(self._outbox):
-            self.log.error("HSM_Mailbox create failed - outbox %s does not "
-                           "exist" % repr(self._outbox))
-            raise RuntimeError("HSM_Mailbox create failed - outbox %s does "
-                               "not exist" % repr(self._outbox))
+            self.log.error(
+                "HSM_Mailbox create failed - outbox %s does not "
+                "exist" % repr(self._outbox)
+            )
+            raise RuntimeError(
+                "HSM_Mailbox create failed - outbox %s does "
+                "not exist" % repr(self._outbox)
+            )
         self._mailman = HSM_MailMonitor(
-            self._inbox, self._outbox, hostID, self._queue, monitorInterval,
-            eventInterval)
+            self._inbox,
+            self._outbox,
+            hostID,
+            self._queue,
+            monitorInterval,
+            eventInterval,
+        )
         self.log.debug('HSM_MailboxMonitor created for pool %s' % self._poolID)
 
     def sendExtendMsg(self, volumeData, newSize, callbackFunction=None):
@@ -208,8 +250,10 @@ class HSM_Mailbox:
             self._mailman.immStop()
             self._mailman.tp.joinAll()
         else:
-            self.log.warning("HSM_MailboxMonitor - No mail monitor object "
-                             "available to stop")
+            self.log.warning(
+                "HSM_MailboxMonitor - No mail monitor object "
+                "available to stop"
+            )
 
     def wait(self, timeout=None):
         return self._mailman.wait(timeout)
@@ -218,8 +262,9 @@ class HSM_Mailbox:
 class HSM_MailMonitor(object):
     log = logging.getLogger('storage.mailbox')
 
-    def __init__(self, inbox, outbox, hostID, queue, monitorInterval,
-                 eventInterval):
+    def __init__(
+        self, inbox, outbox, hostID, queue, monitorInterval, eventInterval
+    ):
         # Save arguments
         self._outbox = outbox
         tpSize = config.getint('irs', 'thread_pool_size') // 2
@@ -236,40 +281,45 @@ class HSM_MailMonitor(object):
         self._outgoingMail = EMPTYMAILBOX
         self._incomingMail = EMPTYMAILBOX
         # TODO: add support for multiple paths (multiple mailboxes)
-        self._inCmd = [constants.EXT_DD,
-                       'if=' + str(inbox),
-                       'iflag=direct,fullblock',
-                       'bs=' + str(MAILBOX_SIZE),
-                       'count=1',
-                       'skip=' + str(self._hostID)
-                       ]
-        self._outCmd = [constants.EXT_DD,
-                        'of=' + str(outbox),
-                        'iflag=fullblock',
-                        'oflag=direct',
-                        'conv=notrunc',
-                        'bs=' + str(MAILBOX_SIZE),
-                        'count=1',
-                        'seek=' + str(self._hostID)
-                        ]
+        self._inCmd = [
+            constants.EXT_DD,
+            'if=' + str(inbox),
+            'iflag=direct,fullblock',
+            'bs=' + str(MAILBOX_SIZE),
+            'count=1',
+            'skip=' + str(self._hostID),
+        ]
+        self._outCmd = [
+            constants.EXT_DD,
+            'of=' + str(outbox),
+            'iflag=fullblock',
+            'oflag=direct',
+            'conv=notrunc',
+            'bs=' + str(MAILBOX_SIZE),
+            'count=1',
+            'seek=' + str(self._hostID),
+        ]
         self._init = False
         self._initMailbox()  # Read initial mailbox state
         self._msgCounter = 0
         self._sendMail()  # Clear outgoing mailbox
-        self._thread = concurrent.thread(self._run, name="mailbox-hsm",
-                                         log=self.log)
+        self._thread = concurrent.thread(
+            self._run, name="mailbox-hsm", log=self.log
+        )
         self._thread.start()
 
     def _initMailbox(self):
         # Sync initial incoming mail state with storage view
-        (rc, out, err) = _mboxExecCmd(self._inCmd, raw=True)
+        rc, out, err = _mboxExecCmd(self._inCmd, raw=True)
         if rc == 0:
             self._incomingMail = out
             self._init = True
         else:
-            self.log.warning("HSM_MailboxMonitor - Could not initialize "
-                             "mailbox, will not accept requests until init "
-                             "succeeds")
+            self.log.warning(
+                "HSM_MailboxMonitor - Could not initialize "
+                "mailbox, will not accept requests until init "
+                "succeeds"
+            )
 
     def immStop(self):
         self._stop = True
@@ -290,7 +340,7 @@ class HSM_MailMonitor(object):
 
             # First byte of message is message version.
             # A null byte indicates an empty response message to be skipped.
-            if newMsgs[start:start + 1] == b"\0":
+            if newMsgs[start : start + 1] == b"\0":
                 continue
 
             for j in range(start, start + MESSAGE_SIZE):
@@ -309,48 +359,68 @@ class HSM_MailMonitor(object):
             #
             rc = True
 
-            newMsg = newMsgs[start:start + MESSAGE_SIZE]
+            newMsg = newMsgs[start : start + MESSAGE_SIZE]
 
             if newMsg == CLEAN_MESSAGE:
                 del self._activeMessages[i]
                 self._used_slots_array[i] = 0
                 self._msgCounter -= 1
-                self._outgoingMail = self._outgoingMail[0:start] + \
-                    MESSAGE_SIZE * b"\0" + self._outgoingMail[start +
-                                                              MESSAGE_SIZE:]
+                self._outgoingMail = (
+                    self._outgoingMail[0:start]
+                    + MESSAGE_SIZE * b"\0"
+                    + self._outgoingMail[start + MESSAGE_SIZE :]
+                )
                 continue
 
             msg = self._activeMessages[i]
             self._activeMessages[i] = CLEAN_MESSAGE
-            self._outgoingMail = self._outgoingMail[0:start] + \
-                CLEAN_MESSAGE + self._outgoingMail[start + MESSAGE_SIZE:]
+            self._outgoingMail = (
+                self._outgoingMail[0:start]
+                + CLEAN_MESSAGE
+                + self._outgoingMail[start + MESSAGE_SIZE :]
+            )
 
             try:
-                self.log.debug("HSM_MailboxMonitor(%s/%s) - Checking reply: "
-                               "%s", self._msgCounter, MESSAGES_PER_MAILBOX,
-                               repr(newMsg))
+                self.log.debug(
+                    "HSM_MailboxMonitor(%s/%s) - Checking reply: " "%s",
+                    self._msgCounter,
+                    MESSAGES_PER_MAILBOX,
+                    repr(newMsg),
+                )
                 msg.checkReply(newMsg)
                 if msg.callback:
                     try:
                         id = str(uuid.uuid4())
-                        if not self.tp.queueTask(id, runTask, (msg.callback,
-                                                 msg.volumeData)):
+                        if not self.tp.queueTask(
+                            id, runTask, (msg.callback, msg.volumeData)
+                        ):
                             raise Exception()
                     except:
-                        self.log.error("HSM_MailMonitor: exception caught "
-                                       "while running msg callback, for "
-                                       "message: %s, callback function: %s",
-                                       repr(msg.payload), msg.callback,
-                                       exc_info=True)
+                        self.log.error(
+                            "HSM_MailMonitor: exception caught "
+                            "while running msg callback, for "
+                            "message: %s, callback function: %s",
+                            repr(msg.payload),
+                            msg.callback,
+                            exc_info=True,
+                        )
             except RuntimeError as e:
-                self.log.error("HSM_MailMonitor: exception: %s caught while "
-                               "checking reply for message: %s, reply: %s",
-                               str(e), repr(msg.payload), repr(newMsg))
+                self.log.error(
+                    "HSM_MailMonitor: exception: %s caught while "
+                    "checking reply for message: %s, reply: %s",
+                    str(e),
+                    repr(msg.payload),
+                    repr(newMsg),
+                )
             except:
-                self.log.error("HSM_MailMonitor: exception caught while "
-                               "checking reply from SPM, request was: %s "
-                               "reply: %s", repr(msg.payload), repr(newMsg),
-                               exc_info=True)
+                self.log.error(
+                    "HSM_MailMonitor: exception caught while "
+                    "checking reply from SPM, request was: %s "
+                    "reply: %s",
+                    repr(msg.payload),
+                    repr(newMsg),
+                    exc_info=True,
+                )
         # Finished processing incoming mail, now save mail to compare against
         # next batch
         self._incomingMail = newMsgs
@@ -359,22 +429,27 @@ class HSM_MailMonitor(object):
     def _checkForMail(self):
         # self.log.debug("HSM_MailMonitor - checking for mail")
         # self.log.debug("Running command: " + str(self._inCmd))
-        (rc, in_mail, err) = _mboxExecCmd(self._inCmd, raw=True)
+        rc, in_mail, err = _mboxExecCmd(self._inCmd, raw=True)
         if rc:
-            raise RuntimeError("_handleResponses.Could not read mailbox - rc "
-                               "%s" % rc)
-        if (len(in_mail) != MAILBOX_SIZE):
-            raise RuntimeError("_handleResponses.Could not read mailbox - len "
-                               "%s != %s" % (len(in_mail), MAILBOX_SIZE))
+            raise RuntimeError(
+                "_handleResponses.Could not read mailbox - rc " "%s" % rc
+            )
+        if len(in_mail) != MAILBOX_SIZE:
+            raise RuntimeError(
+                "_handleResponses.Could not read mailbox - len "
+                "%s != %s" % (len(in_mail), MAILBOX_SIZE)
+            )
         # self.log.debug("Parsing inbox content: %s", in_mail)
         return self._handleResponses(in_mail)
 
     def _sendMail(self):
         self.log.debug("HSM_MailMonitor sending mail to SPM")
         pChk = packed_checksum(
-            self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES])
-        self._outgoingMail = \
-            self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES] + pChk
+            self._outgoingMail[0 : MAILBOX_SIZE - CHECKSUM_BYTES]
+        )
+        self._outgoingMail = (
+            self._outgoingMail[0 : MAILBOX_SIZE - CHECKSUM_BYTES] + pChk
+        )
         _mboxExecCmd(self._outCmd, data=self._outgoingMail)
 
     def _handleMessage(self, message):
@@ -391,25 +466,39 @@ class HSM_MailMonitor(object):
                     duplicate = False
                     break
             if duplicate:
-                self.log.debug("HSM_MailMonitor - ignoring duplicate message "
-                               "%s" % (repr(message)))
+                self.log.debug(
+                    "HSM_MailMonitor - ignoring duplicate message "
+                    "%s" % (repr(message))
+                )
                 return
         if freeSlot is None:
-            raise RuntimeError("HSM_MailMonitor - Active messages list full, "
-                               "cannot add new message")
+            raise RuntimeError(
+                "HSM_MailMonitor - Active messages list full, "
+                "cannot add new message"
+            )
 
         self._msgCounter += 1
         self._used_slots_array[freeSlot] = 1
         self._activeMessages[freeSlot] = message
         start = freeSlot * MESSAGE_SIZE
         end = start + MESSAGE_SIZE
-        self._outgoingMail = self._outgoingMail[0:start] + message.payload + \
-            self._outgoingMail[end:]
-        self.log.debug("HSM_MailMonitor - start: %s, end: %s, len: %s, "
-                       "message(%s/%s): %s" %
-                       (start, end, len(self._outgoingMail), self._msgCounter,
-                        MESSAGES_PER_MAILBOX,
-                        repr(self._outgoingMail[start:end])))
+        self._outgoingMail = (
+            self._outgoingMail[0:start]
+            + message.payload
+            + self._outgoingMail[end:]
+        )
+        self.log.debug(
+            "HSM_MailMonitor - start: %s, end: %s, len: %s, "
+            "message(%s/%s): %s"
+            % (
+                start,
+                end,
+                len(self._outgoingMail),
+                self._msgCounter,
+                MESSAGES_PER_MAILBOX,
+                repr(self._outgoingMail[start:end]),
+            )
+        )
 
     def _run(self):
         try:
@@ -430,14 +519,18 @@ class HSM_MailMonitor(object):
                     sendMail = False
                     # If no message is pending, block_wait until a new message
                     # or stop command arrives
-                    while not self._stop and not message and \
-                            not self._activeMessages:
+                    while (
+                        not self._stop
+                        and not message
+                        and not self._activeMessages
+                    ):
                         try:
                             # self.log.debug("No requests in queue, going to "
                             #               "sleep until new requests arrive")
                             # Check if a new message is waiting to be sent
                             message = self._queue.get(
-                                block=True, timeout=self._monitorInterval)
+                                block=True, timeout=self._monitorInterval
+                            )
                             self._handleMessage(message)
                             message = None
                             sendMail = True
@@ -450,8 +543,9 @@ class HSM_MailMonitor(object):
                     # If pending messages available, check if there are new
                     # messages waiting in queue as well
                     empty = False
-                    while (not empty) and \
-                            (len(self._activeMessages) < MESSAGES_PER_MAILBOX):
+                    while (not empty) and (
+                        len(self._activeMessages) < MESSAGES_PER_MAILBOX
+                    ):
                         # TODO: Remove single mailbox limitation
                         try:
                             message = self._queue.get(block=False)
@@ -465,9 +559,11 @@ class HSM_MailMonitor(object):
                         sendMail |= self._checkForMail()
                         failures = 0
                     except:
-                        self.log.error("HSM_MailboxMonitor - Exception caught "
-                                       "while checking for mail",
-                                       exc_info=True)
+                        self.log.error(
+                            "HSM_MailboxMonitor - Exception caught "
+                            "while checking for mail",
+                            exc_info=True,
+                        )
                         failures += 1
 
                     if sendMail:
@@ -479,18 +575,23 @@ class HSM_MailMonitor(object):
                     if self._activeMessages and not self._stop:
                         # If recurring failures then sleep for one minute
                         # before retrying
-                        if (failures > 9):
+                        if failures > 9:
                             time.sleep(60)
                         else:
                             self._wait_for_reply()
 
                 except:
-                    self.log.error("HSM_MailboxMonitor - Incoming mail"
-                                   "monitoring thread caught exception; "
-                                   "will try to recover", exc_info=True)
+                    self.log.error(
+                        "HSM_MailboxMonitor - Incoming mail"
+                        "monitoring thread caught exception; "
+                        "will try to recover",
+                        exc_info=True,
+                    )
         finally:
-            self.log.info("HSM_MailboxMonitor - Incoming mail monitoring "
-                          "thread stopped, clearing outgoing mail")
+            self.log.info(
+                "HSM_MailboxMonitor - Incoming mail monitoring "
+                "thread stopped, clearing outgoing mail"
+            )
             self._outgoingMail = EMPTYMAILBOX
             self._sendMail()  # Clear outgoing mailbox
 
@@ -547,8 +648,15 @@ class SPM_MailMonitor:
     def unregisterMessageType(self, messageType):
         del self._messageTypes[messageType]
 
-    def __init__(self, poolID, maxHostID, inbox, outbox, monitorInterval=2.0,
-                 eventInterval=0.5):
+    def __init__(
+        self,
+        poolID,
+        maxHostID,
+        inbox,
+        outbox,
+        monitorInterval=2.0,
+        eventInterval=0.5,
+    ):
         """
         Note: inbox parameter here should point to the HSM's outbox
         mailbox file, and vice versa.
@@ -564,16 +672,24 @@ class SPM_MailMonitor:
         self.tp = ThreadPool("mailbox-spm", tpSize, waitTimeout, maxTasks)
         self._inbox = inbox
         if not os.path.exists(self._inbox):
-            self.log.error("SPM_MailMonitor create failed - inbox %s does not "
-                           "exist" % repr(self._inbox))
-            raise RuntimeError("SPM_MailMonitor create failed - inbox %s does "
-                               "not exist" % repr(self._inbox))
+            self.log.error(
+                "SPM_MailMonitor create failed - inbox %s does not "
+                "exist" % repr(self._inbox)
+            )
+            raise RuntimeError(
+                "SPM_MailMonitor create failed - inbox %s does "
+                "not exist" % repr(self._inbox)
+            )
         self._outbox = outbox
         if not os.path.exists(self._outbox):
-            self.log.error("SPM_MailMonitor create failed - outbox %s does "
-                           "not exist" % repr(self._outbox))
-            raise RuntimeError("SPM_MailMonitor create failed - outbox %s "
-                               "does not exist" % repr(self._outbox))
+            self.log.error(
+                "SPM_MailMonitor create failed - outbox %s does "
+                "not exist" % repr(self._outbox)
+            )
+            raise RuntimeError(
+                "SPM_MailMonitor create failed - outbox %s "
+                "does not exist" % repr(self._outbox)
+            )
         self._numHosts = int(maxHostID)
         self._outMailLen = MAILBOX_SIZE * self._numHosts
         self._monitorInterval = monitorInterval
@@ -581,18 +697,20 @@ class SPM_MailMonitor:
         # TODO: add support for multiple paths (multiple mailboxes)
         self._outgoingMail = self._outMailLen * b"\0"
         self._incomingMail = self._outgoingMail
-        self._inCmd = ['dd',
-                       'if=' + str(self._inbox),
-                       'iflag=direct,fullblock',
-                       'count=1'
-                       ]
-        self._outCmd = ['dd',
-                        'of=' + str(self._outbox),
-                        'oflag=direct',
-                        'iflag=fullblock',
-                        'conv=notrunc',
-                        'count=1'
-                        ]
+        self._inCmd = [
+            'dd',
+            'if=' + str(self._inbox),
+            'iflag=direct,fullblock',
+            'count=1',
+        ]
+        self._outCmd = [
+            'dd',
+            'of=' + str(self._outbox),
+            'oflag=direct',
+            'iflag=fullblock',
+            'conv=notrunc',
+            'count=1',
+        ]
         self._outLock = threading.Lock()
         self._inLock = threading.Lock()
 
@@ -600,16 +718,20 @@ class SPM_MailMonitor:
         self._last_event = uuid.UUID(int=0)
 
         # Clear outgoing mail
-        self.log.debug("SPM_MailMonitor - clearing outgoing mail, command is: "
-                       "%s", self._outCmd)
+        self.log.debug(
+            "SPM_MailMonitor - clearing outgoing mail, command is: " "%s",
+            self._outCmd,
+        )
         cmd = self._outCmd + ['bs=' + str(self._outMailLen)]
-        (rc, out, err) = _mboxExecCmd(cmd, data=self._outgoingMail)
+        rc, out, err = _mboxExecCmd(cmd, data=self._outgoingMail)
         if rc:
-            self.log.warning("SPM_MailMonitor couldn't clear outgoing mail, "
-                             "dd failed")
+            self.log.warning(
+                "SPM_MailMonitor couldn't clear outgoing mail, " "dd failed"
+            )
 
         self._thread = concurrent.thread(
-            self._run, name="mailbox-spm", log=self.log)
+            self._run, name="mailbox-spm", log=self.log
+        )
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)
 
     def start(self):
@@ -639,7 +761,11 @@ class SPM_MailMonitor:
             self.log.error(
                 "mailbox %s checksum failed, not clearing mailbox, clearing "
                 "new mail (data=%r, checksum=%r, expected=%r)",
-                mailboxIndex, data, checksum, expected)
+                mailboxIndex,
+                data,
+                checksum,
+                expected,
+            )
             return False
         elif expected == pZeroChecksum:
             return False  # Ignore messages of empty mailbox
@@ -664,7 +790,7 @@ class SPM_MailMonitor:
 
                 # First byte of message is message version.
                 # A null byte indicates an empty message to be skipped.
-                if newMail[msgStart:msgStart + 1] == b"\0":
+                if newMail[msgStart : msgStart + 1] == b"\0":
                     continue
 
                 # Most mailboxes are probably empty so it costs less to check
@@ -673,26 +799,36 @@ class SPM_MailMonitor:
                 # mailbox
                 if not isMailboxValidated:
                     if not self.validateMailbox(
-                            newMail[mailboxStart:mailboxStart + MAILBOX_SIZE],
-                            host):
+                        newMail[mailboxStart : mailboxStart + MAILBOX_SIZE],
+                        host,
+                    ):
                         # Cleaning invalid mbx in newMail
-                        newMail = newMail[:mailboxStart] + EMPTYMAILBOX + \
-                            newMail[mailboxStart + MAILBOX_SIZE:]
+                        newMail = (
+                            newMail[:mailboxStart]
+                            + EMPTYMAILBOX
+                            + newMail[mailboxStart + MAILBOX_SIZE :]
+                        )
                         break
-                    self.log.debug("SPM_MailMonitor: Mailbox %s validated, "
-                                   "checking mail", host)
+                    self.log.debug(
+                        "SPM_MailMonitor: Mailbox %s validated, "
+                        "checking mail",
+                        host,
+                    )
                     isMailboxValidated = True
 
-                newMsg = newMail[msgStart:msgStart + MESSAGE_SIZE]
+                newMsg = newMail[msgStart : msgStart + MESSAGE_SIZE]
                 msgOffset = msgId * MESSAGE_SIZE
                 if newMsg == CLEAN_MESSAGE:
                     # Should probably put a setter on outgoingMail which would
                     # take the lock
                     with self._outLock:
-                        self._outgoingMail = \
-                            self._outgoingMail[0:msgOffset] + CLEAN_MESSAGE + \
-                            self._outgoingMail[msgOffset + MESSAGE_SIZE:
-                                               self._outMailLen]
+                        self._outgoingMail = (
+                            self._outgoingMail[0:msgOffset]
+                            + CLEAN_MESSAGE
+                            + self._outgoingMail[
+                                msgOffset + MESSAGE_SIZE : self._outMailLen
+                            ]
+                        )
                     send = True
                     continue
 
@@ -710,33 +846,47 @@ class SPM_MailMonitor:
 
                 # We only get here if there is a novel request
                 try:
-                    msgType = newMail[msgStart + 1:msgStart + 5]
+                    msgType = newMail[msgStart + 1 : msgStart + 5]
                     if msgType in self._messageTypes:
                         # Use message class to process request according to
                         # message specific logic
                         id = str(uuid.uuid4())
-                        self.log.debug("SPM_MailMonitor: processing request: "
-                                       "%s" % repr(newMail[
-                                           msgStart:msgStart + MESSAGE_SIZE]))
+                        self.log.debug(
+                            "SPM_MailMonitor: processing request: "
+                            "%s"
+                            % repr(newMail[msgStart : msgStart + MESSAGE_SIZE])
+                        )
                         res = self.tp.queueTask(
-                            id, runTask, (self._messageTypes[msgType], msgId,
-                                          newMail[msgStart:
-                                                  msgStart + MESSAGE_SIZE])
+                            id,
+                            runTask,
+                            (
+                                self._messageTypes[msgType],
+                                msgId,
+                                newMail[msgStart : msgStart + MESSAGE_SIZE],
+                            ),
                         )
                         if not res:
                             raise Exception()
                     else:
-                        self.log.error("SPM_MailMonitor: unknown message type "
-                                       "encountered: %s", msgType)
+                        self.log.error(
+                            "SPM_MailMonitor: unknown message type "
+                            "encountered: %s",
+                            msgType,
+                        )
                 except RuntimeError as e:
-                    self.log.error("SPM_MailMonitor: exception: %s caught "
-                                   "while handling message: %s", str(e),
-                                   newMail[msgStart:msgStart + MESSAGE_SIZE])
+                    self.log.error(
+                        "SPM_MailMonitor: exception: %s caught "
+                        "while handling message: %s",
+                        str(e),
+                        newMail[msgStart : msgStart + MESSAGE_SIZE],
+                    )
                 except:
-                    self.log.error("SPM_MailMonitor: exception caught while "
-                                   "handling message: %s",
-                                   newMail[msgStart:msgStart + MESSAGE_SIZE],
-                                   exc_info=True)
+                    self.log.error(
+                        "SPM_MailMonitor: exception caught while "
+                        "handling message: %s",
+                        newMail[msgStart : msgStart + MESSAGE_SIZE],
+                        exc_info=True,
+                    )
 
         self._incomingMail = newMail
         return send
@@ -749,47 +899,65 @@ class SPM_MailMonitor:
             cmd = self._inCmd + ['bs=' + str(self._outMailLen)]
             # self.log.debug("SPM_MailMonitor - reading incoming mail, "
             #               "command: " + str(cmd))
-            (rc, in_mail, err) = _mboxExecCmd(cmd, raw=True)
+            rc, in_mail, err = _mboxExecCmd(cmd, raw=True)
             if rc:
-                raise IOError(errno.EIO, "_handleRequests._checkForMail - "
-                              "Could not read mailbox: %s" % self._inbox)
+                raise IOError(
+                    errno.EIO,
+                    "_handleRequests._checkForMail - "
+                    "Could not read mailbox: %s" % self._inbox,
+                )
 
-            if (len(in_mail) != (self._outMailLen)):
-                self.log.error('SPM_MailMonitor: _checkForMail - dd succeeded '
-                               'but read %d bytes instead of %d, cannot check '
-                               'mail.  Read mail contains: %s', len(in_mail),
-                               self._outMailLen, repr(in_mail[:80]))
-                raise RuntimeError("_handleRequests._checkForMail - Could not "
-                                   "read mailbox")
+            if len(in_mail) != (self._outMailLen):
+                self.log.error(
+                    'SPM_MailMonitor: _checkForMail - dd succeeded '
+                    'but read %d bytes instead of %d, cannot check '
+                    'mail.  Read mail contains: %s',
+                    len(in_mail),
+                    self._outMailLen,
+                    repr(in_mail[:80]),
+                )
+                raise RuntimeError(
+                    "_handleRequests._checkForMail - Could not " "read mailbox"
+                )
             # self.log.debug("Parsing inbox content: %s", in_mail)
             if self._handleRequests(in_mail):
                 with self._outLock:
                     cmd = self._outCmd + ['bs=' + str(self._outMailLen)]
-                    (rc, out, err) = _mboxExecCmd(cmd,
-                                                  data=self._outgoingMail)
+                    rc, out, err = _mboxExecCmd(cmd, data=self._outgoingMail)
                     if rc:
-                        self.log.warning("SPM_MailMonitor couldn't write "
-                                         "outgoing mail, dd failed")
+                        self.log.warning(
+                            "SPM_MailMonitor couldn't write "
+                            "outgoing mail, dd failed"
+                        )
 
     def sendReply(self, msgID, msg):
         # Lock is acquired in order to make sure that
         # outgoingMail is not changed while used
         with self._outLock:
             msgOffset = msgID * MESSAGE_SIZE
-            self._outgoingMail = \
-                self._outgoingMail[0:msgOffset] + msg.payload + \
-                self._outgoingMail[msgOffset + MESSAGE_SIZE:self._outMailLen]
+            self._outgoingMail = (
+                self._outgoingMail[0:msgOffset]
+                + msg.payload
+                + self._outgoingMail[
+                    msgOffset + MESSAGE_SIZE : self._outMailLen
+                ]
+            )
             mailboxOffset = (msgID // SLOTS_PER_MAILBOX) * MAILBOX_SIZE
-            mailbox = self._outgoingMail[mailboxOffset:
-                                         mailboxOffset + MAILBOX_SIZE]
-            cmd = self._outCmd + ['bs=' + str(MAILBOX_SIZE),
-                                  'seek=' + str(mailboxOffset // MAILBOX_SIZE)]
+            mailbox = self._outgoingMail[
+                mailboxOffset : mailboxOffset + MAILBOX_SIZE
+            ]
+            cmd = self._outCmd + [
+                'bs=' + str(MAILBOX_SIZE),
+                'seek=' + str(mailboxOffset // MAILBOX_SIZE),
+            ]
             # self.log.debug("Running command: %s, for message id: %s",
             #               str(cmd), str(msgID))
-            (rc, out, err) = _mboxExecCmd(cmd, data=mailbox)
+            rc, out, err = _mboxExecCmd(cmd, data=mailbox)
             if rc:
-                self.log.error("SPM_MailMonitor: sendReply - couldn't send "
-                               "reply, dd failed")
+                self.log.error(
+                    "SPM_MailMonitor: sendReply - couldn't send "
+                    "reply, dd failed"
+                )
 
     def _run(self):
         try:
@@ -802,8 +970,9 @@ class SPM_MailMonitor:
         finally:
             self._stopped = True
             self.tp.joinAll()
-            self.log.info("SPM_MailMonitor - Incoming mail monitoring thread "
-                          "stopped")
+            self.log.info(
+                "SPM_MailMonitor - Incoming mail monitoring thread " "stopped"
+            )
 
     # Events.
 

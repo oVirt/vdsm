@@ -15,9 +15,9 @@ Flags:
 - EFD_SEMAPHORE: Provide semaphore-like semantics for reads from the new file
   descriptor.
 """
+
 import ctypes
 import os
-
 
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
 
@@ -36,11 +36,9 @@ class EventFD(object):
     maintained by the kernel.  This counter is initialized with the value
     specified in the argument initial_value.
     """
+
     def __init__(self, initial_value=0, flags=0):
-        fd = libc.eventfd(
-            ctypes.c_uint(initial_value),
-            ctypes.c_int(flags)
-        )
+        fd = libc.eventfd(ctypes.c_uint(initial_value), ctypes.c_int(flags))
         self._verify_code(fd)
         self._fd = fd
 
@@ -66,8 +64,9 @@ class EventFD(object):
           the error EAGAIN if the file descriptor has been made nonblocking.
         """
         n = ctypes.c_uint64()
-        rv = libc.read(self._fd, ctypes.pointer(n),
-                       ctypes.sizeof(ctypes.c_uint64))
+        rv = libc.read(
+            self._fd, ctypes.pointer(n), ctypes.sizeof(ctypes.c_uint64)
+        )
         self._verify_code(rv)
 
         return int(n.value)
@@ -82,8 +81,9 @@ class EventFD(object):
         with the error EAGAIN if the file descriptor has been made nonblocking.
         """
         n = ctypes.c_uint64(value)
-        rv = libc.write(self._fd, ctypes.pointer(n),
-                        ctypes.sizeof(ctypes.c_uint64))
+        rv = libc.write(
+            self._fd, ctypes.pointer(n), ctypes.sizeof(ctypes.c_uint64)
+        )
         self._verify_code(rv)
 
     def _verify_code(self, code):

@@ -59,10 +59,12 @@ class TestSecurable(VdsmTestCase):
         secureObject.unsecuredMethod()
 
     def testIsSecureMethodCheck(self):
-        self.assertRaises(NotImplementedError, secured,
-                          ClassWithoutIsSecureMethod)
-        self.assertRaises(NotImplementedError, secured,
-                          ClassIsSecureClassMethod)
+        self.assertRaises(
+            NotImplementedError, secured, ClassWithoutIsSecureMethod
+        )
+        self.assertRaises(
+            NotImplementedError, secured, ClassIsSecureClassMethod
+        )
 
     def testSecurable(self):
         secureObject = SecureClass()
@@ -81,10 +83,12 @@ class TestSecurable(VdsmTestCase):
     def testDocstringWrapping(self):
         secureObject = SecureClass()
 
-        self.assertEqual(secureObject.securedMethod.__doc__,
-                         "securedMethod docstring")
-        self.assertEqual(secureObject.unsecuredMethod.__doc__,
-                         "unsecuredMethod docstring")
+        self.assertEqual(
+            secureObject.securedMethod.__doc__, "securedMethod docstring"
+        )
+        self.assertEqual(
+            secureObject.unsecuredMethod.__doc__, "unsecuredMethod docstring"
+        )
 
     def testInnerClass(self):
         obj = SecureClass.InnerClass()

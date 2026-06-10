@@ -35,13 +35,13 @@ _VM_PARAMS = {
     'display': 'qxl',
     'displayIp': '127.0.0.1',
     'vmType': 'kvm',
-    'memSize': 1024
+    'memSize': 1024,
 }
 
 
 _TICKET_PARAMS = {
     'userName': 'admin',
-    'userId': 'fdfc627c-d875-11e0-90f0-83df133b58cc'
+    'userId': 'fdfc627c-d875-11e0-90f0-83df133b58cc',
 }
 
 
@@ -50,7 +50,7 @@ _GRAPHICS_DEVICE_PARAMS = {
     'password': password.ProtectedPassword('12345678'),
     'ttl': 0,
     'existingConnAction': 'disconnect',
-    'params': _TICKET_PARAMS
+    'params': _TICKET_PARAMS,
 }
 
 
@@ -105,8 +105,9 @@ class TestVmOperations(XMLTestCase):
                 testvm.onRTCUpdate(offset)
             # beware of type change!
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            assert testvm.getStats()['timeOffset'] == \
-                str(self.UPDATE_OFFSETS[-1])
+            assert testvm.getStats()['timeOffset'] == str(
+                self.UPDATE_OFFSETS[-1]
+            )
 
     @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
@@ -116,46 +117,59 @@ class TestVmOperations(XMLTestCase):
                 testvm.onRTCUpdate(offset)
             # beware of type change!
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            assert testvm.getStats()['timeOffset'] == \
-                str(self.BASE_OFFSET + self.UPDATE_OFFSETS[-1])
+            assert testvm.getStats()['timeOffset'] == str(
+                self.BASE_OFFSET + self.UPDATE_OFFSETS[-1]
+            )
 
     def testUpdateSingleDeviceGraphics(self):
         devXmls = (
             '<graphics connected="disconnect" passwd="12345678"'
             ' port="5900" type="spice"/>',
-            '<graphics passwd="12345678" port="5900" type="vnc"/>')
+            '<graphics passwd="12345678" port="5900" type="vnc"/>',
+        )
         for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
-            graphics_xml = ('<graphics type="{device}" port="{port}"/>'.
-                            format(**device))
-            domXml = '''
+            graphics_xml = '<graphics type="{device}" port="{port}"/>'.format(
+                **device
+            )
+            domXml = (
+                '''
                 <devices>
                     <graphics type="%s" port="5900" />
-                </devices>''' % device['device']
-            self._verifyDeviceUpdate(device, graphics_xml, domXml, devXml,
-                                     _GRAPHICS_DEVICE_PARAMS)
+                </devices>'''
+                % device['device']
+            )
+            self._verifyDeviceUpdate(
+                device, graphics_xml, domXml, devXml, _GRAPHICS_DEVICE_PARAMS
+            )
 
     def testUpdateSingleDeviceGraphicsNoConnected(self):
         graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
         del graphics_params['existingConnAction']
         devXmls = (
-            '<graphics passwd="12345678"'
-            ' port="5900" type="spice"/>',
-            '<graphics passwd="12345678" port="5900" type="vnc"/>')
+            '<graphics passwd="12345678"' ' port="5900" type="spice"/>',
+            '<graphics passwd="12345678" port="5900" type="vnc"/>',
+        )
         for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
-            graphics_xml = ('<graphics type="{device}" port="{port}"/>'.
-                            format(**device))
-            domXml = '''
+            graphics_xml = '<graphics type="{device}" port="{port}"/>'.format(
+                **device
+            )
+            domXml = (
+                '''
                 <devices>
                     <graphics type="%s" port="5900" />
-                </devices>''' % device['device']
-            self._verifyDeviceUpdate(device, graphics_xml, domXml, devXml,
-                                     graphics_params)
+                </devices>'''
+                % device['device']
+            )
+            self._verifyDeviceUpdate(
+                device, graphics_xml, domXml, devXml, graphics_params
+            )
 
     def testUpdateMultipleDeviceGraphics(self):
         devXmls = (
             '<graphics connected="disconnect" passwd="12345678"'
             ' port="5900" type="spice"/>',
-            '<graphics passwd="12345678" port="5901" type="vnc"/>')
+            '<graphics passwd="12345678" port="5901" type="vnc"/>',
+        )
         domXml = '''
             <devices>
                 <graphics type="spice" port="5900" />
@@ -163,12 +177,13 @@ class TestVmOperations(XMLTestCase):
             </devices>'''
         graphics_xml = ''
         for device in self.GRAPHIC_DEVICES:
-            graphics_xml += ('<graphics type="{device}" port="{port}"/>'.
-                             format(**device))
+            graphics_xml += '<graphics type="{device}" port="{port}"/>'.format(
+                **device
+            )
         for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
             self._verifyDeviceUpdate(
-                device, graphics_xml, domXml, devXml,
-                _GRAPHICS_DEVICE_PARAMS)
+                device, graphics_xml, domXml, devXml, _GRAPHICS_DEVICE_PARAMS
+            )
 
     def _updateGraphicsDevice(self, testvm, device_type, graphics_params):
         def _check_ticket_params(domXML, conf, params):
@@ -177,21 +192,25 @@ class TestVmOperations(XMLTestCase):
         def _fake_set_vnc_pwd(username, pwd):
             pass
 
-        with MonkeyPatchScope([(hooks, 'before_vm_set_ticket',
-                                _check_ticket_params),
-                               (saslpasswd2, 'set_vnc_password',
-                                _fake_set_vnc_pwd)]):
+        with MonkeyPatchScope(
+            [
+                (hooks, 'before_vm_set_ticket', _check_ticket_params),
+                (saslpasswd2, 'set_vnc_password', _fake_set_vnc_pwd),
+            ]
+        ):
             params = {'graphicsType': device_type}
             params.update(graphics_params)
             return testvm.updateDevice(params)
 
-    def _verifyDeviceUpdate(self, device, allDevices, domXml, devXml,
-                            graphics_params):
+    def _verifyDeviceUpdate(
+        self, device, allDevices, domXml, devXml, graphics_params
+    ):
         with fake.VM(xmldevices=allDevices) as testvm:
             testvm._dom = fake.Domain(domXml)
 
-            self._updateGraphicsDevice(testvm, device['device'],
-                                       graphics_params)
+            self._updateGraphicsDevice(
+                testvm, device['device'], graphics_params
+            )
 
             self.assertXMLEqual(testvm._dom.devXml, devXml)
 
@@ -199,11 +218,13 @@ class TestVmOperations(XMLTestCase):
         graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
         del graphics_params['existingConnAction']
         device = self.GRAPHIC_DEVICES[1]  # VNC
-        graphics_xml = ('<graphics type="%s" port="5900"/>' %
-                        (device['device'],))
+        graphics_xml = '<graphics type="%s" port="5900"/>' % (
+            device['device'],
+        )
         device_xml = '<devices>%s</devices>' % (graphics_xml,)
 
         with fake.VM(xmldevices=graphics_xml) as testvm:
+
             def _fake_set_vnc_pwd(username, pwd):
                 testvm.pwd = pwd
                 testvm.username = username
@@ -215,23 +236,25 @@ class TestVmOperations(XMLTestCase):
             params['params']['fips'] = 'true'
             params['params']['vncUsername'] = 'vnc-123-456'
 
-            with MonkeyPatchScope([(saslpasswd2, 'set_vnc_password',
-                                    _fake_set_vnc_pwd)]):
+            with MonkeyPatchScope(
+                [(saslpasswd2, 'set_vnc_password', _fake_set_vnc_pwd)]
+            ):
                 testvm.updateDevice(params)
 
-            assert password.unprotect(params['password']) == \
-                testvm.pwd
+            assert password.unprotect(params['password']) == testvm.pwd
             assert params['params']['vncUsername'] == testvm.username
 
     def testClearSaslPasswordNoFips(self):
         graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
         del graphics_params['existingConnAction']
         device = self.GRAPHIC_DEVICES[1]  # VNC
-        graphics_xml = ('<graphics type="%s" port="5900"/>' %
-                        (device['device'],))
+        graphics_xml = '<graphics type="%s" port="5900"/>' % (
+            device['device'],
+        )
         device_xml = '<devices>%s</devices>' % (graphics_xml,)
 
         with fake.VM(xmldevices=graphics_xml) as testvm:
+
             def _fake_remove_pwd(username):
                 testvm.username = username
 
@@ -240,8 +263,9 @@ class TestVmOperations(XMLTestCase):
             params.update(graphics_params)
             params['params']['vncUsername'] = 'vnc-123-456'
 
-            with MonkeyPatchScope([(saslpasswd2, 'remove_vnc_password',
-                                    _fake_remove_pwd)]):
+            with MonkeyPatchScope(
+                [(saslpasswd2, 'remove_vnc_password', _fake_remove_pwd)]
+            ):
                 testvm.updateDevice(params)
 
             assert params['params']['vncUsername'] == testvm.username
@@ -265,11 +289,13 @@ class TestVmOperations(XMLTestCase):
             testvm._dom = fake.Domain()
             assert testvm.isDomainReadyForCommands()
 
-    @permutations([
-        # code, text
-        [libvirt.VIR_ERR_NO_DOMAIN, "Disappeared domain"],
-        [libvirt.VIR_ERR_OPERATION_INVALID, "Operation invalid"],
-    ])
+    @permutations(
+        [
+            # code, text
+            [libvirt.VIR_ERR_NO_DOMAIN, "Disappeared domain"],
+            [libvirt.VIR_ERR_OPERATION_INVALID, "Operation invalid"],
+        ]
+    )
     def testIgnoreKnownErrors(self, code, text):
         def _fail(*args):
             raise_libvirt_error(code, text)
@@ -287,8 +313,9 @@ class TestVmOperations(XMLTestCase):
     def testReadyForCommandsRaisesLibvirtError(self):
         def _fail(*args):
             # anything != NO_DOMAIN is good
-            raise_libvirt_error(libvirt.VIR_ERR_INTERNAL_ERROR,
-                                "Fake internal error")
+            raise_libvirt_error(
+                libvirt.VIR_ERR_INTERNAL_ERROR, "Fake internal error"
+            )
 
         with fake.VM() as testvm:
             dom = fake.Domain()
@@ -306,26 +333,40 @@ class TestVmOperations(XMLTestCase):
         with fake.VM() as testvm:
             # if paused for different reason we must not extend the disk
             # so anything else is ok
-            dom = fake.Domain(domState=libvirt.VIR_DOMAIN_PAUSED,
-                              domReason=libvirt.VIR_DOMAIN_PAUSED_CRASHED)
+            dom = fake.Domain(
+                domState=libvirt.VIR_DOMAIN_PAUSED,
+                domReason=libvirt.VIR_DOMAIN_PAUSED_CRASHED,
+            )
             testvm._dom = dom
             assert testvm._readPauseCode() != 'ENOSPC'
 
     def testReadPauseCodeDomainPausedENOSPC(self):
         with fake.VM() as testvm:
-            dom = fake.Domain(domState=libvirt.VIR_DOMAIN_PAUSED,
-                              domReason=libvirt.VIR_DOMAIN_PAUSED_IOERROR)
-            dom.setDiskErrors({'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NO_SPACE,
-                               'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_NONE})
+            dom = fake.Domain(
+                domState=libvirt.VIR_DOMAIN_PAUSED,
+                domReason=libvirt.VIR_DOMAIN_PAUSED_IOERROR,
+            )
+            dom.setDiskErrors(
+                {
+                    'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NO_SPACE,
+                    'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_NONE,
+                }
+            )
             testvm._dom = dom
             assert testvm._readPauseCode() == 'ENOSPC'
 
     def testReadPauseCodeDomainPausedEIO(self):
         with fake.VM() as testvm:
-            dom = fake.Domain(domState=libvirt.VIR_DOMAIN_PAUSED,
-                              domReason=libvirt.VIR_DOMAIN_PAUSED_IOERROR)
-            dom.setDiskErrors({'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NONE,
-                               'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_UNSPEC})
+            dom = fake.Domain(
+                domState=libvirt.VIR_DOMAIN_PAUSED,
+                domReason=libvirt.VIR_DOMAIN_PAUSED_IOERROR,
+            )
+            dom.setDiskErrors(
+                {
+                    'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NONE,
+                    'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_UNSPEC,
+                }
+            )
             testvm._dom = dom
             assert testvm._readPauseCode() == 'EIO'
 
@@ -348,16 +389,25 @@ class TestVmOperations(XMLTestCase):
             assert period + offset == testvm._vcpuTuneInfo['vcpu_period']
 
     @brokentest("sometimes on CI tries to connect to libvirt")
-    @permutations([[libvirt.VIR_ERR_OPERATION_DENIED, 'setNumberOfCpusErr',
-                    'Failed to set the number of cpus'],
-                   [libvirt.VIR_ERR_NO_DOMAIN, 'noVM', None]])
-    def testSetNumberOfVcpusFailed(self, virt_error, vdsm_error,
-                                   error_message):
+    @permutations(
+        [
+            [
+                libvirt.VIR_ERR_OPERATION_DENIED,
+                'setNumberOfCpusErr',
+                'Failed to set the number of cpus',
+            ],
+            [libvirt.VIR_ERR_NO_DOMAIN, 'noVM', None],
+        ]
+    )
+    def testSetNumberOfVcpusFailed(
+        self, virt_error, vdsm_error, error_message
+    ):
         def _fail(*args):
             raise_libvirt_error(virt_error, error_message)
 
-        with MonkeyPatchScope([(hooks, 'before_set_num_of_cpus',
-                                lambda: None)]):
+        with MonkeyPatchScope(
+            [(hooks, 'before_set_num_of_cpus', lambda: None)]
+        ):
             with fake.VM() as testvm:
                 dom = fake.Domain()
                 dom.setVcpusFlags = _fail
@@ -368,8 +418,11 @@ class TestVmOperations(XMLTestCase):
                 assert res == response.error(vdsm_error)
 
     @MonkeyPatch(numa, 'update', lambda: None)
-    @MonkeyPatch(numa, 'cpu_topology', lambda:
-                 numa.CpuTopology(1, 6, 6, [0, 1, 2, 3, 4, 5]))
+    @MonkeyPatch(
+        numa,
+        'cpu_topology',
+        lambda: numa.CpuTopology(1, 6, 6, [0, 1, 2, 3, 4, 5]),
+    )
     def testAssignCpusets(self):
         with fake.VM() as testvm:
             dom = fake.Domain()
@@ -406,10 +459,13 @@ class TestVmOperations(XMLTestCase):
         with fake.VM(devices=self.GRAPHIC_DEVICES) as testvm:
             message = 'fake timeout while setting ticket'
             device = 'spice'
-            domXml = '''
+            domXml = (
+                '''
                 <devices>
                     <graphics type="%s" port="5900" />
-                </devices>''' % device
+                </devices>'''
+                % device
+            )
 
             def _fail(*args):
                 raise virdomain.TimeoutError(defmsg=message)
@@ -443,14 +499,16 @@ class TestVmOperations(XMLTestCase):
             testvm._dom = fake.Domain(vmId='testvm')
             assert not response.is_error(testvm.acpiReboot())
 
-    @permutations([
-        # length should be 1
-        [[], exception.InvalidParameter],
-        # length should be 1
-        [['2', '4'], exception.InvalidParameter],
-        # cannot be arbitrary string
-        [['abc'], exception.InvalidParameter],
-    ])
+    @permutations(
+        [
+            # length should be 1
+            [[], exception.InvalidParameter],
+            # length should be 1
+            [['2', '4'], exception.InvalidParameter],
+            # cannot be arbitrary string
+            [['abc'], exception.InvalidParameter],
+        ]
+    )
     def test_process_migration_cpusets_invalid(self, cpusets, exception):
         with fake.VM() as testvm:
             with pytest.raises(exception):
@@ -487,7 +545,7 @@ def raise_libvirt_error(code, message):
 
 
 def drive_config(**kw):
-    """ Return drive configuration updated from **kw """
+    """Return drive configuration updated from **kw"""
     conf = {
         'device': 'disk',
         'format': 'cow',

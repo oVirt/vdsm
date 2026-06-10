@@ -63,8 +63,9 @@ class JsonRpcClientTests(VdsmTestCase):
             event_queue = queue.Queue()
 
             client.subscribe(queue_name, event_queue)
-            client.notify("test.event", queue_name,
-                          _FakeEventSchema(), {"content": True})
+            client.notify(
+                "test.event", queue_name, _FakeEventSchema(), {"content": True}
+            )
 
             self.assertFalse(event_queue.empty())
             ev_id, ev_params = event_queue.get()

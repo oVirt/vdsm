@@ -15,7 +15,6 @@ from vdsm.common import concurrent
 
 
 class ThreadPool:
-
     """Flexible thread pool class.  Creates a pool of threads, then
     accepts tasks that will be dispatched to the next available
     thread."""
@@ -23,12 +22,16 @@ class ThreadPool:
     log = logging.getLogger('storage.threadpool')
 
     def __init__(self, name, numThreads, waitTimeout=3, maxTasks=100):
-
         """Initialize the thread pool with numThreads workers."""
 
-        self.log.debug("Enter - name: %s, numThreads: %s, waitTimeout: %s, "
-                       "maxTasks: %s",
-                       name, numThreads, waitTimeout, maxTasks)
+        self.log.debug(
+            "Enter - name: %s, numThreads: %s, waitTimeout: %s, "
+            "maxTasks: %s",
+            name,
+            numThreads,
+            waitTimeout,
+            maxTasks,
+        )
         self._name = name
         self.__threads = []
         self.__resizeLock = threading.Condition(threading.Lock())
@@ -45,9 +48,8 @@ class ThreadPool:
             self.__threads.append(newThread)
 
     def queueTask(self, id, task, args=None):
-
         """Insert a task into the queue.  task must be callable;
-        args can be None. """
+        args can be None."""
 
         if self.__isJoining:
             return False
@@ -59,8 +61,7 @@ class ThreadPool:
         return True
 
     def getNextTask(self):
-
-        """ Retrieve the next task from the task queue.  For use
+        """Retrieve the next task from the task queue.  For use
         only by WorkerThread objects contained in the pool."""
         id = None
         cmd = None
@@ -90,8 +91,7 @@ class ThreadPool:
             self.log.debug("Number of running tasks: %s", self.__runningTasks)
 
     def joinAll(self, waitForThreads=True):
-
-        """ Clear the task queue and terminate all pooled threads,
+        """Clear the task queue and terminate all pooled threads,
         optionally allowing the tasks and threads to finish."""
 
         # Mark the pool as joining to prevent any more task queuing
@@ -109,14 +109,12 @@ class ThreadPool:
 
 
 class WorkerThread(object):
-
-    """ Pooled thread class. """
+    """Pooled thread class."""
 
     log = logging.getLogger('storage.threadpool.workerthread')
 
     def __init__(self, pool, name):
-
-        """ Initialize the thread and remember the pool. """
+        """Initialize the thread and remember the pool."""
         self._thread = concurrent.thread(self.run, name=name)
         self.__pool = pool
         self.__isDying = False
@@ -145,20 +143,19 @@ class WorkerThread(object):
             self.log.info("FINISH task %s", id)
         except Exception:
             self.log.exception(
-                "FINISH task %s failed (cmd=%r, args=%r)", id, cmd, args)
+                "FINISH task %s failed (cmd=%r, args=%r)", id, cmd, args
+            )
         finally:
             self.__pool._task_finished()
 
     def run(self):
-
-        """ Until told to quit, retrieve the next task and execute
-        it. """
+        """Until told to quit, retrieve the next task and execute
+        it."""
 
         while not self.__isDying:
             self._processNextTask()
 
     def goAway(self):
-
-        """ Exit the run loop next time through."""
+        """Exit the run loop next time through."""
 
         self.__isDying = True

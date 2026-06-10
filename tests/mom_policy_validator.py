@@ -12,7 +12,8 @@ import mom
 
 
 def usage():
-    print("""
+    print(
+        """
 Usage:
     {0} host_data vm_data policy1 ...
 
@@ -25,7 +26,10 @@ Usage:
            "vcpu_user_limit": 50, "vcpu_quota": null}}' \\
         ../static/etc/vdsm/mom.d/00-defines.policy \\
         ../static/etc/vdsm/mom.d/04-cputune.policy
-""".format(sys.argv[0]))
+""".format(
+            sys.argv[0]
+        )
+    )
 
 
 def load_policy_file(policy, filename):

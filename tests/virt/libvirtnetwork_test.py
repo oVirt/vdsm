@@ -40,7 +40,9 @@ class LibvirtTests(LibvirtTestCase):
                             <name>{}</name>
                             <forward mode='bridge'/>
                             <bridge name='{}'/>
-                         </network>""".format(LIBVIRT_NETWORK, NETWORK)
+                         </network>""".format(
+            LIBVIRT_NETWORK, NETWORK
+        )
         actual_doc = libvirtnetwork.createNetworkDef(NETWORK, bridged=True)
         self.assertEqualXml(expected_doc, actual_doc)
 
@@ -50,9 +52,12 @@ class LibvirtTests(LibvirtTestCase):
                             <forward mode='passthrough'>
                               <interface dev='{}'/>
                             </forward>
-                          </network>""".format(LIBVIRT_NETWORK, IFACE)
+                          </network>""".format(
+            LIBVIRT_NETWORK, IFACE
+        )
         actual_doc = libvirtnetwork.createNetworkDef(
-            NETWORK, bridged=False, iface=IFACE)
+            NETWORK, bridged=False, iface=IFACE
+        )
         self.assertEqualXml(expected_doc, actual_doc)
 
 

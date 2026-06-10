@@ -5,16 +5,13 @@ from functools import partial
 from uuid import uuid4
 
 from yajsonrpc import stompclient
-from yajsonrpc import \
-    JsonRpcRequest, \
-    CALL_TIMEOUT
+from yajsonrpc import JsonRpcRequest, CALL_TIMEOUT
 from yajsonrpc.exception import JsonRpcNoResponseError
 
 from vdsm.api import vdsmapi
 from vdsm.common import response
 from .config import config
 from . import sslutils
-
 
 #############################################################################
 #                                                                           #
@@ -119,15 +116,17 @@ class _Server(object):
         self._default_timeout = CALL_TIMEOUT
         self._timeouts = {
             'migrationCreate': config.getint(
-                'vars', 'migration_create_timeout'),
+                'vars', 'migration_create_timeout'
+            ),
         }
 
     def set_default_timeout(self, timeout):
         self._default_timeout = timeout
 
     def _prepare_args(self, className, methodName, args, kwargs):
-        allargs = self._schema.get_arg_names(vdsmapi.MethodRep(className,
-                                                               methodName))
+        allargs = self._schema.get_arg_names(
+            vdsmapi.MethodRep(className, methodName)
+        )
         params = dict(zip(allargs, args))
         params.update(kwargs)
         return params
@@ -136,9 +135,10 @@ class _Server(object):
         try:
             method = _COMMAND_CONVERTER[methodName]
         except KeyError as e:
-            raise Exception("Attempt to call function: %s with "
-                            "arguments: %s error: %s" %
-                            (methodName, args, e))
+            raise Exception(
+                "Attempt to call function: %s with "
+                "arguments: %s error: %s" % (methodName, args, e)
+            )
 
         class_name, method_name = method.split('.')
         timeout = kwargs.pop('_transport_timeout', self._default_timeout)
@@ -147,7 +147,8 @@ class _Server(object):
         req = JsonRpcRequest(method, params, reqId=str(uuid4()))
 
         responses = self._client.call(
-            req, timeout=self._timeouts.get(method_name, timeout))
+            req, timeout=self._timeouts.get(method_name, timeout)
+        )
         if responses:
             resp = responses[0]
         else:
@@ -174,14 +175,10 @@ class _Server(object):
         args = [params]
         if incomingLimit is not None:
             args.append(incomingLimit)
-        return self._callMethod('migrationCreate',
-                                params['vmId'],
-                                *args)
+        return self._callMethod('migrationCreate', params['vmId'], *args)
 
     def create(self, params):
-        return self._callMethod('create',
-                                params['vmId'],
-                                params)
+        return self._callMethod('create', params['vmId'], params)
 
     def __getattr__(self, methodName):
         return partial(self._callMethod, methodName)
@@ -193,10 +190,9 @@ class _Server(object):
         self._client.close()
 
 
-def _create(requestQueue,
-            host=None, port=None,
-            useSSL=None,
-            responseQueue=None):
+def _create(
+    requestQueue, host=None, port=None, useSSL=None, responseQueue=None
+):
     if host is None:
         host = 'localhost'
     if port is None:
@@ -214,27 +210,28 @@ def _create(requestQueue,
         responseQueue = str(uuid4())
 
     return stompclient.StandAloneRpcClient(
-        host, port, requestQueue, responseQueue, sslctx,
-        lazy_start=False)
+        host, port, requestQueue, responseQueue, sslctx, lazy_start=False
+    )
 
 
-def connect(requestQueue=None, stompClient=None,
-            host=None, port=None,
-            useSSL=None,
-            responseQueue=None, xml_compat=True):
+def connect(
+    requestQueue=None,
+    stompClient=None,
+    host=None,
+    port=None,
+    useSSL=None,
+    responseQueue=None,
+    xml_compat=True,
+):
     if not requestQueue:
         request_queues = config.get("addresses", "request_queues")
         requestQueue = request_queues.split(",")[0]
 
     if not stompClient:
-        client = _create(requestQueue,
-                         host, port, useSSL,
-                         responseQueue)
+        client = _create(requestQueue, host, port, useSSL, responseQueue)
     else:
         client = stompclient.StompRpcClient(
-            stompClient,
-            requestQueue,
-            str(uuid4())
+            stompClient, requestQueue, str(uuid4())
         )
 
     return _Server(client, xml_compat)

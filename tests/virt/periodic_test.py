@@ -39,14 +39,17 @@ class _PeriodicBase(TestCaseBase):
 
     def setUp(self):
         self.tasks = 2
-        self.sched = schedule.Scheduler(name="test.Scheduler",
-                                        clock=monotonic_time)
+        self.sched = schedule.Scheduler(
+            name="test.Scheduler", clock=monotonic_time
+        )
         self.sched.start()
 
-        self.exc = executor.Executor(name="test.Executor",
-                                     workers_count=1,
-                                     max_tasks=100,
-                                     scheduler=self.sched)
+        self.exc = executor.Executor(
+            name="test.Executor",
+            workers_count=1,
+            max_tasks=100,
+            scheduler=self.sched,
+        )
         self.exc.start()
 
     def tearDown(self):
@@ -75,27 +78,28 @@ class PeriodicFunctionsTests(_PeriodicBase):
                     done.set()
 
         ops = [
-            periodic.Operation(_work,
-                               period=1.0,
-                               scheduler=self.sched,
-                               executor=self.exc),
-
+            periodic.Operation(
+                _work, period=1.0, scheduler=self.sched, executor=self.exc
+            ),
             # will raise periodic.InvalidValue
-            periodic.Operation(lambda: None, period=0,
-                               scheduler=self.sched,
-                               executor=self.exc),
-
-            periodic.Operation(_work,
-                               period=1.0,
-                               scheduler=self.sched,
-                               executor=self.exc),
+            periodic.Operation(
+                lambda: None, period=0, scheduler=self.sched, executor=self.exc
+            ),
+            periodic.Operation(
+                _work, period=1.0, scheduler=self.sched, executor=self.exc
+            ),
         ]
 
-        with MonkeyPatchScope([
-            (periodic, 'config',
-                make_config([('sampling', 'enable', 'false')])),
-            (periodic, '_create', lambda cif, sched: ops),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (
+                    periodic,
+                    'config',
+                    make_config([('sampling', 'enable', 'false')]),
+                ),
+                (periodic, '_create', lambda cif, sched: ops),
+            ]
+        ):
             # Don't assume operations are started in order,
             # we just know all of them will be start()ed.
             # See the documentation of periodic.start()
@@ -114,17 +118,17 @@ class PeriodicOperationTests(_PeriodicBase):
         def _work():
             invoked.set()
 
-        op = periodic.Operation(_work, period=1.0,
-                                scheduler=self.sched,
-                                executor=self.exc)
+        op = periodic.Operation(
+            _work, period=1.0, scheduler=self.sched, executor=self.exc
+        )
         op.start()
         invoked.wait(0.5)
         assert invoked.is_set()
 
     def test_invalid_period(self):
-        op = periodic.Operation(lambda: None, period=0,
-                                scheduler=self.sched,
-                                executor=self.exc)
+        op = periodic.Operation(
+            lambda: None, period=0, scheduler=self.sched, executor=self.exc
+        )
         with pytest.raises(periodic.InvalidValue):
             op.start()
 
@@ -133,18 +137,20 @@ class PeriodicOperationTests(_PeriodicBase):
         def _work():
             pass
 
-        op = periodic.Operation(_work, period=1.0,
-                                scheduler=self.sched,
-                                executor=self.exc)
+        op = periodic.Operation(
+            _work, period=1.0, scheduler=self.sched, executor=self.exc
+        )
         op.start()
         with pytest.raises(AssertionError):
             op.start()
 
-    @permutations([
-        # exclusive
-        [True],
-        [False],
-    ])
+    @permutations(
+        [
+            # exclusive
+            [True],
+            [False],
+        ]
+    )
     def test_repeating(self, exclusive):
         PERIOD = 0.1
         TIMES = 3
@@ -158,10 +164,13 @@ class PeriodicOperationTests(_PeriodicBase):
             if invocations[0] == TIMES:
                 invoked.set()
 
-        op = periodic.Operation(_work, period=PERIOD,
-                                scheduler=self.sched,
-                                executor=self.exc,
-                                exclusive=exclusive)
+        op = periodic.Operation(
+            _work,
+            period=PERIOD,
+            scheduler=self.sched,
+            executor=self.exc,
+            exclusive=exclusive,
+        )
         op.start()
         invoked.wait(PERIOD * TIMES + PERIOD)
         # depending on timing, _work may be triggered one more time.
@@ -185,10 +194,13 @@ class PeriodicOperationTests(_PeriodicBase):
             logging.info('_work invoked after %d attempts', attempts[0])
             done.set()
 
-        op = periodic.Operation(_work, period=PERIOD,
-                                scheduler=self.sched,
-                                executor=exc,
-                                exclusive=True)
+        op = periodic.Operation(
+            _work,
+            period=PERIOD,
+            scheduler=self.sched,
+            executor=exc,
+            exclusive=True,
+        )
         op.start()
         timeout = 2  # seconds
         # We intentionally using a timeout much longer than actually needed
@@ -199,8 +211,9 @@ class PeriodicOperationTests(_PeriodicBase):
         assert attempts[0] == TRIES_BEFORE_SUCCESS + 1
         op.stop()
 
-    @broken_on_ci("Fails occasionally, don't know why",
-                  exception=AssertionError)
+    @broken_on_ci(
+        "Fails occasionally, don't know why", exception=AssertionError
+    )
     def test_repeating_if_raises(self):
         PERIOD = 0.1
         TIMES = 5
@@ -209,9 +222,9 @@ class PeriodicOperationTests(_PeriodicBase):
             pass
 
         exc = _FakeExecutor(fail=True, max_attempts=TIMES)
-        op = periodic.Operation(_work, period=PERIOD,
-                                scheduler=self.sched,
-                                executor=exc)
+        op = periodic.Operation(
+            _work, period=PERIOD, scheduler=self.sched, executor=exc
+        )
         op.start()
         completed = exc.done.wait(PERIOD * TIMES + PERIOD)
         # depending on timing, _work may be triggered one more time.
@@ -229,9 +242,9 @@ class PeriodicOperationTests(_PeriodicBase):
         def _work():
             invocations[0] = monotonic_time()
 
-        op = periodic.Operation(_work, period=PERIOD,
-                                scheduler=self.sched,
-                                executor=self.exc)
+        op = periodic.Operation(
+            _work, period=PERIOD, scheduler=self.sched, executor=self.exc
+        )
         op.start()
         time.sleep(PERIOD * 2)
         # avoid pathological case on which nothing ever runs
@@ -266,9 +279,9 @@ class PeriodicOperationTests(_PeriodicBase):
             if invocations[0] == TIMES:
                 done.set()
 
-        op = periodic.Operation(_work, period=PERIOD,
-                                scheduler=self.sched,
-                                executor=self.exc)
+        op = periodic.Operation(
+            _work, period=PERIOD, scheduler=self.sched, executor=self.exc
+        )
         op.start()
         done.wait(PERIOD * TIMES + PERIOD)
         # depending on timing, _work may be triggered one more time.
@@ -307,12 +320,14 @@ class PeriodicOperationTests(_PeriodicBase):
                 log.info('done!')
             log.info('END')
 
-        op = periodic.Operation(_work,
-                                period=PERIOD,
-                                scheduler=self.sched,
-                                executor=self.exc,
-                                timeout=None,
-                                exclusive=True)
+        op = periodic.Operation(
+            _work,
+            period=PERIOD,
+            scheduler=self.sched,
+            executor=self.exc,
+            timeout=None,
+            exclusive=True,
+        )
         op.start()
         assert not done.wait(PERIOD * 4)
         # we just wait "long enough" to make sure we cross at least one
@@ -331,24 +346,30 @@ class PeriodicOperationTests(_PeriodicBase):
 
         log = fakelib.FakeLogger()
 
-        exc = executor.Executor(name="test.Executor",
-                                # intentional we  just want to clog the queue
-                                workers_count=0,
-                                max_tasks=MAX_TASKS,
-                                scheduler=self.sched,  # unused
-                                max_workers=0,
-                                log=log)
+        exc = executor.Executor(
+            name="test.Executor",
+            # intentional we  just want to clog the queue
+            workers_count=0,
+            max_tasks=MAX_TASKS,
+            scheduler=self.sched,  # unused
+            max_workers=0,
+            log=log,
+        )
         exc.start()
 
-        op = periodic.Operation(lambda: None,
-                                period=PERIOD,
-                                scheduler=self.sched,
-                                executor=exc,
-                                timeout=None,
-                                exclusive=False)
-        with MonkeyPatchScope([
-            (throttledlog, '_logger', log),
-        ]):
+        op = periodic.Operation(
+            lambda: None,
+            period=PERIOD,
+            scheduler=self.sched,
+            executor=exc,
+            timeout=None,
+            exclusive=False,
+        )
+        with MonkeyPatchScope(
+            [
+                (throttledlog, '_logger', log),
+            ]
+        ):
             # the first dispatch is done here
             op.start()
             for _ in range(MAX_TASKS - 1):
@@ -362,13 +383,7 @@ class PeriodicOperationTests(_PeriodicBase):
 VM_NUM = 5  # just a number, no special meaning
 
 
-VM_IDS = [
-    [()],
-    [((0,))],
-    [((0, 2))],
-    [((VM_NUM - 1,))],
-    [((VM_NUM - 2, VM_NUM - 1))]
-]
+VM_IDS = [[()], [(0,)], [(0, 2)], [(VM_NUM - 1,)], [(VM_NUM - 2, VM_NUM - 1)]]
 
 
 @expandPermutations
@@ -407,8 +422,7 @@ class VmDispatcherTests(TestCaseBase):
         """
         exc = _FakeExecutor(fail=True)
 
-        op = periodic.VmDispatcher(
-            self.cif.getVMs, exc, _Nop, 0)
+        op = periodic.VmDispatcher(self.cif.getVMs, exc, _Nop, 0)
 
         skipped = op()
 
@@ -416,7 +430,8 @@ class VmDispatcherTests(TestCaseBase):
 
     def _check_dispatching(self, skip_ids):
         op = periodic.VmDispatcher(
-            self.cif.getVMs, _FakeExecutor(), _Visitor, 0)
+            self.cif.getVMs, _FakeExecutor(), _Visitor, 0
+        )
         # we don't care about executor (hence the simplistic fake)
         op()
 
@@ -425,10 +440,7 @@ class VmDispatcherTests(TestCaseBase):
 
         vms = self.cif.getVMs()
 
-        expected = (
-            set(vms.keys()) -
-            set(_fake_vm_id(i) for i in skip_ids)
-        )
+        expected = set(vms.keys()) - set(_fake_vm_id(i) for i in skip_ids)
         for vm_id in expected:
             assert _Visitor.VMS.get(vm_id) == 1
 
@@ -436,8 +448,7 @@ class VmDispatcherTests(TestCaseBase):
         for i in range(VM_NUM):
             vm_id = _fake_vm_id(i)
             with self.cif.vm_container_lock:
-                self.cif.vmContainer[vm_id] = _FakeVM(
-                    vm_id, vm_id)
+                self.cif.vmContainer[vm_id] = _FakeVM(vm_id, vm_id)
 
 
 def _fake_vm_id(i):
@@ -498,7 +509,7 @@ class _RecoveringExecutor(object):
             self.__class__.__name__,
             self.attempts,
             self._tries_before_success,
-            id(self)
+            id(self),
         )
 
 
@@ -511,8 +522,10 @@ class _FakeExecutor(object):
         self.done = threading.Event()
 
     def dispatch(self, func, timeout, discard=True):
-        if (self._max_attempts is not None and
-           self.attempts == self._max_attempts):
+        if (
+            self._max_attempts is not None
+            and self.attempts == self._max_attempts
+        ):
             self.done.set()
 
         self.attempts += 1

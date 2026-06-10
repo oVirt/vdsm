@@ -21,6 +21,6 @@ class VirtSysprepTests(TestCaseBase):
     @MonkeyPatch(virtsysprep, '_VIRTSYSPREP', FakeCommand)
     def test_raise_error_on_failure(self):
 
-        self.assertRaises(cmdutils.Error,
-                          virtsysprep.sysprep,
-                          BLANK_UUID, [FAKE_VOLUME])
+        self.assertRaises(
+            cmdutils.Error, virtsysprep.sysprep, BLANK_UUID, [FAKE_VOLUME]
+        )

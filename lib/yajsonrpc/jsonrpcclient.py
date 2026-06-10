@@ -7,12 +7,13 @@ import logging
 import queue
 from threading import Lock, Event
 
-from yajsonrpc import \
-    exception, \
-    CALL_TIMEOUT, \
-    JsonRpcRequest, \
-    Notification, \
-    JsonRpcResponse
+from yajsonrpc import (
+    exception,
+    CALL_TIMEOUT,
+    JsonRpcRequest,
+    Notification,
+    JsonRpcResponse,
+)
 
 
 class _JsonRpcClientRequestContext(object):
@@ -43,9 +44,7 @@ class _JsonRpcClientRequestContext(object):
         return self._responses.keys()
 
     def encode(self):
-        return ("[" +
-                ", ".join(r.encode() for r in self._requests) +
-                "]")
+        return "[" + ", ".join(r.encode() for r in self._requests) + "]"
 
 
 class JsonRpcClient(object):
@@ -117,8 +116,7 @@ class JsonRpcClient(object):
         """
 
         sub_id = self._transport.subscribe(
-            queue_name,
-            lambda msg: self._handleMessage(msg, event_queue)
+            queue_name, lambda msg: self._handleMessage(msg, event_queue)
         )
 
         self._event_queues[sub_id] = event_queue
@@ -198,15 +196,14 @@ class JsonRpcClient(object):
 
             return v
         else:
-            return ("result" in obj or "error" in obj)
+            return "result" in obj or "error" in obj
 
     def _handleMessage(self, message, event_queue=None):
         try:
             mobj = json.loads(message)
         except ValueError:
             self.log.warning(
-                "Received message is not a valid JSON: %r",
-                message
+                "Received message is not a valid JSON: %r", message
             )
             return
 
@@ -228,7 +225,7 @@ class JsonRpcClient(object):
             self.log.debug(
                 "No event queue is registered for received event, "
                 "ignoring. Event: %s",
-                obj
+                obj,
             )
             return
 

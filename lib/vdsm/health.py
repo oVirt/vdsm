@@ -10,7 +10,7 @@ from vdsm.common import concurrent
 from vdsm.common import cpuarch
 from vdsm.storage import lvm
 
-from . config import config
+from .config import config
 from . import metrics
 
 _monitor = None
@@ -83,38 +83,48 @@ class Monitor(object):
         uncollectable = gc.garbage[:]
         if uncollectable:
             uncollectable = [saferepr(obj) for obj in uncollectable]
-            self.log.warning("Found %d uncollectable objects: %s",
-                             len(uncollectable), uncollectable)
+            self.log.warning(
+                "Found %d uncollectable objects: %s",
+                len(uncollectable),
+                uncollectable,
+            )
         self._stats['uncollectable_obj'] = len(uncollectable)
 
     def _check_resources(self):
         current = ProcStat()
-        self._stats['utime_pct'] = ((current.utime - self._last.utime) /
-                                    self._interval * 100)
-        self._stats['stime_pct'] = ((current.stime - self._last.stime) /
-                                    self._interval * 100)
+        self._stats['utime_pct'] = (
+            (current.utime - self._last.utime) / self._interval * 100
+        )
+        self._stats['stime_pct'] = (
+            (current.stime - self._last.stime) / self._interval * 100
+        )
         self._stats['rss'] = current.rss
         delta_rss = current.rss - self._last.rss
         self._stats['threads'] = current.threads
         self._last = current
-        self.log.debug("user=%.2f%%, sys=%.2f%%, rss=%d kB (%s%d), threads=%d",
-                       self._stats['utime_pct'],
-                       self._stats['stime_pct'],
-                       self._stats['rss'],
-                       "+" if delta_rss >= 0 else "-",
-                       abs(delta_rss),
-                       self._stats['threads'])
+        self.log.debug(
+            "user=%.2f%%, sys=%.2f%%, rss=%d kB (%s%d), threads=%d",
+            self._stats['utime_pct'],
+            self._stats['stime_pct'],
+            self._stats['rss'],
+            "+" if delta_rss >= 0 else "-",
+            abs(delta_rss),
+            self._stats['threads'],
+        )
 
     def _check_lvm_stats(self):
         stats = lvm.cache_stats()
-        self.log.info("LVM cache hit ratio: %.2f%% (hits: %d misses: %d)",
-                      stats["hit_ratio"], stats["hits"], stats["misses"])
+        self.log.info(
+            "LVM cache hit ratio: %.2f%% (hits: %d misses: %d)",
+            stats["hit_ratio"],
+            stats["hits"],
+            stats["misses"],
+        )
 
     def _report_stats(self):
         prefix = "hosts.vdsm"
         report = {}
-        report[prefix + '.gc.uncollectable'] = \
-            self._stats['uncollectable_obj']
+        report[prefix + '.gc.uncollectable'] = self._stats['uncollectable_obj']
         report[prefix + '.cpu.user_pct'] = self._stats['utime_pct']
         report[prefix + '.cpu.sys_pct'] = self._stats['stime_pct']
         report[prefix + '.memory.rss'] = self._stats['rss']

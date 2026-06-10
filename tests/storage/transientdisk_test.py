@@ -24,9 +24,7 @@ def test_add_transient_disk(tmp_basedir):
     disk_name = 'sda'
 
     res = transientdisk.create_disk(
-        owner_name=owner_name,
-        disk_name=disk_name,
-        size=10 * MiB
+        owner_name=owner_name, disk_name=disk_name, size=10 * MiB
     )
 
     disk_path = res['path']
@@ -46,10 +44,8 @@ def test_add_transient_disk_with_backing(tmp_basedir, tmpdir):
     qemuimg.create(src, size=10 * MiB, format="qcow2", qcow2Compat="1.1").run()
 
     res = transientdisk.create_disk(
-        "backup-id",
-        "overlay.qcow2",
-        backing=src,
-        backing_format="qcow2")
+        "backup-id", "overlay.qcow2", backing=src, backing_format="qcow2"
+    )
 
     disk_path = res['path']
     disk_info = qemuimg.info(disk_path)
@@ -70,9 +66,7 @@ def test_remove_transient_disk(tmpdir, tmp_basedir):
 
     for disk_name in [disk1_name, disk2_name]:
         transientdisk.create_disk(
-            owner_name=owner_name,
-            disk_name=disk_name,
-            size=10 * MiB
+            owner_name=owner_name, disk_name=disk_name, size=10 * MiB
         )
 
     transientdisk.remove_disk(owner_name, disk1_name)
@@ -90,9 +84,7 @@ def test_add_existing_transient_disk(tmp_basedir):
 
     def create_disk():
         return transientdisk.create_disk(
-            owner_name=owner_name,
-            disk_name=disk_name,
-            size=10 * MiB
+            owner_name=owner_name, disk_name=disk_name, size=10 * MiB
         )
 
     create_disk()
@@ -108,9 +100,7 @@ def test_remove_disk_not_exists(tmp_basedir):
     disk2_name = 'sdb'
 
     transientdisk.create_disk(
-        owner_name=owner_name,
-        disk_name=disk1_name,
-        size=10 * MiB
+        owner_name=owner_name, disk_name=disk1_name, size=10 * MiB
     )
     # removal of disk that isn't exists should not
     # raise any exception
@@ -134,9 +124,7 @@ def test_list_disks(tmp_basedir):
 
     for disk_name in [disk1_name, disk2_name]:
         res = transientdisk.create_disk(
-            owner_name=owner_name,
-            disk_name=disk_name,
-            size=10 * MiB
+            owner_name=owner_name, disk_name=disk_name, size=10 * MiB
         )
 
         actual_path = res['path']

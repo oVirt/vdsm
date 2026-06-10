@@ -27,11 +27,9 @@ from storage.storagetestlib import (
 VOLSIZE = 256 * MiB
 
 
-@pytest.fixture(params=[
-    'server:/path',
-    '192.168.200.2:/path',
-    '[201::1]:/path'
-])
+@pytest.fixture(
+    params=['server:/path', '192.168.200.2:/path', '[201::1]:/path']
+)
 def file_env(request):
     with fake_file_env(remote_path=request.param) as env:
         yield env
@@ -55,26 +53,33 @@ class TestFileManifest(ManifestMixin):
         self.vol_id = str(uuid.uuid4())
 
     def test_get_monitoring_path(self, file_env):
-        assert (file_env.sd_manifest.metafile ==
-                file_env.sd_manifest.getMonitoringPath())
+        assert (
+            file_env.sd_manifest.metafile
+            == file_env.sd_manifest.getMonitoringPath()
+        )
 
     def test_getvsize(self, file_env):
-        make_file_volume(file_env.sd_manifest, VOLSIZE,
-                         self.img_id, self.vol_id)
+        make_file_volume(
+            file_env.sd_manifest, VOLSIZE, self.img_id, self.vol_id
+        )
         assert VOLSIZE == file_env.sd_manifest.getVSize(
-            self.img_id, self.vol_id)
+            self.img_id, self.vol_id
+        )
 
     def test_getvallocsize(self, file_env):
-        make_file_volume(file_env.sd_manifest, VOLSIZE,
-                         self.img_id, self.vol_id)
+        make_file_volume(
+            file_env.sd_manifest, VOLSIZE, self.img_id, self.vol_id
+        )
         vol = file_env.sd_manifest.produceVolume(self.img_id, self.vol_id)
         allocated = os.stat(vol.getVolumePath()).st_blocks * 512
         assert allocated <= file_env.sd_manifest.getVAllocSize(
-            self.img_id, self.vol_id)
+            self.img_id, self.vol_id
+        )
 
     def test_getisodomainimagesdir(self, file_env):
-        isopath = os.path.join(file_env.sd_manifest.domaindir,
-                               sd.DOMAIN_IMAGES, sd.ISO_IMAGE_UUID)
+        isopath = os.path.join(
+            file_env.sd_manifest.domaindir, sd.DOMAIN_IMAGES, sd.ISO_IMAGE_UUID
+        )
         assert isopath == file_env.sd_manifest.getIsoDomainImagesDir()
 
     def test_getmdpath(self, file_env):
@@ -84,8 +89,7 @@ class TestFileManifest(ManifestMixin):
 
     def test_getmetaparam(self, file_env):
         sd_manifest = file_env.sd_manifest
-        assert (sd_manifest.sdUUID ==
-                sd_manifest.getMetaParam(sd.DMDK_SDUUID))
+        assert sd_manifest.sdUUID == sd_manifest.getMetaParam(sd.DMDK_SDUUID)
 
     def test_getallimages(self, file_env):
         assert set() == file_env.sd_manifest.getAllImages()
@@ -135,31 +139,38 @@ class TestBlockManifest(ManifestMixin):
 
     def test_getmetaparam(self):
         with self.env() as env:
-            assert (env.sd_manifest.sdUUID ==
-                    env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
+            assert env.sd_manifest.sdUUID == env.sd_manifest.getMetaParam(
+                sd.DMDK_SDUUID
+            )
 
 
 class TestBlockDomainMetadataSlot:
 
     # Note: the first 4 slots (0-3) are reserved for domain metadata in V3,4
-    @pytest.mark.parametrize("used_slots, free_slot", [
-        [[], 4],
-        [[4], 5],
-        [[5], 4],
-        [[4, 6], 5],
-        [[4, 7], 5],
-    ])
+    @pytest.mark.parametrize(
+        "used_slots, free_slot",
+        [
+            [[], 4],
+            [[4], 5],
+            [[5], 4],
+            [[4, 6], 5],
+            [[4, 7], 5],
+        ],
+    )
     @pytest.mark.parametrize("sd_version", [3, 4])
     def test_metaslot_selection_v4(self, used_slots, free_slot, sd_version):
         self._metaslot_selection(used_slots, free_slot, sd_version)
 
-    @pytest.mark.parametrize("used_slots, free_slot", [
-        [[], 1],
-        [[1], 2],
-        [[2], 1],
-        [[1, 3], 2],
-        [[1, 4], 2],
-    ])
+    @pytest.mark.parametrize(
+        "used_slots, free_slot",
+        [
+            [[], 1],
+            [[1], 2],
+            [[2], 1],
+            [[1, 3], 2],
+            [[1, 4], 2],
+        ],
+    )
     def test_metaslot_selection_v5(self, used_slots, free_slot):
         self._metaslot_selection(used_slots, free_slot, 5)
 
@@ -199,12 +210,14 @@ class StorageDomainManifest(sd.StorageDomainManifest):
         pass
 
 
-class TestDomainLock():
+class TestDomainLock:
 
     def test_domainlock_contextmanager(self):
-        expected_calls = [("acquireDomainLock", (1,), {}),
-                          ("dummy", (), {}),
-                          ("releaseDomainLock", (), {})]
+        expected_calls = [
+            ("acquireDomainLock", (1,), {}),
+            ("dummy", (), {}),
+            ("releaseDomainLock", (), {}),
+        ]
         manifest = StorageDomainManifest()
         with manifest.domain_lock(1):
             manifest.dummy()
@@ -214,8 +227,10 @@ class TestDomainLock():
         class InjectedFailure(Exception):
             pass
 
-        expected_calls = [("acquireDomainLock", (1,), {}),
-                          ("releaseDomainLock", (), {})]
+        expected_calls = [
+            ("acquireDomainLock", (1,), {}),
+            ("releaseDomainLock", (), {}),
+        ]
         manifest = StorageDomainManifest()
         with pytest.raises(InjectedFailure):
             with manifest.domain_lock(1):
@@ -244,28 +259,33 @@ class TestCreateVolumeParams:
     def test_valid_type(self, disk_type):
         dom = FakeStorageDomainManifest()
         dom.validateCreateVolumeParams(
-            sc.RAW_FORMAT, sc.BLANK_UUID, diskType=disk_type)
+            sc.RAW_FORMAT, sc.BLANK_UUID, diskType=disk_type
+        )
 
     def test_invalid_type(self):
         dom = FakeStorageDomainManifest()
         with pytest.raises(se.InvalidParameterException):
             dom.validateCreateVolumeParams(
-                sc.RAW_FORMAT, sc.BLANK_UUID, diskType="FAIL")
+                sc.RAW_FORMAT, sc.BLANK_UUID, diskType="FAIL"
+            )
 
     def test_invalid_parent(self):
         dom = FakeStorageDomainManifest()
         with pytest.raises(se.IncorrectFormat):
             dom.validateCreateVolumeParams(
-                sc.RAW_FORMAT, "11111111-1111-1111-1111-11111111111")
+                sc.RAW_FORMAT, "11111111-1111-1111-1111-11111111111"
+            )
 
     @pytest.mark.parametrize("preallocate", sc.VOL_TYPE)
     def test_valid_preallocate(self, preallocate):
         dom = FakeStorageDomainManifest()
         dom.validateCreateVolumeParams(
-            sc.RAW_FORMAT, sc.BLANK_UUID, preallocate=preallocate)
+            sc.RAW_FORMAT, sc.BLANK_UUID, preallocate=preallocate
+        )
 
     def test_invalid_preallocate(self):
         dom = FakeStorageDomainManifest()
         with pytest.raises(se.IncorrectType):
             dom.validateCreateVolumeParams(
-                sc.RAW_FORMAT, sc.BLANK_UUID, preallocate=-1)
+                sc.RAW_FORMAT, sc.BLANK_UUID, preallocate=-1
+            )

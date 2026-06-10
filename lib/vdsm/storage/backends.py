@@ -9,7 +9,6 @@ from . import glusterSD
 from . import localFsSD
 from . import nfsSD
 
-
 _BACKENDS = {
     "FCP": blockSD.BlockStorageDomain,
     "GLUSTERFS": glusterSD.GlusterStorageDomain,

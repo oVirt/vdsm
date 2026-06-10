@@ -24,11 +24,13 @@ class ExecutorTests(TestCaseBase):
         self.scheduler.start()
         self.max_tasks = 20
         self.max_workers = 15
-        self.executor = executor.Executor('test',
-                                          workers_count=10,
-                                          max_tasks=self.max_tasks,
-                                          scheduler=self.scheduler,
-                                          max_workers=self.max_workers)
+        self.executor = executor.Executor(
+            'test',
+            workers_count=10,
+            max_tasks=self.max_tasks,
+            scheduler=self.scheduler,
+            max_workers=self.max_workers,
+        )
         self.executor.start()
         time.sleep(0.1)  # Give time to start all threads
 
@@ -39,21 +41,20 @@ class ExecutorTests(TestCaseBase):
     def test_repr_defaults(self):
         # we are using the kwargs syntax, but we are omitting arguments
         # with default values - thus using their defaults.
-        exc = executor.Executor('test',
-                                workers_count=10,
-                                max_tasks=self.max_tasks,
-                                scheduler=self.scheduler)
+        exc = executor.Executor(
+            'test',
+            workers_count=10,
+            max_tasks=self.max_tasks,
+            scheduler=self.scheduler,
+        )
         self.assertTrue(repr(exc))
 
     def test_dispatch_not_running(self):
         self.executor.stop()
-        self.assertRaises(executor.NotRunning,
-                          self.executor.dispatch,
-                          Task())
+        self.assertRaises(executor.NotRunning, self.executor.dispatch, Task())
 
     def test_start_twice(self):
-        self.assertRaises(executor.AlreadyStarted,
-                          self.executor.start)
+        self.assertRaises(executor.AlreadyStarted, self.executor.start)
 
     def test_dispatch(self):
         task = Task()
@@ -141,8 +142,10 @@ class ExecutorTests(TestCaseBase):
             # Fill the executor with stuck tasks, one of them can be unblocked
             # later
             start_barrier = concurrent.Barrier(limit + 1)
-            tasks = [Task(event=blocked_forever, start_barrier=start_barrier)
-                     for n in range(limit - 1)]
+            tasks = [
+                Task(event=blocked_forever, start_barrier=start_barrier)
+                for n in range(limit - 1)
+            ]
             tasks.append(Task(event=blocked, start_barrier=start_barrier))
             for t in tasks:
                 self.executor.dispatch(t, 0)
@@ -160,8 +163,9 @@ class ExecutorTests(TestCaseBase):
             # Check that none of the new tasks got executed (the number of the
             # executor workers is at the maximum limit, so nothing more may be
             # run)
-            self.assertEqual([t for t in extra_tasks if t.executed.wait(1)],
-                             [])
+            self.assertEqual(
+                [t for t in extra_tasks if t.executed.wait(1)], []
+            )
 
             # Unblock one of the tasks and check the new tasks run
             blocked.set()
@@ -172,15 +176,16 @@ class ExecutorTests(TestCaseBase):
             # things go as expected before proceeding (however we don't want to
             # stop and wait on each of the tasks, the first one is enough)
             self.assertFalse(tasks[0].executed.wait(1))
-            self.assertEqual([t for t in tasks if t.executed.is_set()],
-                             [tasks[-1]])
+            self.assertEqual(
+                [t for t in tasks if t.executed.is_set()], [tasks[-1]]
+            )
 
             # Extra tasks are not blocking, they were blocked just by the
             # overflown executor, so they should be all executed now when there
             # is one free worker
-            self.assertEqual([t for t in extra_tasks
-                             if not t.executed.wait(1)],
-                             [])
+            self.assertEqual(
+                [t for t in extra_tasks if not t.executed.wait(1)], []
+            )
 
         finally:
             # Cleanup: Finish all the executor jobs
@@ -208,8 +213,9 @@ class ExecutorTests(TestCaseBase):
 
             # Check we did what we intended -- the next task shouldn't be
             # accepted
-            self.assertRaises(exception.ResourceExhausted,
-                              self.executor.dispatch, Task(), 0)
+            self.assertRaises(
+                exception.ResourceExhausted, self.executor.dispatch, Task(), 0
+            )
 
         finally:
             # Cleanup: Finish all the executor jobs
@@ -222,12 +228,14 @@ class ExecutorTests(TestCaseBase):
         WORKERS = 3
         log = FakeLogger(level=logging.DEBUG)
 
-        self.executor = executor.Executor('test',
-                                          workers_count=10,
-                                          max_tasks=self.max_tasks,
-                                          scheduler=self.scheduler,
-                                          max_workers=self.max_workers,
-                                          log=log)
+        self.executor = executor.Executor(
+            'test',
+            workers_count=10,
+            max_tasks=self.max_tasks,
+            scheduler=self.scheduler,
+            max_workers=self.max_workers,
+            log=log,
+        )
         self.executor.start()
         time.sleep(0.1)  # Give time to start all threads
 
@@ -240,9 +248,12 @@ class ExecutorTests(TestCaseBase):
         time.sleep(REPORT_PERIOD * 2)
 
         print(log.messages)  # troubleshooting aid when test fails
-        self.assertTrue(any(
-            text.startswith('Worker blocked')
-            for (level, text, _) in log.messages))
+        self.assertTrue(
+            any(
+                text.startswith('Worker blocked')
+                for (level, text, _) in log.messages
+            )
+        )
 
 
 class TestWorkerSystemNames(TestCaseBase):
@@ -281,8 +292,7 @@ class TestWorkerSystemNames(TestCaseBase):
                 bar.dispatch(get_worker_name)
             done.wait()
 
-        self.assertEqual(sorted(names),
-                         ["bar/0", "bar/1", "foo/0", "foo/1"])
+        self.assertEqual(sorted(names), ["bar/0", "bar/1", "foo/0", "foo/1"])
 
 
 class ExecutorTaskTests(TestCaseBase):
@@ -333,5 +343,7 @@ class Task(object):
             raise self.error
 
     def __repr__(self):
-        return ('<Task; started=%s, executed=%s>' %
-                (self.started.is_set(), self.executed.is_set(),))
+        return '<Task; started=%s, executed=%s>' % (
+            self.started.is_set(),
+            self.executed.is_set(),
+        )

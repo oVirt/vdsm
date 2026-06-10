@@ -107,20 +107,22 @@ LEGACY_DATA_DISKTYPE = "2"
 # virt-v2v -o rhv/vdsm created data disks with wrong disk type
 LEGACY_V2V_DATA_DISKTYPE = "1"
 
-VOL_DISKTYPE = frozenset([
-    DATA_DISKTYPE,
-    ISOF_DISKTYPE,
-    MEMD_DISKTYPE,
-    MEMM_DISKTYPE,
-    OVFS_DISKTYPE,
-    HEVD_DISKTYPE,
-    HESD_DISKTYPE,
-    HEMD_DISKTYPE,
-    HECI_DISKTYPE,
-    SCRD_DISKTYPE,
-    LEGACY_DATA_DISKTYPE,
-    LEGACY_V2V_DATA_DISKTYPE,
-])
+VOL_DISKTYPE = frozenset(
+    [
+        DATA_DISKTYPE,
+        ISOF_DISKTYPE,
+        MEMD_DISKTYPE,
+        MEMM_DISKTYPE,
+        OVFS_DISKTYPE,
+        HEVD_DISKTYPE,
+        HESD_DISKTYPE,
+        HEMD_DISKTYPE,
+        HECI_DISKTYPE,
+        SCRD_DISKTYPE,
+        LEGACY_DATA_DISKTYPE,
+        LEGACY_V2V_DATA_DISKTYPE,
+    ]
+)
 
 _TYPE2NAME = {
     UNKNOWN_VOL: 'UNKNOWN',
@@ -131,7 +133,7 @@ _TYPE2NAME = {
     RAW_FORMAT: 'RAW',
     SHARED_VOL: 'SHARED',
     INTERNAL_VOL: 'INTERNAL',
-    LEAF_VOL: 'LEAF'
+    LEAF_VOL: 'LEAF',
 }
 
 _NAME2TYPE = {v: k for k, v in _TYPE2NAME.items()}
@@ -257,9 +259,7 @@ TAG_PREFIX_MD = "MD_"
 TAG_PREFIX_IMAGE = "IU_"
 TAG_PREFIX_PARENT = "PU_"
 TAG_VOL_UNINIT = "OVIRT_VOL_INITIALIZING"
-VOLUME_TAGS = [TAG_PREFIX_PARENT,
-               TAG_PREFIX_IMAGE,
-               TAG_PREFIX_MD]
+VOLUME_TAGS = [TAG_PREFIX_PARENT, TAG_PREFIX_IMAGE, TAG_PREFIX_MD]
 
 # VG tag marking a vdsm-managed block storage domain.
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"

@@ -20,8 +20,8 @@ from vdsm.storage import constants as sc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage.exception import MiscDirCleanupFailure
 
-from . marks import requires_root, requires_unprivileged_user
-from . storagetestlib import chmod
+from .marks import requires_root, requires_unprivileged_user
+from .storagetestlib import chmod
 
 BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 
@@ -57,6 +57,7 @@ def user_mount(request):
 #   The method is not part of ioprocess API.
 # proc._commthread.name
 #   The member is not part of ioprocess API.
+
 
 def test_same_pool_name(oop_cleanup):
     pids = []
@@ -110,6 +111,7 @@ def test_amount_of_instances_per_pool_name(oop_cleanup, monkeypatch):
 
 
 # fileUtils APIs
+
 
 def test_fileutils_fsyncPath(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
@@ -187,14 +189,18 @@ def test_fileutils_cleanupdir_failed_due_to_permissions(oop_cleanup, tmpdir):
     assert not os.path.exists(outer_dir)
 
 
-@pytest.mark.parametrize("initial_mode, expected_mode", [
-    (0o770, 0o770),
-    (0o700, 0o770),
-    (0o750, 0o770),
-    (0o650, 0o660),
-])
+@pytest.mark.parametrize(
+    "initial_mode, expected_mode",
+    [
+        (0o770, 0o770),
+        (0o700, 0o770),
+        (0o750, 0o770),
+        (0o650, 0o660),
+    ],
+)
 def test_fileutils_copyusermodetogroup(
-        oop_cleanup, tmpdir, initial_mode, expected_mode):
+    oop_cleanup, tmpdir, initial_mode, expected_mode
+):
     iop = oop.getProcessPool("test")
     f = tmpdir.join("file")
     f.write("")
@@ -262,7 +268,8 @@ def test_fileutils_createdir_non_default_mode(oop_cleanup, tmpdir):
 
 
 def test_fileutils_createdir_non_default_mode_dir_exists_same_mode(
-        oop_cleanup, tmpdir):
+    oop_cleanup, tmpdir
+):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("subdir"))
     mode = 0o766
@@ -276,7 +283,8 @@ def test_fileutils_createdir_non_default_mode_dir_exists_same_mode(
 
 
 def test_fileutils_createdir_non_default_mode_dir_exists_other_mode(
-        oop_cleanup, tmpdir):
+    oop_cleanup, tmpdir
+):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("subdir"))
     mode = 0o766
@@ -317,13 +325,17 @@ def test_fileutils_createdir_bad_permissions(oop_cleanup, tmpdir):
     assert not os.path.exists(str(tmpdir.join("subdir1", "subdir2")))
 
 
-@pytest.mark.parametrize("orig_size, expected_size", [
-    (sc.BLOCK_SIZE_4K - 1, sc.BLOCK_SIZE_4K),
-    (sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_4K),
-    (sc.BLOCK_SIZE_4K + 1, 2 * sc.BLOCK_SIZE_4K),
-])
+@pytest.mark.parametrize(
+    "orig_size, expected_size",
+    [
+        (sc.BLOCK_SIZE_4K - 1, sc.BLOCK_SIZE_4K),
+        (sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_4K),
+        (sc.BLOCK_SIZE_4K + 1, 2 * sc.BLOCK_SIZE_4K),
+    ],
+)
 def test_fileutils_padtoblocksize(
-        oop_cleanup, tmpdir, orig_size, expected_size):
+    oop_cleanup, tmpdir, orig_size, expected_size
+):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))
 
@@ -346,7 +358,8 @@ ACCESS_PARAMS_DEFAULT_PERMISSION_FAILURE = [0o300, 0o444, 0o500, 0o600]
 @pytest.mark.parametrize("mode", ACCESS_PARAMS_DEFAULT_PERMISSION_SUCCESS)
 @requires_unprivileged_user
 def test_fileutils_validateaccess_directory_default_permission_success(
-        oop_cleanup, tmpdir, mode):
+    oop_cleanup, tmpdir, mode
+):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.mkdir("subdir"))
 
@@ -358,7 +371,8 @@ def test_fileutils_validateaccess_directory_default_permission_success(
 @pytest.mark.parametrize("mode", ACCESS_PARAMS_DEFAULT_PERMISSION_FAILURE)
 @requires_unprivileged_user
 def test_fileutils_validateaccess_directory_default_permission_failure(
-        oop_cleanup, tmpdir, mode):
+    oop_cleanup, tmpdir, mode
+):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.mkdir("subdir"))
 
@@ -372,7 +386,8 @@ def test_fileutils_validateaccess_directory_default_permission_failure(
 @pytest.mark.parametrize("mode", ACCESS_PARAMS_DEFAULT_PERMISSION_SUCCESS)
 @requires_unprivileged_user
 def test_fileutils_validateaccess_file_default_permission_success(
-        oop_cleanup, tmpdir, mode):
+    oop_cleanup, tmpdir, mode
+):
     iop = oop.getProcessPool("test")
 
     f = tmpdir.join("file")
@@ -387,7 +402,8 @@ def test_fileutils_validateaccess_file_default_permission_success(
 @pytest.mark.parametrize("mode", ACCESS_PARAMS_DEFAULT_PERMISSION_FAILURE)
 @requires_unprivileged_user
 def test_fileutils_validateaccess_file_default_permission_failure(
-        oop_cleanup, tmpdir, mode):
+    oop_cleanup, tmpdir, mode
+):
     iop = oop.getProcessPool("test")
 
     f = tmpdir.join("file")
@@ -416,10 +432,12 @@ ACCESS_PARAMS_NON_DEFAULT_PERMISSION_FAILURE = [
 
 
 @pytest.mark.parametrize(
-    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_SUCCESS)
+    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_SUCCESS
+)
 @requires_unprivileged_user
 def test_fileutils_validateaccess_directory_non_default_permission_success(
-        oop_cleanup, tmpdir, mode, permissions):
+    oop_cleanup, tmpdir, mode, permissions
+):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.mkdir("subdir"))
 
@@ -429,10 +447,12 @@ def test_fileutils_validateaccess_directory_non_default_permission_success(
 
 
 @pytest.mark.parametrize(
-    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_FAILURE)
+    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_FAILURE
+)
 @requires_unprivileged_user
 def test_fileutils_validateaccess_directory_non_default_permission_failure(
-        oop_cleanup, tmpdir, mode, permissions):
+    oop_cleanup, tmpdir, mode, permissions
+):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.mkdir("subdir"))
 
@@ -444,10 +464,12 @@ def test_fileutils_validateaccess_directory_non_default_permission_failure(
 
 
 @pytest.mark.parametrize(
-    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_SUCCESS)
+    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_SUCCESS
+)
 @requires_unprivileged_user
 def test_fileutils_validateaccess_file_non_default_permission_success(
-        oop_cleanup, tmpdir, mode, permissions):
+    oop_cleanup, tmpdir, mode, permissions
+):
     iop = oop.getProcessPool("test")
 
     f = tmpdir.join("file")
@@ -460,10 +482,12 @@ def test_fileutils_validateaccess_file_non_default_permission_success(
 
 
 @pytest.mark.parametrize(
-    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_FAILURE)
+    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_FAILURE
+)
 @requires_unprivileged_user
 def test_fileutils_validateaccess_file_non_default_permission_failure(
-        oop_cleanup, tmpdir, mode, permissions):
+    oop_cleanup, tmpdir, mode, permissions
+):
     iop = oop.getProcessPool("test")
 
     f = tmpdir.join("file")
@@ -518,14 +542,18 @@ def test_fileutils_validateqemureadable_other_group(oop_cleanup, tmpdir):
         assert e.value.errno == errno.EACCES
 
 
-@pytest.mark.parametrize("gid, mode", [
-    (107, 0o750),   # qemu
-    (36, 0o750),    # kvm
-])
+@pytest.mark.parametrize(
+    "gid, mode",
+    [
+        (107, 0o750),  # qemu
+        (36, 0o750),  # kvm
+    ],
+)
 @requires_root
 @pytest.mark.root
 def test_fileutils_validateqemureadable_qemu_or_kvm_group(
-        oop_cleanup, tmpdir, gid, mode):
+    oop_cleanup, tmpdir, gid, mode
+):
     iop = oop.getProcessPool("test")
 
     f = tmpdir.join("file")
@@ -556,7 +584,8 @@ ACCESS_PARAMS = [
 @pytest.mark.parametrize("mode, permission, expected_result", ACCESS_PARAMS)
 @requires_unprivileged_user
 def test_os_access_file(
-        oop_cleanup, tmpdir, mode, permission, expected_result):
+    oop_cleanup, tmpdir, mode, permission, expected_result
+):
     iop = oop.getProcessPool("test")
 
     f = tmpdir.join("file")
@@ -570,7 +599,8 @@ def test_os_access_file(
 @pytest.mark.parametrize("mode, permission, expected_result", ACCESS_PARAMS)
 @requires_unprivileged_user
 def test_os_access_directory(
-        oop_cleanup, tmpdir, mode, permission, expected_result):
+    oop_cleanup, tmpdir, mode, permission, expected_result
+):
     iop = oop.getProcessPool("test")
 
     d = tmpdir.mkdir("subdir")
@@ -840,6 +870,7 @@ def test_os_unlink(oop_cleanup, tmpdir):
 
 # os.path APIs
 
+
 def test_os_path_isdir(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
 
@@ -901,6 +932,7 @@ def test_os_path_exists(oop_cleanup, tmpdir):
 
 # utils APIs
 
+
 def test_utils_forcelink_failed_no_such_file(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path_src = str(tmpdir.join("file"))
@@ -947,6 +979,7 @@ def test_utils_rmfile(oop_cleanup, tmpdir):
 
 # glob APIs
 
+
 def test_glob(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir)
@@ -965,6 +998,7 @@ def test_glob(oop_cleanup, tmpdir):
 
 
 # External APIs
+
 
 def test_read_lines(oop_cleanup, user_mount):
     iop = oop.getProcessPool("test")
@@ -1142,8 +1176,13 @@ def chown(path, uid=-1, gid=-1):
         try:
             os.chown(path, orig_uid, orig_gid)
         except Exception as e:
-            logging.error("Failed to restore %r to uid %d gid %d: %s",
-                          path, orig_uid, orig_gid, e)
+            logging.error(
+                "Failed to restore %r to uid %d gid %d: %s",
+                path,
+                orig_uid,
+                orig_gid,
+                e,
+            )
 
 
 def check_stat(iop_stat, os_stat):
@@ -1151,9 +1190,9 @@ def check_stat(iop_stat, os_stat):
     #  "st_blocks" doesn't appear in "os.stat(path)", but its "hasattr"
     #  returns True as if the attribute does appear!
     #  Comparison doesn't fail since both "getattr" return zero.
-    common_fields = [field
-                     for field in iop_stat._fields
-                     if hasattr(os_stat, field)]
+    common_fields = [
+        field for field in iop_stat._fields if hasattr(os_stat, field)
+    ]
     for field in common_fields:
         if field in ("st_atime", "st_mtime", "st_ctime"):
             # These are float\double values and due to the many conversions
@@ -1168,9 +1207,11 @@ def check_statvfs(iop_statvfs, os_statvfs):
     #  For some reason "os.statvfs(path)" returns an object without "f_fsid",
     #  but "hasattr" returns True as if the attribute does appear!
     #  After that "getattr" returns some value that fails the below comparison.
-    common_fields = [field
-                     for field in iop_statvfs._fields
-                     if hasattr(os_statvfs, field) and field != "f_fsid"]
+    common_fields = [
+        field
+        for field in iop_statvfs._fields
+        if hasattr(os_statvfs, field) and field != "f_fsid"
+    ]
 
     for field in common_fields:
         assert getattr(iop_statvfs, field) == getattr(os_statvfs, field)

@@ -19,13 +19,14 @@ class Job(base.Job):
     def _validate(self):
         if self._vol_info.volume.getFormat() != sc.COW_FORMAT:
             raise se.UnsupportedOperation(
-                "Volume is not in COW format",
-                vol_uuid=self._vol_info.vol_id)
+                "Volume is not in COW format", vol_uuid=self._vol_info.vol_id
+            )
 
         if self._vol_info.volume.isShared():
             raise se.UnsupportedOperation(
                 "Cannot remove bitmaps from shared volume",
-                vol_uuid=self._vol_info.vol_id)
+                vol_uuid=self._vol_info.vol_id,
+            )
 
     def _run(self):
         with guarded.context(self._vol_info.locks):

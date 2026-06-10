@@ -55,5 +55,7 @@ class TestUniterruptible(VdsmTestCase):
         def func(*args, **kwargs):
             return args, kwargs
 
-        self.assertEqual(osutils.uninterruptible(func, "a", "b", c=3),
-                         (("a", "b"), {"c": 3}))
+        self.assertEqual(
+            osutils.uninterruptible(func, "a", "b", c=3),
+            (("a", "b"), {"c": 3}),
+        )

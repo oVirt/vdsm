@@ -19,8 +19,11 @@ ISCSI_ERR_SESS_EXISTS = 15
 ISCSI_ERR_LOGIN_AUTH_FAILED = 24
 ISCSI_ERR_OBJECT_NOT_FOUND = 21
 
-Iface = namedtuple('Iface', 'ifacename transport_name hwaddress ipaddress \
-                    net_ifacename initiatorname')
+Iface = namedtuple(
+    'Iface',
+    'ifacename transport_name hwaddress ipaddress \
+                    net_ifacename initiatorname',
+)
 
 
 class IscsiError(RuntimeError):
@@ -80,8 +83,10 @@ class IscsiSessionError(IscsiError):
 
 
 class IscsiSessionRescanTimeout(IscsiSessionError):
-    msg = ("Timeout scanning iSCSI sesions (pid={self.pid}, "
-           "timeout={self.timeout})")
+    msg = (
+        "Timeout scanning iSCSI sesions (pid={self.pid}, "
+        "timeout={self.timeout})"
+    )
 
     def __init__(self, pid, timeout):
         self.pid = pid
@@ -127,8 +132,9 @@ def iface_new(name):
 
 def iface_update(name, key, value):
     try:
-        run_cmd(["-m", "iface", "-I", name, "-n", key, "-v", value,
-                 "--op=update"])
+        run_cmd(
+            ["-m", "iface", "-I", name, "-n", key, "-v", value, "--op=update"]
+        )
     except cmdutils.Error as e:
         if not iface_exists(name):
             raise IscsiInterfaceDoesNotExistError(name)
@@ -159,8 +165,10 @@ def iface_list(out=None):
             raise IscsiInterfaceListingError(e.rc, e.out, e.err)
 
     for line in out.splitlines():
-        yield Iface._make(None if value == '<empty>' else value
-                          for value in re.split(r'[\s,]', line))
+        yield Iface._make(
+            None if value == '<empty>' else value
+            for value in re.split(r'[\s,]', line)
+        )
 
 
 def iface_info(name):
@@ -191,8 +199,19 @@ def iface_info(name):
 
 def discoverydb_new(discoveryType, iface, portal):
     try:
-        run_cmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
-                 "-p", portal, "--op=new"])
+        run_cmd(
+            [
+                "-m",
+                "discoverydb",
+                "-t",
+                discoveryType,
+                "-I",
+                iface,
+                "-p",
+                portal,
+                "--op=new",
+            ]
+        )
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -202,8 +221,23 @@ def discoverydb_new(discoveryType, iface, portal):
 
 def discoverydb_update(discoveryType, iface, portal, key, value):
     try:
-        run_cmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
-                 "-p", portal, "-n", key, "-v", value, "--op=update"])
+        run_cmd(
+            [
+                "-m",
+                "discoverydb",
+                "-t",
+                discoveryType,
+                "-I",
+                iface,
+                "-p",
+                portal,
+                "-n",
+                key,
+                "-v",
+                value,
+                "--op=update",
+            ]
+        )
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -214,8 +248,18 @@ def discoverydb_update(discoveryType, iface, portal, key, value):
 def discoverydb_discover(discoveryType, iface, portal):
     try:
         out = run_cmd(
-            ["-m", "discoverydb", "-t", discoveryType, "-I", iface, "-p",
-             portal, "--discover"])
+            [
+                "-m",
+                "discoverydb",
+                "-t",
+                discoveryType,
+                "-I",
+                iface,
+                "-p",
+                portal,
+                "--discover",
+            ]
+        )
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -237,8 +281,19 @@ def discoverydb_discover(discoveryType, iface, portal):
 
 def discoverydb_delete(discoveryType, iface, portal):
     try:
-        run_cmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
-                 "-p", portal, "--op=delete"])
+        run_cmd(
+            [
+                "-m",
+                "discoverydb",
+                "-t",
+                discoveryType,
+                "-I",
+                iface,
+                "-p",
+                portal,
+                "--op=delete",
+            ]
+        )
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -248,8 +303,19 @@ def discoverydb_delete(discoveryType, iface, portal):
 
 def node_new(iface, portal, targetName):
     try:
-        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
-                 "-p", portal, "--op=new"])
+        run_cmd(
+            [
+                "-m",
+                "node",
+                "-T",
+                targetName,
+                "-I",
+                iface,
+                "-p",
+                portal,
+                "--op=new",
+            ]
+        )
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -259,8 +325,23 @@ def node_new(iface, portal, targetName):
 
 def node_update(iface, portal, targetName, key, value):
     try:
-        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
-                 "-p", portal, "-n", key, "-v", value, "--op=update"])
+        run_cmd(
+            [
+                "-m",
+                "node",
+                "-T",
+                targetName,
+                "-I",
+                iface,
+                "-p",
+                portal,
+                "-n",
+                key,
+                "-v",
+                value,
+                "--op=update",
+            ]
+        )
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -270,8 +351,19 @@ def node_update(iface, portal, targetName, key, value):
 
 def node_delete(iface, portal, targetName):
     try:
-        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
-                 "-p", portal, "--op=delete"])
+        run_cmd(
+            [
+                "-m",
+                "node",
+                "-T",
+                targetName,
+                "-I",
+                iface,
+                "-p",
+                portal,
+                "--op=delete",
+            ]
+        )
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -281,8 +373,9 @@ def node_delete(iface, portal, targetName):
 
 def node_disconnect(iface, portal, targetName):
     try:
-        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
-                 "-p", portal, "-u"])
+        run_cmd(
+            ["-m", "node", "-T", targetName, "-I", iface, "-p", portal, "-u"]
+        )
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -295,8 +388,9 @@ def node_disconnect(iface, portal, targetName):
 
 def node_login(iface, portal, targetName):
     try:
-        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
-                 "-p", portal, "-l"])
+        run_cmd(
+            ["-m", "node", "-T", targetName, "-I", iface, "-p", portal, "-l"]
+        )
     except cmdutils.Error as e:
         if e.rc == ISCSI_ERR_SESS_EXISTS:
             # If we have multiple portals using same (address, port, iface),
@@ -307,7 +401,11 @@ def node_login(iface, portal, targetName):
             # https://bugzilla.redhat.com/2097614
             log.warning(
                 "Duplicate portals for target %s iface %s portal %s: %s",
-                targetName, iface, portal, e)
+                targetName,
+                iface,
+                portal,
+                e,
+            )
             return
 
         if not iface_exists(iface):
@@ -323,10 +421,8 @@ def session_rescan(timeout=None):
     args = [constants.EXT_ISCSIADM, "-m", "session", "-R"]
 
     p = commands.start(
-        args,
-        sudo=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        args, sudo=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
 
     try:
         out, err = p.communicate(timeout=timeout)

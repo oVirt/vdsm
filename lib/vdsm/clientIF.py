@@ -47,6 +47,7 @@ from vdsm.virt.vm import DestroyedOnResumeError, Vm
 
 try:
     import vdsm.gluster.api as gapi
+
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
@@ -58,6 +59,7 @@ class clientIF(object):
 
     Exposes vdsm verbs as json-rpc or xml-rpc functions.
     """
+
     _instance = None
     _instanceLock = threading.Lock()
 
@@ -108,7 +110,8 @@ class clientIF(object):
             secret.clear()
             concurrent.thread(self._recoverThread, name='vmrecovery').start()
             self.channelListener.settimeout(
-                config.getint('vars', 'guest_agent_timeout'))
+                config.getint('vars', 'guest_agent_timeout')
+            )
             self.channelListener.start()
             self.qga_poller.start()
             self.threadLocal = threading.local()
@@ -131,8 +134,9 @@ class clientIF(object):
             self._prepareJSONRPCServer()
             self._connectToBroker()
         except:
-            self.log.error('failed to init clientIF, '
-                           'shutting down storage dispatcher')
+            self.log.error(
+                'failed to init clientIF, ' 'shutting down storage dispatcher'
+            )
             if self.irs:
                 self.irs.prepareForShutdown()
             raise
@@ -155,8 +159,11 @@ class clientIF(object):
         This is intended to serve for detection of external VMs.
         """
         with self.vm_container_lock:
-            unknown_vm_ids = [vm_id for vm_id in self._unknown_vm_ids
-                              if vm_id not in self.vmContainer]
+            unknown_vm_ids = [
+                vm_id
+                for vm_id in self._unknown_vm_ids
+                if vm_id not in self.vmContainer
+            ]
             self._unknown_vm_ids = set()
         return unknown_vm_ids
 
@@ -191,25 +198,31 @@ class clientIF(object):
             params = {}
 
         if not self.ready:
-            self.log.warning('Not ready yet, ignoring event %r args=%r',
-                             event_id, params)
+            self.log.warning(
+                'Not ready yet, ignoring event %r args=%r', event_id, params
+            )
             return
 
         json_binding = self.servers['jsonrpc']
 
         def _send_notification(message):
             json_binding.reactor.server.send(
-                message, config.get('addresses', 'event_queue'))
+                message, config.get('addresses', 'event_queue')
+            )
 
         try:
-            notification = Notification(event_id, _send_notification,
-                                        json_binding.bridge.event_schema)
+            notification = Notification(
+                event_id, _send_notification, json_binding.bridge.event_schema
+            )
             notification.emit(params)
-            self.log.debug("Sending notification %s with params %s ",
-                           event_id, params)
+            self.log.debug(
+                "Sending notification %s with params %s ", event_id, params
+            )
         except KeyError:
-            self.log.warning("Attempt to send an event when jsonrpc binding"
-                             " not available")
+            self.log.warning(
+                "Attempt to send an event when jsonrpc binding"
+                " not available"
+            )
 
     def contEIOVms(self, sdUUID, isDomainStateValid):
         # This method is called everytime the onDomainStateChange
@@ -220,7 +233,8 @@ class clientIF(object):
 
         libvirtCon = libvirtconnection.get()
         libvirtVms = libvirtCon.listAllDomains(
-            libvirt.VIR_CONNECT_LIST_DOMAINS_PAUSED)
+            libvirt.VIR_CONNECT_LIST_DOMAINS_PAUSED
+        )
 
         with self.vm_start_stop_lock:
             self.log.info("vm_start_stop_lock acquired")
@@ -241,8 +255,10 @@ class clientIF(object):
         with cls._instanceLock:
             if cls._instance is None:
                 if log is None:
-                    raise Exception("Logging facility is required to create "
-                                    "the single clientIF instance")
+                    raise Exception(
+                        "Logging facility is required to create "
+                        "the single clientIF instance"
+                    )
                 else:
                     cls._instance = clientIF(irs, log, scheduler)
         return cls._instance
@@ -251,8 +267,9 @@ class clientIF(object):
         sslctx = sslutils.create_ssl_context()
         self._reactor = Reactor()
 
-        self._acceptor = MultiProtocolAcceptor(self._reactor, host,
-                                               port, sslctx)
+        self._acceptor = MultiProtocolAcceptor(
+            self._reactor, host, port, sslctx
+        )
 
     def _connectToBroker(self):
         if config.getboolean('vars', 'broker_enable'):
@@ -274,7 +291,7 @@ class clientIF(object):
                     destination,
                     broker_address,
                     config.getint('vars', 'connection_stats_timeout'),
-                    self
+                    self,
                 )
 
     def _prepareHttpServer(self):
@@ -283,8 +300,10 @@ class clientIF(object):
                 from vdsm.rpc.http import Server
                 from vdsm.rpc.http import HttpDetector
             except ImportError:
-                self.log.error('Unable to load the http server module. '
-                               'Please make sure it is installed.')
+                self.log.error(
+                    'Unable to load the http server module. '
+                    'Please make sure it is installed.'
+                )
             else:
                 http_server = Server(self, self.log)
                 self.servers['http'] = http_server
@@ -298,14 +317,19 @@ class clientIF(object):
                 from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
                 from yajsonrpc.stompserver import StompDetector
             except ImportError:
-                self.log.warn('Unable to load the json rpc server module. '
-                              'Please make sure it is installed.')
+                self.log.warn(
+                    'Unable to load the json rpc server module. '
+                    'Please make sure it is installed.'
+                )
             else:
                 bridge = Bridge.DynamicBridge()
                 json_binding = BindingJsonRpc(
-                    bridge, self._subscriptions,
+                    bridge,
+                    self._subscriptions,
                     config.getint('vars', 'connection_stats_timeout'),
-                    self._scheduler, self)
+                    self._scheduler,
+                    self,
+                )
                 self.servers['jsonrpc'] = json_binding
                 stomp_detector = StompDetector(json_binding)
                 self._acceptor.add_detector(stomp_detector)
@@ -381,8 +405,9 @@ class clientIF(object):
     def start(self):
         for binding in self.servers.values():
             binding.start()
-        self.thread = concurrent.thread(self._reactor.process_requests,
-                                        name='Reactor thread')
+        self.thread = concurrent.thread(
+            self._reactor.process_requests, name='Reactor thread'
+        )
         self.thread.start()
 
     def prepareVolumePath(self, drive, vmId=None, path=None):
@@ -407,8 +432,11 @@ class clientIF(object):
             # Since version 4.2 cdrom may use a PDIV format
             elif device in ("cdrom", "disk") and isVdsmImage(drive):
                 res = self.irs.prepareImage(
-                    drive['domainID'], drive['poolID'],
-                    drive['imageID'], drive['volumeID'])
+                    drive['domainID'],
+                    drive['poolID'],
+                    drive['imageID'],
+                    drive['volumeID'],
+                )
 
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
@@ -421,7 +449,8 @@ class clientIF(object):
                     if device == "cdrom":
                         raise exception.UnsupportedOperation(
                             "A cdrom device is not supported as network disk",
-                            drive=drive)
+                            drive=drive,
+                        )
 
                     # Not applicable for Ceph network disk as
                     # Ceph disks are not vdsm images
@@ -440,17 +469,20 @@ class clientIF(object):
                 res = self.irs.getDevicesVisibility([drive["GUID"]])
                 if not res["visible"][drive["GUID"]]:
                     raise vm.VolumeError(
-                        "Drive %r not visible" % drive["GUID"])
+                        "Drive %r not visible" % drive["GUID"]
+                    )
 
                 # Managed drives are prepared in ManagedVolume.attach_volume
                 if drive.get("managed", False):
                     volPath = '/dev/mapper/' + drive["GUID"]
                 else:
                     res = self.irs.appropriateDevice(
-                        drive["GUID"], vmId, 'mpath')
+                        drive["GUID"], vmId, 'mpath'
+                    )
                     if res['status']['code']:
                         raise vm.VolumeError(
-                            "Cannot appropriate drive %r" % drive["GUID"])
+                            "Cannot appropriate drive %r" % drive["GUID"]
+                        )
 
                     # Update size for LUN volume
                     drive["truesize"] = res['truesize']
@@ -465,15 +497,18 @@ class clientIF(object):
                 volPath = drive["RBD"]
 
             # cdrom and floppy drives
-            elif (device in ('cdrom', 'floppy') and 'specParams' in drive):
+            elif device in ('cdrom', 'floppy') and 'specParams' in drive:
                 params = drive['specParams']
                 if 'vmPayload' in params:
                     volPath = self._prepareVolumePathFromPayload(
-                        vmId, device, params['vmPayload'], path)
+                        vmId, device, params['vmPayload'], path
+                    )
                 # next line can be removed in future, when < 3.3 engine
                 # is not supported
-                elif (params.get('path', '') == '' and
-                      drive.get('path', '') == ''):
+                elif (
+                    params.get('path', '') == ''
+                    and drive.get('path', '') == ''
+                ):
                     volPath = ''
                 else:
                     volPath = drive.get('path', '')
@@ -522,13 +557,15 @@ class clientIF(object):
         res = {'status': doneCode}
         try:
             if isVdsmImage(drive):
-                res = self.irs.teardownImage(drive['domainID'],
-                                             drive['poolID'], drive['imageID'])
+                res = self.irs.teardownImage(
+                    drive['domainID'], drive['poolID'], drive['imageID']
+                )
         except TypeError:
             # paths (strings) are not deactivated
             if not isinstance(drive, str):
-                self.log.warning("Drive is not a vdsm image: %s",
-                                 drive, exc_info=True)
+                self.log.warning(
+                    "Drive is not a vdsm image: %s", drive, exc_info=True
+                )
 
         return res['status']['code']
 
@@ -599,8 +636,10 @@ class clientIF(object):
             # Starting up libvirt might take long when host under high load,
             # we prefer running this code in external thread to avoid blocking
             # API response.
-            mog = min(config.getint('vars', 'max_outgoing_migrations'),
-                      numa.cpu_topology().cores)
+            mog = min(
+                config.getint('vars', 'max_outgoing_migrations'),
+                numa.cpu_topology().cores,
+            )
             migration.SourceThread.ongoingMigrations.bound = mog
 
             recovery.all_domains(self)
@@ -618,8 +657,10 @@ class clientIF(object):
 
             self._preparePathsForRecoveredVMs()
 
-            self.log.info('recovery: completed in %is',
-                          vdsm.common.time.monotonic_time() - start_time)
+            self.log.info(
+                'recovery: completed in %is',
+                vdsm.common.time.monotonic_time() - start_time,
+            )
 
         except:
             self.log.exception("recovery: failed")
@@ -631,11 +672,17 @@ class clientIF(object):
         v = self.vmContainer.get(vmid)
 
         if v is None:
-            self.log.debug('unknown vm %s event %s args %s',
-                           vmid, events.event_name(eventid), args)
+            self.log.debug(
+                'unknown vm %s event %s args %s',
+                vmid,
+                events.event_name(eventid),
+                args,
+            )
 
-            if (eventid != libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE or
-                    args[0] != libvirt.VIR_DOMAIN_EVENT_UNDEFINED):
+            if (
+                eventid != libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE
+                or args[0] != libvirt.VIR_DOMAIN_EVENT_UNDEFINED
+            ):
                 self._unknown_vm_ids.add(vmid)
 
         return eventid, v
@@ -659,34 +706,43 @@ class clientIF(object):
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_REBOOT:
                 v.onReboot()
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE:
-                utcoffset, = args[:-1]
+                (utcoffset,) = args[:-1]
                 v.onRTCUpdate(utcoffset)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON:
                 srcPath, devAlias, action, reason = args[:-1]
                 v.onIOError(devAlias, reason, action)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS:
                 phase, localAddr, remoteAddr, authScheme, subject = args[:-1]
-                v.log.debug('graphics event phase '
-                            '%s localAddr %s remoteAddr %s'
-                            'authScheme %s subject %s',
-                            phase, localAddr, remoteAddr, authScheme, subject)
+                v.log.debug(
+                    'graphics event phase '
+                    '%s localAddr %s remoteAddr %s'
+                    'authScheme %s subject %s',
+                    phase,
+                    localAddr,
+                    remoteAddr,
+                    authScheme,
+                    subject,
+                )
                 if phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_INITIALIZE:
                     v.onConnect(remoteAddr['node'], remoteAddr['service'])
                 elif phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_DISCONNECT:
-                    v.onDisconnect(clientIp=remoteAddr['node'],
-                                   clientPort=remoteAddr['service'])
+                    v.onDisconnect(
+                        clientIp=remoteAddr['node'],
+                        clientPort=remoteAddr['service'],
+                    )
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
-                action, = args[:-1]
+                (action,) = args[:-1]
                 v.onWatchdogEvent(action)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED:
                 v.onJobCompleted(args)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_DEVICE_REMOVED:
-                device_alias, = args[:-1]
+                (device_alias,) = args[:-1]
                 v.onDeviceRemoved(device_alias)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_THRESHOLD:
                 dev, path, threshold, excess = args[:-1]
                 v.volume_monitor.on_block_threshold(
-                    dev, path, threshold, excess)
+                    dev, path, threshold, excess
+                )
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2:
                 drive, job_type, job_status, _ = args
                 v.on_block_job_event(drive, job_type, job_status)
@@ -695,27 +751,35 @@ class clientIF(object):
                 state, reason, _ = args
                 self.qga_poller.channel_state_changed(vmid, state, reason)
             else:
-                v.log.debug('unhandled libvirt event (event_name=%s, args=%s)',
-                            events.event_name(eventid), args)
+                v.log.debug(
+                    'unhandled libvirt event (event_name=%s, args=%s)',
+                    events.event_name(eventid),
+                    args,
+                )
 
         except:
             self.log.error("Error running VM callback", exc_info=True)
 
     def _waitForDomainsUp(self):
         while self._enabled:
-            launching = sum(int(v.lastStatus == vmstatus.WAIT_FOR_LAUNCH)
-                            for v in self.getVMs().values())
+            launching = sum(
+                int(v.lastStatus == vmstatus.WAIT_FOR_LAUNCH)
+                for v in self.getVMs().values()
+            )
             if not launching:
                 break
             else:
                 self.log.info(
-                    'recovery: waiting for %d domains to go up',
-                    launching)
+                    'recovery: waiting for %d domains to go up', launching
+                )
             time.sleep(1)
 
     def _waitForStoragePool(self):
-        while (self._enabled and self.vmContainer and
-               not self.irs.getConnectedStoragePoolsList()['poollist']):
+        while (
+            self._enabled
+            and self.vmContainer
+            and not self.irs.getConnectedStoragePoolsList()['poollist']
+        ):
             self.log.info('recovery: waiting for storage pool to go up')
             time.sleep(5)
 
@@ -728,13 +792,19 @@ class clientIF(object):
                 # Do not prepare volumes when system goes down
                 if self._enabled:
                     self.log.info(
-                        'recovery [%d/%d]: preparing paths for'
-                        ' domain %s', idx + 1, num_vm_objects, vm_obj.id)
+                        'recovery [%d/%d]: preparing paths for' ' domain %s',
+                        idx + 1,
+                        num_vm_objects,
+                        vm_obj.id,
+                    )
                     vm_obj.preparePaths()
             except:
                 self.log.exception(
                     "recovery [%d/%d]: failed for vm %s",
-                    idx + 1, num_vm_objects, vm_obj.id)
+                    idx + 1,
+                    num_vm_objects,
+                    vm_obj.id,
+                )
 
     def _prepare_network_drive(self, drive, res):
         """
@@ -761,8 +831,7 @@ class clientIF(object):
         volinfo = res['info']
         img_dir, _ = os.path.split(volinfo["path"])
         for entry in drive['volumeChain']:
-            entry["path"] = os.path.join(img_dir,
-                                         entry["volumeID"])
+            entry["path"] = os.path.join(img_dir, entry["volumeID"])
         drive['protocol'] = volinfo['protocol']
         # currently, single host is provided due to this bug:
         # https://bugzilla.redhat.com/1465810

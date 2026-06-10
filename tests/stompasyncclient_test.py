@@ -7,12 +7,13 @@ from testlib import VdsmTestCase as TestCaseBase
 
 from yajsonrpc import stompclient
 
-from yajsonrpc.stompclient import \
-    AsyncClient, \
-    Command, \
-    Frame, \
-    Headers, \
-    StompError
+from yajsonrpc.stompclient import (
+    AsyncClient,
+    Command,
+    Frame,
+    Headers,
+    StompError,
+)
 from stomp_test_utils import FakeSubscription, FakeAsyncDispatcher
 from monkeypatch import MonkeyPatchScope
 
@@ -43,8 +44,9 @@ class AsyncClientTest(TestCaseBase):
         client = AsyncClient()
 
         id = str(uuid4())
-        client.subscribe(destination='jms.queue.events', ack='client',
-                         sub_id=id)
+        client.subscribe(
+            destination='jms.queue.events', ack='client', sub_id=id
+        )
 
         req_frame = client.pop_message()
         self.assertEqual(len(client._subscriptions), 1)
@@ -56,20 +58,23 @@ class AsyncClientTest(TestCaseBase):
     def test_manage_subscription(self):
         client = AsyncClient()
 
-        subscription = client.subscribe(destination='jms.queue.events',
-                                        ack='client',
-                                        sub_id=str(uuid4()))
+        subscription = client.subscribe(
+            destination='jms.queue.events', ack='client', sub_id=str(uuid4())
+        )
         client.unsubscribe(subscription)
         self.assertEqual(len(client._subscriptions), 0)
 
     def test_restore_subcsriptions(self):
         client = AsyncClient()
-        client.subscribe(destination='jms.queue.events', ack='client',
-                         sub_id=str(uuid4()))
-        client.subscribe(destination='jms.queue.events', ack='client',
-                         sub_id=str(uuid4()))
-        client.subscribe(destination='jms.queue.events', ack='client',
-                         sub_id=str(uuid4()))
+        client.subscribe(
+            destination='jms.queue.events', ack='client', sub_id=str(uuid4())
+        )
+        client.subscribe(
+            destination='jms.queue.events', ack='client', sub_id=str(uuid4())
+        )
+        client.subscribe(
+            destination='jms.queue.events', ack='client', sub_id=str(uuid4())
+        )
 
         client.restore_subscriptions()
         self.assertEqual(len(client._subscriptions), 3)
@@ -77,24 +82,31 @@ class AsyncClientTest(TestCaseBase):
     def test_unsubscribe_with_different_id(self):
         client = AsyncClient()
 
-        client.subscribe(destination='jms.queue.events',
-                         ack='client-individual',
-                         sub_id=str(uuid4()))
+        client.subscribe(
+            destination='jms.queue.events',
+            ack='client-individual',
+            sub_id=str(uuid4()),
+        )
         # ignore subscribe frame
         client.pop_message()
 
-        client.unsubscribe(FakeSubscription('jms.queue.events',
-                                            'ad052acb-a934-4e10-8ec3'))
+        client.unsubscribe(
+            FakeSubscription('jms.queue.events', 'ad052acb-a934-4e10-8ec3')
+        )
 
         self.assertEqual(len(client._subscriptions), 1)
         self.assertFalse(client.has_outgoing_messages)
 
     def test_send(self):
         client = AsyncClient()
-        data = (b'{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
-                b'"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}')
-        headers = {Headers.REPLY_TO: 'jms.topic.vdsm_responses',
-                   Headers.CONTENT_LENGTH: '103'}
+        data = (
+            b'{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
+            b'"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}'
+        )
+        headers = {
+            Headers.REPLY_TO: 'jms.topic.vdsm_responses',
+            Headers.CONTENT_LENGTH: '103',
+        }
         # make sure that client can send messages
         client._connected.set()
 
@@ -102,35 +114,44 @@ class AsyncClientTest(TestCaseBase):
 
         req_frame = client.pop_message()
         self.assertEqual(req_frame.command, Command.SEND)
-        self.assertEqual(req_frame.headers['destination'],
-                         'jms.topic.vdsm_requests')
-        self.assertEqual(req_frame.headers[Headers.REPLY_TO],
-                         'jms.topic.vdsm_responses')
+        self.assertEqual(
+            req_frame.headers['destination'], 'jms.topic.vdsm_requests'
+        )
+        self.assertEqual(
+            req_frame.headers[Headers.REPLY_TO], 'jms.topic.vdsm_responses'
+        )
         self.assertEqual(req_frame.body, data)
 
     def test_resend(self):
         client = AsyncClient()
 
-        data = (b'{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
-                b'"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}')
-        headers = {Headers.REPLY_TO: 'jms.topic.vdsm_responses',
-                   Headers.CONTENT_LENGTH: '103'}
+        data = (
+            b'{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
+            b'"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}'
+        )
+        headers = {
+            Headers.REPLY_TO: 'jms.topic.vdsm_responses',
+            Headers.CONTENT_LENGTH: '103',
+        }
 
         with MonkeyPatchScope([(stompclient, 'CALL_TIMEOUT', 0.5)]):
             client.send('jms.topic.vdsm_requests', data, headers)
             client._connected.set()
             req_frame = client.pop_message()
             self.assertEqual(req_frame.command, Command.SEND)
-            self.assertEqual(req_frame.headers['destination'],
-                             'jms.topic.vdsm_requests')
-            self.assertEqual(req_frame.headers[Headers.REPLY_TO],
-                             'jms.topic.vdsm_responses')
+            self.assertEqual(
+                req_frame.headers['destination'], 'jms.topic.vdsm_requests'
+            )
+            self.assertEqual(
+                req_frame.headers[Headers.REPLY_TO], 'jms.topic.vdsm_responses'
+            )
             self.assertEqual(req_frame.body, data)
 
     def test_receive_connected(self):
         client = AsyncClient()
-        frame = Frame(Command.CONNECTED,
-                      {'version': '1.2', Headers.HEARTBEAT: '8000,0'})
+        frame = Frame(
+            Command.CONNECTED, {'version': '1.2', Headers.HEARTBEAT: '8000,0'}
+        )
 
         client.handle_frame(FakeAsyncDispatcher(''), frame)
 
@@ -139,12 +160,16 @@ class AsyncClientTest(TestCaseBase):
     def test_receive_message(self):
         client = AsyncClient()
         id = 'ad052acb-a934-4e10-8ec3-00c7417ef8d1'
-        headers = {Headers.CONTENT_LENGTH: '78',
-                   Headers.DESTINATION: 'jms.topic.vdsm_responses',
-                   Headers.CONTENT_TYPE: 'application/json',
-                   Headers.SUBSCRIPTION: id}
-        body = ('{"jsonrpc": "2.0", "id": "e8a936a6-d886-4cfa-97b9-2d54209053f'
-                'f", "result": []}')
+        headers = {
+            Headers.CONTENT_LENGTH: '78',
+            Headers.DESTINATION: 'jms.topic.vdsm_responses',
+            Headers.CONTENT_TYPE: 'application/json',
+            Headers.SUBSCRIPTION: id,
+        }
+        body = (
+            '{"jsonrpc": "2.0", "id": "e8a936a6-d886-4cfa-97b9-2d54209053f'
+            'f", "result": []}'
+        )
         frame = Frame(command=Command.MESSAGE, headers=headers, body=body)
 
         def message_handler(sub, frame):

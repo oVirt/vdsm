@@ -25,13 +25,9 @@ from vdsm.storage import sp
 from vdsm.storage import spbackends as spb
 
 
-VG = collections.namedtuple("VG", [
-    'vg_mda_size',
-    'vg_mda_free',
-    'extent_size',
-    'extent_count',
-    'free'
-])
+VG = collections.namedtuple(
+    "VG", ['vg_mda_size', 'vg_mda_free', 'extent_size', 'extent_count', 'free']
+)
 
 
 class FakeLVM(object):
@@ -57,33 +53,38 @@ class FakeLVM(object):
 
         for dev in devices:
             self._create_pv(dev, vgName, self._PV_SIZE)
-        pv_name = (tuple(_fqpvname(pdev)
-                         for pdev in real_lvm.normalize_args(devices)))
+        pv_name = tuple(
+            _fqpvname(pdev) for pdev in real_lvm.normalize_args(devices)
+        )
         extent_count = self._calc_vg_pe_count(vgName)
         size = extent_count * self._PV_PE_SIZE
 
-        vg_attr = dict(permission='w',
-                       resizeable='z',
-                       exported='-',
-                       partial='-',
-                       allocation='n',
-                       clustered='-')
-        vg_md = dict(uuid=fake_lvm_uuid(),
-                     name=vgName,
-                     attr=vg_attr,
-                     size=str(size),
-                     free=str(size),
-                     extent_size=str(sc.VG_EXTENT_SIZE),
-                     extent_count=str(extent_count),
-                     free_count=str(extent_count),
-                     tags=(initialTag,),
-                     vg_mda_size=str(metadataSize),
-                     vg_mda_free=None,
-                     lv_count='0',
-                     pv_count=str(len(devices)),
-                     pv_name=pv_name,
-                     writeable=True,
-                     partial='OK')
+        vg_attr = dict(
+            permission='w',
+            resizeable='z',
+            exported='-',
+            partial='-',
+            allocation='n',
+            clustered='-',
+        )
+        vg_md = dict(
+            uuid=fake_lvm_uuid(),
+            name=vgName,
+            attr=vg_attr,
+            size=str(size),
+            free=str(size),
+            extent_size=str(sc.VG_EXTENT_SIZE),
+            extent_count=str(extent_count),
+            free_count=str(extent_count),
+            tags=(initialTag,),
+            vg_mda_size=str(metadataSize),
+            vg_mda_free=None,
+            lv_count='0',
+            pv_count=str(len(devices)),
+            pv_name=pv_name,
+            writeable=True,
+            partial='OK',
+        )
         self.vgmd[vgName] = vg_md
 
         for dev in devices:
@@ -108,13 +109,21 @@ class FakeLVM(object):
         with open(lv_path, "r+") as f:
             f.truncate(size)
 
-    def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
-                 initialTags=()):
+    def createLV(
+        self,
+        vgName,
+        lvName,
+        size,
+        activate=True,
+        contiguous=False,
+        initialTags=(),
+    ):
         try:
             vg_md = self.vgmd[vgName]
         except KeyError:
             raise se.CannotCreateLogicalVolume(
-                ['Fake cmd'], 5, ['Fake out'], ['Fake error'])
+                ['Fake cmd'], 5, ['Fake out'], ['Fake error']
+            )
 
         size = self._size_param_to_bytes(size)
 
@@ -123,31 +132,36 @@ class FakeLVM(object):
         devices = None
 
         state = 'a' if activate else '-'
-        lv_attr = dict(voltype='-',
-                       permission='w',
-                       allocations='i',
-                       fixedminor='-',
-                       state=state,
-                       devopen='-',
-                       target='-',
-                       zero='-')
-        lv_md = dict(uuid=fake_lvm_uuid(),
-                     name=lvName,
-                     vg_name=vgName,
-                     attr=lv_attr,
-                     size=str(size),
-                     seg_start_pe='0',
-                     devices=devices,
-                     tags=initialTags,
-                     writeable=True,
-                     opened=False,
-                     active=bool(activate))
+        lv_attr = dict(
+            voltype='-',
+            permission='w',
+            allocations='i',
+            fixedminor='-',
+            state=state,
+            devopen='-',
+            target='-',
+            zero='-',
+        )
+        lv_md = dict(
+            uuid=fake_lvm_uuid(),
+            name=lvName,
+            vg_name=vgName,
+            attr=lv_attr,
+            size=str(size),
+            seg_start_pe='0',
+            devices=devices,
+            tags=initialTags,
+            writeable=True,
+            opened=False,
+            active=bool(activate),
+        )
 
         lv_count = int(vg_md['lv_count']) + 1
 
         if (vgName, lvName) in self.lvmd:
             raise se.CannotCreateLogicalVolume(
-                ['Fake cmd'], 5, ['Fake out'], ['Fake error'])
+                ['Fake cmd'], 5, ['Fake out'], ['Fake error']
+            )
 
         self.lvmd[(vgName, lvName)] = lv_md
         self.vgmd[vgName]['lv_count'] = str(lv_count)
@@ -162,14 +176,14 @@ class FakeLVM(object):
                 raise se.CannotActivateLogicalVolume(str(e))
 
             if not lv_md['active']:
-                os.rename(self._lvPathInactive(vgName, lv),
-                          self.lvPath(vgName, lv))
+                os.rename(
+                    self._lvPathInactive(vgName, lv), self.lvPath(vgName, lv)
+                )
                 lv_md['active'] = True
                 lv_md['attr']['state'] = 'a'
 
     def deactivateLVs(self, vgName, lvNames):
-        active_lvs = [lv for lv in lvNames
-                      if self._is_lv_active(vgName, lv)]
+        active_lvs = [lv for lv in lvNames if self._is_lv_active(vgName, lv)]
         for lv in active_lvs:
             self._deactivate_lv(vgName, lv)
 
@@ -178,8 +192,7 @@ class FakeLVM(object):
 
     def _deactivate_lv(self, vg, lv):
         lv_md = self.lvmd[(vg, lv)]
-        os.rename(self.lvPath(vg, lv),
-                  self._lvPathInactive(vg, lv))
+        os.rename(self.lvPath(vg, lv), self._lvPathInactive(vg, lv))
         lv_md['active'] = False
         lv_md['attr']['state'] = '-'
 
@@ -190,7 +203,8 @@ class FakeLVM(object):
                 lv_mds.append(self.lvmd[(vg, lv)])
             except KeyError:
                 raise se.LogicalVolumeReplaceTagError(
-                    "cmd", 1, ["out"], ["err"])
+                    "cmd", 1, ["out"], ["err"]
+                )
 
         for lv_md in lv_mds:
             # Adding an existing tag or removing a nonexistent tag are ignored
@@ -238,7 +252,8 @@ class FakeLVM(object):
             vg_md = self.vgmd[vgName]
         except KeyError:
             raise se.VolumeGroupReplaceTagError(
-                ['Fake cmd'], 5, ['Fake out'], ['Fake error'])
+                ['Fake cmd'], 5, ['Fake out'], ['Fake error']
+            )
 
         # Adding an existing tag or removing a nonexistent tag are ignored
         tags = set(vg_md['tags'])
@@ -260,8 +275,9 @@ class FakeLVM(object):
         return self._getLV(vgName, lvName)
 
     def getAllLVs(self, vgName):
-        return [self._getLV(vgName, lv)
-                for vg, lv in self.lvmd if vg == vgName]
+        return [
+            self._getLV(vgName, lv) for vg, lv in self.lvmd if vg == vgName
+        ]
 
     def extendLV(self, vgName, lvName, size_mb, refresh=True):
         try:
@@ -288,23 +304,28 @@ class FakeLVM(object):
         # currently needed by users of FakeLVM, set it to None.
         pe_start = None
         pe_count = (size - self._PV_UNUSABLE) // self._PV_PE_SIZE
-        pv_md = dict(uuid=fake_lvm_uuid(),
-                     name='/dev/mapper/%s' % pv_name,
-                     guid=pv_name,
-                     size=str(pe_count * self._PV_PE_SIZE),
-                     vg_name=vg_name,
-                     vg_uuid=None,  # This is set when the VG is created
-                     pe_start=pe_start,
-                     pe_count=str(pe_count),
-                     pe_alloc_count='0',
-                     mda_count=str(self._PV_MDA_COUNT),
-                     dev_size=str(self._PV_SIZE),
-                     mda_used_count='0')
+        pv_md = dict(
+            uuid=fake_lvm_uuid(),
+            name='/dev/mapper/%s' % pv_name,
+            guid=pv_name,
+            size=str(pe_count * self._PV_PE_SIZE),
+            vg_name=vg_name,
+            vg_uuid=None,  # This is set when the VG is created
+            pe_start=pe_start,
+            pe_count=str(pe_count),
+            pe_alloc_count='0',
+            mda_count=str(self._PV_MDA_COUNT),
+            dev_size=str(self._PV_SIZE),
+            mda_used_count='0',
+        )
         self.pvmd[pv_name] = pv_md
 
     def _calc_vg_pe_count(self, vg_name):
-        return sum(int(pv["pe_count"]) for pv in self.pvmd.values()
-                   if pv["vg_name"] == vg_name)
+        return sum(
+            int(pv["pe_count"])
+            for pv in self.pvmd.values()
+            if pv["vg_name"] == vg_name
+        )
 
 
 _fqpvname = real_lvm._fqpvname
@@ -315,6 +336,7 @@ def fake_lvm_uuid():
 
     def part(size):
         return ''.join(random.choice(chars) for _ in range(size))
+
     return '-'.join(part(size) for size in [6, 4, 4, 4, 4, 6])
 
 
@@ -434,6 +456,7 @@ class FakeDomainMonitor(object):
     This class cannot be used for tests relying over domain
     monitor's functionality itself.
     """
+
     def __init__(self):
         self.onDomainStateChange = MonitorEvent()
         self.monitors = {}
@@ -460,6 +483,7 @@ class FakeTaskManager(object):
     This class cannot be used for tests relying over task
     manager's functionality itself.
     """
+
     def loadDumpedTasks(self, task_dir):
         pass
 
@@ -483,21 +507,29 @@ def fake_repo():
         # /rhev/data-center/mnt/glusterSD
         mnt_glustersd_dir = os.path.join(mnt_dir, sd.GLUSTERSD_DIR)
         os.mkdir(mnt_glustersd_dir)
-        with monkeypatch.MonkeyPatchScope([
-            (sc, 'REPO_DATA_CENTER', repo),
-            (sc, 'REPO_MOUNT_DIR', mnt_dir),
-        ]):
+        with monkeypatch.MonkeyPatchScope(
+            [
+                (sc, 'REPO_DATA_CENTER', repo),
+                (sc, 'REPO_MOUNT_DIR', mnt_dir),
+            ]
+        ):
             yield repo
 
 
-def fake_vg(vg_mda_size=None, vg_mda_free=None, extent_size=None,
-            extent_count=None, free=None):
+def fake_vg(
+    vg_mda_size=None,
+    vg_mda_free=None,
+    extent_size=None,
+    extent_count=None,
+    free=None,
+):
     return VG(vg_mda_size, vg_mda_free, extent_size, extent_count, free)
 
 
 def fake_spm(pool_id, master_version, domains_map):
     pool = sp.StoragePool(pool_id, None, None)
-    pool.setBackend(spb.StoragePoolMemoryBackend(
-        pool, master_version, domains_map))
+    pool.setBackend(
+        spb.StoragePoolMemoryBackend(pool, master_version, domains_map)
+    )
     pool._set_secure()
     return pool

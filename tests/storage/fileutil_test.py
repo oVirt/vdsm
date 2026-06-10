@@ -16,7 +16,7 @@ from vdsm.storage import fileUtils
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
-from . marks import (
+from .marks import (
     requires_root,
     requires_selinux,
     requires_unprivileged_user,
@@ -131,6 +131,7 @@ def test_createdir_file_exists_no_mode():
             with pytest.raises(OSError) as e:
                 fileUtils.createdir(path)
             assert e.value.errno == errno.ENOTDIR
+
 
 # chown tests
 
@@ -314,35 +315,36 @@ def test_atomic_symlink_error_isdir():
             fileUtils.atomic_symlink(target, link)
         assert e.value.errno == errno.EINVAL
 
+
 # normalize path tests
 
 
-@pytest.mark.parametrize("path, normalized_path", [
-    ("server:/path", "server:/path"),
-    ("server://path", "server:/path"),
-    ("server:///path", "server:/path"),
-    ("server:/path/", "server:/path"),
-    ("server:/pa:th", "server:/pa:th"),
-    ("server:/path//", "server:/path"),
-    ("server:/", "server:/"),
-    ("server://", "server:/"),
-    ("server:///", "server:/"),
-    ("12.34.56.78:/", "12.34.56.78:/"),
-    ("[2001:db8::60fe:5bf:febc:912]:/", "[2001:db8::60fe:5bf:febc:912]:/"),
-    ("server:01234:/", "server:01234:"),
-
-    # Remote paths with a port (relevant for cephfs mounts)
-    ("server:6789:/path", "server:6789:/path"),
-    ("server:6789:/", "server:6789:/"),
-
-    # Local paths
-    ("/path/to/device", "/path/to/device"),
-    ("/path/to//device/", "/path/to/device"),
-
-    # Other paths
-    ("proc", "proc"),
-    ("path//to///device/", "path/to/device"),
-])
+@pytest.mark.parametrize(
+    "path, normalized_path",
+    [
+        ("server:/path", "server:/path"),
+        ("server://path", "server:/path"),
+        ("server:///path", "server:/path"),
+        ("server:/path/", "server:/path"),
+        ("server:/pa:th", "server:/pa:th"),
+        ("server:/path//", "server:/path"),
+        ("server:/", "server:/"),
+        ("server://", "server:/"),
+        ("server:///", "server:/"),
+        ("12.34.56.78:/", "12.34.56.78:/"),
+        ("[2001:db8::60fe:5bf:febc:912]:/", "[2001:db8::60fe:5bf:febc:912]:/"),
+        ("server:01234:/", "server:01234:"),
+        # Remote paths with a port (relevant for cephfs mounts)
+        ("server:6789:/path", "server:6789:/path"),
+        ("server:6789:/", "server:6789:/"),
+        # Local paths
+        ("/path/to/device", "/path/to/device"),
+        ("/path/to//device/", "/path/to/device"),
+        # Other paths
+        ("proc", "proc"),
+        ("path//to///device/", "path/to/device"),
+    ],
+)
 def test_normalize_path_equals(path, normalized_path):
     assert normalized_path == fileUtils.normalize_path(path)
 

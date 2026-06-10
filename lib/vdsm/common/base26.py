@@ -41,6 +41,6 @@ def decode(value):
         val = ord(char) - ord('a') + 1
         if val < 1 or val > 26:
             raise ValueError('Invalid character %r in %r' % (char, value))
-        index += val * (26 ** pos)
+        index += val * (26**pos)
 
     return index - 1

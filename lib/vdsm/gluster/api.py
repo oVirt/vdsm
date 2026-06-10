@@ -58,14 +58,16 @@ GLUSTER_RPM_PACKAGES = (
     ('gluster-swift-doc', ('gluster-swift-doc',)),
     ('gluster-swift-object', ('gluster-swift-object',)),
     ('gluster-swift-proxy', ('gluster-swift-proxy',)),
-    ('gluster-swift-plugin', ('gluster-swift-plugin',)))
+    ('gluster-swift-plugin', ('gluster-swift-plugin',)),
+)
 
 GLUSTER_DEB_PACKAGES = (
     ('glusterfs', 'glusterfs-client'),
     ('glusterfs-fuse', 'libglusterfs0'),
     ('glusterfs-geo-replication', 'libglusterfs0'),
     ('glusterfs-rdma', 'libglusterfs0'),
-    ('glusterfs-server', 'glusterfs-server'))
+    ('glusterfs-server', 'glusterfs-server'),
+)
 
 
 def exportAsVerb(func):
@@ -89,7 +91,8 @@ def glusterAdditionalFeatures():
     glusterfeatureSampleVerbs = {
         'volumeSnapshotCreate': 'GLUSTER_SNAPSHOT',
         'volumeGeoRepSessionCreate': 'GLUSTER_GEO_REPLICATION',
-        'storageDevicesList': 'GLUSTER_BRICK_MANAGEMENT'}
+        'storageDevicesList': 'GLUSTER_BRICK_MANAGEMENT',
+    }
     additionalFeatures = []
     for feature, code in glusterfeatureSampleVerbs.items():
         if feature in dir(GlusterApi):
@@ -141,8 +144,9 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
             raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 
     try:
-        existingKeys = [" ".join(line.split()[:-1])
-                        for line in existingKeyLines]
+        existingKeys = [
+            " ".join(line.split()[:-1]) for line in existingKeyLines
+        ]
         existingKeyDict = dict(zip(existingKeys, existingKeyLines))
 
         outLines = existingKeyLines
@@ -177,11 +181,16 @@ def mountMetaVolume(metaVolumeName):
     def _metaVolumeFstabUpdate(metaVolumeName):
         try:
             fs_spec = "127.0.0.1:" + metaVolumeName
-            fstab.FsTab().add(fs_spec, META_VOL_MOUNT_POINT, FS_TYPE,
-                              mntOpts=['defaults', '_netdev'])
+            fstab.FsTab().add(
+                fs_spec,
+                META_VOL_MOUNT_POINT,
+                FS_TYPE,
+                mntOpts=['defaults', '_netdev'],
+            )
         except IOError as e:
             raise ge.GlusterMetaVolumeFstabUpdateFailedException(
-                err=["fstab update failed", str(e)])
+                err=["fstab update failed", str(e)]
+            )
         except ge.GlusterHostStorageDeviceFsTabFoundException as e:
             logging.warn(e.message)
 
@@ -190,26 +199,33 @@ def mountMetaVolume(metaVolumeName):
     if os.path.ismount(META_VOL_MOUNT_POINT):
         try:
             fs_spec = mount.getMountFromTarget(
-                os.path.realpath(META_VOL_MOUNT_POINT)).fs_spec
+                os.path.realpath(META_VOL_MOUNT_POINT)
+            ).fs_spec
             if fs_spec.endswith(META_VOLUME):
-                logging.warn("Meta Volume %s already mounted at %s" % (
-                    META_VOLUME, META_VOL_MOUNT_POINT))
+                logging.warn(
+                    "Meta Volume %s already mounted at %s"
+                    % (META_VOLUME, META_VOL_MOUNT_POINT)
+                )
                 return True
             else:
                 raise ge.GlusterMetaVolumeMountFailedException(
-                    err=["%s already mounted at %s" % (
-                        fs_spec, META_VOL_MOUNT_POINT)])
+                    err=[
+                        "%s already mounted at %s"
+                        % (fs_spec, META_VOL_MOUNT_POINT)
+                    ]
+                )
         except OSError as e:
             raise ge.GlusterMetaVolumeMountFailedException(
-                err=["Failed to check if volume is already mounted",
-                     str(e)])
+                err=["Failed to check if volume is already mounted", str(e)]
+            )
     else:
         try:
             os.makedirs(META_VOL_MOUNT_POINT, 0o755)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise ge.GlusterMetaVolumeMountFailedException(
-                    err=['Mount Point creation failed', str(e)])
+                    err=['Mount Point creation failed', str(e)]
+                )
 
     command = [constants.EXT_MOUNT, META_VOL_MOUNT_POINT]
     try:
@@ -237,7 +253,8 @@ def snapshotScheduleFlagUpdate(value):
             os.makedirs(LOCK_FILE_DIR, 0o755)
         except OSError as e:
             raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
-                err=[str(e)])
+                err=[str(e)]
+            )
 
     try:
         f = os.open(LOCK_FILE, os.O_CREAT | os.O_RDWR | os.O_NONBLOCK)
@@ -248,14 +265,15 @@ def snapshotScheduleFlagUpdate(value):
         except IOError as e:
             os.close(f)
             raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
-                err=["unable to get the lock", str(e)])
+                err=["unable to get the lock", str(e)]
+            )
         except OSError as e:
             os.close(f)
             raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
-                err=[str(e)])
+                err=[str(e)]
+            )
     except (IOError, OSError) as e:
-        raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
-            err=[str(e)])
+        raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(err=[str(e)])
     return True
 
 
@@ -279,17 +297,33 @@ class GlusterApi(object):
 
     @exportAsVerb
     def volumesList(self, volumeName=None, remoteServer=None, options=None):
-        return {'volumes': self.svdsmProxy.glusterVolumeInfo(volumeName,
-                                                             remoteServer)}
+        return {
+            'volumes': self.svdsmProxy.glusterVolumeInfo(
+                volumeName, remoteServer
+            )
+        }
 
     @exportAsVerb
-    def volumeCreate(self, volumeName, brickList, replicaCount=0,
-                     stripeCount=0, transportList=[],
-                     force=False, arbiter=False, options=None):
-        return self.svdsmProxy.glusterVolumeCreate(volumeName, brickList,
-                                                   replicaCount, stripeCount,
-                                                   transportList, force,
-                                                   arbiter)
+    def volumeCreate(
+        self,
+        volumeName,
+        brickList,
+        replicaCount=0,
+        stripeCount=0,
+        transportList=[],
+        force=False,
+        arbiter=False,
+        options=None,
+    ):
+        return self.svdsmProxy.glusterVolumeCreate(
+            volumeName,
+            brickList,
+            replicaCount,
+            stripeCount,
+            transportList,
+            force,
+            arbiter,
+        )
 
     @exportAsVerb
     def volumeStart(self, volumeName, force=False, options=None):
@@ -316,20 +350,26 @@ class GlusterApi(object):
         self.svdsmProxy.glusterVolumeReset(volumeName, option, force)
 
     @exportAsVerb
-    def volumeBrickAdd(self, volumeName, brickList, replicaCount=0,
-                       stripeCount=0, force=False, options=None):
-        self.svdsmProxy.glusterVolumeAddBrick(volumeName,
-                                              brickList,
-                                              replicaCount,
-                                              stripeCount,
-                                              force)
+    def volumeBrickAdd(
+        self,
+        volumeName,
+        brickList,
+        replicaCount=0,
+        stripeCount=0,
+        force=False,
+        options=None,
+    ):
+        self.svdsmProxy.glusterVolumeAddBrick(
+            volumeName, brickList, replicaCount, stripeCount, force
+        )
 
     @exportAsVerb
-    def volumeRebalanceStart(self, volumeName, rebalanceType="",
-                             force=False, options=None):
-        return self.svdsmProxy.glusterVolumeRebalanceStart(volumeName,
-                                                           rebalanceType,
-                                                           force)
+    def volumeRebalanceStart(
+        self, volumeName, rebalanceType="", force=False, options=None
+    ):
+        return self.svdsmProxy.glusterVolumeRebalanceStart(
+            volumeName, rebalanceType, force
+        )
 
     @exportAsVerb
     def volumeRebalanceStop(self, volumeName, force=False, options=None):
@@ -340,59 +380,70 @@ class GlusterApi(object):
         return self.svdsmProxy.glusterVolumeRebalanceStatus(volumeName)
 
     @exportAsVerb
-    def volumeReplaceBrickCommitForce(self, volumeName, existingBrick,
-                                      newBrick, options=None):
-        self.svdsmProxy.glusterVolumeReplaceBrickCommitForce(volumeName,
-                                                             existingBrick,
-                                                             newBrick)
+    def volumeReplaceBrickCommitForce(
+        self, volumeName, existingBrick, newBrick, options=None
+    ):
+        self.svdsmProxy.glusterVolumeReplaceBrickCommitForce(
+            volumeName, existingBrick, newBrick
+        )
 
     @exportAsVerb
-    def volumeRemoveBrickStart(self, volumeName, brickList,
-                               replicaCount=0, options=None):
-        return self.svdsmProxy.glusterVolumeRemoveBrickStart(volumeName,
-                                                             brickList,
-                                                             replicaCount)
+    def volumeRemoveBrickStart(
+        self, volumeName, brickList, replicaCount=0, options=None
+    ):
+        return self.svdsmProxy.glusterVolumeRemoveBrickStart(
+            volumeName, brickList, replicaCount
+        )
 
     @exportAsVerb
-    def volumeRemoveBrickStop(self, volumeName, brickList,
-                              replicaCount=0, options=None):
-        return self.svdsmProxy.glusterVolumeRemoveBrickStop(volumeName,
-                                                            brickList,
-                                                            replicaCount)
+    def volumeRemoveBrickStop(
+        self, volumeName, brickList, replicaCount=0, options=None
+    ):
+        return self.svdsmProxy.glusterVolumeRemoveBrickStop(
+            volumeName, brickList, replicaCount
+        )
 
     @exportAsVerb
-    def volumeRemoveBrickStatus(self, volumeName, brickList,
-                                replicaCount=0, options=None):
-        return self.svdsmProxy.glusterVolumeRemoveBrickStatus(volumeName,
-                                                              brickList,
-                                                              replicaCount)
+    def volumeRemoveBrickStatus(
+        self, volumeName, brickList, replicaCount=0, options=None
+    ):
+        return self.svdsmProxy.glusterVolumeRemoveBrickStatus(
+            volumeName, brickList, replicaCount
+        )
 
     @exportAsVerb
-    def volumeRemoveBrickCommit(self, volumeName, brickList,
-                                replicaCount=0, options=None):
-        self.svdsmProxy.glusterVolumeRemoveBrickCommit(volumeName,
-                                                       brickList,
-                                                       replicaCount)
+    def volumeRemoveBrickCommit(
+        self, volumeName, brickList, replicaCount=0, options=None
+    ):
+        self.svdsmProxy.glusterVolumeRemoveBrickCommit(
+            volumeName, brickList, replicaCount
+        )
 
     @exportAsVerb
-    def volumeRemoveBrickForce(self, volumeName, brickList,
-                               replicaCount=0, options=None):
-        self.svdsmProxy.glusterVolumeRemoveBrickForce(volumeName, brickList,
-                                                      replicaCount)
+    def volumeRemoveBrickForce(
+        self, volumeName, brickList, replicaCount=0, options=None
+    ):
+        self.svdsmProxy.glusterVolumeRemoveBrickForce(
+            volumeName, brickList, replicaCount
+        )
 
     def _computeVolumeStats(self, data):
         total = data.f_blocks * data.f_bsize
         free = data.f_bfree * data.f_bsize
         used = total - free
-        return {'sizeTotal': str(total),
-                'sizeFree': str(free),
-                'sizeUsed': str(used)}
+        return {
+            'sizeTotal': str(total),
+            'sizeFree': str(free),
+            'sizeUsed': str(used),
+        }
 
     @exportAsVerb
-    def volumeStatus(self, volumeName, brick=None, statusOption=None,
-                     options=None):
-        status = self.svdsmProxy.glusterVolumeStatus(volumeName, brick,
-                                                     statusOption)
+    def volumeStatus(
+        self, volumeName, brick=None, statusOption=None, options=None
+    ):
+        status = self.svdsmProxy.glusterVolumeStatus(
+            volumeName, brick, statusOption
+        )
         if statusOption == 'detail':
             data = self.svdsmProxy.glusterVolumeStatvfs(volumeName)
             status['volumeStatsInfo'] = self._computeVolumeStats(data)
@@ -454,20 +505,36 @@ class GlusterApi(object):
 
     @exportAsVerb
     def hookRead(self, glusterCmd, hookLevel, hookName, options=None):
-        return self.svdsmProxy.glusterHookRead(glusterCmd, hookLevel,
-                                               hookName)
+        return self.svdsmProxy.glusterHookRead(glusterCmd, hookLevel, hookName)
 
     @exportAsVerb
-    def hookUpdate(self, glusterCmd, hookLevel, hookName, hookData,
-                   hookChecksum, options=None):
-        self.svdsmProxy.glusterHookUpdate(glusterCmd, hookLevel, hookName,
-                                          hookData, hookChecksum)
+    def hookUpdate(
+        self,
+        glusterCmd,
+        hookLevel,
+        hookName,
+        hookData,
+        hookChecksum,
+        options=None,
+    ):
+        self.svdsmProxy.glusterHookUpdate(
+            glusterCmd, hookLevel, hookName, hookData, hookChecksum
+        )
 
     @exportAsVerb
-    def hookAdd(self, glusterCmd, hookLevel, hookName, hookData, hookChecksum,
-                enable=False, options=None):
-        self.svdsmProxy.glusterHookAdd(glusterCmd, hookLevel, hookName,
-                                       hookData, hookChecksum, enable)
+    def hookAdd(
+        self,
+        glusterCmd,
+        hookLevel,
+        hookName,
+        hookData,
+        hookChecksum,
+        enable=False,
+        options=None,
+    ):
+        self.svdsmProxy.glusterHookAdd(
+            glusterCmd, hookLevel, hookName, hookData, hookChecksum, enable
+        )
 
     @exportAsVerb
     def hookRemove(self, glusterCmd, hookLevel, hookName, options=None):
@@ -479,8 +546,7 @@ class GlusterApi(object):
 
     @exportAsVerb
     def servicesAction(self, serviceNames, action, options=None):
-        status = self.svdsmProxy.glusterServicesAction(serviceNames,
-                                                       action)
+        status = self.svdsmProxy.glusterServicesAction(serviceNames, action)
         return {'services': status}
 
     @exportAsVerb
@@ -504,30 +570,42 @@ class GlusterApi(object):
         return {'deviceInfo': status}
 
     @exportAsVerb
-    def volumeGeoRepSessionStart(self, volumeName, remoteHost,
-                                 remoteVolumeName,
-                                 remoteUserName=None,
-                                 force=False, options=None):
-        self.svdsmProxy.glusterVolumeGeoRepSessionStart(volumeName,
-                                                        remoteHost,
-                                                        remoteVolumeName,
-                                                        remoteUserName,
-                                                        force)
+    def volumeGeoRepSessionStart(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        force=False,
+        options=None,
+    ):
+        self.svdsmProxy.glusterVolumeGeoRepSessionStart(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName, force
+        )
 
     @exportAsVerb
-    def volumeGeoRepSessionStop(self, volumeName, remoteHost,
-                                remoteVolumeName, remoteUserName=None,
-                                force=False, options=None):
-        self.svdsmProxy.glusterVolumeGeoRepSessionStop(volumeName,
-                                                       remoteHost,
-                                                       remoteVolumeName,
-                                                       remoteUserName,
-                                                       force)
+    def volumeGeoRepSessionStop(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        force=False,
+        options=None,
+    ):
+        self.svdsmProxy.glusterVolumeGeoRepSessionStop(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName, force
+        )
 
     @exportAsVerb
-    def volumeGeoRepSessionList(self, volumeName=None, remoteHost=None,
-                                remoteVolumeName=None, remoteUserName=None,
-                                options=None):
+    def volumeGeoRepSessionList(
+        self,
+        volumeName=None,
+        remoteHost=None,
+        remoteVolumeName=None,
+        remoteUserName=None,
+        options=None,
+    ):
         status = self.svdsmProxy.glusterVolumeGeoRepStatus(
             volumeName,
             remoteHost,
@@ -537,80 +615,113 @@ class GlusterApi(object):
         return {'sessions': status}
 
     @exportAsVerb
-    def volumeGeoRepSessionStatus(self, volumeName, remoteHost,
-                                  remoteVolumeName, remoteUserName=None,
-                                  options=None):
+    def volumeGeoRepSessionStatus(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        options=None,
+    ):
         status = self.svdsmProxy.glusterVolumeGeoRepStatus(
-            volumeName,
-            remoteHost,
-            remoteVolumeName,
-            remoteUserName
+            volumeName, remoteHost, remoteVolumeName, remoteUserName
         )
         return {'sessionStatus': status}
 
     @exportAsVerb
-    def volumeGeoRepSessionPause(self, volumeName, remoteHost,
-                                 remoteVolumeName, remoteUserName=None,
-                                 force=False, options=None):
-        self.svdsmProxy.glusterVolumeGeoRepSessionPause(volumeName,
-                                                        remoteHost,
-                                                        remoteVolumeName,
-                                                        remoteUserName,
-                                                        force)
+    def volumeGeoRepSessionPause(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        force=False,
+        options=None,
+    ):
+        self.svdsmProxy.glusterVolumeGeoRepSessionPause(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName, force
+        )
 
     @exportAsVerb
-    def volumeGeoRepSessionResume(self, volumeName, remoteHost,
-                                  remoteVolumeName, remoteUserName=None,
-                                  force=False, options=None):
-        self.svdsmProxy.glusterVolumeGeoRepSessionResume(volumeName,
-                                                         remoteHost,
-                                                         remoteVolumeName,
-                                                         remoteUserName,
-                                                         force)
+    def volumeGeoRepSessionResume(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        force=False,
+        options=None,
+    ):
+        self.svdsmProxy.glusterVolumeGeoRepSessionResume(
+            volumeName, remoteHost, remoteVolumeName, remoteUserName, force
+        )
 
     @exportAsVerb
-    def volumeGeoRepConfigList(self, volumeName, remoteHost,
-                               remoteVolumeName, remoteUserName=None,
-                               options=None):
+    def volumeGeoRepConfigList(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        options=None,
+    ):
         status = self.svdsmProxy.glusterVolumeGeoRepConfig(
             volumeName,
             remoteHost,
             remoteVolumeName,
-            remoteUserName=remoteUserName
+            remoteUserName=remoteUserName,
         )
         return {'sessionConfig': status}
 
     @exportAsVerb
-    def volumeGeoRepConfigSet(self, volumeName, remoteHost, remoteVolumeName,
-                              optionName, optionValue, remoteUserName=None,
-                              options=None):
-        self.svdsmProxy.glusterVolumeGeoRepConfig(volumeName,
-                                                  remoteHost,
-                                                  remoteVolumeName,
-                                                  optionName,
-                                                  optionValue,
-                                                  remoteUserName)
-
-    @exportAsVerb
-    def volumeGeoRepConfigReset(self, volumeName, remoteHost,
-                                remoteVolumeName, optionName,
-                                remoteUserName=None, options=None):
+    def volumeGeoRepConfigSet(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        optionName,
+        optionValue,
+        remoteUserName=None,
+        options=None,
+    ):
         self.svdsmProxy.glusterVolumeGeoRepConfig(
             volumeName,
             remoteHost,
             remoteVolumeName,
             optionName,
-            remoteUserName=remoteUserName)
+            optionValue,
+            remoteUserName,
+        )
 
     @exportAsVerb
-    def volumeSnapshotCreate(self, volumeName, snapName,
-                             snapDescription=None, force=False,
-                             options=None):
-        return self.svdsmProxy.glusterSnapshotCreate(
+    def volumeGeoRepConfigReset(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        optionName,
+        remoteUserName=None,
+        options=None,
+    ):
+        self.svdsmProxy.glusterVolumeGeoRepConfig(
             volumeName,
-            snapName,
-            snapDescription,
-            force
+            remoteHost,
+            remoteVolumeName,
+            optionName,
+            remoteUserName=remoteUserName,
+        )
+
+    @exportAsVerb
+    def volumeSnapshotCreate(
+        self,
+        volumeName,
+        snapName,
+        snapDescription=None,
+        force=False,
+        options=None,
+    ):
+        return self.svdsmProxy.glusterSnapshotCreate(
+            volumeName, snapName, snapDescription, force
         )
 
     @exportAsVerb
@@ -639,39 +750,48 @@ class GlusterApi(object):
         try:
             status = self.svdsmProxy.glusterSnapshotConfig()
         except ge.GlusterSnapshotConfigFailedException as e:
-            raise ge.GlusterSnapshotConfigGetFailedException(rc=e.rc,
-                                                             err=e.err)
+            raise ge.GlusterSnapshotConfigGetFailedException(
+                rc=e.rc, err=e.err
+            )
         return {'snapshotConfig': status}
 
     @exportAsVerb
     def volumeSnapshotConfigList(self, volumeName, options=None):
         try:
             status = self.svdsmProxy.glusterSnapshotConfig(
-                volumeName=volumeName)
+                volumeName=volumeName
+            )
         except ge.GlusterSnapshotConfigFailedException as e:
-            raise ge.GlusterSnapshotConfigGetFailedException(rc=e.rc,
-                                                             err=e.err)
+            raise ge.GlusterSnapshotConfigGetFailedException(
+                rc=e.rc, err=e.err
+            )
         return {'snapshotConfig': status}
 
     @exportAsVerb
-    def volumeSnapshotConfigSet(self, volumeName, optionName, optionValue,
-                                options=None):
+    def volumeSnapshotConfigSet(
+        self, volumeName, optionName, optionValue, options=None
+    ):
         try:
-            self.svdsmProxy.glusterSnapshotConfig(volumeName=volumeName,
-                                                  optionName=optionName,
-                                                  optionValue=optionValue)
+            self.svdsmProxy.glusterSnapshotConfig(
+                volumeName=volumeName,
+                optionName=optionName,
+                optionValue=optionValue,
+            )
         except ge.GlusterSnapshotConfigFailedException as e:
-            raise ge.GlusterSnapshotConfigSetFailedException(rc=e.rc,
-                                                             err=e.err)
+            raise ge.GlusterSnapshotConfigSetFailedException(
+                rc=e.rc, err=e.err
+            )
 
     @exportAsVerb
     def snapshotConfigSet(self, optionName, optionValue, options=None):
         try:
-            self.svdsmProxy.glusterSnapshotConfig(optionName=optionName,
-                                                  optionValue=optionValue)
+            self.svdsmProxy.glusterSnapshotConfig(
+                optionName=optionName, optionValue=optionValue
+            )
         except ge.GlusterSnapshotConfigFailedException as e:
-            raise ge.GlusterSnapshotConfigSetFailedException(rc=e.rc,
-                                                             err=e.err)
+            raise ge.GlusterSnapshotConfigSetFailedException(
+                rc=e.rc, err=e.err
+            )
 
     @exportAsVerb
     def volumeSnapshotList(self, volumeName=None, options=None):
@@ -679,13 +799,18 @@ class GlusterApi(object):
         return {'snapshotList': status}
 
     @exportAsVerb
-    def createBrick(self, name, mountPoint, devList, fsType=None,
-                    raidParams={}, options=None):
-        status = self.svdsmProxy.glusterCreateBrick(name,
-                                                    mountPoint,
-                                                    devList,
-                                                    fsType,
-                                                    raidParams)
+    def createBrick(
+        self,
+        name,
+        mountPoint,
+        devList,
+        fsType=None,
+        raidParams={},
+        options=None,
+    ):
+        status = self.svdsmProxy.glusterCreateBrick(
+            name, mountPoint, devList, fsType, raidParams
+        )
         return {'device': status}
 
     @exportAsVerb
@@ -699,40 +824,54 @@ class GlusterApi(object):
         self.svdsmProxy.glusterUpdateGeoRepKeys(userName, geoRepPubKeys)
 
     @exportAsVerb
-    def geoRepMountBrokerSetup(self, remoteUserName, remoteGroupName,
-                               remoteVolumeName, partial=False, options=None):
+    def geoRepMountBrokerSetup(
+        self,
+        remoteUserName,
+        remoteGroupName,
+        remoteVolumeName,
+        partial=False,
+        options=None,
+    ):
         self.svdsmProxy.glusterCreateMountBrokerRoot(remoteUserName)
         if not partial:
-            mountBrokerOptions = {'mountbroker-root': MOUNT_BROKER_ROOT,
-                                  'geo-replication-log-group': remoteGroupName,
-                                  'rpc-auth-allow-insecure': 'on'}
+            mountBrokerOptions = {
+                'mountbroker-root': MOUNT_BROKER_ROOT,
+                'geo-replication-log-group': remoteGroupName,
+                'rpc-auth-allow-insecure': 'on',
+            }
             for optionName, optionValue in mountBrokerOptions.items():
-                self.svdsmProxy.glusterExecuteMountBrokerOpt(optionName,
-                                                             optionValue)
-            self.svdsmProxy.glusterExecuteMountBrokerUserAdd(remoteUserName,
-                                                             remoteVolumeName)
+                self.svdsmProxy.glusterExecuteMountBrokerOpt(
+                    optionName, optionValue
+                )
+            self.svdsmProxy.glusterExecuteMountBrokerUserAdd(
+                remoteUserName, remoteVolumeName
+            )
 
     @exportAsVerb
-    def volumeGeoRepSessionCreate(self, volumeName, remoteHost,
-                                  remotVolumeName, remoteUserName=None,
-                                  force=False, options=None):
+    def volumeGeoRepSessionCreate(
+        self,
+        volumeName,
+        remoteHost,
+        remotVolumeName,
+        remoteUserName=None,
+        force=False,
+        options=None,
+    ):
         self.svdsmProxy.glusterVolumeGeoRepSessionCreate(
-            volumeName,
-            remoteHost,
-            remotVolumeName,
-            remoteUserName,
-            force
+            volumeName, remoteHost, remotVolumeName, remoteUserName, force
         )
 
     @exportAsVerb
-    def volumeGeoRepSessionDelete(self, volumeName, remoteHost,
-                                  remoteVolumeName, remoteUserName=None,
-                                  options=None):
+    def volumeGeoRepSessionDelete(
+        self,
+        volumeName,
+        remoteHost,
+        remoteVolumeName,
+        remoteUserName=None,
+        options=None,
+    ):
         self.svdsmProxy.glusterVolumeGeoRepSessionDelete(
-            volumeName,
-            remoteHost,
-            remoteVolumeName,
-            remoteUserName
+            volumeName, remoteHost, remoteVolumeName, remoteUserName
         )
 
     @exportAsVerb
@@ -779,16 +918,16 @@ class GlusterApi(object):
         self.svdsmProxy.glusterWebhookDelete(url)
 
     @exportAsVerb
-    def volumeResetBrickStart(self, volumeName,
-                              existingBrick, options=None):
-        self.svdsmProxy.glusterVolumeResetBrickStart(volumeName,
-                                                     existingBrick)
+    def volumeResetBrickStart(self, volumeName, existingBrick, options=None):
+        self.svdsmProxy.glusterVolumeResetBrickStart(volumeName, existingBrick)
 
     @exportAsVerb
-    def volumeResetBrickCommitForce(self, volumeName,
-                                    existingBrick, options=None):
-        self.svdsmProxy.glusterVolumeResetBrickCommitForce(volumeName,
-                                                           existingBrick)
+    def volumeResetBrickCommitForce(
+        self, volumeName, existingBrick, options=None
+    ):
+        self.svdsmProxy.glusterVolumeResetBrickCommitForce(
+            volumeName, existingBrick
+        )
 
     @exportAsVerb
     def logicalVolumeList(self, options=None):

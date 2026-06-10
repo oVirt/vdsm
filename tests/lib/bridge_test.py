@@ -27,37 +27,48 @@ _COPIED_API_OBJECTS = (
 )
 
 
-class Host():
+class Host:
     ctorArgs = []
 
-    def fenceNode(self, addr, port, agent, username, password, action,
-                  secure=False, options='', policy=None):
+    def fenceNode(
+        self,
+        addr,
+        port,
+        agent,
+        username,
+        password,
+        action,
+        secure=False,
+        options='',
+        policy=None,
+    ):
         if options == 'port=15':
-            return {'status': {'code': 0, 'message': 'Done'},
-                    'power': 'on'}
+            return {'status': {'code': 0, 'message': 'Done'}, 'power': 'on'}
         else:
             return {'status': {'code': -1, 'message': 'Failed'}}
 
     def getCapabilities(self):
-        return {'status': {'code': 0, 'message': 'Done'},
-                'info': {'My caps': 'My capabilites'}}
+        return {
+            'status': {'code': 0, 'message': 'Done'},
+            'info': {'My caps': 'My capabilites'},
+        }
 
     def ping(self):
         raise GeneralException("Kaboom!!!")
 
-    def getDeviceList(self, storageType=None, guids=(), checkStatus=True,
-                      refresh=True):
+    def getDeviceList(
+        self, storageType=None, guids=(), checkStatus=True, refresh=True
+    ):
         if storageType != 3:
             return {'status': {'code': -1, 'message': 'Failed'}}
         if not isinstance(guids, tuple):
             return {'status': {'code': -1, 'message': 'Failed'}}
         if checkStatus:
             return {'status': {'code': -1, 'message': 'Failed'}}
-        return {'status': {'code': 0, 'message': 'Done'},
-                'devList': []}
+        return {'status': {'code': 0, 'message': 'Done'}, 'devList': []}
 
 
-class VM():
+class VM:
     ctorArgs = ['vmID']
 
     def __init__(self, UUID):
@@ -65,25 +76,32 @@ class VM():
 
     def migrationCreate(self, params, incomingLimit):
         if self._UUID == params['vmID'] and incomingLimit == 42:
-            return {'status': {'code': 0, 'message': 'Done'},
-                    'migrationPort': 0, 'params': {}}
+            return {
+                'status': {'code': 0, 'message': 'Done'},
+                'migrationPort': 0,
+                'params': {},
+            }
         else:
             return {'status': {'code': -1, 'message': 'Fail'}}
 
 
-class StorageDomain():
+class StorageDomain:
     ctorArgs = []
 
     def detach(
-            self,
-            storagedomainID,
-            spUUID,
-            masterSdUUID=None,
-            masterVersion=0,
-            force=False):
-        if (spUUID == '00000002-0002-0002-0002-0000000000f6' and
-            masterSdUUID is None and masterVersion == 0 and
-                force is not False):
+        self,
+        storagedomainID,
+        spUUID,
+        masterSdUUID=None,
+        masterVersion=0,
+        force=False,
+    ):
+        if (
+            spUUID == '00000002-0002-0002-0002-0000000000f6'
+            and masterSdUUID is None
+            and masterVersion == 0
+            and force is not False
+        ):
             return {'status': {'code': 0, 'message': 'Done'}}
         else:
             return {'status': {'code': -1, 'message': 'Fail'}}
@@ -129,32 +147,44 @@ class BridgeTests(TestCaseBase):
     def testMethodWithManyOptionalAttributes(self):
         bridge = DynamicBridge()
 
-        params = {"addr": "rack05-pdu01-lab4.tlv.redhat.com", "port": "",
-                  "agent": "apc_snmp", "username": "emesika",
-                  "password": "pass", "action": "off", "options": "port=15"}
+        params = {
+            "addr": "rack05-pdu01-lab4.tlv.redhat.com",
+            "port": "",
+            "agent": "apc_snmp",
+            "username": "emesika",
+            "password": "pass",
+            "action": "off",
+            "options": "port=15",
+        }
 
-        self.assertEqual(bridge.dispatch('Host.fenceNode')(**params),
-                         {'power': 'on'})
+        self.assertEqual(
+            bridge.dispatch('Host.fenceNode')(**params), {'power': 'on'}
+        )
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testMethodWithNoParams(self):
         bridge = DynamicBridge()
 
         bridge.register_server_address('127.0.0.1')
-        self.assertEqual(bridge.dispatch('Host.getCapabilities')()
-                         ['My caps'], 'My capabilites')
+        self.assertEqual(
+            bridge.dispatch('Host.getCapabilities')()['My caps'],
+            'My capabilites',
+        )
         bridge.unregister_server_address()
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testDetach(self):
         bridge = DynamicBridge()
 
-        params = {"storagepoolID": "00000002-0002-0002-0002-0000000000f6",
-                  "force": "True",
-                  "storagedomainID": "773adfc7-10d4-4e60-b700-3272ee1871f9"}
+        params = {
+            "storagepoolID": "00000002-0002-0002-0002-0000000000f6",
+            "force": "True",
+            "storagedomainID": "773adfc7-10d4-4e60-b700-3272ee1871f9",
+        }
 
-        self.assertEqual(bridge.dispatch('StorageDomain.detach')(**params),
-                         None)
+        self.assertEqual(
+            bridge.dispatch('StorageDomain.detach')(**params), None
+        )
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testHookError(self):
@@ -169,11 +199,15 @@ class BridgeTests(TestCaseBase):
     def testMethodWithIntParam(self):
         bridge = DynamicBridge()
 
-        params = {"vmID": "773adfc7-10d4-4e60-b700-3272ee1871f9",
-                  "params": {"vmID": "773adfc7-10d4-4e60-b700-3272ee1871f9"},
-                  "incomingLimit": 42}
-        self.assertEqual(bridge.dispatch('VM.migrationCreate')(**params),
-                         {'migrationPort': 0, 'params': {}})
+        params = {
+            "vmID": "773adfc7-10d4-4e60-b700-3272ee1871f9",
+            "params": {"vmID": "773adfc7-10d4-4e60-b700-3272ee1871f9"},
+            "incomingLimit": 42,
+        }
+        self.assertEqual(
+            bridge.dispatch('VM.migrationCreate')(**params),
+            {'migrationPort': 0, 'params': {}},
+        )
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testDefaultValues(self):
@@ -181,5 +215,4 @@ class BridgeTests(TestCaseBase):
 
         params = {'storageType': 3, 'checkStatus': False}
 
-        self.assertEqual(bridge.dispatch('Host.getDeviceList')(**params),
-                         [])
+        self.assertEqual(bridge.dispatch('Host.getDeviceList')(**params), [])

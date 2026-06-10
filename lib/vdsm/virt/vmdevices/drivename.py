@@ -3,7 +3,6 @@
 
 from vdsm.common import base26
 
-
 _DEVNAMES = {
     'ide': 'hd',
     'scsi': 'sd',

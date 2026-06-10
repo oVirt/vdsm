@@ -36,7 +36,7 @@ class TestDeviceCompat(XMLTestCase):
                 'bus': '0x00',
                 'domain': '0x0000',
                 'function': '0x0',
-                'type': 'pci'
+                'type': 'pci',
             },
             'device': 'bridge',
             'type': 'interface',
@@ -47,16 +47,11 @@ class TestDeviceCompat(XMLTestCase):
                 'inbound': {
                     'average': '1000',
                     'peak': '5000',
-                    'burst': '1024'
+                    'burst': '1024',
                 },
-                'outbound': {
-                    'average': '128',
-                    'burst': '256'
-                }
+                'outbound': {'average': '128', 'burst': '256'},
             },
-            'custom': {
-                'queues': '7'
-            },
+            'custom': {'queues': '7'},
         }
         dev_meta = {
             'vmid': 'testvm',
@@ -89,7 +84,7 @@ class TestDeviceCompat(XMLTestCase):
                 'controller': '0',
                 'target': '0',
                 'type': 'drive',
-                'unit': '0'
+                'unit': '0',
             },
             'alias': 'ua-58ca6050-0134-00d6-0053-000000000388',
             'bootOrder': '1',
@@ -107,29 +102,27 @@ class TestDeviceCompat(XMLTestCase):
             'specParams': {},
             'type': 'disk',
             'volumeChain': [],
-            'volumeInfo': {}
+            'volumeInfo': {},
         }
         dev_meta = {}
         dev = vmdevices.storage.Drive(
             self.log,
             **vmdevices.storagexml.parse(
-                xmlutils.fromstring(dev_xml),
-                dev_meta
+                xmlutils.fromstring(dev_xml), dev_meta
             )
         )
         assert dev.config() == dev_conf
 
-        assert dev.config() == \
-            vmdevices.storage.Drive(self.log, **dev_conf).config()
+        assert (
+            dev.config()
+            == vmdevices.storage.Drive(self.log, **dev_conf).config()
+        )
 
     def _assertDeviceCorrect(self, dev_class, dev_xml, dev_conf, dev_meta):
         dev = dev_class.from_xml_tree(
-            self.log,
-            xmlutils.fromstring(dev_xml),
-            dev_meta
+            self.log, xmlutils.fromstring(dev_xml), dev_meta
         )
         assert dev.vmid == 'testvm'
         assert dev.config() == dev_conf
 
-        assert dev.config() == \
-            dev_class(self.log, **dev_conf).config()
+        assert dev.config() == dev_class(self.log, **dev_conf).config()

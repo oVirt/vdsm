@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from vdsm.storage import threadPool
 
-from . storagetestlib import Callable
+from .storagetestlib import Callable
 
 # Fail tests if callable is hang for longer time.
 HANG_TIMEOUT = 5

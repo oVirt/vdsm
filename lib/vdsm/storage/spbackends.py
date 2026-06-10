@@ -19,7 +19,6 @@ from vdsm.storage.sp import SPM_ACQUIRED
 from vdsm.storage.sp import SPM_ID_FREE
 from vdsm.config import config
 
-
 MAX_POOL_DESCRIPTION_SIZE = 50
 
 PMDK_DOMAINS = "POOL_DOMAINS"
@@ -50,7 +49,7 @@ SP_MD_FIELDS = {
     PMDK_POOL_DESCRIPTION: (unicodeDecoder, unicodeEncoder),
     PMDK_LVER: (int, str),
     PMDK_SPM_ID: (int, str),
-    PMDK_MASTER_VER: (int, str)
+    PMDK_MASTER_VER: (int, str),
 }
 
 
@@ -149,8 +148,9 @@ class StoragePoolBackendInterface(object):
         """
         raise NotImplementedError()
 
-    def switchMasterDomain(self, curMasterDomain, newMasterDomain,
-                           newMasterVersion):
+    def switchMasterDomain(
+        self, curMasterDomain, newMasterDomain, newMasterVersion
+    ):
         """Switch the master domain to a new domain
 
         This method is used from the StoragePool to request the switch
@@ -208,8 +208,10 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
 
         # if we claim that we were the SPM (but we're currently not) we
         # have to make sure that we're not returning stale data
-        if (poolMeta[PMDK_SPM_ID] == self.id and
-                not self.spmRole == SPM_ACQUIRED):
+        if (
+            poolMeta[PMDK_SPM_ID] == self.id
+            and not self.spmRole == SPM_ACQUIRED
+        ):
             self.invalidateMetadata()
             poolMeta = self._getPoolMD(self.masterDomain)
 
@@ -250,9 +252,13 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
     def validateMasterDomainVersion(self, masterDomain, masterVersion):
         version = self._getPoolMD(masterDomain)[PMDK_MASTER_VER]
         if version != int(masterVersion):
-            self.log.error("Requested master domain %s does not have expected "
-                           "version %s it is version %s",
-                           masterDomain.sdUUID, masterVersion, version)
+            self.log.error(
+                "Requested master domain %s does not have expected "
+                "version %s it is version %s",
+                masterDomain.sdUUID,
+                masterVersion,
+                version,
+            )
             raise se.StoragePoolWrongMaster(self.spUUID, masterDomain.sdUUID)
 
     # TODO: evaluate if it is possible to remove this from the backends and
@@ -267,26 +273,31 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
 
     @unsecured
     def initParameters(self, poolName, domain, masterVersion):
-        self._getPoolMD(domain).update({
-            PMDK_SPM_ID: SPM_ID_FREE,
-            PMDK_LVER: LVER_INVALID,
-            PMDK_MASTER_VER: masterVersion,
-            PMDK_POOL_DESCRIPTION: poolName,
-            PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS},
-        })
+        self._getPoolMD(domain).update(
+            {
+                PMDK_SPM_ID: SPM_ID_FREE,
+                PMDK_LVER: LVER_INVALID,
+                PMDK_MASTER_VER: masterVersion,
+                PMDK_POOL_DESCRIPTION: poolName,
+                PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS},
+            }
+        )
 
-    def switchMasterDomain(self, curMasterDomain, newMasterDomain,
-                           newMasterVersion):
+    def switchMasterDomain(
+        self, curMasterDomain, newMasterDomain, newMasterVersion
+    ):
         curPoolMD = self._getPoolMD(curMasterDomain)
         newPoolMD = self._getPoolMD(newMasterDomain)
 
-        newPoolMD.update({
-            PMDK_DOMAINS: curPoolMD[PMDK_DOMAINS],
-            PMDK_POOL_DESCRIPTION: curPoolMD[PMDK_POOL_DESCRIPTION],
-            PMDK_LVER: curPoolMD[PMDK_LVER],
-            PMDK_SPM_ID: curPoolMD[PMDK_SPM_ID],
-            PMDK_MASTER_VER: newMasterVersion,
-        })
+        newPoolMD.update(
+            {
+                PMDK_DOMAINS: curPoolMD[PMDK_DOMAINS],
+                PMDK_POOL_DESCRIPTION: curPoolMD[PMDK_POOL_DESCRIPTION],
+                PMDK_LVER: curPoolMD[PMDK_LVER],
+                PMDK_SPM_ID: curPoolMD[PMDK_SPM_ID],
+                PMDK_MASTER_VER: newMasterVersion,
+            }
+        )
 
     @unsecured
     def getInfo(self):
@@ -399,7 +410,10 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
     def setSpmStatus(self, lVer=None, spmId=None):
         self.log.debug(
             'this storage pool implementation ignores the set spm '
-            'status requests (lver=%s, spmid=%s)', lVer, spmId)
+            'status requests (lver=%s, spmid=%s)',
+            lVer,
+            spmId,
+        )
 
     @unsecured
     def getDomainsMap(self):
@@ -407,10 +421,13 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
 
     def setDomainsMap(self, domainsMap):
         self.domainsMap = dict(
-            ((k, v.capitalize()) for k, v in domainsMap.items()))
+            ((k, v.capitalize()) for k, v in domainsMap.items())
+        )
         self.log.info(
             'new storage pool master version %s and domains map %s',
-            self.masterVersion, self.domainsMap)
+            self.masterVersion,
+            self.domainsMap,
+        )
 
     @unsecured
     def getMaximumSupportedDomains(self):
@@ -425,7 +442,9 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
         if self.masterVersion != int(masterVersion):
             self.log.error(
                 'requested master version %s is not the expected one %s',
-                masterVersion, self.masterVersion)
+                masterVersion,
+                self.masterVersion,
+            )
             raise se.StoragePoolWrongMaster(self.spUUID, masterDomain.sdUUID)
 
     def setDomainRegularRole(self, domain):
@@ -436,14 +455,23 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
         self.log.debug(
             'this storage pool implementation ignores master '
             'domain initialization (sdUUID=%s, poolName="%s", '
-            'masterVersion=%s)', domain.sdUUID, poolName, masterVersion)
+            'masterVersion=%s)',
+            domain.sdUUID,
+            poolName,
+            masterVersion,
+        )
 
-    def switchMasterDomain(self, currentMasterDomain, newMasterDomain,
-                           newMasterVersion):
+    def switchMasterDomain(
+        self, currentMasterDomain, newMasterDomain, newMasterVersion
+    ):
         self.log.debug(
             'switching from master domain %s version %s to master domain '
-            '%s version %s', currentMasterDomain.sdUUID, self.masterVersion,
-            newMasterDomain.sdUUID, newMasterVersion)
+            '%s version %s',
+            currentMasterDomain.sdUUID,
+            self.masterVersion,
+            newMasterDomain.sdUUID,
+            newMasterVersion,
+        )
         self.masterVersion = newMasterVersion
 
     @unsecured
@@ -461,8 +489,11 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
 
     @unsecured
     def updateVersionAndDomains(self, masterVersion, domainsMap):
-        self.log.debug('updating domain version to %s and domains map '
-                       'to %s', masterVersion, domainsMap)
+        self.log.debug(
+            'updating domain version to %s and domains map ' 'to %s',
+            masterVersion,
+            domainsMap,
+        )
         self.masterVersion = masterVersion
         # pylint: disable=unexpected-keyword-arg
         self.setDomainsMap(domainsMap, __securityOverride=True)

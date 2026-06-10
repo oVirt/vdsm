@@ -18,8 +18,9 @@ class ResponseTests(TestCaseBase):
 
         template = errCode[NAME]
         self.assertEqual(res["status"]["code"], template["status"]["code"])
-        self.assertEqual(res["status"]["message"],
-                         template["status"]["message"])
+        self.assertEqual(
+            res["status"]["message"], template["status"]["message"]
+        )
 
     def test_error_with_message(self):
         NAME = 'noVM'  # no special meaning, any error is fine
@@ -60,44 +61,46 @@ class ResponseTests(TestCaseBase):
         NAME = 'noVM'  # no special meaning, any error is fine
         self.assertTrue(response.is_error(response.error(NAME)))
 
-    @permutations((
-        ('noVM', 'noVM'),
-        ('hookError', 'hookError'),
-        ('noVM', 'hookError')
-    ))
+    @permutations(
+        (('noVM', 'noVM'), ('hookError', 'hookError'), ('noVM', 'hookError'))
+    )
     def test_is_specific_error(self, actual_err, expected_err):
         match = actual_err == expected_err
-        self.assertEqual(match, response.is_error(response.error(actual_err),
-                                                  err=expected_err))
+        self.assertEqual(
+            match,
+            response.is_error(response.error(actual_err), err=expected_err),
+        )
 
     def test_malformed_empty(self):
-        self.assertRaises(response.MalformedResponse,
-                          response.is_error,
-                          {})
+        self.assertRaises(response.MalformedResponse, response.is_error, {})
 
     def test_malformed_missing_code(self):
-        self.assertRaises(response.MalformedResponse,
-                          response.is_error,
-                          {'status': {}})
+        self.assertRaises(
+            response.MalformedResponse, response.is_error, {'status': {}}
+        )
 
-    @permutations([
-        # res
-        [response.success()],
-        [response.success(foo='bar', a=42)],
-        [response.error('noVM')],
-        [{'status': {'code': '0', 'message': 'ok', 'foo': 'bar'}}],
-    ])
+    @permutations(
+        [
+            # res
+            [response.success()],
+            [response.success(foo='bar', a=42)],
+            [response.error('noVM')],
+            [{'status': {'code': '0', 'message': 'ok', 'foo': 'bar'}}],
+        ]
+    )
     def test_is_valid(self, res):
         self.assertTrue(response.is_valid(res))
 
-    @permutations([
-        # res
-        [('foo', 'bar')],
-        [['foo', 'bar']],
-        [{'code': 42}],
-        [{'message': 'foobar'}],
-        [{'success': True}],
-    ])
+    @permutations(
+        [
+            # res
+            [('foo', 'bar')],
+            [['foo', 'bar']],
+            [{'code': 42}],
+            [{'message': 'foobar'}],
+            [{'success': True}],
+        ]
+    )
     def test_is_not_valid(self, res):
         self.assertFalse(response.is_valid(res))
 
@@ -113,8 +116,7 @@ class ResponseTests(TestCaseBase):
         try:
             response.is_error(bad_res)
         except response.MalformedResponse as ex:
-            self.assertEqual(str(ex),
-                             "Missing required key in {}")
+            self.assertEqual(str(ex), "Missing required key in {}")
 
     # TODO: drop this once we get rid of errCode
     def test_legacy_error_code(self):

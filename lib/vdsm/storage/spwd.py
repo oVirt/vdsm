@@ -21,8 +21,9 @@ class Watchdog:
     Watchdog for master storage domain cluster lock.
     """
 
-    def __init__(self, sd, check_interval, max_errors=3,
-                 callback=lambda: None):
+    def __init__(
+        self, sd, check_interval, max_errors=3, callback=lambda: None
+    ):
         """
         Arguments:
             sd (StorageDomain): storage domain to check. We watch the
@@ -45,7 +46,8 @@ class Watchdog:
         self._lease = Lease(
             lockspace=sd.sdUUID,
             resource=lease.name,
-            disk=(lease.path, lease.offset))
+            disk=(lease.path, lease.offset),
+        )
 
         # Number of temporary errors. Reset on every successful check.
         self._errors = 0
@@ -104,13 +106,17 @@ class Watchdog:
                     self._errors += 1
                     log.warning(
                         "Error (%s/%s) checking cluster lock %s",
-                        self._errors, self._max_errors, self._lease)
+                        self._errors,
+                        self._max_errors,
+                        self._lease,
+                    )
                     return
 
             panic("Error checking cluster lock {}".format(self._lease))
         except Exception:
-            panic("Unexpected error checking cluster lock {}"
-                  .format(self._lease))
+            panic(
+                "Unexpected error checking cluster lock {}".format(self._lease)
+            )
 
         # Reset errors on succesful inquire.
         self._errors = 0
@@ -125,8 +131,11 @@ class Watchdog:
             # Validate the cluster lease.
 
             if r["disks"] != [self._lease.disk]:
-                panic("Invalid cluster lock disk exepcted={} actual={}"
-                      .format(self._lease, r))
+                panic(
+                    "Invalid cluster lock disk exepcted={} actual={}".format(
+                        self._lease, r
+                    )
+                )
 
             log.debug("Found cluster lock %s", r)
             return

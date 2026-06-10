@@ -51,7 +51,8 @@ context = ssl.create_default_context(cafile="/etc/pki/vdsm/certs/cacert.pem")
 
 context.load_cert_chain(
     certfile="/etc/pki/vdsm/certs/vdsmcert.pem",
-    keyfile="/etc/pki/vdsm/keys/vdsmkey.pem")
+    keyfile="/etc/pki/vdsm/keys/vdsmkey.pem",
+)
 
 
 def reader(ctx, headers, errors):
@@ -76,7 +77,11 @@ def reader(ctx, headers, errors):
             try:
                 log.debug(
                     "Received response %s: status=%r reason=%r headers=%r",
-                    i, r.status, r.reason, r.getheaders())
+                    i,
+                    r.status,
+                    r.reason,
+                    r.getheaders(),
+                )
 
                 task_id = r.getheader("Task-Id")
 
@@ -91,7 +96,8 @@ def reader(ctx, headers, errors):
                     r.read()
                 except (http_client.HTTPException, OSError) as e:
                     log.error(
-                        "Reading payload failed: %s, closing connection", e)
+                        "Reading payload failed: %s, closing connection", e
+                    )
                     http.close()
             finally:
                 if task_id:
@@ -119,7 +125,8 @@ def reader(ctx, headers, errors):
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s")
+    format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s",
+)
 
 log.info("Starting readers")
 
@@ -131,10 +138,8 @@ for i in range(10):
     log.debug("Starting reader %s", name)
 
     t = threading.Thread(
-        target=reader,
-        args=(context, headers, errors),
-        daemon=True,
-        name=name)
+        target=reader, args=(context, headers, errors), daemon=True, name=name
+    )
 
     t.start()
     readers.append(t)

@@ -23,8 +23,9 @@ from vdsm.storage import fileUtils
 
 VFS_EXT3 = "ext3"
 
-MountRecord = namedtuple("MountRecord", "fs_spec fs_file fs_vfstype "
-                         "fs_mntops fs_freq fs_passno")
+MountRecord = namedtuple(
+    "MountRecord", "fs_spec fs_file fs_vfstype " "fs_mntops fs_freq fs_passno"
+)
 
 _PROC_MOUNTS_PATH = '/proc/mounts'
 _SYS_DEV_BLOCK_PATH = '/sys/dev/block/'
@@ -45,15 +46,15 @@ def _normalize_gluster_mountpoint(fs_spec, fs_vfstype):
              or non-rdma gluster mount
     """
     suffix = ".rdma"
-    if (fs_vfstype == 'fuse.glusterfs' and
-            fs_spec.endswith(suffix)):
-        return fs_spec[:-len(suffix)]
+    if fs_vfstype == 'fuse.glusterfs' and fs_spec.endswith(suffix):
+        return fs_spec[: -len(suffix)]
     return fs_spec
 
 
 def _parseFstabLine(line):
-    (fs_spec, fs_file, fs_vfstype, fs_mntops,
-     fs_freq, fs_passno) = line.split()[:6]
+    fs_spec, fs_file, fs_vfstype, fs_mntops, fs_freq, fs_passno = line.split()[
+        :6
+    ]
     fs_mntops = fs_mntops.split(",")
     fs_freq = int(fs_freq)
     fs_passno = int(fs_passno)
@@ -67,10 +68,11 @@ def _parseFstabLine(line):
     # We expect normalized fs_file from the kernel.
     fs_file = _unescape_spaces(fs_file)
     if fs_file.endswith(_DELETED_SUFFIX):
-        fs_file = fs_file[:-len(_DELETED_SUFFIX)]
+        fs_file = fs_file[: -len(_DELETED_SUFFIX)]
 
-    return MountRecord(fs_spec, fs_file, fs_vfstype, fs_mntops,
-                       fs_freq, fs_passno)
+    return MountRecord(
+        fs_spec, fs_file, fs_vfstype, fs_mntops, fs_freq, fs_passno
+    )
 
 
 def _unescape_spaces(path):
@@ -101,10 +103,9 @@ def _resolveLoopDevice(path):
 
     minor = os.minor(st.st_rdev)
     major = os.major(st.st_rdev)
-    backing_file = os.path.join(_SYS_DEV_BLOCK_PATH,
-                                '%d:%d' % (major, minor),
-                                'loop',
-                                'backing_file')
+    backing_file = os.path.join(
+        _SYS_DEV_BLOCK_PATH, '%d:%d' % (major, minor), 'loop', 'backing_file'
+    )
 
     try:
         with open(backing_file, "r") as f:
@@ -130,8 +131,14 @@ def _iterMountRecords():
             yield rec
             continue
 
-        yield MountRecord(realSpec, rec.fs_file, rec.fs_vfstype,
-                          rec.fs_mntops, rec.fs_freq, rec.fs_passno)
+        yield MountRecord(
+            realSpec,
+            rec.fs_file,
+            rec.fs_vfstype,
+            rec.fs_mntops,
+            rec.fs_freq,
+            rec.fs_passno,
+        )
 
 
 def iterMounts():
@@ -173,9 +180,11 @@ class Mount(object):
         self.fs_file = fs_file
 
     def __eq__(self, other):
-        return (self.__class__ == other.__class__ and
-                self.fs_spec == other.fs_spec and
-                self.fs_file == other.fs_file)
+        return (
+            self.__class__ == other.__class__
+            and self.fs_spec == other.fs_spec
+            and self.fs_file == other.fs_file
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -187,8 +196,13 @@ class Mount(object):
         mount = supervdsm.getProxy().mount if os.geteuid() != 0 else _mount
         self.log.info("mounting %s at %s", self.fs_spec, self.fs_file)
         with utils.stopwatch("%s mounted" % self.fs_file, log=self.log):
-            mount(self.fs_spec, self.fs_file, mntOpts=mntOpts, vfstype=vfstype,
-                  cgroup=cgroup)
+            mount(
+                self.fs_spec,
+                self.fs_file,
+                mntOpts=mntOpts,
+                vfstype=vfstype,
+                cgroup=cgroup,
+            )
         self._wait_for_events()
 
     def umount(self, force=False, lazy=False, freeloop=False):
@@ -232,13 +246,18 @@ class Mount(object):
             if self.fs_file == record.fs_file and record.fs_spec in fs_specs:
                 return record
 
-        raise OSError(errno.ENOENT,
-                      "Mount of `%s` at `%s` does not exist" %
-                      (self.fs_spec, self.fs_file))
+        raise OSError(
+            errno.ENOENT,
+            "Mount of `%s` at `%s` does not exist"
+            % (self.fs_spec, self.fs_file),
+        )
 
     def __repr__(self):
-        return ("<%s fs_spec='%s' fs_file='%s'>" %
-                (self.__class__.__name__, self.fs_spec, self.fs_file))
+        return "<%s fs_spec='%s' fs_file='%s'>" % (
+            self.__class__.__name__,
+            self.fs_spec,
+            self.fs_file,
+        )
 
 
 def _mount(fs_spec, fs_file, mntOpts=None, vfstype=None, cgroup=None):

@@ -28,20 +28,19 @@ import pytest
 
 log = logging.getLogger("test")
 
-VolumeChainEnv = namedtuple(
-    'VolumeChainEnv',
-    ['drive', 'top', 'base']
-)
+VolumeChainEnv = namedtuple('VolumeChainEnv', ['drive', 'top', 'base'])
 
 
 @expandPermutations
 class DriveXMLTests(XMLTestCase):
 
-    @permutations([
-        # propagateErrors
-        (None,),
-        ('off',),
-    ])
+    @permutations(
+        [
+            # propagateErrors
+            (None,),
+            ('off',),
+        ]
+    )
     def test_cdrom(self, propagateErrors):
         conf = drive_config(
             propagateErrors=propagateErrors,
@@ -77,9 +76,7 @@ class DriveXMLTests(XMLTestCase):
                 'read_bytes_sec': 6120000,
                 'total_iops_sec': 800,
             },
-            vm_custom={
-                'viodiskcache': 'writethrough'
-            },
+            vm_custom={'viodiskcache': 'writethrough'},
             diskType=DISK_TYPE.FILE,
         )
         xml = """
@@ -454,12 +451,14 @@ class DriveValidation(VdsmTestCase):
     def test_network_disk_no_protocol(self):
         self.check(diskType=DISK_TYPE.NETWORK, hosts=[{}])
 
-    @permutations([
-        # iotune
-        [{'total_bytes_sec': -2}],
-        [{'write_bytes_sec': 'a'}],
-        [{'bogus_setting': 1}],
-    ])
+    @permutations(
+        [
+            # iotune
+            [{'total_bytes_sec': -2}],
+            [{'write_bytes_sec': 'a'}],
+            [{'bogus_setting': 1}],
+        ]
+    )
     def test_set_iotune(self, iotune):
         conf = drive_config(
             serial='54-a672-23e5b495a9ea',
@@ -682,29 +681,32 @@ def test_drive_exceeded_time(monkeypatch):
 @expandPermutations
 class ChunkedTests(VdsmTestCase):
 
-    @permutations([
-        # device, diskType, format, chunked
-        ('cdrom', DISK_TYPE.FILE, 'raw', False),
-        ('floppy', DISK_TYPE.FILE, 'raw', False),
-        ('disk', DISK_TYPE.FILE, 'raw', False),
-        ('disk', DISK_TYPE.BLOCK, 'raw', False),
-        ('lun', DISK_TYPE.BLOCK, 'raw', False),
-        ('disk', DISK_TYPE.BLOCK, 'cow', True),
-    ])
+    @permutations(
+        [
+            # device, diskType, format, chunked
+            ('cdrom', DISK_TYPE.FILE, 'raw', False),
+            ('floppy', DISK_TYPE.FILE, 'raw', False),
+            ('disk', DISK_TYPE.FILE, 'raw', False),
+            ('disk', DISK_TYPE.BLOCK, 'raw', False),
+            ('lun', DISK_TYPE.BLOCK, 'raw', False),
+            ('disk', DISK_TYPE.BLOCK, 'cow', True),
+        ]
+    )
     def test_drive(self, device, diskType, format, chunked):
         conf = drive_config(device=device, format=format)
         drive = Drive(self.log, diskType=diskType, **conf)
         assert drive.chunked == chunked
 
-    @permutations([
-        # replica diskType, replica format
-        (DISK_TYPE.BLOCK, 'raw'),
-        (DISK_TYPE.BLOCK, 'cow'),
-    ])
+    @permutations(
+        [
+            # replica diskType, replica format
+            (DISK_TYPE.BLOCK, 'raw'),
+            (DISK_TYPE.BLOCK, 'cow'),
+        ]
+    )
     def test_replica(self, diskType, format):
         conf = drive_config(
-            diskReplicate=replica(diskType, format=format),
-            diskType=diskType
+            diskReplicate=replica(diskType, format=format), diskType=diskType
         )
         drive = Drive(self.log, **conf)
         assert drive.chunked is False
@@ -713,17 +715,18 @@ class ChunkedTests(VdsmTestCase):
 @expandPermutations
 class ReplicaChunkedTests(VdsmTestCase):
 
-    @permutations([
-        # replica diskType, replica format, chunked
-        (DISK_TYPE.FILE, 'raw', False),
-        (DISK_TYPE.FILE, 'cow', False),
-        (DISK_TYPE.BLOCK, 'raw', False),
-        (DISK_TYPE.BLOCK, 'cow', True),
-    ])
+    @permutations(
+        [
+            # replica diskType, replica format, chunked
+            (DISK_TYPE.FILE, 'raw', False),
+            (DISK_TYPE.FILE, 'cow', False),
+            (DISK_TYPE.BLOCK, 'raw', False),
+            (DISK_TYPE.BLOCK, 'cow', True),
+        ]
+    )
     def test_replica(self, diskType, format, chunked):
         conf = drive_config(
-            diskReplicate=replica(diskType, format=format),
-            diskType=diskType
+            diskReplicate=replica(diskType, format=format), diskType=diskType
         )
         drive = Drive(self.log, **conf)
         assert drive.replicaChunked == chunked
@@ -743,15 +746,18 @@ class DriveVolumeSizeTests(VdsmTestCase):
     def test_next_size(self, cursize):
         conf = drive_config(format='cow', diskType=DISK_TYPE.BLOCK)
         drive = Drive(self.log, **conf)
-        assert drive.getNextVolumeSize(cursize, self.CAPACITY) == \
-            cursize + drive.volExtensionChunk
+        assert (
+            drive.getNextVolumeSize(cursize, self.CAPACITY)
+            == cursize + drive.volExtensionChunk
+        )
 
     @permutations([[CAPACITY - 1], [CAPACITY], [CAPACITY + 1]])
     def test_next_size_limit(self, cursize):
         conf = drive_config(format='cow', diskType=DISK_TYPE.BLOCK)
         drive = Drive(self.log, **conf)
-        assert drive.getNextVolumeSize(cursize, self.CAPACITY) == \
-            drive.getMaxVolumeSize(self.CAPACITY)
+        assert drive.getNextVolumeSize(
+            cursize, self.CAPACITY
+        ) == drive.getMaxVolumeSize(self.CAPACITY)
 
     def test_max_size(self):
         conf = drive_config(format='cow', diskType=DISK_TYPE.BLOCK)
@@ -771,63 +777,71 @@ class TestDriveLeases(XMLTestCase):
 
     # Drive without leases
 
-    @MonkeyPatch(storage, 'config', make_config([
-        ("irs", "use_volume_leases", "false")
-    ]))
-    @permutations([
-        ["true"],
-        ["True"],
-        ["TRUE"],
-        ["false"],
-        ["False"],
-        ["FALSE"],
-        [DRIVE_SHARED_TYPE.NONE],
-        [DRIVE_SHARED_TYPE.EXCLUSIVE],
-        [DRIVE_SHARED_TYPE.SHARED],
-        [DRIVE_SHARED_TYPE.TRANSIENT],
-    ])
+    @MonkeyPatch(
+        storage, 'config', make_config([("irs", "use_volume_leases", "false")])
+    )
+    @permutations(
+        [
+            ["true"],
+            ["True"],
+            ["TRUE"],
+            ["false"],
+            ["False"],
+            ["FALSE"],
+            [DRIVE_SHARED_TYPE.NONE],
+            [DRIVE_SHARED_TYPE.EXCLUSIVE],
+            [DRIVE_SHARED_TYPE.SHARED],
+            [DRIVE_SHARED_TYPE.TRANSIENT],
+        ]
+    )
     def test_shared_no_volume_leases_no_chain(self, shared):
         conf = drive_config(shared=shared, volumeChain=[])
         self.check_no_leases(conf)
 
-    @MonkeyPatch(storage, 'config', make_config([
-        ("irs", "use_volume_leases", "true")
-    ]))
-    @permutations([
-        ["true"],
-        ["True"],
-        ["TRUE"],
-        ["false"],
-        ["False"],
-        ["FALSE"],
-        [DRIVE_SHARED_TYPE.NONE],
-        [DRIVE_SHARED_TYPE.EXCLUSIVE],
-        [DRIVE_SHARED_TYPE.SHARED],
-        [DRIVE_SHARED_TYPE.TRANSIENT],
-    ])
+    @MonkeyPatch(
+        storage, 'config', make_config([("irs", "use_volume_leases", "true")])
+    )
+    @permutations(
+        [
+            ["true"],
+            ["True"],
+            ["TRUE"],
+            ["false"],
+            ["False"],
+            ["FALSE"],
+            [DRIVE_SHARED_TYPE.NONE],
+            [DRIVE_SHARED_TYPE.EXCLUSIVE],
+            [DRIVE_SHARED_TYPE.SHARED],
+            [DRIVE_SHARED_TYPE.TRANSIENT],
+        ]
+    )
     def test_shared_use_volume_leases_no_chain(self, shared):
         conf = drive_config(shared=shared, volumeChain=[])
         self.check_no_leases(conf)
 
     # Drive with leases
 
-    @MonkeyPatch(storage, 'config', make_config([
-        ("irs", "use_volume_leases", "true")
-    ]))
-    @permutations([
-        ["false"],
-        [DRIVE_SHARED_TYPE.EXCLUSIVE],
-    ])
+    @MonkeyPatch(
+        storage, 'config', make_config([("irs", "use_volume_leases", "true")])
+    )
+    @permutations(
+        [
+            ["false"],
+            [DRIVE_SHARED_TYPE.EXCLUSIVE],
+        ]
+    )
     def test_use_volume_leases(self, shared):
         conf = drive_config(shared=shared, volumeChain=make_volume_chain())
         self.check_leases(conf)
 
-    @MonkeyPatch(storage, 'config', make_config([
-        ("irs", "use_volume_leases", "false")
-    ]))
-    @permutations([
-        [DRIVE_SHARED_TYPE.EXCLUSIVE],
-    ])
+    @MonkeyPatch(
+        storage, 'config', make_config([("irs", "use_volume_leases", "false")])
+    )
+    @permutations(
+        [
+            [DRIVE_SHARED_TYPE.EXCLUSIVE],
+        ]
+    )
     def test_no_volume_leases(self, shared):
         conf = drive_config(shared=shared, volumeChain=make_volume_chain())
         self.check_leases(conf)
@@ -856,66 +870,66 @@ class TestDriveLeases(XMLTestCase):
 @expandPermutations
 class TestDriveNaming(VdsmTestCase):
 
-    @permutations([
-        ['ide', 0, 'hda'],
-        ['ide', 1, 'hdb'],
-        ['ide', 2, 'hdc'],
-        ['ide', 25, 'hdz'],
-        ['ide', 26, 'hdaa'],
-        ['ide', 27, 'hdab'],
-
-        ['scsi', 0, 'sda'],
-        ['scsi', 1, 'sdb'],
-        ['scsi', 2, 'sdc'],
-        ['scsi', 25, 'sdz'],
-        ['scsi', 26, 'sdaa'],
-        ['scsi', 27, 'sdab'],
-
-        ['virtio', 0, 'vda'],
-        ['virtio', 1, 'vdb'],
-        ['virtio', 2, 'vdc'],
-        ['virtio', 25, 'vdz'],
-        ['virtio', 26, 'vdaa'],
-        ['virtio', 27, 'vdab'],
-
-        ['fdc', 0, 'fda'],
-        ['fdc', 1, 'fdb'],
-        ['fdc', 2, 'fdc'],
-        ['fdc', 25, 'fdz'],
-        ['fdc', 26, 'fdaa'],
-        ['fdc', 27, 'fdab'],
-
-        ['sata', 0, 'sda'],
-        ['sata', 1, 'sdb'],
-        ['sata', 2, 'sdc'],
-        ['sata', 25, 'sdz'],
-        ['sata', 26, 'sdaa'],
-        ['sata', 27, 'sdab'],
-    ])
+    @permutations(
+        [
+            ['ide', 0, 'hda'],
+            ['ide', 1, 'hdb'],
+            ['ide', 2, 'hdc'],
+            ['ide', 25, 'hdz'],
+            ['ide', 26, 'hdaa'],
+            ['ide', 27, 'hdab'],
+            ['scsi', 0, 'sda'],
+            ['scsi', 1, 'sdb'],
+            ['scsi', 2, 'sdc'],
+            ['scsi', 25, 'sdz'],
+            ['scsi', 26, 'sdaa'],
+            ['scsi', 27, 'sdab'],
+            ['virtio', 0, 'vda'],
+            ['virtio', 1, 'vdb'],
+            ['virtio', 2, 'vdc'],
+            ['virtio', 25, 'vdz'],
+            ['virtio', 26, 'vdaa'],
+            ['virtio', 27, 'vdab'],
+            ['fdc', 0, 'fda'],
+            ['fdc', 1, 'fdb'],
+            ['fdc', 2, 'fdc'],
+            ['fdc', 25, 'fdz'],
+            ['fdc', 26, 'fdaa'],
+            ['fdc', 27, 'fdab'],
+            ['sata', 0, 'sda'],
+            ['sata', 1, 'sdb'],
+            ['sata', 2, 'sdc'],
+            ['sata', 25, 'sdz'],
+            ['sata', 26, 'sdaa'],
+            ['sata', 27, 'sdab'],
+        ]
+    )
     def test_ide_drive(self, interface, index, expected_name):
         conf = drive_config(
             device='disk',
             iface=interface,
             index=index,
-            diskType=DISK_TYPE.FILE
+            diskType=DISK_TYPE.FILE,
         )
 
         drive = Drive(self.log, **conf)
         assert drive.name == expected_name
 
-    @permutations([
-        ['ide', -1],
-        ['scsi', -1],
-        ['virtio', -1],
-        ['fdc', -1],
-        ['sata', -1],
-    ])
+    @permutations(
+        [
+            ['ide', -1],
+            ['scsi', -1],
+            ['virtio', -1],
+            ['fdc', -1],
+            ['sata', -1],
+        ]
+    )
     def test_invalid_name(self, interface, index):
         conf = drive_config(
             device='disk',
             iface=interface,
             index=index,
-            diskType=DISK_TYPE.FILE
+            diskType=DISK_TYPE.FILE,
         )
 
         with pytest.raises(ValueError):
@@ -924,13 +938,19 @@ class TestDriveNaming(VdsmTestCase):
 
 class TestVolumeTarget(VdsmTestCase):
     def setUp(self):
-        volume_chain = [{"path": "/top",
-                         "volumeID": "00000000-0000-0000-0000-000000000000"},
-                        {"path": "/base",
-                         "volumeID": "11111111-1111-1111-1111-111111111111"}]
-        self.conf = drive_config(volumeChain=volume_chain,
-                                 alias=0,
-                                 name="name")
+        volume_chain = [
+            {
+                "path": "/top",
+                "volumeID": "00000000-0000-0000-0000-000000000000",
+            },
+            {
+                "path": "/base",
+                "volumeID": "11111111-1111-1111-1111-111111111111",
+            },
+        ]
+        self.conf = drive_config(
+            volumeChain=volume_chain, alias=0, name="name"
+        )
 
         self.actual_chain = [
             storage.VolumeChainEntry(
@@ -942,35 +962,36 @@ class TestVolumeTarget(VdsmTestCase):
                 uuid="00000000-0000-0000-0000-000000000000",
                 index=1,
                 path=None,
-            )
+            ),
         ]
 
     def test_base_not_found(self):
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **self.conf)
         with pytest.raises(storage.VolumeNotFound):
-            drive.volume_target("FFFFFFFF-FFFF-FFFF-FFFF-111111111111",
-                                self.actual_chain)
+            drive.volume_target(
+                "FFFFFFFF-FFFF-FFFF-FFFF-111111111111", self.actual_chain
+            )
 
     def test_internal_volume(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
         actual = drive.volume_target(
-            "11111111-1111-1111-1111-111111111111",
-            self.actual_chain)
+            "11111111-1111-1111-1111-111111111111", self.actual_chain
+        )
         assert actual == "vda[3]"
 
     def test_top_volume(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
         actual = drive.volume_target(
-            "00000000-0000-0000-0000-000000000000",
-            self.actual_chain)
+            "00000000-0000-0000-0000-000000000000", self.actual_chain
+        )
         assert actual == "vda[1]"
 
     def test_volume_missing(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
         with pytest.raises(storage.VolumeNotFound):
             drive.volume_target(
-                "FFFFFFFF-FFFF-FFFF-FFFF-000000000000",
-                self.actual_chain)
+                "FFFFFFFF-FFFF-FFFF-FFFF-000000000000", self.actual_chain
+            )
 
 
 class TestVolumeChain(VdsmTestCase):
@@ -995,41 +1016,41 @@ class TestVolumeChain(VdsmTestCase):
             os.symlink(dc_base, run_base)
 
             dc_top_vol = os.path.join(
-                images_path,
-                "11111111-1111-1111-1111-111111111111")
+                images_path, "11111111-1111-1111-1111-111111111111"
+            )
             dc_base_vol = os.path.join(
-                images_path,
-                "22222222-2222-2222-2222-222222222222")
+                images_path, "22222222-2222-2222-2222-222222222222"
+            )
 
             make_file(dc_top_vol)
             make_file(dc_base_vol)
 
             run_top_vol = os.path.join(
-                run_base,
-                "images",
-                "11111111-1111-1111-1111-111111111111")
+                run_base, "images", "11111111-1111-1111-1111-111111111111"
+            )
             run_base_vol = os.path.join(
-                run_base,
-                "images",
-                "22222222-2222-2222-2222-222222222222")
+                run_base, "images", "22222222-2222-2222-2222-222222222222"
+            )
 
             volume_chain = [
-                {'path': dc_top_vol,
-                 'volumeID': '11111111-1111-1111-1111-111111111111'},
-                {'path': dc_base_vol,
-                 'volumeID': '22222222-2222-2222-2222-222222222222'}
+                {
+                    'path': dc_top_vol,
+                    'volumeID': '11111111-1111-1111-1111-111111111111',
+                },
+                {
+                    'path': dc_base_vol,
+                    'volumeID': '22222222-2222-2222-2222-222222222222',
+                },
             ]
             conf = drive_config(volumeChain=volume_chain)
             drive = Drive(self.log, diskType=disk_type, **conf)
 
-            yield VolumeChainEnv(
-                drive, run_top_vol,
-                run_base_vol
-            )
+            yield VolumeChainEnv(drive, run_top_vol, run_base_vol)
 
     def test_parse_volume_chain_block(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk = etree.fromstring("""
+            disk = etree.fromstring(
+                """
             <disk type='block'>
                 <source dev='%(top)s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
@@ -1038,27 +1059,29 @@ class TestVolumeChain(VdsmTestCase):
                     <source dev='%(base)s'/>
                     <backingStore/>
                 </backingStore>
-            </disk>""" % {
-                "top": env.top,
-                "base": env.base
-            })
+            </disk>"""
+                % {"top": env.top, "base": env.base}
+            )
 
             chain = env.drive.parse_volume_chain(disk)
             expected = [
                 storage.VolumeChainEntry(
                     path=env.base,
                     uuid='22222222-2222-2222-2222-222222222222',
-                    index=3),
+                    index=3,
+                ),
                 storage.VolumeChainEntry(
                     path=env.top,
                     uuid='11111111-1111-1111-1111-111111111111',
-                    index=1)
+                    index=1,
+                ),
             ]
             assert chain == expected
 
     def test_parse_volume_chain_file(self):
         with self.make_env(DISK_TYPE.FILE) as env:
-            disk = etree.fromstring("""
+            disk = etree.fromstring(
+                """
             <disk type='file'>
                 <source file='%(top)s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
@@ -1067,35 +1090,41 @@ class TestVolumeChain(VdsmTestCase):
                     <source file='%(base)s'/>
                     <backingStore/>
                 </backingStore>
-            </disk>""" % {
-                "top": env.top,
-                "base": env.base
-            })
+            </disk>"""
+                % {"top": env.top, "base": env.base}
+            )
 
             chain = env.drive.parse_volume_chain(disk)
             expected = [
                 storage.VolumeChainEntry(
                     path=env.base,
                     uuid='22222222-2222-2222-2222-222222222222',
-                    index=3),
+                    index=3,
+                ),
                 storage.VolumeChainEntry(
                     path=env.top,
                     uuid='11111111-1111-1111-1111-111111111111',
-                    index=1)
+                    index=1,
+                ),
             ]
             assert chain == expected
 
     def test_parse_volume_chain_network(self):
         volume_chain = [
-            {'path': 'server:/vol/11111111-1111-1111-1111-111111111111',
-             'volumeID': '11111111-1111-1111-1111-111111111111'},
-            {'path': 'server:/vol/22222222-2222-2222-2222-222222222222',
-             'volumeID': '22222222-2222-2222-2222-222222222222'}
+            {
+                'path': 'server:/vol/11111111-1111-1111-1111-111111111111',
+                'volumeID': '11111111-1111-1111-1111-111111111111',
+            },
+            {
+                'path': 'server:/vol/22222222-2222-2222-2222-222222222222',
+                'volumeID': '22222222-2222-2222-2222-222222222222',
+            },
         ]
         conf = drive_config(volumeChain=volume_chain)
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **conf)
 
-        disk = etree.fromstring("""
+        disk = etree.fromstring(
+            """
         <disk type='network'>
             <source name='server:/vol/11111111-1111-1111-1111-111111111111'
                     index='1'>
@@ -1106,24 +1135,28 @@ class TestVolumeChain(VdsmTestCase):
                     name='server:/vol/22222222-2222-2222-2222-222222222222'/>
                 <backingStore/>
             </backingStore>
-        </disk>""")
+        </disk>"""
+        )
 
         chain = drive.parse_volume_chain(disk)
         expected = [
             storage.VolumeChainEntry(
                 path='server:/vol/22222222-2222-2222-2222-222222222222',
                 uuid='22222222-2222-2222-2222-222222222222',
-                index=3),
+                index=3,
+            ),
             storage.VolumeChainEntry(
                 path='server:/vol/11111111-1111-1111-1111-111111111111',
                 uuid='11111111-1111-1111-1111-111111111111',
-                index=1)
+                index=1,
+            ),
         ]
         assert chain == expected
 
     def test_parse_volume_not_in_chain(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk = etree.fromstring("""
+            disk = etree.fromstring(
+                """
             <disk type='block'>
                 <source dev='/top' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
@@ -1133,7 +1166,8 @@ class TestVolumeChain(VdsmTestCase):
                     <source dev='/base'/>
                     <backingStore/>
                 </backingStore>
-            </disk>""")
+            </disk>"""
+            )
 
             with pytest.raises(LookupError):
                 env.drive.parse_volume_chain(disk)
@@ -1154,7 +1188,8 @@ class TestVolumeChain(VdsmTestCase):
 
     def test_parse_volume_no_backing_store_type(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk = etree.fromstring("""
+            disk = etree.fromstring(
+                """
             <disk type='block'>
                 <source dev='%(top)s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
@@ -1164,29 +1199,32 @@ class TestVolumeChain(VdsmTestCase):
                     <source dev='%(base)s'/>
                     <backingStore/>
                 </backingStore>
-            </disk>""" % {
-                "top": env.top,
-                "base": env.base
-            })
+            </disk>"""
+                % {"top": env.top, "base": env.base}
+            )
 
             with pytest.raises(storage.InvalidDiskXML):
                 env.drive.parse_volume_chain(disk)
 
     def test_parse_volume_no_backing_store(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk = etree.fromstring("""
+            disk = etree.fromstring(
+                """
             <disk type='block'>
                 <source dev='%s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
                 </source>
-            </disk>""" % env.top)
+            </disk>"""
+                % env.top
+            )
 
             with pytest.raises(storage.InvalidDiskXML):
                 env.drive.parse_volume_chain(disk)
 
     def test_parse_volume_chain_no_source_index(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk = etree.fromstring("""
+            disk = etree.fromstring(
+                """
             <disk type='block'>
                 <source dev='%(top)s'>
                     <seclabel model="dac" relabel="no" type="none" />
@@ -1195,17 +1233,17 @@ class TestVolumeChain(VdsmTestCase):
                     <source dev='%(base)s'/>
                     <backingStore/>
                 </backingStore>
-            </disk>""" % {
-                "top": env.top,
-                "base": env.base
-            })
+            </disk>"""
+                % {"top": env.top, "base": env.base}
+            )
 
             with pytest.raises(storage.InvalidDiskXML):
                 env.drive.parse_volume_chain(disk)
 
     def test_parse_volume_chain_no_backing_store_index(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk = etree.fromstring("""
+            disk = etree.fromstring(
+                """
             <disk type='block'>
                 <source dev='%(top)s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
@@ -1214,17 +1252,17 @@ class TestVolumeChain(VdsmTestCase):
                     <source dev='%(base)s'/>
                     <backingStore/>
                 </backingStore>
-            </disk>""" % {
-                "top": env.top,
-                "base": env.base
-            })
+            </disk>"""
+                % {"top": env.top, "base": env.base}
+            )
 
             with pytest.raises(storage.InvalidDiskXML):
                 env.drive.parse_volume_chain(disk)
 
     def test_parse_volume_chain_invalid_index(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk = etree.fromstring("""
+            disk = etree.fromstring(
+                """
             <disk type='block'>
                 <source dev='%(top)s' index='invalid1'>
                     <seclabel model="dac" relabel="no" type="none" />
@@ -1233,10 +1271,9 @@ class TestVolumeChain(VdsmTestCase):
                     <source dev='%(base)s'/>
                     <backingStore/>
                 </backingStore>
-            </disk>""" % {
-                "top": env.top,
-                "base": env.base
-            })
+            </disk>"""
+                % {"top": env.top, "base": env.base}
+            )
             with pytest.raises(storage.InvalidDiskXML):
                 env.drive.parse_volume_chain(disk)
 
@@ -1274,8 +1311,12 @@ class TestDiskSnapshotXml(XMLTestCase):
         self.assertXMLEqual(xmlutils.tostring(actual), expected)
 
     def test_network(self):
-        drive = Drive(self.log, diskType=DISK_TYPE.NETWORK,
-                      protocol='gluster', **self.conf)
+        drive = Drive(
+            self.log,
+            diskType=DISK_TYPE.NETWORK,
+            protocol='gluster',
+            **self.conf
+        )
 
         expected = """
             <disk name='vda' snapshot='external' type='network'>
@@ -1299,14 +1340,14 @@ class TestDiskSnapshotXml(XMLTestCase):
                 {
                     'name': 'brick1.example.com',
                     'port': '49152',
-                    'transport': 'tcp'
+                    'transport': 'tcp',
                 },
                 {
                     'name': 'brick2.example.com',
                     'port': '49153',
-                    'transport': 'tcp'
-                }
-            ]
+                    'transport': 'tcp',
+                },
+            ],
         }
         actual = drive.get_snapshot_xml(snap_info)
         self.assertXMLEqual(xmlutils.tostring(actual), expected)
@@ -1318,8 +1359,12 @@ class TestDiskSnapshotXml(XMLTestCase):
             drive.get_snapshot_xml({"path": "/foo", "diskType": "bad"})
 
     def test_incorrect_protocol(self):
-        drive = Drive(self.log, diskType=DISK_TYPE.NETWORK,
-                      protocol='gluster', **self.conf)
+        drive = Drive(
+            self.log,
+            diskType=DISK_TYPE.NETWORK,
+            protocol='gluster',
+            **self.conf
+        )
 
         with pytest.raises(exception.UnsupportedOperation):
             drive.get_snapshot_xml({'protocol': 'bad', 'diskType': 'network'})
@@ -1328,14 +1373,16 @@ class TestDiskSnapshotXml(XMLTestCase):
 @expandPermutations
 class DriveConfigurationTests(VdsmTestCase):
 
-    @permutations([
-        # flag, expected
-        ['true', True],
-        ['false', False],
-        [True, True],
-        [False, False],
-        [None, False]
-    ])
+    @permutations(
+        [
+            # flag, expected
+            ['true', True],
+            ['false', False],
+            [True, True],
+            [False, False],
+            [None, False],
+        ]
+    )
     def test_cdrom_readonly(self, flag, expected):
         conf = drive_config(
             readonly=flag,
@@ -1348,14 +1395,16 @@ class DriveConfigurationTests(VdsmTestCase):
         assert drive.device == 'cdrom'
         assert drive.readonly is expected
 
-    @permutations([
-        # flag, expected
-        ['true', True],
-        ['false', False],
-        [True, True],
-        [False, False],
-        [None, False]
-    ])
+    @permutations(
+        [
+            # flag, expected
+            ['true', True],
+            ['false', False],
+            [True, True],
+            [False, False],
+            [None, False],
+        ]
+    )
     def test_disk_readonly(self, flag, expected):
         conf = drive_config(
             readonly=flag,
@@ -1366,19 +1415,18 @@ class DriveConfigurationTests(VdsmTestCase):
         assert drive.device == 'disk'
         assert drive.readonly is expected
 
-    @permutations([
-        # flag, expected
-        ['true', True],
-        ['false', False],
-        [True, True],
-        [False, False],
-        [None, True]
-    ])
+    @permutations(
+        [
+            # flag, expected
+            ['true', True],
+            ['false', False],
+            [True, True],
+            [False, False],
+            [None, True],
+        ]
+    )
     def test_floppy_readonly(self, flag, expected):
-        conf = drive_config(
-            readonly=flag,
-            device='floppy'
-        )
+        conf = drive_config(readonly=flag, device='floppy')
         drive = Drive(self.log, **conf)
         assert drive.device == 'floppy'
         assert drive.readonly is expected
@@ -1429,14 +1477,18 @@ class TestNeedsMonitoring(VdsmTestCase):
 
 
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
-    return [{"leasePath": path,
-             "leaseOffset": offset,
-             "volumeID": vol_id,
-             "domainID": dom_id}]
+    return [
+        {
+            "leasePath": path,
+            "leaseOffset": offset,
+            "volumeID": vol_id,
+            "domainID": dom_id,
+        }
+    ]
 
 
 def drive_config(readonly=None, propagateErrors=None, **kw):
-    """ Return drive configuration updated from **kw """
+    """Return drive configuration updated from **kw"""
     conf = {
         'device': 'disk',
         'format': 'raw',

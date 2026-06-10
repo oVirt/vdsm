@@ -179,7 +179,7 @@ terminated = threading.Event()
 
 
 class Terminated(Exception):
-    """ Raised during termination """
+    """Raised during termination"""
 
 
 class Error(Exception):
@@ -216,7 +216,8 @@ def main():
 
     logging.basicConfig(
         level=logging.DEBUG if args.debug else logging.INFO,
-        format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s")
+        format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s",
+    )
 
     globals()["cmd_" + args.command](args)
 
@@ -224,58 +225,48 @@ def main():
 def parse_args():
     p = argparse.ArgumentParser()
 
-    p.add_argument(
-        "command",
-        choices=("setup", "teardown", "run"))
+    p.add_argument("command", choices=("setup", "teardown", "run"))
+
+    p.add_argument("--trials", type=int, default=1, help="Number of trials")
+
+    p.add_argument("--vg-count", type=int, default=10, help="Number of vgs")
 
     p.add_argument(
-        "--trials",
-        type=int,
-        default=1,
-        help="Number of trials")
+        "--lv-count", type=int, default=500, help="Number of lvs per vg"
+    )
 
     p.add_argument(
-        "--vg-count",
-        type=int,
-        default=10,
-        help="Number of vgs")
-
-    p.add_argument(
-        "--lv-count",
-        type=int,
-        default=500,
-        help="Number of lvs per vg")
-
-    p.add_argument(
-        "--pv-size",
-        type=gib,
-        default=gib(2048),
-        help="Size of pv in GiB")
+        "--pv-size", type=gib, default=gib(2048), help="Size of pv in GiB"
+    )
 
     p.add_argument(
         "--read-delay-msec",
         type=int,
         default=10,
-        help="Number of milliseconds to delay read I/O")
+        help="Number of milliseconds to delay read I/O",
+    )
 
     p.add_argument(
         "--write-delay-msec",
         type=int,
         default=10,
-        help="Number of milliseconds to delay write I/O")
+        help="Number of milliseconds to delay write I/O",
+    )
 
     p.add_argument(
         "--no-udev",
         dest="use_udev",
         action="store_false",
         help="Use udev to obtain device list in lvm commands (broken "
-             "on rhel 8.2)")
+        "on rhel 8.2)",
+    )
 
     p.add_argument(
         "--no-select",
         dest="use_select",
         action="store_false",
-        help="Avoid using --select for reloading")
+        help="Avoid using --select for reloading",
+    )
 
     p.add_argument(
         "--verbose",
@@ -283,24 +274,24 @@ def parse_args():
         type=int,
         default=0,
         help="Use lvm --verbose option for verbose errors and dump errors "
-             "to files (e.g. pvs-error-0042.txt)")
+        "to files (e.g. pvs-error-0042.txt)",
+    )
 
     p.add_argument(
         "--read-only",
         dest="read_only",
         action="store_true",
-        help="Use read-only locking_type for pvs/vgs/lvs commands (false)")
+        help="Use read-only locking_type for pvs/vgs/lvs commands (false)",
+    )
 
     p.add_argument(
         "--retries",
         type=int,
         default=0,
-        help="Max retries for a failing pvs/vgs/lvs commands")
+        help="Max retries for a failing pvs/vgs/lvs commands",
+    )
 
-    p.add_argument(
-        "--debug",
-        action="store_true",
-        help="Show debug logs")
+    p.add_argument("--debug", action="store_true", help="Show debug logs")
 
     return p.parse_args()
 
@@ -338,7 +329,7 @@ def cmd_setup(args):
             sectors=sectors,
             device=loop_device,
             read_delay=args.read_delay_msec,
-            write_delay=args.write_delay_msec
+            write_delay=args.write_delay_msec,
         )
         run(["dmsetup", "create", delay_name], input=table.encode("utf-8"))
 
@@ -361,8 +352,13 @@ def cmd_teardown(args):
 
     # Deactivate lvs.
     logging.info("Deactivating lvs")
-    lvm.run("vgchange", "--activate", "n", "--select",
-            "vg_name =~ ^{}-[0-9]+".format(VG_PREFIX))
+    lvm.run(
+        "vgchange",
+        "--activate",
+        "n",
+        "--select",
+        "vg_name =~ ^{}-[0-9]+".format(VG_PREFIX),
+    )
 
     # Wipe and remove the devices.
     for delay_link in glob.glob("delay_*"):
@@ -399,9 +395,8 @@ def cmd_run(args):
     register_termination_signals()
 
     reloaders_lvm = LVMRunner(
-        use_udev=args.use_udev,
-        verbose=args.verbose,
-        read_only=args.read_only)
+        use_udev=args.use_udev, verbose=args.verbose, read_only=args.read_only
+    )
     reloaders = []
 
     logging.info("Starting pv reloader")
@@ -504,9 +499,11 @@ def run_trial(lvm, args, vg_name):
     for lv_name in iter_lvs(args):
         lvm.create_lv(vg_name, lv_name)
         lvm.change_lv_tags(
-            vg_name, lv_name,
+            vg_name,
+            lv_name,
             rem=[TAG_VOL_UNINIT],
-            add=["IU_{}".format(lv_name), "PU_{}".format(BLANK_UUID)])
+            add=["IU_{}".format(lv_name), "PU_{}".format(BLANK_UUID)],
+        )
         lvm.deactivate_lv(vg_name, lv_name)
 
     # Simulate lv usage.
@@ -519,9 +516,11 @@ def run_trial(lvm, args, vg_name):
     # Prepare lvs for removal.
     for lv_name in iter_lvs(args):
         lvm.change_lv_tags(
-            vg_name, lv_name,
+            vg_name,
+            lv_name,
             rem=["IU_{}".format(lv_name)],
-            add=["IU_{}{}".format(REMOVED_IMAGE_PREFIX, lv_name)])
+            add=["IU_{}{}".format(REMOVED_IMAGE_PREFIX, lv_name)],
+        )
 
     # Discard and remove lvs.
     for lv_name in iter_lvs(args):
@@ -574,31 +573,34 @@ class LVMRunner:
         logging.info("Creating pv %s", pv_name)
         self.run(
             "pvcreate",
-            "--metadatasize", "128m",
-            "--metadatacopies", "2",
-            pv_name
+            "--metadatasize",
+            "128m",
+            "--metadatacopies",
+            "2",
+            pv_name,
         )
 
     def create_vg(self, vg_name, pv_name):
         logging.info("Creating vg %s on pv %s", vg_name, pv_name)
-        self.run(
-            "vgcreate",
-            "--physicalextentsize", "128m",
-            vg_name,
-            pv_name
-        )
+        self.run("vgcreate", "--physicalextentsize", "128m", vg_name, pv_name)
 
     def create_lv(self, vg_name, lv_name):
         logging.info("Creating lv %s/%s", vg_name, lv_name)
         self.run(
             "lvcreate",
-            "--autobackup", "n",
-            "--contiguous", "n",
-            "--size", "1g",
-            "--addtag", TAG_VOL_UNINIT,
-            "--activate", "y",
-            "--name", lv_name,
-            vg_name
+            "--autobackup",
+            "n",
+            "--contiguous",
+            "n",
+            "--size",
+            "1g",
+            "--addtag",
+            TAG_VOL_UNINIT,
+            "--activate",
+            "y",
+            "--name",
+            lv_name,
+            vg_name,
         )
 
     def activate_lv(self, vg_name, lv_name):
@@ -613,8 +615,9 @@ class LVMRunner:
         logging.info("Changing lv tags %s/%s", vg_name, lv_name)
         self.change_lv(vg_name, lv_name, add_tags=add, del_tags=rem)
 
-    def change_lv(self, vg_name, lv_name, activate=None, add_tags=(),
-                  del_tags=()):
+    def change_lv(
+        self, vg_name, lv_name, activate=None, add_tags=(), del_tags=()
+    ):
         args = ["--autobackup", "n"]
 
         for tag in add_tags:
@@ -634,18 +637,21 @@ class LVMRunner:
         logging.info("Extending lv %s/%s", vg_name, lv_name)
         self.run(
             "lvextend",
-            "--autobackup", "n",
-            "--size", size,
-            "{}/{}".format(vg_name, lv_name)
+            "--autobackup",
+            "n",
+            "--size",
+            size,
+            "{}/{}".format(vg_name, lv_name),
         )
 
     def remove_lv(self, vg_name, lv_name):
         logging.info("Removing %s/%s", vg_name, lv_name)
         self.run(
             "lvremove",
-            "--autobackup", "n",
+            "--autobackup",
+            "n",
             "--force",
-            "{}/{}".format(vg_name, lv_name)
+            "{}/{}".format(vg_name, lv_name),
         )
 
     def run(self, cmd_name, *args):
@@ -680,23 +686,27 @@ def perform_io(vg_name, lv_name):
     logging.info("Doing some I/O with %s", lv_device)
 
     # Write 2 MiB per lv, total 10 GiB per 5000 lvs.
-    run([
-        "dd",
-        "if=/dev/zero",
-        "of=" + lv_device,
-        "bs=64k",
-        "count=32",
-        "oflag=direct",
-    ])
+    run(
+        [
+            "dd",
+            "if=/dev/zero",
+            "of=" + lv_device,
+            "bs=64k",
+            "count=32",
+            "oflag=direct",
+        ]
+    )
 
-    run([
-        "dd",
-        "if=" + lv_device,
-        "of=/dev/null",
-        "bs=64k",
-        "count=32",
-        "iflag=direct",
-    ])
+    run(
+        [
+            "dd",
+            "if=" + lv_device,
+            "of=/dev/null",
+            "bs=64k",
+            "count=32",
+            "iflag=direct",
+        ]
+    )
 
 
 class ReloaderStats:
@@ -800,8 +810,9 @@ def reload(lvm, cmd, cmd_args, stats, args):
                 e.dump(filename)
                 e = "See {} for more info".format(filename)
 
-            logging.warning("Attempt %d of %d failed: %s",
-                            attempt, args.retries + 1, e)
+            logging.warning(
+                "Attempt %d of %d failed: %s", attempt, args.retries + 1, e
+            )
 
     # all attempts have failed
     stats.failures += 1
@@ -848,15 +859,20 @@ def run(args, input=None):
         args,
         stdin=subprocess.PIPE if input else None,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        stderr=subprocess.PIPE,
+    )
 
     out, err = p.communicate(input=input)
 
     out = out.decode("utf-8").strip()
     err = err.decode("utf-8").strip()
 
-    logging.debug("Command completed rc=%s out=%r err=%r",
-                  p.returncode, Head(out), Head(err))
+    logging.debug(
+        "Command completed rc=%s out=%r err=%r",
+        p.returncode,
+        Head(out),
+        Head(err),
+    )
 
     if p.returncode != 0:
         raise Error(args, p.returncode, out, err)
@@ -872,7 +888,7 @@ class Head:
 
     def __str__(self):
         if len(self.text) > self.limit:
-            return self.text[:self.limit] + " ..."
+            return self.text[: self.limit] + " ..."
         return self.text
 
     def __repr__(self):

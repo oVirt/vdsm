@@ -6,11 +6,7 @@ import argparse
 import sys
 import traceback
 
-from . import \
-    service, \
-    expose, \
-    UsageError, \
-    requiresRoot
+from . import service, expose, UsageError, requiresRoot
 from . import configurators
 from vdsm import moduleloader
 
@@ -41,6 +37,7 @@ _CONFIGURATORS = _init_configurators()
 #
 # Default implementation follows;
 #
+
 
 def _getrequires(module):
     """Return a set of module names required by this module.
@@ -86,6 +83,7 @@ def _removeConf(module):
     """Cleanup vdsm's configuration."""
     getattr(module, 'removeConf', lambda: None)()
 
+
 #
 # Configurators Interface End.
 #
@@ -102,8 +100,9 @@ def configure(*args):
     pargs = _parse_args(*args)
 
     sys.stdout.write("\nChecking configuration status...\n\n")
-    configurer_to_trigger = [c for c in pargs.modules
-                             if _should_configure(c, pargs.force)]
+    configurer_to_trigger = [
+        c for c in pargs.modules if _should_configure(c, pargs.force)
+    ]
 
     services = []
     for c in configurer_to_trigger:
@@ -150,8 +149,7 @@ def isconfigured(*args):
         ret = False
 
     if not ret:
-        msg = \
-            """
+        msg = """
 
 One of the modules is not configured to work with VDSM.
 To configure the module use the following:
@@ -203,8 +201,7 @@ def remove_config(*args):
             _removeConf(c)
         except Exception:
             sys.stderr.write(
-                "can't remove configuration of module %s\n" %
-                c.name
+                "can't remove configuration of module %s\n" % c.name
             )
             traceback.print_exc(file=sys.stderr)
             failed = True
@@ -269,8 +266,7 @@ def _parse_args(*args):
             'Specify the module to run the action on '
             '(e.g %s).\n'
             'If non is specified, operation will run for '
-            'all related modules.'
-            % list(_CONFIGURATORS)
+            'all related modules.' % list(_CONFIGURATORS)
         ),
     )
     if action == "configure":
@@ -295,8 +291,9 @@ def _parse_args(*args):
 
 def _should_configure(c, force):
     configured = _isconfigured(c)
-    configure_allowed = (configured == configurators.NO or
-                         (configured == configurators.MAYBE and force))
+    configure_allowed = configured == configurators.NO or (
+        configured == configurators.MAYBE and force
+    )
     if not _validate(c) and not configure_allowed:
         raise configurators.InvalidConfig(
             "Configuration of %s is invalid" % c.name

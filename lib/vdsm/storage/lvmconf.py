@@ -62,7 +62,6 @@ from augeas import Augeas
 from vdsm import constants
 from vdsm.common import commands
 
-
 log = logging.getLogger("storage.lvmconf")
 
 
@@ -161,7 +160,11 @@ class LVMConfig(object):
 
     def _flat_path(self, section, option, opt_type):
         return "/files%s/%s/dict/%s/%s" % (
-            self.path, section, option, opt_type)
+            self.path,
+            section,
+            option,
+            opt_type,
+        )
 
     # Removing options
 
@@ -173,9 +176,12 @@ class LVMConfig(object):
     # File operations
 
     def save(self):
-        log.info("Saving new LVM configuration to %r, previous configuration "
-                 "saved to %r",
-                 self.path, self.path + ".augsave")
+        log.info(
+            "Saving new LVM configuration to %r, previous configuration "
+            "saved to %r",
+            self.path,
+            self.path + ".augsave",
+        )
         self.aug.save()
 
     def close(self):
@@ -193,23 +199,29 @@ def configured_value(section, option):
     if not option:
         raise ValueError("Option must not be empty.")
 
-    cmd = [constants.EXT_LVM, "lvmconfig",
-           "--typeconfig", "full",
-           f"{section}/{option}"]
+    cmd = [
+        constants.EXT_LVM,
+        "lvmconfig",
+        "--typeconfig",
+        "full",
+        f"{section}/{option}",
+    ]
     out = commands.run(cmd).decode("utf-8").strip()
 
     # Validate, that the output is in expected format key=value and doesn't
     # span multiple lines.
     if "=" not in out or "\n" in out:
         raise UnexpectedLvmConfigOutput(
-            f"Unexpected output: option={section}/{option}, output={out}")
+            f"Unexpected output: option={section}/{option}, output={out}"
+        )
 
     key, value = out.split("=", 1)
 
     # Validate, that returned key matches requested option.
     if key.strip() != option:
         raise UnexpectedLvmConfigOutput(
-            f"Returned key doesn't match option: option={option}, key={key}")
+            f"Returned key doesn't match option: option={option}, key={key}"
+        )
 
     # String value.
     if value[0] == '"' and value[-1] == '"':

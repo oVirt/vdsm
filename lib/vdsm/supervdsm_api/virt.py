@@ -19,15 +19,14 @@ from . import expose
 
 @expose
 def prepareVmChannel(socketFile, group=None):
-    if (socketFile.startswith(P_LIBVIRT_VMCHANNELS) or
-       socketFile.startswith(P_OVIRT_VMCONSOLES)):
+    if socketFile.startswith(P_LIBVIRT_VMCHANNELS) or socketFile.startswith(
+        P_OVIRT_VMCONSOLES
+    ):
         fsinfo = os.stat(socketFile)
         mode = fsinfo.st_mode | stat.S_IWGRP
         os.chmod(socketFile, mode)
         if group is not None:
-            os.chown(socketFile,
-                     fsinfo.st_uid,
-                     resolveGid(group))
+            os.chown(socketFile, fsinfo.st_uid, resolveGid(group))
     else:
         raise Exception("Incorporate socketFile")
 
@@ -104,8 +103,11 @@ def mdev_create(device, mdev_properties, mdev_uuid=None):
             try:
                 mdev_delete(device, mdev_uuid)
             except Exception as e:
-                logging.error("Failed to remove vGPU device with failed "
-                              "driver parameters: %s", e)
+                logging.error(
+                    "Failed to remove vGPU device with failed "
+                    "driver parameters: %s",
+                    e,
+                )
             raise
 
     return mdev_uuid
@@ -125,9 +127,7 @@ def mdev_delete(device, mdev_uuid):
         Possibly anything related to sysfs write (IOError).
     """
     path = os.path.join(
-        '/sys/class/mdev_bus/{}/{}/remove'.format(
-            device, mdev_uuid
-        )
+        '/sys/class/mdev_bus/{}/{}/remove'.format(device, mdev_uuid)
     )
 
     with open(path, 'w') as f:
@@ -172,8 +172,7 @@ def read_tpm_data(vm_id, last_modified):
       actual modification time)
     :rtype: tuple
     """
-    accessor = filedata.DirectoryData(filedata.tpm_path(vm_id),
-                                      compress=False)
+    accessor = filedata.DirectoryData(filedata.tpm_path(vm_id), compress=False)
     currently_modified = accessor.last_modified()
     data = accessor.retrieve(last_modified=last_modified)
     return password.ProtectedPassword(data), currently_modified
@@ -203,7 +202,7 @@ def write_tpm_data(vm_id, tpm_data):
                     logging.error("Special file in TPM data: %s", path)
                     raise exception.ExternalDataFailed(
                         reason="Cannot write TPM data with non-regular files",
-                        path=path
+                        path=path,
                     )
     # OK, write the data to the target location
     accessor = filedata.DirectoryData(filedata.tpm_path(vm_id))
@@ -225,8 +224,7 @@ def write_nvram_data(vm_id, nvram_data):
     # Create the file with restricted permissions owned by root
     if os.path.exists(nvram_path):
         os.remove(nvram_path)
-    fd = os.open(
-        nvram_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o600)
+    fd = os.open(nvram_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o600)
     os.close(fd)
     # Write content
     accessor = filedata.FileData(nvram_path)

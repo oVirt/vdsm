@@ -43,6 +43,7 @@ class StompAdapterImpl(object):
               representing stomp subscription.
     req_dest - maps a request id to a destination.
     """
+
     def __init__(self, reactor, sub_map, req_dest):
         self._reactor = reactor
         self._outbox = deque()
@@ -56,11 +57,12 @@ class StompAdapterImpl(object):
             stomp.Command.SEND: self._cmd_send,
             stomp.Command.SUBSCRIBE: self._cmd_subscribe,
             stomp.Command.UNSUBSCRIBE: self._cmd_unsubscribe,
-            stomp.Command.DISCONNECT: self._cmd_disconnect}
+            stomp.Command.DISCONNECT: self._cmd_disconnect,
+        }
 
     @property
     def has_outgoing_messages(self):
-        return (len(self._outbox) > 0)
+        return len(self._outbox) > 0
 
     def peek_message(self):
         return self._outbox[0]
@@ -82,9 +84,7 @@ class StompAdapterImpl(object):
         version = frame.headers.get(stomp.Headers.ACCEPT_VERSION, None)
         if version != "1.2":
             resp = stomp.Frame(
-                stomp.Command.ERROR,
-                None,
-                "Version unsupported"
+                stomp.Command.ERROR, None, "Version unsupported"
             )
         else:
             resp = stomp.Frame(stomp.Command.CONNECTED, {"version": "1.2"})
@@ -112,28 +112,28 @@ class StompAdapterImpl(object):
         sub_id = frame.headers.get("id", None)
 
         if not destination or not sub_id:
-            self._send_error("Missing destination or subscription id header",
-                             dispatcher.connection)
+            self._send_error(
+                "Missing destination or subscription id header",
+                dispatcher.connection,
+            )
             return
 
         if sub_id in self._sub_ids:
-            self._send_error("Subscription id already exists",
-                             dispatcher.connection)
+            self._send_error(
+                "Subscription id already exists", dispatcher.connection
+            )
             return
 
         ack = frame.headers.get("ack", stomp.AckMode.AUTO)
-        subscription = stomp.Subscription(dispatcher.connection, destination,
-                                          sub_id, ack, None)
+        subscription = stomp.Subscription(
+            dispatcher.connection, destination, sub_id, ack, None
+        )
 
         self._sub_dests[destination].append(subscription)
         self._sub_ids[sub_id] = subscription
 
     def _send_error(self, msg, connection):
-        res = stomp.Frame(
-            stomp.Command.ERROR,
-            None,
-            msg
-        )
+        res = stomp.Frame(stomp.Command.ERROR, None, msg)
         connection.send_raw(res)
 
     def _cmd_unsubscribe(self, dispatcher, frame):
@@ -141,15 +141,13 @@ class StompAdapterImpl(object):
         sub_id = frame.headers.get("id", None)
 
         if not sub_id:
-            self._send_error("Missing id header",
-                             dispatcher.connection)
+            self._send_error("Missing id header", dispatcher.connection)
             return
 
         try:
             subscription = self._sub_ids.pop(sub_id)
         except KeyError:
-            self.log.debug("No subscription for %s id",
-                           sub_id)
+            self.log.debug("No subscription for %s id", sub_id)
             return
         else:
             self._remove_subscription(subscription)
@@ -163,8 +161,9 @@ class StompAdapterImpl(object):
             return
 
         headers = {stomp.Headers.RECEIPT_ID: r_id}
-        dispatcher.connection.send_raw(stomp.Frame(stomp.Command.RECEIPT,
-                                                   headers))
+        dispatcher.connection.send_raw(
+            stomp.Frame(stomp.Command.RECEIPT, headers)
+        )
 
     def _remove_subscription(self, subscription):
         subs = self._sub_dests[subscription.destination]
@@ -186,19 +185,24 @@ class StompAdapterImpl(object):
 
         # Is this a command that is meant to be answered
         # by the internal implementation?
-        if any(destination == queue or destination.startswith(queue + ".")
-               for queue in self.request_queues):
-            self._handle_internal(dispatcher,
-                                  frame.headers.get(stomp.Headers.REPLY_TO),
-                                  frame.headers.get(stomp.Headers.FLOW_ID),
-                                  frame.body)
+        if any(
+            destination == queue or destination.startswith(queue + ".")
+            for queue in self.request_queues
+        ):
+            self._handle_internal(
+                dispatcher,
+                frame.headers.get(stomp.Headers.REPLY_TO),
+                frame.headers.get(stomp.Headers.FLOW_ID),
+                frame.body,
+            )
             return
 
         # This was not a command nor there were any subscribers,
         # return an error!
         if not subs:
-            self._send_error("Subscription not available",
-                             dispatcher.connection)
+            self._send_error(
+                "Subscription not available", dispatcher.connection
+            )
 
     def _forward_frame(self, subscription, frame):
         """
@@ -207,11 +211,7 @@ class StompAdapterImpl(object):
         """
         headers = {stomp.Headers.SUBSCRIPTION: subscription.id}
         headers.update(frame.headers)
-        res = stomp.Frame(
-            stomp.Command.MESSAGE,
-            headers,
-            frame.body
-        )
+        res = stomp.Frame(stomp.Command.MESSAGE, headers, frame.body)
         subscription.client.send_raw(res)
 
     def _handle_internal(self, dispatcher, req_dest, flow_id, request):
@@ -244,8 +244,14 @@ class StompAdapterImpl(object):
         to build response map for each message.
         """
         if isinstance(request, list):
-            list(map(functools.partial(self._handle_destination, dispatcher,
-                                       req_dest), request))
+            list(
+                map(
+                    functools.partial(
+                        self._handle_destination, dispatcher, req_dest
+                    ),
+                    request,
+                )
+            )
             return
 
         self._req_dest[request.get("id")] = req_dest
@@ -259,12 +265,12 @@ class StompAdapterImpl(object):
 
     def find_subscribers(self, destination):
         """Return all subscribers that are interested in the destination
-           or its parents. Hierarchy is defined using dot as the separator.
+        or its parents. Hierarchy is defined using dot as the separator.
         """
         destination_segments = destination.split(".")
         subscriptions = []
         for parts in range(len(destination_segments)):
-            candidate_dest = ".".join(destination_segments[:parts + 1])
+            candidate_dest = ".".join(destination_segments[: parts + 1])
             if candidate_dest in self._sub_dests:
                 subscriptions.extend(self._sub_dests[candidate_dest])
 
@@ -281,19 +287,21 @@ class StompServer(object):
         self._req_dest = {}
 
     def add_client(self, sock):
-        adapter = StompAdapterImpl(self._reactor, self._sub_map,
-                                   self._req_dest)
-        return stomp.StompConnection(self, adapter, sock,
-                                     self._reactor)
+        adapter = StompAdapterImpl(
+            self._reactor, self._sub_map, self._req_dest
+        )
+        return stomp.StompConnection(self, adapter, sock, self._reactor)
 
     """
     Sends message to all subscribes that subscribed to destination.
     """
+
     def send(self, message, destination=stomp.SUBSCRIPTION_ID_RESPONSE):
         resp = json.loads(message)
         if not isinstance(resp, dict):
             raise ValueError(
-                'Provided message %s failed parsing to dictionary' % message)
+                'Provided message %s failed parsing to dictionary' % message
+            )
         # pylint: disable=no-member
         response_id = resp.get("id")
 
@@ -307,8 +315,9 @@ class StompServer(object):
         try:
             connections = self._sub_map[destination]
         except KeyError:
-            self.log.warn("Attempt to reply to unknown destination %s",
-                          destination)
+            self.log.warn(
+                "Attempt to reply to unknown destination %s", destination
+            )
             return
 
         for connection in connections:
@@ -317,9 +326,9 @@ class StompServer(object):
                 {
                     stomp.Headers.DESTINATION: destination,
                     stomp.Headers.CONTENT_TYPE: "application/json",
-                    stomp.Headers.SUBSCRIPTION: connection.id
+                    stomp.Headers.SUBSCRIPTION: connection.id,
                 },
-                message
+                message,
             )
             # we need to check whether the channel is not closed
             if not connection.client.is_closed():
@@ -359,10 +368,7 @@ class StompReactor(object):
 
     def createListener(self, connected_socket, acceptHandler):
         listener = StompListener(
-            self._reactor,
-            self._server,
-            acceptHandler,
-            connected_socket
+            self._reactor, self._server, acceptHandler, connected_socket
         )
         self._reactor.wakeup()
         return listener
@@ -372,8 +378,9 @@ class StompReactor(object):
         return self._server
 
     def createClient(self, connected_socket, owns_reactor=False):
-        return stompclient.StompClient(connected_socket, self._reactor,
-                                       owns_reactor=owns_reactor)
+        return stompclient.StompClient(
+            connected_socket, self._reactor, owns_reactor=owns_reactor
+        )
 
     def process_requests(self):
         self._reactor.process_requests()
@@ -382,7 +389,7 @@ class StompReactor(object):
         self._reactor.stop()
 
 
-class StompDetector():
+class StompDetector:
     log = logging.getLogger("protocoldetector.StompDetector")
     NAME = "stomp"
     REQUIRED_SIZE = max(len(s) for s in stomp.COMMANDS)
@@ -406,13 +413,14 @@ class ServerRpcContextAdapter(object):
     to instance of a JsonRpcServer and adds 'reply_to' header to a frame
     before sending it.
     """
+
     @classmethod
     def subscription_handler(cls, server, address):
         def handler(sub, frame):
             server.queueRequest(
                 (
                     ServerRpcContextAdapter(sub.client, frame, address),
-                    frame.body
+                    frame.body,
                 )
             )
 
@@ -433,7 +441,7 @@ class ServerRpcContextAdapter(object):
                 data,
                 {
                     "content-type": "application/json",
-                }
+                },
             )
 
 
@@ -442,6 +450,7 @@ def StompRpcServer(bridge, stomp_client, request_queue, address, timeout, cif):
 
     return stomp_client.subscribe(
         request_queue,
-        message_handler=ServerRpcContextAdapter.subscription_handler(server,
-                                                                     address)
+        message_handler=ServerRpcContextAdapter.subscription_handler(
+            server, address
+        ),
     )

@@ -20,7 +20,7 @@ from vdsm.storage import lvm
 
 import testing
 
-from . marks import requires_root
+from .marks import requires_root
 
 
 EXPECTED_CFG_DEVICES = (
@@ -127,9 +127,8 @@ def fake_devices(monkeypatch):
 
     # Initial devices for LVMCache tests.
     monkeypatch.setattr(
-        lvm.multipath,
-        "getMPDevNamesIter",
-        lambda: tuple(devices))
+        lvm.multipath, "getMPDevNamesIter", lambda: tuple(devices)
+    )
 
     return devices
 
@@ -137,7 +136,8 @@ def fake_devices(monkeypatch):
 def build_config(devices, use_lvmpolld="1"):
     return lvm._buildConfig(
         dev_filter=lvm._buildFilter(lvm._prepare_device_set(devices)),
-        use_lvmpolld=use_lvmpolld)
+        use_lvmpolld=use_lvmpolld,
+    )
 
 
 def test_build_command_long_filter(fake_devices, use_filter):
@@ -153,7 +153,8 @@ def test_build_command_long_filter(fake_devices, use_filter):
         "lvs",
         "--config",
         build_config(fake_devices),
-        "-o", "+tags",
+        "-o",
+        "+tags",
     ]
 
 
@@ -217,15 +218,19 @@ def test_cmd_success(fake_devices, use_filter):
         "lvs",
         "--config",
         build_config(fake_devices),
-        "-o", "+tags",
+        "-o",
+        "+tags",
     ]
 
 
-@pytest.mark.parametrize("devices, expected", [
-    (("/dev/mapper/a",), "/dev/mapper/a"),
-    (("/dev/mapper/a", "/dev/mapper/b"), "/dev/mapper/a,/dev/mapper/b"),
-    ((r"\x20\x24\x7c\x22\x28",), r"\\x20\\x24\\x7c\\x22\\x28"),
-])
+@pytest.mark.parametrize(
+    "devices, expected",
+    [
+        (("/dev/mapper/a",), "/dev/mapper/a"),
+        (("/dev/mapper/a", "/dev/mapper/b"), "/dev/mapper/a,/dev/mapper/b"),
+        ((r"\x20\x24\x7c\x22\x28",), r"\\x20\\x24\\x7c\\x22\\x28"),
+    ],
+)
 def test_cmd_with_devices(use_devices, devices, expected):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
@@ -235,10 +240,14 @@ def test_cmd_with_devices(use_devices, devices, expected):
 
     cmd = fake_runner.calls[0]
     expected_cmd = [
-        constants.EXT_LVM, "lvs",
-        "--devices", expected,
-        "--config", EXPECTED_CFG_DEVICES,
-        "-o", "+tags",
+        constants.EXT_LVM,
+        "lvs",
+        "--devices",
+        expected,
+        "--config",
+        EXPECTED_CFG_DEVICES,
+        "-o",
+        "+tags",
     ]
 
     assert cmd == expected_cmd
@@ -437,10 +446,8 @@ def test_reducelv_failure_cache(monkeypatch, fake_devices):
 
     # Fake LV - 16MiB
     fake_lv_unreduced = make_lv(
-        vg_name=fake_vg.name,
-        lv_name="lv",
-        pvs=[fake_pv.name],
-        size="16777216")
+        vg_name=fake_vg.name, lv_name="lv", pvs=[fake_pv.name], size="16777216"
+    )
 
     # Assign fake PV, VG, LV to cache.
     lc._pvs = {fake_pv.name: fake_pv}
@@ -520,7 +527,8 @@ def test_createlv_success_cache(monkeypatch, fake_devices):
 
     # Create fake control lv in same vg - should not get invalidated.
     fake_control_lv = make_lv(
-        lv_name="controllv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+        lv_name="controllv", pvs=[fake_pv.name], vg_name=fake_vg.name
+    )
 
     # Assign fake PV, VG, LV to cache.
     lc._pvs = {fake_pv.name: fake_pv}
@@ -600,7 +608,8 @@ def test_removevg_failure_cache(monkeypatch, fake_devices):
 
     # Create fake control pv in a different vg - should not get invalidated.
     fake_control_pv = make_pv(
-        pv_name="/dev/mapper/controlpv", vg_name="controlvg")
+        pv_name="/dev/mapper/controlpv", vg_name="controlvg"
+    )
     fake_control_vg = make_vg(pvs=[fake_control_pv.name], vg_name="controlvg")
 
     # Assign fake PV, VG to cache.
@@ -670,14 +679,13 @@ def test_resizepv_success_cache(monkeypatch):
     fake_control_pv1 = make_pv(pv_name="/dev/mapper/controlpv1", vg_name="vg")
 
     # Assign both pvs to same vg.
-    fake_vg = make_vg(
-        pvs=[fake_pv.name, fake_control_pv1.name], vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name, fake_control_pv1.name], vg_name="vg")
 
     # Create fake control pv in a different vg - should not get invalidated.
     fake_control_pv2 = make_pv(
-        pv_name="/dev/mapper/controlpv2", vg_name="controlvg")
-    fake_control_vg = make_vg(
-        vg_name="controlvg", pvs=[fake_control_pv2.name])
+        pv_name="/dev/mapper/controlpv2", vg_name="controlvg"
+    )
+    fake_control_vg = make_vg(vg_name="controlvg", pvs=[fake_control_pv2.name])
 
     # Assign fake PV, VG to cache.
     lc._pvs = {
@@ -757,7 +765,7 @@ def test_cmd_retry_filter_stale(fake_devices, use_filter):
         constants.EXT_LVM,
         "fake",
         "--config",
-        build_config(fake_devices)
+        build_config(fake_devices),
     ]
 
 
@@ -780,10 +788,12 @@ def test_suppress_warnings(fake_devices):
     assert e.value.rc == 1
     assert e.value.err == [
         u"  before",
-        (u"  WARNING: Combining activation change with other commands is "
-         "not advised."),
+        (
+            u"  WARNING: Combining activation change with other commands is "
+            "not advised."
+        ),
         u"  Configuration setting \"global/event_activation\" unknown.",
-        u"  after"
+        u"  after",
     ]
 
 
@@ -826,7 +836,8 @@ def test_pv_move_cmd(fake_devices, monkeypatch, use_filter):
         mda_count='1',
         dev_size='123',
         mda_used_count='1',
-        guid='a')
+        guid='a',
+    )
 
     fake_pv2 = lvm.PV(
         uuid='id',
@@ -840,7 +851,8 @@ def test_pv_move_cmd(fake_devices, monkeypatch, use_filter):
         mda_count='1',
         dev_size='123',
         mda_used_count='1',
-        guid='b')
+        guid='b',
+    )
 
     # Assign fake PVs to cache.
     lc._pvs = {"/dev/mapper/a": fake_pv1, "/dev/mapper/b": fake_pv2}
@@ -855,7 +867,7 @@ def test_pv_move_cmd(fake_devices, monkeypatch, use_filter):
         "pvmove",
         "--config",
         build_config(fake_devices, use_lvmpolld="0"),
-        *fake_devices
+        *fake_devices,
     ]
 
 
@@ -1091,17 +1103,23 @@ def stale_pv(tmp_storage):
     devices = ",".join([good_pv_name, stale_pv_name])
     # Simulate removal of the second PV on another host, leaving stale PV in
     # the cache.
-    commands.run([
-        "vgreduce",
-        "--devices", devices,
-        vg_name,
-        stale_pv_name,
-    ])
-    commands.run([
-        "pvremove",
-        "--devices", devices,
-        stale_pv_name,
-    ])
+    commands.run(
+        [
+            "vgreduce",
+            "--devices",
+            devices,
+            vg_name,
+            stale_pv_name,
+        ]
+    )
+    commands.run(
+        [
+            "pvremove",
+            "--devices",
+            devices,
+            stale_pv_name,
+        ]
+    )
 
     # We still report both devies.
     pvs = sorted(pv.name for pv in lvm.getAllPVs())
@@ -1174,7 +1192,7 @@ def test_pv_stale_reload_all_stale(stale_pv):
     # stale PV.
     assert set(lvm.getAllPVs()) == {
         lvm.Unreadable(good_pv_name),
-        lvm.Unreadable(stale_pv_name)
+        lvm.Unreadable(stale_pv_name),
     }
 
 
@@ -1272,14 +1290,12 @@ def test_vg_add_delete_tags(tmp_storage):
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
 
     lvm.changeVGTags(
-        vg_name,
-        delTags=("initial-tag",),
-        addTags=("new-tag-1", "new-tag-2"))
+        vg_name, delTags=("initial-tag",), addTags=("new-tag-1", "new-tag-2")
+    )
 
     lvm.changeVGTags(
-        vg_name,
-        delTags=["initial-tag"],
-        addTags=["new-tag-1", "new-tag-2"])
+        vg_name, delTags=["initial-tag"], addTags=["new-tag-1", "new-tag-2"]
+    )
 
     clear_stats()
     vg = lvm.getVG(vg_name)
@@ -1535,7 +1551,8 @@ def test_lv_add_delete_tags(tmp_storage):
         vg_name,
         (lv1_name, lv2_name),
         delTags=("initial-tag",),
-        addTags=("new-tag-1", "new-tag-2"))
+        addTags=("new-tag-1", "new-tag-2"),
+    )
 
     lv1 = lvm.getLV(vg_name, lv1_name)
     lv2 = lvm.getLV(vg_name, lv2_name)
@@ -1562,11 +1579,14 @@ def stale_vg(tmp_storage):
 
     # Simulate removal of the second VG on another host, leaving stale VG in
     # the cache.
-    commands.run([
-        "vgremove",
-        "--devices", dev2,
-        stale_vg_name,
-    ])
+    commands.run(
+        [
+            "vgremove",
+            "--devices",
+            dev2,
+            stale_vg_name,
+        ]
+    )
 
     # We still report both vgs.
     vgs = sorted(vg.name for vg in lvm.getAllVGs())
@@ -1724,12 +1744,18 @@ def test_lv_deactivate_in_use(tmp_storage):
     assert not lv.active
 
 
-@pytest.mark.parametrize("in_use, error", [
-    (True, ["Logical volume XYZ in use."]),
-    (True, ["other warning", "Logical volume XYZ in use.", "other warning"]),
-    (False, ["other warning"]),
-    (False, [])
-])
+@pytest.mark.parametrize(
+    "in_use, error",
+    [
+        (True, ["Logical volume XYZ in use."]),
+        (
+            True,
+            ["other warning", "Logical volume XYZ in use.", "other warning"],
+        ),
+        (False, ["other warning"]),
+        (False, []),
+    ],
+)
 def test_in_use_exception(fake_devices, in_use, error):
     exc = se.LVMCommandError("cmd", 1, "out", error)
     assert exc.lv_in_use() == in_use
@@ -1774,19 +1800,38 @@ def test_lv_extend_reduce(tmp_storage):
     assert int(lv.size) == 1 * GiB
 
 
-@pytest.mark.parametrize("lvm_version, expected_cmd", [
-    ((2, 3, 16), ("lvreduce", "--autobackup", "n", "--size",
-                  "100m", "vg/lv")),
-    ((2, 3, 17), ("lvreduce", "--autobackup", "n", "--fs", "ignore", "--size",
-                  "100m", "vg/lv"))
-])
+@pytest.mark.parametrize(
+    "lvm_version, expected_cmd",
+    [
+        (
+            (2, 3, 16),
+            ("lvreduce", "--autobackup", "n", "--size", "100m", "vg/lv"),
+        ),
+        (
+            (2, 3, 17),
+            (
+                "lvreduce",
+                "--autobackup",
+                "n",
+                "--fs",
+                "ignore",
+                "--size",
+                "100m",
+                "vg/lv",
+            ),
+        ),
+    ],
+)
 def test_reducelv_with_different_lvm_versions(lvm_version, expected_cmd):
-    with mock.patch.object(lvm, "_get_lvm_version",
-                           return_value=lvm_version), \
-            mock.patch.object(lvm._lvminfo,
-                              "run_command") as mock_run_command, \
-            mock.patch.object(lvm._lvminfo, "_invalidatevgs"), \
-            mock.patch.object(lvm._lvminfo, "_invalidatelvs"):
+    with mock.patch.object(
+        lvm, "_get_lvm_version", return_value=lvm_version
+    ), mock.patch.object(
+        lvm._lvminfo, "run_command"
+    ) as mock_run_command, mock.patch.object(
+        lvm._lvminfo, "_invalidatevgs"
+    ), mock.patch.object(
+        lvm._lvminfo, "_invalidatelvs"
+    ):
 
         lvm.reduceLV("vg", "lv", 100)
 
@@ -1849,12 +1894,7 @@ def test_lv_refresh(tmp_storage):
     lvm.createLV(vg_name, lv_name, 1024)
 
     # Simulate extending the LV on the SPM.
-    commands.run([
-        "lvextend",
-        "--devices", dev,
-        "-L+1g",
-        lv_fullname
-    ])
+    commands.run(["lvextend", "--devices", dev, "-L+1g", lv_fullname])
 
     # Refreshing LV invalidates the cache to pick up changes from storage.
     lvm.refreshLVs(vg_name, [lv_name])
@@ -1862,12 +1902,7 @@ def test_lv_refresh(tmp_storage):
     assert int(lv.size) == 2 * GiB
 
     # Simulate extending the LV on the SPM.
-    commands.run([
-        "lvextend",
-        "--devices", dev,
-        "-L+1g",
-        lv_fullname
-    ])
+    commands.run(["lvextend", "--devices", dev, "-L+1g", lv_fullname])
 
     # Activate active LV refreshes it.
     lvm.activateLVs(vg_name, [lv_name])
@@ -1902,8 +1937,8 @@ def test_bootstrap(tmp_storage):
         img_dir = os.path.join(sc.P_VDSM_STORAGE, vg_name, "img")
         os.makedirs(img_dir)
         os.symlink(
-            lvm.lvPath(vg_name, "prepared"),
-            os.path.join(img_dir, "prepared"))
+            lvm.lvPath(vg_name, "prepared"), os.path.join(img_dir, "prepared")
+        )
 
     # Open some lvs during bootstrap.
     vg1_opened = lvm.lvPath(vg1_name, "opened")
@@ -1928,7 +1963,8 @@ def test_bootstrap(tmp_storage):
 @pytest.mark.root
 @pytest.mark.skipif(
     testing.on_ovirt_ci() or testing.on_travis_ci(),
-    reason="dm-mirror kernel module missing - pvmove fails")
+    reason="dm-mirror kernel module missing - pvmove fails",
+)
 def test_pv_move(tmp_storage):
     dev_size = 1 * GiB
     dev1 = tmp_storage.create_device(dev_size)
@@ -1987,11 +2023,14 @@ def stale_lv(tmp_storage):
 
     # Simulate removal of the second LV on another host, leaving stale LV in
     # the cache.
-    commands.run([
-        "lvremove",
-        "--devices", dev,
-        f"{vg_name}/{stale_lv_name}",
-    ])
+    commands.run(
+        [
+            "lvremove",
+            "--devices",
+            dev,
+            f"{vg_name}/{stale_lv_name}",
+        ]
+    )
 
     # The cache still keeps both lvs.
     assert lvm._lvminfo._lvs == {
@@ -2292,31 +2331,39 @@ def test_normalize_args():
     assert lvm.normalize_args([u"arg1", u"arg2"]) == [u"arg1", u"arg2"]
 
     assert list(lvm.normalize_args(iter(("arg1", "arg2")))) == [
-        u"arg1", u"arg2"]
+        u"arg1",
+        u"arg2",
+    ]
     assert list(lvm.normalize_args(iter((u"arg1", u"arg2")))) == [
-        u"arg1", u"arg2"]
+        u"arg1",
+        u"arg2",
+    ]
     assert list(lvm.normalize_args(iter(["arg1", "arg2"]))) == [
-        u"arg1", u"arg2"]
+        u"arg1",
+        u"arg2",
+    ]
     assert list(lvm.normalize_args(iter([u"arg1", u"arg2"]))) == [
-        u"arg1", u"arg2"]
+        u"arg1",
+        u"arg2",
+    ]
 
 
-@pytest.mark.parametrize("input,expected", [
-    (
-        'Physical volume "/dev/mapper/36001404" successfully created',
-        ["/dev/mapper/36001404"]
-    ),
-    (
-        """
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        (
+            'Physical volume "/dev/mapper/36001404" successfully created',
+            ["/dev/mapper/36001404"],
+        ),
+        (
+            """
         Physical volume "/dev/mapper/36001404" successfully created
         Physical volume "/dev/mapper/36001405" successfully created""",
-        ["/dev/mapper/36001404", "/dev/mapper/36001405"]
-    ),
-    (
-        "Run 'pvcreate --help' for more information",
-        []
-    )
-])
+            ["/dev/mapper/36001404", "/dev/mapper/36001405"],
+        ),
+        ("Run 'pvcreate --help' for more information", []),
+    ],
+)
 def test_pv_name_reg_exp(input, expected):
     assert lvm.re_pvName.findall(input) == expected
 

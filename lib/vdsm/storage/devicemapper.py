@@ -14,7 +14,6 @@ from vdsm.common import commands
 from vdsm.constants import EXT_DMSETUP
 from vdsm.storage import dmsetup
 
-
 DMPATH_PREFIX = "/dev/mapper/"
 
 
@@ -25,7 +24,7 @@ log = logging.getLogger("storage.devicemapper")
 
 
 class Error(Exception):
-    """ device mapper operation failed """
+    """device mapper operation failed"""
 
 
 def getDmId(deviceMultipathName):
@@ -33,26 +32,33 @@ def getDmId(deviceMultipathName):
     try:
         devStat = os.stat(devlinkPath)
     except OSError:
-        raise OSError(errno.ENODEV, "Could not find dm device named `%s`" %
-                                    deviceMultipathName)
+        raise OSError(
+            errno.ENODEV,
+            "Could not find dm device named `%s`" % deviceMultipathName,
+        )
 
     return "dm-%d" % os.minor(devStat.st_rdev)
 
 
 def device_name(major_minor):
-    return os.path.basename(os.path.realpath('/sys/dev/block/%s' %
-                                             major_minor))
+    return os.path.basename(
+        os.path.realpath('/sys/dev/block/%s' % major_minor)
+    )
 
 
 def getSysfsPath(devName):
     if "/" in devName:
-        raise ValueError("devName has an illegal format. "
-                         "Parameter is not a devname `%s`" % devName)
+        raise ValueError(
+            "devName has an illegal format. "
+            "Parameter is not a devname `%s`" % devName
+        )
 
     sysfsPath = os.path.join("/sys/block/", devName)
     if sysfsPath != os.path.abspath(sysfsPath):
-        raise ValueError("devName has an illegal format. "
-                         "Parameter is not a devname `%s`" % devName)
+        raise ValueError(
+            "devName has an illegal format. "
+            "Parameter is not a devname `%s`" % devName
+        )
 
     if not os.path.exists(sysfsPath):
         raise OSError(errno.ENOENT, "device `%s` doesn't exist" % devName)

@@ -249,16 +249,20 @@ class InvalidIndex(Error):
 
 
 class IndexIsUpdating(InvalidIndex):
-    msg = ("Index is updating or an update operation was aborted, the index "
-           "must be formatted or rebuilt from storage: {self.metadata}")
+    msg = (
+        "Index is updating or an update operation was aborted, the index "
+        "must be formatted or rebuilt from storage: {self.metadata}"
+    )
 
     def __init__(self, metadata):
         self.metadata = metadata
 
 
 class InvalidMetadata(InvalidIndex):
-    msg = ("Invalid index metadata ({self.reason}), the index must be "
-           "formatted or rebuilt from storage: {self.data!r}")
+    msg = (
+        "Invalid index metadata ({self.reason}), the index must be "
+        "formatted or rebuilt from storage: {self.data!r}"
+    )
 
     def __init__(self, reason, data):
         self.reason = reason
@@ -266,27 +270,35 @@ class InvalidMetadata(InvalidIndex):
 
 
 class TruncatedIndex(InvalidIndex):
-    msg = ("Couuld not read index, expected {self.expected} bytes, available "
-           "{self.available} bytes")
+    msg = (
+        "Couuld not read index, expected {self.expected} bytes, available "
+        "{self.available} bytes"
+    )
 
     def __init__(self, expected, available):
         self.expected = expected
         self.available = available
 
 
-LeaseInfo = namedtuple("LeaseInfo", (
-    "lockspace",        # Sanlock lockspace name
-    "resource",         # Sanlock resource name
-    "path",             # Path to lease file or block device
-    "offset",           # Offset in path
-))
+LeaseInfo = namedtuple(
+    "LeaseInfo",
+    (
+        "lockspace",  # Sanlock lockspace name
+        "resource",  # Sanlock resource name
+        "path",  # Path to lease file or block device
+        "offset",  # Offset in path
+    ),
+)
 
 
-ResourceInfo = namedtuple("ResourceInfo", (
-    "lockspace",        # Sanlock lockspace name
-    "resource",         # Sanlock resource name
-    "version",          # Sanlock resource version
-))
+ResourceInfo = namedtuple(
+    "ResourceInfo",
+    (
+        "lockspace",  # Sanlock lockspace name
+        "resource",  # Sanlock resource name
+        "version",  # Sanlock resource version
+    ),
+)
 
 
 class IndexMetadata(object):
@@ -307,8 +319,9 @@ class IndexMetadata(object):
                 cannot be parsed.
         """
         try:
-            magic, version, lockspace, mtime, updating, _ = \
-                META_STRUCT.unpack(data)
+            magic, version, lockspace, mtime, updating, _ = META_STRUCT.unpack(
+                data
+            )
         except struct.error as e:
             raise InvalidMetadata("cannot unpack: %s" % e, data)
 
@@ -327,16 +340,16 @@ class IndexMetadata(object):
         try:
             lockspace = lockspace.decode("ascii")
         except UnicodeDecodeError:
-            raise InvalidMetadata("cannot decode lockspace %r" %
-                                  lockspace, data)
+            raise InvalidMetadata(
+                "cannot decode lockspace %r" % lockspace, data
+            )
 
         try:
             mtime = int(mtime)
         except ValueError:
-            raise InvalidMetadata("cannot parse mtime %r" %
-                                  mtime, data)
+            raise InvalidMetadata("cannot parse mtime %r" % mtime, data)
 
-        updating = (updating == FLAG_UPDATING)
+        updating = updating == FLAG_UPDATING
 
         return cls(version, lockspace, mtime=mtime, updating=updating)
 
@@ -390,11 +403,13 @@ class IndexMetadata(object):
         )
 
     def __repr__(self):
-        return ("<IndexMetadata version={self.version}, "
-                "lockspace={self.lockspace!r}, "
-                "mtime={self.mtime}, "
-                "updating={self.updating} "
-                "at {addr:#x}>").format(self=self, addr=id(self))
+        return (
+            "<IndexMetadata version={self.version}, "
+            "lockspace={self.lockspace!r}, "
+            "mtime={self.mtime}, "
+            "updating={self.updating} "
+            "at {addr:#x}>"
+        ).format(self=self, addr=id(self))
 
 
 class Record(object):
@@ -425,7 +440,7 @@ class Record(object):
         except UnicodeDecodeError:
             raise InvalidRecord("cannot decode resource %r" % resource, record)
 
-        updating = (updating == FLAG_UPDATING)
+        updating = updating == FLAG_UPDATING
 
         try:
             offset = int(offset)
@@ -496,8 +511,8 @@ class LeasesVolume(object):
     """
 
     def __init__(
-            self, file, alignment=sc.ALIGNMENT_1M,
-            block_size=sc.BLOCK_SIZE_512):
+        self, file, alignment=sc.ALIGNMENT_1M, block_size=sc.BLOCK_SIZE_512
+    ):
         log.debug("Loading index from %r", file.name)
         self._file = file
         self._alignment = alignment
@@ -538,8 +553,9 @@ class LeasesVolume(object):
         - InvalidRecord if corrupted lease record is found
         - OSError if io operation failed
         """
-        log.debug("Looking up lease %r in lockspace %r",
-                  lease_id, self.lockspace)
+        log.debug(
+            "Looking up lease %r in lockspace %r", lease_id, self.lockspace
+        )
         recnum = self._index.find_record(lease_id)
         if recnum == -1:
             raise se.NoSuchLease(lease_id)
@@ -564,17 +580,20 @@ class LeasesVolume(object):
         - OSError if I/O operation failed
         - sanlock.SanlockException if sanlock operation failed.
         """
-        log.info("Adding lease %r in lockspace %r",
-                 lease_id, self.lockspace)
+        log.info("Adding lease %r in lockspace %r", lease_id, self.lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum != -1:
             record = self._index.read_record(recnum)
             if record.updating:
                 # Record can have updating flag due to partial creation caused
                 # by older vdsm versions
-                log.warning("Ignoring partially created lease in updating "
-                            "state recnum=%s resource=%s offset=%s",
-                            recnum, record.resource, record.offset)
+                log.warning(
+                    "Ignoring partially created lease in updating "
+                    "state recnum=%s resource=%s offset=%s",
+                    recnum,
+                    record.resource,
+                    record.offset,
+                )
             else:
                 raise LeaseExists(lease_id)
         else:
@@ -596,7 +615,8 @@ class LeasesVolume(object):
             lease_id.encode("utf-8"),
             [(self._file.name, offset)],
             align=self._alignment,
-            sector=self._block_size)
+            sector=self._block_size,
+        )
 
         record = Record(lease_id, offset)
         self._write_record(recnum, record)
@@ -612,8 +632,7 @@ class LeasesVolume(object):
         - OSError if I/O operation failed
         - sanlock.SanlockException if sanlock operation failed.
         """
-        log.info("Removing lease %r in lockspace %r",
-                 lease_id, self.lockspace)
+        log.info("Removing lease %r in lockspace %r", lease_id, self.lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum == -1:
             raise se.NoSuchLease(lease_id)
@@ -639,10 +658,15 @@ class LeasesVolume(object):
                 b"",
                 [(self._file.name, offset)],
                 align=self._alignment,
-                sector=self._block_size)
+                sector=self._block_size,
+            )
         except sanlock.SanlockException:
-            log.warning("Ignoring failure to clear sanlock resource file=%s "
-                        "offset=%s", self._file.name, offset)
+            log.warning(
+                "Ignoring failure to clear sanlock resource file=%s "
+                "offset=%s",
+                self._file.name,
+                offset,
+            )
 
     def leases(self):
         """
@@ -657,8 +681,9 @@ class LeasesVolume(object):
             try:
                 record = self._index.read_record(recnum)
             except InvalidRecord as e:
-                log.warning("Failed to read xlease index record %d: %s",
-                            recnum, e)
+                log.warning(
+                    "Failed to read xlease index record %d: %s", recnum, e
+                )
                 # TODO: Dump the bad records as well.
                 continue
 
@@ -692,8 +717,13 @@ class LeasesVolume(object):
         self._index.write_record(recnum, record)
 
 
-def format_index(lockspace, file, alignment=sc.ALIGNMENT_1M,
-                 block_size=sc.BLOCK_SIZE_512, max_records=MAX_RECORDS):
+def format_index(
+    lockspace,
+    file,
+    alignment=sc.ALIGNMENT_1M,
+    block_size=sc.BLOCK_SIZE_512,
+    max_records=MAX_RECORDS,
+):
     """
     Format xleases volume index, deleting all existing records.
 
@@ -707,8 +737,11 @@ def format_index(lockspace, file, alignment=sc.ALIGNMENT_1M,
     Raises:
     - OSError if I/O operation failed
     """
-    log.info("Formatting index for lockspace %r (version=%d)",
-             lockspace, INDEX_VERSION)
+    log.info(
+        "Formatting index for lockspace %r (version=%d)",
+        lockspace,
+        INDEX_VERSION,
+    )
     index = VolumeIndex(alignment, block_size)
     with utils.closing(index):
         with index.updating(lockspace, file):
@@ -720,8 +753,8 @@ def format_index(lockspace, file, alignment=sc.ALIGNMENT_1M,
 
 
 def rebuild_index(
-        lockspace, file, alignment=sc.ALIGNMENT_1M,
-        block_size=sc.BLOCK_SIZE_512):
+    lockspace, file, alignment=sc.ALIGNMENT_1M, block_size=sc.BLOCK_SIZE_512
+):
     """
     This operation synchronizes the index with sanlock resources on storage.
 
@@ -772,7 +805,9 @@ def rebuild_index(
     """
     log.info(
         "Rebuilding index for lockspace %r (version=%d)",
-        lockspace, INDEX_VERSION)
+        lockspace,
+        INDEX_VERSION,
+    )
     index = VolumeIndex(alignment, block_size)
     index.load(file)
 
@@ -780,7 +815,10 @@ def rebuild_index(
     meta = index.read_metadata()
     log.debug(
         "Index metadata check passed lockspace=%s version=%s updating=%s",
-        meta.lockspace, meta.version, meta.updating)
+        meta.lockspace,
+        meta.version,
+        meta.updating,
+    )
 
     with utils.closing(index):
         with index.updating(lockspace, file):
@@ -802,53 +840,76 @@ def rebuild_index(
                         file.name,
                         offset,
                         alignment=alignment,
-                        block_size=block_size)
+                        block_size=block_size,
+                    )
                     log.debug(
                         "Sanlock resource found recnum=%s resource=%s "
                         "offset=%s",
-                        recnum, res.resource, offset)
+                        recnum,
+                        res.resource,
+                        offset,
+                    )
                 except NoSuchResource:
                     res = None
                     log.debug(
                         "No sanlock resource found recnum=%s lockspace=%s "
                         "offset=%s",
-                        recnum, file.name, offset)
+                        recnum,
+                        file.name,
+                        offset,
+                    )
 
                 try:
                     record = index.read_record(recnum)
                     log.debug(
                         "Record loaded recnum=%s resource=%s offset=%s",
-                        recnum, record.resource, offset)
+                        recnum,
+                        record.resource,
+                        offset,
+                    )
                 except InvalidRecord as e:
                     # Record corrupted, try to recreate or clear it.
                     log.warning(
                         "Found corrupted record recnum=%s offset=%s: %s",
-                        recnum, offset, e)
+                        recnum,
+                        offset,
+                        e,
+                    )
 
                     if res:
                         # Found a non-empty resource in sanlock.
                         if index.find_record(res.resource) == -1:
                             # Resource is not in index, recreate record.
-                            log.debug("Record not found in index recnum=%s "
-                                      "offset=%s resource=%s",
-                                      recnum, offset, res.resource)
+                            log.debug(
+                                "Record not found in index recnum=%s "
+                                "offset=%s resource=%s",
+                                recnum,
+                                offset,
+                                res.resource,
+                            )
                             _write_record(index, recnum, offset, res)
                         else:
                             # Resource already exists in index, this indicates
                             # leftover resource and should be cleared. Also
                             # clear the corrupted record so it can be reused.
-                            log.debug("Leftover resource found for corrupted "
-                                      "index record recnum=%s offset=%s",
-                                      recnum, offset)
+                            log.debug(
+                                "Leftover resource found for corrupted "
+                                "index record recnum=%s offset=%s",
+                                recnum,
+                                offset,
+                            )
                             _clear_record(index, recnum, offset)
                             _clear_resource(
-                                file.name, offset, alignment, block_size)
+                                file.name, offset, alignment, block_size
+                            )
                     else:
                         # Record corrupted and no resource found, clear record.
                         log.debug(
                             "Corrupted record does not have matching sanlock "
                             "resource recnum=%s offset=%s",
-                            recnum, offset)
+                            recnum,
+                            offset,
+                        )
                         _clear_record(index, recnum, offset)
                 else:
                     if record.is_empty():
@@ -858,9 +919,13 @@ def rebuild_index(
                             log.debug(
                                 "Found leftover sanlock resource recnum=%s "
                                 "resource=%s offset=%s",
-                                recnum, res.resource, offset)
-                            _clear_resource(file.name, offset, alignment,
-                                            block_size)
+                                recnum,
+                                res.resource,
+                                offset,
+                            )
+                            _clear_resource(
+                                file.name, offset, alignment, block_size
+                            )
                     else:
                         if res is None:
                             # Record ok, but no resource found - recreate
@@ -868,33 +933,55 @@ def rebuild_index(
                             log.debug(
                                 "Found missing sanlock resource recnum=%s "
                                 "resource=%s offset=%s",
-                                recnum, record.resource, offset)
+                                recnum,
+                                record.resource,
+                                offset,
+                            )
                             _write_resource(
-                                file.name, offset, alignment, block_size,
-                                record.resource, lockspace)
+                                file.name,
+                                offset,
+                                alignment,
+                                block_size,
+                                record.resource,
+                                lockspace,
+                            )
                         if res and record.resource != res.resource:
                             # Resource and index record exist but IDs mismatch.
                             log.debug(
                                 "Found lease mismatch between sanlock "
                                 "resource=%s and index record resource=%s "
                                 "recnum=%s offset=%s",
-                                res.resource, record.resource, recnum, offset)
+                                res.resource,
+                                record.resource,
+                                recnum,
+                                offset,
+                            )
                             _write_resource(
-                                file.name, offset, alignment, block_size,
-                                record.resource, lockspace)
+                                file.name,
+                                offset,
+                                alignment,
+                                block_size,
+                                record.resource,
+                                lockspace,
+                            )
 
             # Attempt to write index to file.
             log.info(
                 "Writing new index. Index rebuild finished lockspace=%s "
                 "file=%s",
-                lockspace, file.name)
+                lockspace,
+                file.name,
+            )
             index.dump(file)
 
 
 def _write_record(index, recnum, offset, res):
     log.info(
         "Writing index record from sanlock recnum=%s resource=%s offset=%s",
-        recnum, res.resource, offset)
+        recnum,
+        res.resource,
+        offset,
+    )
     record = Record(res.resource, offset)
     index.write_record(recnum, record)
 
@@ -907,11 +994,8 @@ def _clear_record(index, recnum, offset):
 def _clear_resource(path, offset, alignment, block_size):
     log.info("Clearing sanlock resource file=%s offset=%s", path, offset)
     sanlock.write_resource(
-        b"",
-        b"",
-        [(path, offset)],
-        align=alignment,
-        sector=block_size)
+        b"", b"", [(path, offset)], align=alignment, sector=block_size
+    )
 
 
 def _write_resource(path, offset, alignment, block_size, resource, lockspace):
@@ -920,17 +1004,23 @@ def _write_resource(path, offset, alignment, block_size, resource, lockspace):
     """
     log.info(
         "Writing sanlock resource=%s lockspace=%s path=%s offset=%s",
-        resource, lockspace, path, offset)
+        resource,
+        lockspace,
+        path,
+        offset,
+    )
     sanlock.write_resource(
         lockspace.encode("utf-8"),
         resource.encode("utf-8"),
         [(path, offset)],
         align=alignment,
-        sector=block_size)
+        sector=block_size,
+    )
 
 
 def _read_resource(
-        path, offset, alignment=sc.ALIGNMENT_1M, block_size=sc.BLOCK_SIZE_512):
+    path, offset, alignment=sc.ALIGNMENT_1M, block_size=sc.BLOCK_SIZE_512
+):
     """
     Helper for reading sanlock resoruces, supporting both non-existing and
     deleted resources.
@@ -940,7 +1030,8 @@ def _read_resource(
     """
     try:
         res = sanlock.read_resource(
-            path, offset, align=alignment, sector=block_size)
+            path, offset, align=alignment, sector=block_size
+        )
     except sanlock.SanlockException as e:
         if e.errno != SANLK_LEADER_MAGIC:
             raise
@@ -952,7 +1043,8 @@ def _read_resource(
     return ResourceInfo(
         res["lockspace"].decode("utf-8"),
         res["resource"].decode("utf-8"),
-        res["version"])
+        res["version"],
+    )
 
 
 def lease_offset(recnum, alignment):
@@ -1073,7 +1165,8 @@ class VolumeIndex(object):
         offset = self._record_offset(recnum)
         block_start = offset - (offset % self._block_size)
         return ChangeBlock(
-            self._offset, self._buf, block_start, self._block_size)
+            self._offset, self._buf, block_start, self._block_size
+        )
 
     @contextmanager
     def updating(self, lockspace, file):
@@ -1136,7 +1229,7 @@ class ChangeBlock(object):
         self._offset = offset
         self._size = size
         self._buf = mmap.mmap(-1, size, mmap.MAP_SHARED)
-        self._buf[:] = index_buf[offset:offset + size]
+        self._buf[:] = index_buf[offset : offset + size]
 
     def write_record(self, recnum, record):
         """
@@ -1304,7 +1397,8 @@ class InterruptibleDirectFile(object):
             data=data,
             raw=True,
             # We do tiny io, no need to run this on another CPU.
-            resetCpuAffinity=False)
+            resetCpuAffinity=False,
+        )
         if rc != 0:
             # Do not spam the log with received binary data
             raise cmdutils.Error(args, rc, "[suppressed]", err)

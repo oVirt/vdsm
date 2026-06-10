@@ -30,8 +30,9 @@ def _upgrade_seal(upgrade):
     except (OSError, IOError):
         _get_upgrade_log().exception("Failed to seal upgrade %s", upgrade.name)
     else:
-        _get_upgrade_log().debug("Upgrade %s successfully performed",
-                                 upgrade.name)
+        _get_upgrade_log().debug(
+            "Upgrade %s successfully performed", upgrade.name
+        )
 
 
 def apply_upgrade(upgrade, *args):
@@ -64,12 +65,12 @@ def apply_upgrade(upgrade, *args):
         dest='runAgain',
         default=False,
         action='store_true',
-        help='Run the upgrade again, even if it was ran before'
+        help='Run the upgrade again, even if it was ran before',
     )
     if hasattr(upgrade, 'extendArgParser'):
         upgrade.extendArgParser(argparser)
     ns, args = argparser.parse_known_args(args[1:])
-    if (_upgrade_needed(upgrade) or ns.runAgain):
+    if _upgrade_needed(upgrade) or ns.runAgain:
         _get_upgrade_log().debug("Running upgrade %s", upgrade.name)
         try:
             upgrade.run(ns, args)

@@ -32,13 +32,14 @@ class Job(base.Job):
     Copy data from one endpoint to another using qemu-img convert.
     """
 
-    def __init__(self, job_id, host_id, source, destination,
-                 copy_bitmaps=False):
+    def __init__(
+        self, job_id, host_id, source, destination, copy_bitmaps=False
+    ):
         super(Job, self).__init__(job_id, 'copy_data', host_id)
-        self._dest = _create_endpoint(
-            destination, host_id, job_id=job_id)
+        self._dest = _create_endpoint(destination, host_id, job_id=job_id)
         self._source = _create_endpoint(
-            source, host_id, job_id=job_id, dest=self._dest)
+            source, host_id, job_id=job_id, dest=self._dest
+        )
         self._operation = None
         self._copy_bitmaps = copy_bitmaps
 
@@ -52,12 +53,13 @@ class Job(base.Job):
 
     def _validate_copy_bitmaps(self, src_format, dst_format):
         if self._copy_bitmaps and qemuimg.FORMAT.RAW in (
-                src_format, dst_format):
+            src_format,
+            dst_format,
+        ):
             raise se.UnsupportedOperation(
-                "Cannot copy bitmaps from/to volumes with raw "
-                "format",
+                "Cannot copy bitmaps from/to volumes with raw " "format",
                 src_vol=self._source.path,
-                dst_vol=self._dest.path
+                dst_vol=self._dest.path,
             )
 
     def _run(self):
@@ -86,26 +88,23 @@ class Job(base.Job):
                         dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
                         backingFormat=self._dest.backing_qemu_format,
-                        unordered_writes=self._dest
-                            .recommends_unordered_writes,
+                        unordered_writes=self._dest.recommends_unordered_writes,
                         create=self._dest.requires_create,
                         bitmaps=self._copy_bitmaps,
                         target_is_zero=self._dest.zero_initialized,
                     )
                     with utils.stopwatch(
-                            "Copy volume {}".format(self._source.path),
-                            level=logging.INFO,
-                            log=log):
+                        "Copy volume {}".format(self._source.path),
+                        level=logging.INFO,
+                        log=log,
+                    ):
                         self._operation.run()
 
 
 def _create_endpoint(params, host_id, job_id=None, dest=None):
     endpoint_type = params.pop('endpoint_type')
     if endpoint_type == 'div':
-        return CopyDataDivEndpoint(
-            params,
-            host_id,
-            dest=dest)
+        return CopyDataDivEndpoint(params, host_id, dest=dest)
     elif endpoint_type == 'external':
         return CopyDataExternalEndpoint(params, host_id, job_id)
     else:
@@ -116,8 +115,9 @@ class CopyDataDivEndpoint(properties.Owner):
     sd_id = properties.UUID(required=True)
     img_id = properties.UUID(required=True)
     vol_id = properties.UUID(required=True)
-    generation = properties.Integer(required=False, minval=0,
-                                    maxval=sc.MAX_GENERATION)
+    generation = properties.Integer(
+        required=False, minval=0, maxval=sc.MAX_GENERATION
+    )
     prepared = properties.Boolean(default=False)
 
     def __init__(self, params, host_id, dest=None):
@@ -150,8 +150,11 @@ class CopyDataDivEndpoint(properties.Owner):
         if self.is_destination:
             dom = sdCache.produce_manifest(self.sd_id)
             if dom.hasVolumeLeases():
-                ret.append(volume.VolumeLease(self._host_id, self.sd_id,
-                                              self.img_id, self.vol_id))
+                ret.append(
+                    volume.VolumeLease(
+                        self._host_id, self.sd_id, self.img_id, self.vol_id
+                    )
+                )
         return ret
 
     @property
@@ -216,7 +219,8 @@ class CopyDataDivEndpoint(properties.Owner):
             self.volume.prepare(
                 rw=self.is_destination,
                 justme=False,
-                allow_illegal=self.is_destination)
+                allow_illegal=self.is_destination,
+            )
             try:
                 yield
             finally:
@@ -230,8 +234,9 @@ class CopyDataExternalEndpoint(properties.Owner):
     """
 
     url = properties.String(required=True)
-    generation = properties.Integer(required=False, minval=0,
-                                    maxval=sc.MAX_GENERATION)
+    generation = properties.Integer(
+        required=False, minval=0, maxval=sc.MAX_GENERATION
+    )
     format = properties.String(required=True)
     sparse = properties.Boolean(required=False)
     create = properties.Boolean(required=False)
@@ -253,7 +258,8 @@ class CopyDataExternalEndpoint(properties.Owner):
     def locks(self):
         return [
             sd.ExternalLease(
-                self.host_id, self.lease.sd_id, self.lease.lease_id),
+                self.host_id, self.lease.sd_id, self.lease.lease_id
+            ),
         ]
 
     @property
@@ -299,10 +305,7 @@ class CopyDataExternalEndpoint(properties.Owner):
     def volume_operation(self):
         dom = sdCache.produce_manifest(self.lease.sd_id)
         metadata = dom.get_lvb(self.lease.lease_id)
-        log.info(
-            "Current lease %s metadata: %r",
-            self.lease.sd_id,
-            metadata)
+        log.info("Current lease %s metadata: %r", self.lease.sd_id, metadata)
 
         self._validate_metadata(metadata)
         try:
@@ -322,21 +325,25 @@ class CopyDataExternalEndpoint(properties.Owner):
             raise se.UnsupportedOperation(
                 "Metadata type is not support",
                 expected="JOB",
-                actual=metadata.get("type"))
+                actual=metadata.get("type"),
+            )
 
         if metadata.get("job_id") != self.job_id:
             raise se.UnsupportedOperation(
                 "job_id on lease doesn't match passed job_id",
                 expected=self.job_id,
-                actual=metadata.get("job_id"))
+                actual=metadata.get("job_id"),
+            )
 
         if metadata.get("job_status") != sc.JOB_STATUS_PENDING:
             raise se.JobStatusMismatch(
-                sc.JOB_STATUS_PENDING, metadata.get("job_status"))
+                sc.JOB_STATUS_PENDING, metadata.get("job_status")
+            )
 
         if metadata.get("generation") != self.generation:
             raise se.GenerationMismatch(
-                self.generation, metadata.get("generation"))
+                self.generation, metadata.get("generation")
+            )
 
     def _update_metadata(self, dom, metadata, job_status):
         updated_metadata = metadata.copy()
@@ -346,11 +353,11 @@ class CopyDataExternalEndpoint(properties.Owner):
 
         if job_status == sc.JOB_STATUS_SUCCEEDED:
             updated_metadata["generation"] = su.next_generation(
-                metadata["generation"])
+                metadata["generation"]
+            )
 
         log.info(
-            "Updated lease %s metadata: %r",
-            self.lease.sd_id,
-            updated_metadata)
+            "Updated lease %s metadata: %r", self.lease.sd_id, updated_metadata
+        )
 
         dom.set_lvb(self.lease.lease_id, updated_metadata)

@@ -26,28 +26,29 @@ from . import exception as se
 from . import fileUtils
 from . import qemuimg
 from . import transientdisk
-from . sdc import sdCache
+from .sdc import sdCache
 
 DEFAULT_SOCKET_MODE = 0o660
 RUN_DIR = os.path.join(constants.P_VDSM_RUN, "nbd")
 OVERLAY = "overlay"
 
 QEMU_NBD = cmdutils.CommandPath(
-    "qemu-nbd", "/usr/local/bin/qemu-nbd", "/usr/bin/qemu-nbd")
+    "qemu-nbd", "/usr/local/bin/qemu-nbd", "/usr/bin/qemu-nbd"
+)
 
 log = logging.getLogger("storage.nbd")
 
 
 class Error(Exception):
-    """ Base class for nbd errors """
+    """Base class for nbd errors"""
 
 
 class Timeout(Error):
-    """ Timeout starting nbd server """
+    """Timeout starting nbd server"""
 
 
 class InvalidPath(Error):
-    """ Path is not a valid volume path """
+    """Path is not a valid volume path"""
 
 
 class ServerConfig(properties.Owner):
@@ -78,17 +79,18 @@ class ServerConfig(properties.Owner):
         if not self.backing_chain and self.bitmap:
             # When exporting a bitmap we always export the entire chain.
             raise se.UnsupportedOperation(
-                "Cannot export bitmap with backing_chain=False")
+                "Cannot export bitmap with backing_chain=False"
+            )
 
         if self.bitmap and not self.readonly:
             # Exporting bitmaps makes sense only for incremental backup.
-            raise se.UnsupportedOperation(
-                "Cannot export bitmap for writing")
+            raise se.UnsupportedOperation("Cannot export bitmap for writing")
 
 
 QemuNBDConfig = collections.namedtuple(
     "QemuNBDConfig",
-    "format,readonly,discard,detect_zeroes,path,backing_chain,is_block,bitmap")
+    "format,readonly,discard,detect_zeroes,path,backing_chain,is_block,bitmap",
+)
 
 
 def start_server(server_id, config):
@@ -102,7 +104,8 @@ def start_server(server_id, config):
     if cfg.bitmap:
         if vol.getFormat() != sc.COW_FORMAT:
             raise se.UnsupportedOperation(
-                "Cannot export bitmap from RAW volume")
+                "Cannot export bitmap from RAW volume"
+            )
 
         # The bitmap must exist in the volume, and may exist in the
         # backing chain.
@@ -110,7 +113,8 @@ def start_server(server_id, config):
         if not bitmap_chain:
             raise se.BitmapDoesNotExist(
                 reason=f"Bitmap does not exist in {vol.volumePath}",
-                bitmap=cfg.bitmap)
+                bitmap=cfg.bitmap,
+            )
 
     _create_rundir()
 
@@ -120,7 +124,8 @@ def start_server(server_id, config):
 
     if using_overlay:
         path = _create_overlay(
-            server_id, vol.volumePath, cfg.bitmap, bitmap_chain)
+            server_id, vol.volumePath, cfg.bitmap, bitmap_chain
+        )
         format = "qcow2"
         is_block = False
     else:
@@ -132,7 +137,10 @@ def start_server(server_id, config):
 
         log.info(
             "Starting transient service %s, serving %s via unix socket %s",
-            _service_name(server_id), path, sock)
+            _service_name(server_id),
+            path,
+            sock,
+        )
 
         qemu_nbd_config = QemuNBDConfig(
             format=format,
@@ -142,13 +150,15 @@ def start_server(server_id, config):
             path=path,
             backing_chain=cfg.backing_chain,
             is_block=is_block,
-            bitmap=cfg.bitmap)
+            bitmap=cfg.bitmap,
+        )
 
         start_transient_service(server_id, qemu_nbd_config)
 
         if not _wait_for_socket(sock, 10.0):
-            raise Timeout("Timeout starting NBD server {}: {}"
-                          .format(server_id, config))
+            raise Timeout(
+                "Timeout starting NBD server {}: {}".format(server_id, config)
+            )
     finally:
         if using_overlay:
             # When qemu-nbd is ready it has an open file descriptor, and it
@@ -184,16 +194,15 @@ def _create_overlay(server_id, backing, bitmap, bitmap_chain):
     merge all bitmaps from the chain into the overlay.
     """
     overlay = transientdisk.create_disk(
-        server_id,
-        OVERLAY,
-        backing=backing,
-        backing_format="qcow2")["path"]
+        server_id, OVERLAY, backing=backing, backing_format="qcow2"
+    )["path"]
     try:
         # Merge bitmap from filenames into overlay.
         qemuimg.bitmap_add(overlay, bitmap).run()
         for src_img in bitmap_chain:
             qemuimg.bitmap_merge(
-                src_img, bitmap, "qcow2", overlay, bitmap).run()
+                src_img, bitmap, "qcow2", overlay, bitmap
+            ).run()
     except:
         try:
             transientdisk.remove_disk(server_id, OVERLAY)
@@ -388,19 +397,22 @@ def _find_bitmap(path, bitmap):
                 raise se.InvalidBitmapChain(
                     reason="Bitmap in use",
                     bitmap=bitmap_info,
-                    filename=node["filename"])
+                    filename=node["filename"],
+                )
 
             if "auto" not in bitmap_info["flags"]:
                 raise se.InvalidBitmapChain(
                     reason="Bitmap is disabled",
                     bitmap=bitmap_info,
-                    filename=node["filename"])
+                    filename=node["filename"],
+                )
 
             if missing:
                 # This bitmap was not found in previous nodes - a hole.
                 raise se.InvalidBitmapChain(
                     reason="Bitmap is missing in {}".format(missing),
-                    bitmap=bitmap)
+                    bitmap=bitmap,
+                )
 
             # Found a valid bitmap in this node.
             filenames.append(node["filename"])
@@ -416,25 +428,24 @@ def _find_bitmap(path, bitmap):
 def start_transient_service(server_id, config):
     if os.geteuid() != 0:
         return supervdsm.getProxy().nbd_start_transient_service(
-            server_id, config)
+            server_id, config
+        )
 
     _verify_path(config.path)
 
     cmd = [
         str(QEMU_NBD),
-        "--socket", _socket_path(server_id),
+        "--socket",
+        _socket_path(server_id),
         "--persistent",
-
         # Allow up to 8 clients to share the device. Safe for readers, but for
         # now, consistency is not guaranteed between multiple writers.  Eric
         # Blake says it should be safe if clients write to distinct areas.
         # https://patchwork.kernel.org/patch/11096321/
         "--shared=8",
-
         # Use empty export name for nicer url: "nbd:unix:/path" instead of
         # "nbd:unix:/path:exportname=name".
         "--export-name=",
-
         "--cache=none",
         "--aio=native",
     ]
@@ -469,7 +480,8 @@ def start_transient_service(server_id, config):
         cmd,
         unit=_service_name(server_id),
         uid=fileUtils.resolveUid(constants.VDSM_USER),
-        gid=fileUtils.resolveGid(constants.VDSM_GROUP))
+        gid=fileUtils.resolveGid(constants.VDSM_GROUP),
+    )
 
 
 def json_uri(config):
@@ -478,7 +490,7 @@ def json_uri(config):
         "file": {
             "driver": "host_device" if config.is_block else "file",
             "filename": config.path,
-        }
+        },
     }
 
     if config.format == "qcow2" and not config.backing_chain:
@@ -500,8 +512,10 @@ def _verify_path(path):
 
     if not path.startswith(sc.REPO_MOUNT_DIR):
         raise InvalidPath(
-            "Path {!r} is outside storage repository {!r}"
-            .format(path, sc.REPO_MOUNT_DIR))
+            "Path {!r} is outside storage repository {!r}".format(
+                path, sc.REPO_MOUNT_DIR
+            )
+        )
 
 
 def _service_name(server_id):

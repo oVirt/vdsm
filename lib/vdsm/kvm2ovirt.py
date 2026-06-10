@@ -84,27 +84,59 @@ def recvSkipHandler(stream, length, opaque):
 def arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('args')
-    parser.add_argument('--uri', dest='uri', required=True,
-                        help='Libvirt URI')
-    parser.add_argument('--username', dest='username', default='',
-                        help='Libvirt login user name')
-    parser.add_argument('--ip', dest='password_file', default='',
-                        help='Libvirt login password read from a file')
-    parser.add_argument('--source', dest='source', nargs='+', required=True,
-                        help='Source remote volumes path')
-    parser.add_argument('--dest', dest='dest', nargs='+', required=True,
-                        help='Destination local volumes path')
-    parser.add_argument('--storage-type', dest='storagetype', nargs='+',
-                        required=True, help='Storage type (volume or path)')
-    parser.add_argument('--vm-name', dest='vmname', required=True,
-                        help='Libvirt source VM name')
-    parser.add_argument('--bufsize', dest='bufsize', default=MiB,
-                        type=int, help='Size of packets in bytes, default'
-                        '1048676')
-    parser.add_argument('--verbose', action='store_true',
-                        help='verbose output')
-    parser.add_argument('--allocation', dest='allocation', default='',
-                        help='Allocation Policy')
+    parser.add_argument('--uri', dest='uri', required=True, help='Libvirt URI')
+    parser.add_argument(
+        '--username',
+        dest='username',
+        default='',
+        help='Libvirt login user name',
+    )
+    parser.add_argument(
+        '--ip',
+        dest='password_file',
+        default='',
+        help='Libvirt login password read from a file',
+    )
+    parser.add_argument(
+        '--source',
+        dest='source',
+        nargs='+',
+        required=True,
+        help='Source remote volumes path',
+    )
+    parser.add_argument(
+        '--dest',
+        dest='dest',
+        nargs='+',
+        required=True,
+        help='Destination local volumes path',
+    )
+    parser.add_argument(
+        '--storage-type',
+        dest='storagetype',
+        nargs='+',
+        required=True,
+        help='Storage type (volume or path)',
+    )
+    parser.add_argument(
+        '--vm-name',
+        dest='vmname',
+        required=True,
+        help='Libvirt source VM name',
+    )
+    parser.add_argument(
+        '--bufsize',
+        dest='bufsize',
+        default=MiB,
+        type=int,
+        help='Size of packets in bytes, default' '1048676',
+    )
+    parser.add_argument(
+        '--verbose', action='store_true', help='verbose output'
+    )
+    parser.add_argument(
+        '--allocation', dest='allocation', default='', help='Allocation Policy'
+    )
 
     return parser.parse_args(args)
 
@@ -164,20 +196,24 @@ def get_password(options):
     if not options.password_file:
         return None
     if options.verbose:
-        write_output('>>> Reading password from file %s' %
-                     options.password_file)
+        write_output(
+            '>>> Reading password from file %s' % options.password_file
+        )
     with open(options.password_file, 'r') as f:
         return ProtectedPassword(f.read())
 
 
 def handle_volume(con, diskno, src, dst, options):
-    write_output('Copying disk %d/%d to %s' % (diskno, len(options.source),
-                                               dst))
+    write_output(
+        'Copying disk %d/%d to %s' % (diskno, len(options.source), dst)
+    )
     vol = con.storageVolLookupByPath(src)
     _, capacity, allocation = vol.info()
     if options.verbose:
-        write_output('>>> disk %d, capacity: %d allocation %d' %
-                     (diskno, capacity, allocation))
+        write_output(
+            '>>> disk %d, capacity: %d allocation %d'
+            % (diskno, capacity, allocation)
+        )
 
     estimated_size = capacity
     stream = con.newStream()
@@ -186,17 +222,21 @@ def handle_volume(con, diskno, src, dst, options):
     # Current code does not support writing to block storage using libvirt
     # sparse stream API.
     # Libvirt sparseness is only supported from version 3004000 and up.
-    if options.allocation == "sparse" and \
-            not fileutils.is_block_device(dst) and \
-            con.getLibVersion() >= 3004000:
+    if (
+        options.allocation == "sparse"
+        and not fileutils.is_block_device(dst)
+        and con.getLibVersion() >= 3004000
+    ):
         try:
             preallocated = False
-            vol.download(stream, 0, 0,
-                         libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
+            vol.download(
+                stream, 0, 0, libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM
+            )
             # No need to pass the size, volume download will return -1
             # when the stream finishes
-            download_disk_sparse(stream, estimated_size, None, dst,
-                                 options.bufsize)
+            download_disk_sparse(
+                stream, estimated_size, None, dst, options.bufsize
+            )
         except libvirt.libvirtError:
             preallocated = True
             write_output('WARN: sparseness is not supported')
@@ -210,33 +250,43 @@ def handle_volume(con, diskno, src, dst, options):
 
 
 def handle_path(con, diskno, src, dst, options):
-    write_output('Copying disk %d/%d to %s' % (diskno, len(options.source),
-                                               dst))
+    write_output(
+        'Copying disk %d/%d to %s' % (diskno, len(options.source), dst)
+    )
     vm = con.lookupByName(options.vmname)
     info = vm.blockInfo(src)
     physical = info[2]
     if options.verbose:
         capacity = info[0]
-        write_output('>>> disk %d, capacity: %d physical %d' %
-                     (diskno, capacity, physical))
+        write_output(
+            '>>> disk %d, capacity: %d physical %d'
+            % (diskno, capacity, physical)
+        )
 
     vmAdapter = VMAdapter(vm, src)
     download_disk(vmAdapter, physical, physical, dst, options.bufsize)
 
 
 def validate_disks(options):
-    if not (len(options.source) == len(options.dest) and
-            len(options.source) == len(options.storagetype)):
-        write_output('>>> source, dest, and storage-type have different'
-                     ' lengths')
+    if not (
+        len(options.source) == len(options.dest)
+        and len(options.source) == len(options.storagetype)
+    ):
+        write_output(
+            '>>> source, dest, and storage-type have different' ' lengths'
+        )
         sys.exit(1)
     elif not all(st in ("volume", "path") for st in options.storagetype):
         write_output('>>> unsupported storage type. (supported: volume, path)')
         sys.exit(1)
-    elif not options.allocation == "sparse" and \
-            not options.allocation == "preallocated":
-        write_output('>>> unsupported allocation policy. (supported: sparse, '
-                     'preallocated)')
+    elif (
+        not options.allocation == "sparse"
+        and not options.allocation == "preallocated"
+    ):
+        write_output(
+            '>>> unsupported allocation policy. (supported: sparse, '
+            'preallocated)'
+        )
         sys.exit(1)
 
 
@@ -247,9 +297,9 @@ def main(argv=None):
     options = arguments(argv or sys.argv)
     validate_disks(options)
 
-    con = libvirtconnection.open_connection(options.uri,
-                                            options.username,
-                                            get_password(options))
+    con = libvirtconnection.open_connection(
+        options.uri, options.username, get_password(options)
+    )
 
     write_output('preparing for copy')
     disks = zip(options.source, options.dest, options.storagetype)

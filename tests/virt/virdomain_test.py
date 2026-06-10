@@ -45,12 +45,10 @@ class TestDefined(VdsmTestCase):
             self.dom.XMLDesc()
 
     def test_state(self):
-        assert self.dom.state(0) == \
-            (libvirt.VIR_DOMAIN_RUNNING, 0)
+        assert self.dom.state(0) == (libvirt.VIR_DOMAIN_RUNNING, 0)
 
     def test_UUIDString(self):
-        assert self.dom.UUIDString() == \
-            self.libvirtid
+        assert self.dom.UUIDString() == self.libvirtid
 
     def test_metadata(self):
         md_xml = '<metadata>random test garbage</metadata>'
@@ -60,16 +58,16 @@ class TestDefined(VdsmTestCase):
             xmlconstants.METADATA_VM_VDSM_PREFIX,
             xmlconstants.METADATA_VM_VDSM_URI,
         )
-        assert self.dom.metadata(
-            libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-            xmlconstants.METADATA_VM_VDSM_URI,
-        ) == md_xml
+        assert (
+            self.dom.metadata(
+                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                xmlconstants.METADATA_VM_VDSM_URI,
+            )
+            == md_xml
+        )
 
     def undefineFlags(self, flags=0):
-        self.assertNotRaises(
-            self.dom.undefineFlags,
-            0
-        )
+        self.assertNotRaises(self.dom.undefineFlags, 0)
 
 
 class TestNotifying(VdsmTestCase):
@@ -88,8 +86,7 @@ class TestNotifying(VdsmTestCase):
         assert self.dom.connected
 
     def test_call(self):
-        assert self.dom.state(0) == \
-            (libvirt.VIR_DOMAIN_RUNNING, 0)
+        assert self.dom.state(0) == (libvirt.VIR_DOMAIN_RUNNING, 0)
         assert self.elapsed is not None
         assert not self.elapsed
 

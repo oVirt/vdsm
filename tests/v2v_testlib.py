@@ -8,23 +8,74 @@ import uuid
 
 import vmfakecon as fake
 
-VmSpec = namedtuple('VmSpec',
-                    ['name', 'uuid', 'id', 'active', 'has_snapshots',
-                     'has_disk_volume', 'has_disk_block'])
+VmSpec = namedtuple(
+    'VmSpec',
+    [
+        'name',
+        'uuid',
+        'id',
+        'active',
+        'has_snapshots',
+        'has_disk_volume',
+        'has_disk_block',
+    ],
+)
 
 VM_SPECS = (
-    VmSpec("RHEL_0", str(uuid.uuid4()), id=0, active=True,
-           has_snapshots=False, has_disk_volume=True, has_disk_block=False),
-    VmSpec("RHEL_1", str(uuid.uuid4()), id=1, active=True,
-           has_snapshots=False, has_disk_volume=True, has_disk_block=False),
-    VmSpec("RHEL_2", str(uuid.uuid4()), id=2, active=False,
-           has_snapshots=False, has_disk_volume=True, has_disk_block=False),
-    VmSpec("RHEL_3", str(uuid.uuid4()), id=3, active=False,
-           has_snapshots=False, has_disk_volume=True, has_disk_block=False),
-    VmSpec("RHEL_4", str(uuid.uuid4()), id=4, active=False,
-           has_snapshots=True, has_disk_volume=False, has_disk_block=True),
-    VmSpec("RHEL_5", str(uuid.uuid4()), id=5, active=False,
-           has_snapshots=False, has_disk_volume=True, has_disk_block=True),
+    VmSpec(
+        "RHEL_0",
+        str(uuid.uuid4()),
+        id=0,
+        active=True,
+        has_snapshots=False,
+        has_disk_volume=True,
+        has_disk_block=False,
+    ),
+    VmSpec(
+        "RHEL_1",
+        str(uuid.uuid4()),
+        id=1,
+        active=True,
+        has_snapshots=False,
+        has_disk_volume=True,
+        has_disk_block=False,
+    ),
+    VmSpec(
+        "RHEL_2",
+        str(uuid.uuid4()),
+        id=2,
+        active=False,
+        has_snapshots=False,
+        has_disk_volume=True,
+        has_disk_block=False,
+    ),
+    VmSpec(
+        "RHEL_3",
+        str(uuid.uuid4()),
+        id=3,
+        active=False,
+        has_snapshots=False,
+        has_disk_volume=True,
+        has_disk_block=False,
+    ),
+    VmSpec(
+        "RHEL_4",
+        str(uuid.uuid4()),
+        id=4,
+        active=False,
+        has_snapshots=True,
+        has_disk_volume=False,
+        has_disk_block=True,
+    ),
+    VmSpec(
+        "RHEL_5",
+        str(uuid.uuid4()),
+        id=5,
+        active=False,
+        has_snapshots=False,
+        has_disk_volume=True,
+        has_disk_block=True,
+    ),
 )
 
 
@@ -51,7 +102,11 @@ XML_DISK_BLOCK = """
 
 def _mac_from_uuid(vm_uuid):
     return "52:54:%s:%s:%s:%s" % (
-        vm_uuid[:2], vm_uuid[2:4], vm_uuid[4:6], vm_uuid[6:8])
+        vm_uuid[:2],
+        vm_uuid[2:4],
+        vm_uuid[4:6],
+        vm_uuid[6:8],
+    )
 
 
 class FakeVolume(object):
@@ -92,14 +147,16 @@ class FakeStream(object):
 
 class MockVirDomain(object):
 
-    def __init__(self, name="RHEL",
-                 vm_uuid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611",
-                 id=0,
-                 active=False,
-                 has_snapshots=False,
-                 has_disk_volume=False,
-                 has_disk_block=False
-                 ):
+    def __init__(
+        self,
+        name="RHEL",
+        vm_uuid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611",
+        id=0,
+        active=False,
+        has_snapshots=False,
+        has_disk_volume=False,
+        has_disk_block=False,
+    ):
         self._name = name
         self._uuid = vm_uuid
         self._mac_address = _mac_from_uuid(vm_uuid)
@@ -136,13 +193,17 @@ class MockVirDomain(object):
             'name': self._name,
             'uuid': self._uuid,
             'block': BLOCK_DEV_PATH,
-            'mac': self._mac_address
+            'mac': self._mac_address,
         }
-        params['volume_disk'] = "" if not self._has_disk_volume else \
-            XML_DISK_VOLUME.format(**params)
+        params['volume_disk'] = (
+            ""
+            if not self._has_disk_volume
+            else XML_DISK_VOLUME.format(**params)
+        )
 
-        params['block_disk'] = "" if not self._has_disk_block else \
-            XML_DISK_BLOCK.format(**params)
+        params['block_disk'] = (
+            "" if not self._has_disk_block else XML_DISK_BLOCK.format(**params)
+        )
 
         return """
 <domain type='vmware' id='15'>
@@ -187,7 +248,9 @@ class MockVirDomain(object):
             <model type='vmvga' vram='8192'/>
         </video>
     </devices>
-</domain>""".format(**params)
+</domain>""".format(
+            **params
+        )
 
     def hasCurrentSnapshot(self):
         return self._has_snapshots
@@ -197,16 +260,18 @@ class MockVirDomain(object):
 
     def blockInfo(self, source, flags=0):
         if not self._has_disk_block:
-            raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR,
-                             "no such disk in this VM")
+            raise fake.Error(
+                libvirt.VIR_ERR_INTERNAL_ERROR, "no such disk in this VM"
+            )
         # capacity, allocation, physical
         info = self._block_disk.info()
         return [info[1], info[2], info[1]]
 
     def blockPeek(self, disk, pos, size):
         if not self._has_disk_block:
-            raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR,
-                             "no such disk in this VM")
+            raise fake.Error(
+                libvirt.VIR_ERR_INTERNAL_ERROR, "no such disk in this VM"
+            )
         self._block_disk.seek(pos)
         return self._block_disk.read(size)
 
@@ -242,20 +307,23 @@ class MockVirConnect(object):
         for vm in self._vms:
             if vm.name() == name:
                 return vm
-        raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
-                         'virDomainLookupByName() failed')
+        raise fake.Error(
+            libvirt.VIR_ERR_NO_DOMAIN, 'virDomainLookupByName() failed'
+        )
 
     def lookupByID(self, id):
         for vm in self._vms:
             if vm.ID() == id:
                 return vm
-        raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
-                         'virDomainLookupByID() failed')
+        raise fake.Error(
+            libvirt.VIR_ERR_NO_DOMAIN, 'virDomainLookupByID() failed'
+        )
 
     def storageVolLookupByPath(self, name):
         if not any([vm._has_disk_volume for vm in self._vms]):
-            raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR,
-                             "no volume in storage")
+            raise fake.Error(
+                libvirt.VIR_ERR_INTERNAL_ERROR, "no volume in storage"
+            )
         return FakeVolume()
 
     def newStream(self):

@@ -6,7 +6,6 @@ import xml.etree.ElementTree as etree
 
 from vdsm.virt import xmlconstants
 
-
 _UNSPECIFIED = object()
 
 
@@ -14,6 +13,7 @@ class NotFound(Exception):
     """
     Raised when vmxml helpers can't find some requested entity.
     """
+
     pass
 
 
@@ -54,7 +54,12 @@ def find_first(element, tag, default=_UNSPECIFIED):
         return next(find_all(element, tag))
     except StopIteration:
         if default is _UNSPECIFIED:
-            raise NotFound((element, tag,))
+            raise NotFound(
+                (
+                    element,
+                    tag,
+                )
+            )
         else:
             return default
 
@@ -171,8 +176,9 @@ def append_child(element, child=None, etree_child=None):
         element.append(etree_child)
     else:
         raise RuntimeError(
-            'append_child invoked with child=%r etree_child=%r' % (
-                child, etree_child))
+            'append_child invoked with child=%r etree_child=%r'
+            % (child, etree_child)
+        )
 
 
 def remove_child(element, child):
@@ -221,12 +227,12 @@ def has_vdsm_metadata(domXML):
     domObj = etree.fromstring(domXML)
     metadata = domObj.findall('metadata')
     nsdict = {
-        xmlconstants.METADATA_VM_VDSM_PREFIX:
-        xmlconstants.METADATA_VM_VDSM_URI
+        xmlconstants.METADATA_VM_VDSM_PREFIX: xmlconstants.METADATA_VM_VDSM_URI
     }
     vdsmtag = (
-        xmlconstants.METADATA_VM_VDSM_PREFIX + ':' +
-        xmlconstants.METADATA_VM_VDSM_ELEMENT
+        xmlconstants.METADATA_VM_VDSM_PREFIX
+        + ':'
+        + xmlconstants.METADATA_VM_VDSM_ELEMENT
     )
     for md in metadata:
         if len(md.findall(vdsmtag, nsdict)) > 0:
@@ -278,8 +284,12 @@ class Device(object):
             attr = getattr(self, attrName)
             if attr is None:
                 log = logging.getLogger('devel')
-                log.debug("Attribute '%s' of '%s' device element '%s' is None",
-                          attrName, deviceType, elemType)
+                log.debug(
+                    "Attribute '%s' of '%s' device element '%s' is None",
+                    attrName,
+                    deviceType,
+                    elemType,
+                )
                 continue
 
             if isinstance(attr, dict):
@@ -293,10 +303,14 @@ class Device(object):
 
 class Element(object):
 
-    def __init__(self, tagName, text=None, namespace=None, namespace_uri=None,
-                 **attrs):
+    def __init__(
+        self, tagName, text=None, namespace=None, namespace_uri=None, **attrs
+    ):
         if namespace_uri is not None:
-            tagName = '{%s}%s' % (namespace_uri, tagName,)
+            tagName = '{%s}%s' % (
+                namespace_uri,
+                tagName,
+            )
             if namespace is not None:
                 etree.register_namespace(namespace, namespace_uri)
         self._elem = etree.Element(tagName)

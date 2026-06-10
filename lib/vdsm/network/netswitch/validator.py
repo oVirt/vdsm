@@ -7,7 +7,6 @@ from vdsm.network.link.bond import sysfs_options
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo.cache import NetInfo
 
-
 MAX_NAME_LEN = 15
 ILLEGAL_CHARS = frozenset(':. \t')
 
@@ -36,7 +35,7 @@ class Validator(object):
 
     def validate_southbound_devices_usages(self):
         underlying_devices = []
-        for (net_name, net_attrs) in self._desired_config.networks.items():
+        for net_name, net_attrs in self._desired_config.networks.items():
             vlan = net_attrs.get('vlan')
             if 'bonding' in net_attrs:
                 underlying_devices.append((net_attrs['bonding'], vlan))

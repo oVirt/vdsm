@@ -19,26 +19,37 @@ from vdsm.gluster import exception as ge
 from vdsm.gluster import fstab
 from . import gluster_mgmt_api
 
-
 log = logging.getLogger("Gluster")
-_pvCreateCommandPath = cmdutils.CommandPath("pvcreate",
-                                            "/sbin/pvcreate",
-                                            "/usr/sbin/pvcreate",)
-_vgCreateCommandPath = cmdutils.CommandPath("vgcreate",
-                                            "/sbin/vgcreate",
-                                            "/usr/sbin/vgcreate",)
-_lvconvertCommandPath = cmdutils.CommandPath("lvconvert",
-                                             "/sbin/lvconvert",
-                                             "/usr/sbin/lvconvert",)
-_lvchangeCommandPath = cmdutils.CommandPath("lvchange",
-                                            "/sbin/lvchange",
-                                            "/usr/sbin/lvchange",)
-_vgscanCommandPath = cmdutils.CommandPath("vgscan",
-                                          "/sbin/vgscan",
-                                          "/usr/sbin/vgscan",)
-_semanageCommandPath = cmdutils.CommandPath("semanage",
-                                            "/sbin/semanage",
-                                            "/usr/sbin/semanage",)
+_pvCreateCommandPath = cmdutils.CommandPath(
+    "pvcreate",
+    "/sbin/pvcreate",
+    "/usr/sbin/pvcreate",
+)
+_vgCreateCommandPath = cmdutils.CommandPath(
+    "vgcreate",
+    "/sbin/vgcreate",
+    "/usr/sbin/vgcreate",
+)
+_lvconvertCommandPath = cmdutils.CommandPath(
+    "lvconvert",
+    "/sbin/lvconvert",
+    "/usr/sbin/lvconvert",
+)
+_lvchangeCommandPath = cmdutils.CommandPath(
+    "lvchange",
+    "/sbin/lvchange",
+    "/usr/sbin/lvchange",
+)
+_vgscanCommandPath = cmdutils.CommandPath(
+    "vgscan",
+    "/sbin/vgscan",
+    "/usr/sbin/vgscan",
+)
+_semanageCommandPath = cmdutils.CommandPath(
+    "semanage",
+    "/sbin/semanage",
+    "/usr/sbin/semanage",
+)
 
 # All size are in MiB unless otherwise specified
 DEFAULT_CHUNK_SIZE_KB = 256
@@ -77,15 +88,17 @@ def _getDeviceSize(device, unitType='MiB'):
 
 
 def _getDeviceDict(device, createBrick=False):
-    info = {'name': device.name,
-            'devPath': device.path,
-            'devUuid': device.uuid or '',
-            'bus': device.bus or '',
-            'model': '',
-            'fsType': '',
-            'mountPoint': '',
-            'uuid': '',
-            'createBrick': createBrick}
+    info = {
+        'name': device.name,
+        'devPath': device.path,
+        'devUuid': device.uuid or '',
+        'bus': device.bus or '',
+        'model': '',
+        'fsType': '',
+        'mountPoint': '',
+        'uuid': '',
+        'createBrick': createBrick,
+    }
     if isinstance(device.size, blivet.size.Size):
         info['size'] = '%s' % _getDeviceSize(device)
     else:
@@ -123,9 +136,14 @@ def _parseDevices(devices):
 
 
 def _canCreateBrick(device):
-    if not device or _is_parent(device) or device.format.type or \
-       hasattr(device.format, 'mountpoint') or \
-       device.type in ['cdrom', 'lvmvg', 'lvmthinpool', 'lvmlv', 'lvmthinlv']:
+    if (
+        not device
+        or _is_parent(device)
+        or device.format.type
+        or hasattr(device.format, 'mountpoint')
+        or device.type
+        in ['cdrom', 'lvmvg', 'lvmthinpool', 'lvmlv', 'lvmthinlv']
+    ):
         return False
     return True
 
@@ -133,8 +151,10 @@ def _canCreateBrick(device):
 def _reset_blivet(blivetEnv):
     try:
         blivetEnv.reset()
-    except (blivet.errors.UnusableConfigurationError,
-            blivet.errors.StorageError) as e:
+    except (
+        blivet.errors.UnusableConfigurationError,
+        blivet.errors.StorageError,
+    ) as e:
         log.error("Error: %s", e)
 
 
@@ -146,23 +166,31 @@ def storageDevicesList():
 
 
 @gluster_mgmt_api
-def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
-                raidParams={}):
+def createBrick(
+    brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE, raidParams={}
+):
     def _getDeviceList(devNameList):
-        return [blivetEnv.devicetree.getDeviceByName(devName.split("/")[-1])
-                for devName in devNameList]
+        return [
+            blivetEnv.devicetree.getDeviceByName(devName.split("/")[-1])
+            for devName in devNameList
+        ]
 
     def _createPV(deviceList, alignment):
         for dev in deviceList:
             # bz#1178705: Blivet always creates pv with 1MB dataalignment
             # Workaround: Till blivet fixes the issue, we use lvm pvcreate
-            rc, out, err = commands.execCmd([_pvCreateCommandPath.cmd,
-                                             '--dataalignment',
-                                             '%sk' % alignment,
-                                             dev.path])
+            rc, out, err = commands.execCmd(
+                [
+                    _pvCreateCommandPath.cmd,
+                    '--dataalignment',
+                    '%sk' % alignment,
+                    dev.path,
+                ]
+            )
             if rc:
                 raise ge.GlusterHostStorageDevicePVCreateFailedException(
-                    dev.path, alignment, rc, out, err)
+                    dev.path, alignment, rc, out, err
+                )
         _reset_blivet(blivetEnv)
         return _getDeviceList([dev.name for dev in deviceList])
 
@@ -170,25 +198,37 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         # bz#1198568: Blivet always creates vg with 1MB stripe size
         # Workaround: Till blivet fixes the issue, use vgcreate command
         devices = ','.join([device.path for device in deviceList])
-        rc, out, err = commands.execCmd([_vgCreateCommandPath.cmd,
-                                         '-s', '%sk' % stripeSize,
-                                         vgName, devices])
+        rc, out, err = commands.execCmd(
+            [
+                _vgCreateCommandPath.cmd,
+                '-s',
+                '%sk' % stripeSize,
+                vgName,
+                devices,
+            ]
+        )
         if rc:
             raise ge.GlusterHostStorageDeviceVGCreateFailedException(
-                vgName, devices, stripeSize, rc, out, err)
+                vgName, devices, stripeSize, rc, out, err
+            )
         blivetEnv.reset()
         return blivetEnv.devicetree.getDeviceByName(vgName)
 
-    def _createThinPool(poolName, vg, alignment,
-                        poolMetaDataSize, poolDataSize):
+    def _createThinPool(
+        poolName, vg, alignment, poolMetaDataSize, poolDataSize
+    ):
         metaName = "meta-%s" % poolName
         vgPoolName = "%s/%s" % (vg.name, poolName)
         metaLv = LVMLogicalVolumeDevice(
-            metaName, parents=[vg],
-            size=blivet.size.Size('%d KiB' % poolMetaDataSize))
+            metaName,
+            parents=[vg],
+            size=blivet.size.Size('%d KiB' % poolMetaDataSize),
+        )
         poolLv = LVMLogicalVolumeDevice(
-            poolName, parents=[vg],
-            size=blivet.size.Size('%d KiB' % poolDataSize))
+            poolName,
+            parents=[vg],
+            size=blivet.size.Size('%d KiB' % poolDataSize),
+        )
         blivetEnv.createDevice(metaLv)
         blivetEnv.createDevice(poolLv)
         blivetEnv.doIt()
@@ -198,21 +238,32 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         # to use lvconvert to achive that.
         # bz#1179826: blivet doesn't support lvconvert functionality.
         # Workaround: Till the bz gets fixed, lvconvert command is used
-        rc, out, err = commands.execCmd([_lvconvertCommandPath.cmd,
-                                         '--chunksize', '%sK' % alignment,
-                                         '--thinpool', vgPoolName,
-                                         '--poolmetadata',
-                                         "%s/%s" % (vg.name, metaName),
-                                         '--poolmetadataspar', 'n', '-y'])
+        rc, out, err = commands.execCmd(
+            [
+                _lvconvertCommandPath.cmd,
+                '--chunksize',
+                '%sK' % alignment,
+                '--thinpool',
+                vgPoolName,
+                '--poolmetadata',
+                "%s/%s" % (vg.name, metaName),
+                '--poolmetadataspar',
+                'n',
+                '-y',
+            ]
+        )
 
         if rc:
             raise ge.GlusterHostStorageDeviceLVConvertFailedException(
-                vg.path, alignment, rc, out, err)
-        rc, out, err = commands.execCmd([_lvchangeCommandPath.cmd,
-                                         '--zero', 'n', vgPoolName])
+                vg.path, alignment, rc, out, err
+            )
+        rc, out, err = commands.execCmd(
+            [_lvchangeCommandPath.cmd, '--zero', 'n', vgPoolName]
+        )
         if rc:
             raise ge.GlusterHostStorageDeviceLVChangeFailedException(
-                vgPoolName, rc, out, err)
+                vgPoolName, rc, out, err
+            )
         _reset_blivet(blivetEnv)
         return blivetEnv.devicetree.getDeviceByName(poolLv.name)
 
@@ -245,13 +296,15 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
 
     # raise an error when any device not actually found in the given list
     notFoundList = set(devNameList).difference(
-        set([dev.name for dev in deviceList]))
+        set([dev.name for dev in deviceList])
+    )
     if notFoundList:
         raise ge.GlusterHostStorageDeviceNotFoundException(notFoundList)
 
     # raise an error when any device is used already in the given list
-    inUseList = set(devNameList).difference(set([not _canCreateBrick(
-        dev) or dev.name for dev in deviceList]))
+    inUseList = set(devNameList).difference(
+        set([not _canCreateBrick(dev) or dev.name for dev in deviceList])
+    )
     if inUseList:
         raise ge.GlusterHostStorageDeviceInUseException(inUseList)
 
@@ -271,14 +324,15 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         metaDataSizeKib = vgSizeKib * MIN_METADATA_PERCENT
     poolDataSize = vgSizeKib - metaDataSizeKib
 
-    metaDataSizeKib = (metaDataSizeKib - (metaDataSizeKib % alignment))
-    poolDataSize = (poolDataSize - (poolDataSize % alignment))
+    metaDataSizeKib = metaDataSizeKib - (metaDataSizeKib % alignment)
+    poolDataSize = poolDataSize - (poolDataSize % alignment)
 
     # Creating a thin pool from the data LV and the metadata LV
     # lvconvert --chunksize alignment --thinpool VOLGROUP/thin_pool
     #     --poolmetadata VOLGROUP/metadata_device_name
-    pool = _createThinPool(poolName, vg, chunkSize, metaDataSizeKib,
-                           poolDataSize)
+    pool = _createThinPool(
+        poolName, vg, chunkSize, metaDataSizeKib, poolDataSize
+    )
     # Size of the thin LV should be same as the size of Thinpool to avoid
     # over allocation. Refer bz#1412455 for more info.
     thinlv = LVMLogicalVolumeDevice(
@@ -286,7 +340,8 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         parents=[pool],
         size=blivet.size.Size('%d KiB' % poolDataSize),
         grow=True,
-        seg_type="thin")
+        seg_type="thin",
+    )
 
     blivetEnv.createDevice(thinlv)
     blivetEnv.doIt()
@@ -297,12 +352,15 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
 
     get_format = blivet.formats.get_format  # pylint: disable=no-member
 
-    format = get_format(DEFAULT_FS_TYPE, device=thinlv.path,
-                        mountopts=DEFAULT_MOUNT_OPTIONS)
+    format = get_format(
+        DEFAULT_FS_TYPE, device=thinlv.path, mountopts=DEFAULT_MOUNT_OPTIONS
+    )
     format._defaultFormatOptions = ["-f", "-i", "size=512", "-n", "size=8192"]
     if raidParams.get('type') == '6':
-        format._defaultFormatOptions += ["-d", "sw=%s,su=%sk" % (
-            count, raidParams.get('stripeSize'))]
+        format._defaultFormatOptions += [
+            "-d",
+            "sw=%s,su=%sk" % (count, raidParams.get('stripeSize')),
+        ]
     blivetEnv.formatDevice(thinlv, format)
     blivetEnv.doIt()
 
@@ -312,7 +370,8 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         if errno.EEXIST != e.errno:
             errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
             raise ge.GlusterHostStorageDeviceMakeDirsFailedException(
-                err=[errMsg])
+                err=[errMsg]
+            )
     thinlv.format.setup(mountpoint=mountPoint)
     blivetEnv.doIt()
 
@@ -321,17 +380,29 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     rc, out, err = commands.execCmd([_vgscanCommandPath.cmd])
     if rc:
         raise ge.GlusterHostStorageDeviceVGScanFailedException(rc, out, err)
-    fstab.FsTab().add(thinlv.path, mountPoint,
-                      DEFAULT_FS_TYPE, mntOpts=[DEFAULT_MOUNT_OPTIONS])
+    fstab.FsTab().add(
+        thinlv.path,
+        mountPoint,
+        DEFAULT_FS_TYPE,
+        mntOpts=[DEFAULT_MOUNT_OPTIONS],
+    )
 
     # If selinux is enabled, set correct selinux labels on the brick.
     if selinux.is_selinux_enabled():
-        rc, out, err = commands.execCmd([_semanageCommandPath.cmd,
-                                         'fcontext', '-a', '-t',
-                                         'glusterd_brick_t', mountPoint])
+        rc, out, err = commands.execCmd(
+            [
+                _semanageCommandPath.cmd,
+                'fcontext',
+                '-a',
+                '-t',
+                'glusterd_brick_t',
+                mountPoint,
+            ]
+        )
         if rc:
-            raise ge.GlusterHostFailedToSetSelinuxContext(mountPoint, rc,
-                                                          out, err)
+            raise ge.GlusterHostFailedToSetSelinuxContext(
+                mountPoint, rc, out, err
+            )
         try:
             # mountPoint can be of 'unicode' type when its passed through
             # jsonrpc. restorecon calls into a C API that needs a char *.

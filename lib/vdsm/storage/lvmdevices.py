@@ -26,7 +26,6 @@ from vdsm.storage import fileUtils
 from vdsm.storage import lvmconf
 from vdsm.storage import lvmfilter
 
-
 _LVM_DEVICES_DIR = "/etc/lvm/devices"
 
 
@@ -111,8 +110,10 @@ def _create_system_devices(vgs):
         # Create empty devices file if no VGs are provided.
         devices_file = _get_devices_file_path()
         now = datetime.datetime.now()
-        data = (f"# Created by Vdsm pid {os.getpid()} at "
-                f"{now.strftime('%a %b %d %H:%M:%S %Y')}\n")
+        data = (
+            f"# Created by Vdsm pid {os.getpid()} at "
+            f"{now.strftime('%a %b %d %H:%M:%S %Y')}\n"
+        )
 
         os.makedirs(os.path.dirname(devices_file), exist_ok=True)
         fileUtils.atomic_write(devices_file, data.encode("utf-8"))
@@ -129,18 +130,15 @@ def _run_vgimportdevices(vg):
     devices won't be imported. If the filter is wrong, we may miss some
     devices. To avoid such situation, set the filter to enable all the devices.
     """
-    cmd = [constants.EXT_LVM,
-           'vgimportdevices',
-           vg,
-           '--config',
-           'devices { use_devicesfile = 1 filter = ["a|.*|"] }'
-           ]
+    cmd = [
+        constants.EXT_LVM,
+        'vgimportdevices',
+        vg,
+        '--config',
+        'devices { use_devicesfile = 1 filter = ["a|.*|"] }',
+    ]
 
-    p = commands.start(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
+    p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = commands.communicate(p)
 
     if p.returncode == 0 and err:
@@ -159,11 +157,7 @@ def _run_check():
     """
     cmd = [constants.EXT_LVM, 'lvmdevices', "--check"]
 
-    p = commands.start(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
+    p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = commands.communicate(p)
 
     if p.returncode == 0 and err:

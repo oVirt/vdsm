@@ -13,7 +13,6 @@ from . import exception
 from . import logutils
 from . import response
 
-
 _log = logging.getLogger("api")
 
 
@@ -33,6 +32,7 @@ def logged(on=""):
             raise
         log.info('FINISH %s return=%s %s', func.__name__, ret, ctx)
         return ret
+
     return method
 
 
@@ -57,8 +57,15 @@ def context_string(api_object):
 
     attributes = getattr(api_object, 'LOG_ATTRIBUTES', {})
     if attributes:
-        items.extend([(name, getattr(api_object, attr, '') or '',)
-                      for name, attr in attributes.items()])
+        items.extend(
+            [
+                (
+                    name,
+                    getattr(api_object, attr, '') or '',
+                )
+                for name, attr in attributes.items()
+            ]
+        )
 
     return ", ".join(k + "=" + v for k, v in items)
 
@@ -74,11 +81,13 @@ def guard(*guarding_functions):
     :param guarding_functions: functions to call with the decorated method
       arguments before the decorated method is actually called
     """
+
     @decorator
     def method(func, *args, **kwargs):
         for f in guarding_functions:
             f(*args, **kwargs)
         return func(*args, **kwargs)
+
     return method
 
 

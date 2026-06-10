@@ -32,6 +32,7 @@ class IscsiPortal(namedtuple("IscsiPortal", "hostname, port")):
     Represents transport (TCP) address like defined in rfc 3721 or
     Network Portal of rfc 3720.
     """
+
     def __str__(self):
         return hosttail_join(self.hostname, str(self.port))
 
@@ -44,6 +45,7 @@ class IscsiTarget(namedtuple("IscsiTarget", "portal, tpgt, iqn")):
     Represents the iSCSI Address like defined in rfc 3721 or
     the target record of rfc 3720 Appendix D.
     """
+
     def __str__(self):
         return "%s %s" % (self.address, self.iqn)
 
@@ -90,8 +92,9 @@ def getDevIscsiInfo(dev):
         return getSessionInfo(getDevIscsiSessionId(dev))
 
     # FIXME: raise exception instead of returning an empty object
-    return IscsiSession(0, IscsiInterface(""),
-                        IscsiTarget(IscsiPortal("", 0), 0, ""), None)
+    return IscsiSession(
+        0, IscsiInterface(""), IscsiTarget(IscsiPortal("", 0), 0, ""), None
+    )
 
 
 def getSessionInfo(sessionID):
@@ -99,13 +102,15 @@ def getSessionInfo(sessionID):
 
 
 def getIscsiSessionPath(sessionId):
-    return os.path.join("/sys", "class", "iscsi_session",
-                        "session%d" % sessionId)
+    return os.path.join(
+        "/sys", "class", "iscsi_session", "session%d" % sessionId
+    )
 
 
 def getIscsiConnectionPath(sessionId):
-    return os.path.join("/sys", "class", "iscsi_connection",
-                        "connection%d:0" % sessionId)
+    return os.path.join(
+        "/sys", "class", "iscsi_connection", "connection%d:0" % sessionId
+    )
 
 
 def getIscsiHostPath(sessionID):
@@ -144,10 +149,12 @@ def readSessionInfo(sessionID):
     iface = sysfs.read(os.path.join(iscsi_session, "ifacename"), default="")
     tpgt = sysfs.read_int(os.path.join(iscsi_session, "tpgt"))
     username = sysfs.read(os.path.join(iscsi_session, "username"), default="")
-    password = sysfs.read_password(os.path.join(iscsi_session, "password"),
-                                   default="")
-    ip = sysfs.read(os.path.join(iscsi_connection, "persistent_address"),
-                    default="")
+    password = sysfs.read_password(
+        os.path.join(iscsi_session, "password"), default=""
+    )
+    ip = sysfs.read(
+        os.path.join(iscsi_connection, "persistent_address"), default=""
+    )
     port = sysfs.read_int(os.path.join(iscsi_connection, "persistent_port"))
 
     # iscsi_host is available only when the session exists.
@@ -190,17 +197,24 @@ def addIscsiNode(iface, target, credentials=None):
     with _iscsiadmTransactionLock:
         iscsiadm.node_new(iface.name, target.address, target.iqn)
         try:
-            iscsiadm.node_update(iface.name, target.address, target.iqn,
-                                 "node.startup", "manual")
+            iscsiadm.node_update(
+                iface.name,
+                target.address,
+                target.iqn,
+                "node.startup",
+                "manual",
+            )
 
             if credentials is not None:
                 for key, value in credentials.getIscsiadmOptions():
                     key = "node.session." + key
-                    iscsiadm.node_update(iface.name, target.address,
-                                         target.iqn, key, value)
+                    iscsiadm.node_update(
+                        iface.name, target.address, target.iqn, key, value
+                    )
 
-            setRpFilterIfNeeded(iface.netIfaceName, target.portal.hostname,
-                                True)
+            setRpFilterIfNeeded(
+                iface.netIfaceName, target.portal.hostname, True
+            )
         except:
             removeIscsiNode(iface, target)
             raise
@@ -244,8 +258,9 @@ def addIscsiPortal(iface, portal, credentials=None):
             if credentials is not None:
                 for key, value in credentials.getIscsiadmOptions():
                     key = "discovery.sendtargets." + key
-                    iscsiadm.discoverydb_update(discoverType, iface.name,
-                                                str(portal), key, value)
+                    iscsiadm.discoverydb_update(
+                        discoverType, iface.name, str(portal), key, value
+                    )
 
         except:
             deleteIscsiPortal(iface, portal)
@@ -262,16 +277,18 @@ def discoverSendTargets(iface, portal, credentials=None):
     # Because proper discovery actually has to clear the DB having multiple
     # discoveries at once will cause unpredictable results
 
-    log.info("Discovering iscsi targets for portal %s iface %s",
-             portal, iface.name)
+    log.info(
+        "Discovering iscsi targets for portal %s iface %s", portal, iface.name
+    )
 
     discoverType = "sendtargets"
 
     with _iscsiadmTransactionLock:
         addIscsiPortal(iface, portal, credentials)
         try:
-            targets = iscsiadm.discoverydb_discover(discoverType, iface.name,
-                                                    str(portal))
+            targets = iscsiadm.discoverydb_discover(
+                discoverType, iface.name, str(portal)
+            )
         finally:
             deleteIscsiPortal(iface, portal)
 
@@ -286,7 +303,7 @@ def discoverSendTargets(iface, portal, credentials=None):
 
 def iterateIscsiSessions():
     for sessionDir in glob.iglob("/sys/class/iscsi_session/session*"):
-        sessionID = int(os.path.basename(sessionDir)[len("session"):])
+        sessionID = int(os.path.basename(sessionDir)[len("session") :])
         try:
             yield getSessionInfo(sessionID)
         except OSError as e:
@@ -313,9 +330,11 @@ class ChapCredentials(object):
         return res
 
     def __eq__(self, other):
-        return (self.__class__ == other.__class__ and
-                self.username == other.username and
-                self.password == other.password)
+        return (
+            self.__class__ == other.__class__
+            and self.username == other.username
+            and self.password == other.password
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -334,7 +353,7 @@ class IscsiInterface(object):
         'hardwareAddress': ("iface.hwaddress", 'rw'),
         'ipAddress': ('iface.ipaddress', 'rw'),
         'initiatorName': ('iface.initiatorname', 'rw'),
-        'netIfaceName': ('iface.net_ifacename', 'rw')
+        'netIfaceName': ('iface.net_ifacename', 'rw'),
     }
 
     def __getattr__(self, name):
@@ -371,8 +390,14 @@ class IscsiInterface(object):
 
         self._conf[key] = value
 
-    def __init__(self, name, hardwareAddress=None, ipAddress=None,
-                 initiatorName=None, netIfaceName=None):
+    def __init__(
+        self,
+        name,
+        hardwareAddress=None,
+        ipAddress=None,
+        initiatorName=None,
+        netIfaceName=None,
+    ):
 
         # Only new tcp interfaces are supported for now
         self._conf = {'iface.transport_name': 'tcp'}
@@ -426,8 +451,10 @@ class IscsiInterface(object):
         self._conf = conf
 
     def __repr__(self):
-        return "<IscsiInterface name='%s' transport='%s' netIfaceName='%s'>" \
+        return (
+            "<IscsiInterface name='%s' transport='%s' netIfaceName='%s'>"
             % (self.name, self.transport, self.netIfaceName)
+        )
 
 
 def iterateIscsiInterfaces():
@@ -441,15 +468,17 @@ def rescan():
     log.info("Scanning iSCSI devices")
     try:
         with utils.stopwatch(
-                "Scanning iSCSI devices", level=logging.INFO, log=log):
+            "Scanning iSCSI devices", level=logging.INFO, log=log
+        ):
             iscsiadm.session_rescan(timeout=timeout)
     except iscsiadm.IscsiSessionError as e:
         log.error("Scan failed: %s", e)
 
 
 def devIsiSCSI(dev):
-    hostdir = os.path.realpath(os.path.join("/sys/block", dev,
-                                            "device/../../.."))
+    hostdir = os.path.realpath(
+        os.path.join("/sys/block", dev, "device/../../..")
+    )
     host = os.path.basename(hostdir)
     iscsi_host = os.path.join(hostdir, "iscsi_host/", host)
     scsi_host = os.path.join(hostdir, "scsi_host/", host)
@@ -479,8 +508,7 @@ def getiScsiTarget(dev):
     device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
     sessiondir = os.path.realpath(os.path.join(device, "../.."))
     session = os.path.basename(sessiondir)
-    iscsi_session = os.path.join(sessiondir,
-                                 "iscsi_session/" + session)
+    iscsi_session = os.path.join(sessiondir, "iscsi_session/" + session)
     with open(os.path.join(iscsi_session, "targetname")) as f:
         return f.readline().strip()
 
@@ -490,7 +518,7 @@ def getiScsiSession(dev):
     device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
     sessiondir = os.path.realpath(os.path.join(device, "../.."))
     session = os.path.basename(sessiondir)
-    return int(session[len('session'):])
+    return int(session[len('session') :])
 
 
 def getDefaultInitiatorName():
@@ -555,7 +583,7 @@ def disconnectiScsiSession(sessionID):
 
 
 def _sessionsUsingNetiface(netIfaceName):
-    """ Return sessions using netIfaceName """
+    """Return sessions using netIfaceName"""
     for session in iterateIscsiSessions():
         if session.iface.netIfaceName == netIfaceName:
             yield session
@@ -584,12 +612,14 @@ def setRpFilterIfNeeded(netIfaceName, hostname, loose_mode):
 
     if not any(sessions) and netIfaceName != getRouteDeviceTo(hostname):
         if loose_mode:
-            log.info("Setting loose mode rp_filter for device %r." %
-                     netIfaceName)
+            log.info(
+                "Setting loose mode rp_filter for device %r." % netIfaceName
+            )
             supervdsm.getProxy().set_rp_filter_loose(netIfaceName)
         else:
-            log.info("Setting strict mode rp_filter for device %r." %
-                     netIfaceName)
+            log.info(
+                "Setting strict mode rp_filter for device %r." % netIfaceName
+            )
             supervdsm.getProxy().set_rp_filter_strict(netIfaceName)
 
 
@@ -612,19 +642,24 @@ def resolveIscsiIface(ifaceName, initiatorName, netIfaceName):
             continue
 
         if netIfaceName is not None:
-            if (not _updateIfaceNameIfNeeded(iface, netIfaceName) and
-                    netIfaceName != iface.netIfaceName):
-                logging.error('iSCSI netIfaceName coming from engine [%s] '
-                              'is different from iface.net_ifacename '
-                              'present on the system [%s]. Aborting iscsi '
-                              'iface [%s] configuration.' %
-                              (netIfaceName, iface.netIfaceName, iface.name))
+            if (
+                not _updateIfaceNameIfNeeded(iface, netIfaceName)
+                and netIfaceName != iface.netIfaceName
+            ):
+                logging.error(
+                    'iSCSI netIfaceName coming from engine [%s] '
+                    'is different from iface.net_ifacename '
+                    'present on the system [%s]. Aborting iscsi '
+                    'iface [%s] configuration.'
+                    % (netIfaceName, iface.netIfaceName, iface.name)
+                )
 
                 raise se.iSCSIifaceError()
 
         return iface
 
-    iface = IscsiInterface(ifaceName, initiatorName=initiatorName,
-                           netIfaceName=netIfaceName)
+    iface = IscsiInterface(
+        ifaceName, initiatorName=initiatorName, netIfaceName=netIfaceName
+    )
     iface.create()
     return iface

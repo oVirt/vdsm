@@ -116,19 +116,22 @@ def update_leases_xml_from_disk_objs(vm, dom, disk_devices):
 
         params = vmdevices.lease.parse_xml(dev_elem, {})
         if not params:
-            vm.log.warning('could not parse lease: %s',
-                           xmlutils.tostring(dev_elem))
+            vm.log.warning(
+                'could not parse lease: %s', xmlutils.tostring(dev_elem)
+            )
             continue
 
         info = vmdevices.lease.find_drive_lease_info(
-            params['sd_id'], params['lease_id'], disk_devices)
+            params['sd_id'], params['lease_id'], disk_devices
+        )
         if info is None:
             vm.log.debug('lease with not corresponding drive info, skipped')
             # must be a vm lease, let's skip it
             continue
 
         vmdevices.lease.update_lease_element_from_info(
-            dev_elem, info, params, vm.log)
+            dev_elem, info, params, vm.log
+        )
 
 
 def update_disks_xml_from_objs(vm, dom, disk_devices):
@@ -164,19 +167,22 @@ def update_disks_xml_from_objs(vm, dom, disk_devices):
         # switch to them.
         attrs = vmdevices.storage.Drive.get_identifying_attrs(dev_elem)
         if not attrs:
-            vm.log.warning('could not identify drive: %s',
-                           xmlutils.tostring(dev_elem))
+            vm.log.warning(
+                'could not identify drive: %s', xmlutils.tostring(dev_elem)
+            )
             continue
 
         try:
-            disk_obj = vmdevices.lookup.drive_by_name(disk_devices,
-                                                      attrs['name'])
+            disk_obj = vmdevices.lookup.drive_by_name(
+                disk_devices, attrs['name']
+            )
         except LookupError:
             vm.log.warning('unknown drive %r, skipped', attrs['name'])
             continue
 
         vmdevices.storagexml.update_disk_element_from_object(
-            dev_elem, disk_obj, vm.log, replace_attribs=True)
+            dev_elem, disk_obj, vm.log, replace_attribs=True
+        )
 
 
 def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
@@ -203,7 +209,8 @@ def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
 
         try:
             dev_meta = vmdevices.common.dev_meta_from_elem(
-                dev_elem, vm_id, md_desc)
+                dev_elem, vm_id, md_desc
+            )
         except vmdevices.core.SkipDevice:
             # metadata is optional, so it is ok to just skip devices
             # with no metadata attached.
@@ -217,9 +224,8 @@ def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
             continue
 
         hook_xml = hooks.before_device_create(
-            xmlutils.tostring(dev_elem, pretty=True),
-            vm_custom,
-            dev_custom)
+            xmlutils.tostring(dev_elem, pretty=True), vm_custom, dev_custom
+        )
 
         to_remove.append(dev_elem)
         to_append.append(xmlutils.fromstring(hook_xml))
@@ -242,8 +248,7 @@ def replace_placeholders(dom, arch, serial=None):
         osd = osinfo.version()
         os_version = osd.get('version', '') + '-' + osd.get('release', '')
         serial_number = host.uuid() if serial is None else serial
-        libvirtxml.update_sysinfo(
-            dom, osd['name'], os_version, serial_number)
+        libvirtxml.update_sysinfo(dom, osd['name'], os_version, serial_number)
 
 
 def _make_disk_devices(engine_xml, log):
@@ -258,5 +263,6 @@ def _make_disk_devices(engine_xml, log):
     engine_domain = domain_descriptor.DomainDescriptor(engine_xml)
     engine_md = metadata.Descriptor.from_xml(engine_xml)
     params = vmdevices.common.storage_device_params_from_domain_xml(
-        engine_domain.id, engine_domain, engine_md, log)
+        engine_domain.id, engine_domain, engine_md, log
+    )
     return [vmdevices.storage.Drive(log, **p) for p in params]

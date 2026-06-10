@@ -13,7 +13,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import volume, volumemetadata
 
-from . constants import CLEARED_VOLUME_METADATA
+from .constants import CLEARED_VOLUME_METADATA
 
 FAKE_TIME = 1461095629
 
@@ -31,7 +31,8 @@ def make_init_params(**kwargs):
         description="",
         legality=sc.LEGAL_VOL,
         generation=sc.DEFAULT_GENERATION,
-        sequence=sc.DEFAULT_SEQUENCE)
+        sequence=sc.DEFAULT_SEQUENCE,
+    )
     res.update(kwargs)
     return res
 
@@ -84,7 +85,8 @@ class TestVolumeMetadata:
             TYPE=params['type'],
             VOLTYPE=params['voltype'],
             GEN=params['generation'],
-            SEQ=params['sequence'])
+            SEQ=params['sequence'],
+        )
 
         monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
         info = volume.VolumeMetadata(**params)
@@ -95,7 +97,8 @@ class TestVolumeMetadata:
         params = make_init_params(ctime=FAKE_TIME)
         expected_params = dict(params)
         expected_params['size'] = params['capacity'] // sc.BLOCK_SIZE_512
-        expected = textwrap.dedent("""\
+        expected = textwrap.dedent(
+            """\
             CTIME=%(ctime)s
             DESCRIPTION=%(description)s
             DISKTYPE=%(disktype)s
@@ -110,13 +113,16 @@ class TestVolumeMetadata:
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
             EOF
-            """ % expected_params).encode("utf-8")
+            """
+            % expected_params
+        ).encode("utf-8")
         md = volume.VolumeMetadata(**params)
         assert expected == md.storage_format(4)
 
     def test_storage_format_v5(self):
         params = make_init_params(ctime=FAKE_TIME)
-        expected = textwrap.dedent("""\
+        expected = textwrap.dedent(
+            """\
             CAP=%(capacity)s
             CTIME=%(ctime)s
             DESCRIPTION=%(description)s
@@ -131,7 +137,9 @@ class TestVolumeMetadata:
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
             EOF
-            """ % params).encode("utf-8")
+            """
+            % params
+        ).encode("utf-8")
         md = volume.VolumeMetadata(**params)
         assert expected == md.storage_format(5)
 
@@ -148,9 +156,14 @@ class TestVolumeMetadata:
         with pytest.raises(AssertionError):
             volume.VolumeMetadata(**params)
 
-    @pytest.mark.parametrize("required_key",
-                             [key for key in make_md_dict()
-                              if key not in (sc.SEQUENCE, sc.GENERATION)])
+    @pytest.mark.parametrize(
+        "required_key",
+        [
+            key
+            for key in make_md_dict()
+            if key not in (sc.SEQUENCE, sc.GENERATION)
+        ],
+    )
     def test_from_lines_missing_key(self, required_key):
         data = make_md_dict()
         data[required_key] = None
@@ -262,8 +275,9 @@ class TestVolumeMetadata:
 
     def test_invalid_legacy_size_value(self):
         capacity = 123456
-        lines = make_lines(**{volumemetadata._SIZE: 'not_an_integer',
-                              "CAP": capacity})
+        lines = make_lines(
+            **{volumemetadata._SIZE: 'not_an_integer', "CAP": capacity}
+        )
 
         # Check capacity is used regardless of invalid size legacy value.
         md, errors = volumemetadata.parse(lines)
@@ -273,8 +287,7 @@ class TestVolumeMetadata:
     def test_valid_legacy_size_no_capacity(self):
         size = 4
         capacity = size * sc.BLOCK_SIZE_512
-        lines = make_lines(**{volumemetadata._SIZE: size,
-                              "CAP": capacity})
+        lines = make_lines(**{volumemetadata._SIZE: size, "CAP": capacity})
 
         # Remove capacity value.
         lines.remove(b'CAP=%s' % str(capacity).encode("utf-8"))
@@ -315,60 +328,56 @@ class TestMDSize:
     MAX_PREALLOCATED_SIZE = PiB
     MAX_VOLUME_SIZE = 2**63 - 1
 
-    @pytest.mark.parametrize('size', [
-        sc.DESCRIPTION_SIZE,
-        sc.DESCRIPTION_SIZE + 1
-    ])
+    @pytest.mark.parametrize(
+        'size', [sc.DESCRIPTION_SIZE, sc.DESCRIPTION_SIZE + 1]
+    )
     def test_long_description(self, size):
         params = make_init_params(description="!" * size)
         md = volume.VolumeMetadata(**params)
         assert sc.DESCRIPTION_SIZE == len(md.description)
 
     @pytest.mark.parametrize('version', [4, 5])
-    @pytest.mark.parametrize('md_params', [
-        # Preallocated block/file example:
-        #
-        # CTIME=1542308390
-        # FORMAT=RAW
-        # DISKTYPE=ISOF
-        # LEGALITY=ILLEGAL
-        # CAP=1125899906842624
-        # VOLTYPE=LEAF
-        # DESCRIPTION={"DiskAlias":"Fedora-Server-dvd-x86_64-29-1.2.iso", "DiskDescription":"Uploaded disk"} # NOQA: E501 (potentially long line)
-        # IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
-        # PUUID=00000000-0000-0000-0000-000000000000
-        # MTIME=0
-        # POOL_UUID=
-        # TYPE=PREALLOCATED
-        # GEN=0
-        # SEQ=4294967295
-        # EOF
-        {
-            'capacity': MAX_PREALLOCATED_SIZE,
-            'type': 'PREALLOCATED'
-        },
-        # Sparse block/file example:
-        #
-        # CTIME=1542308390
-        # FORMAT=RAW
-        # DISKTYPE=ISOF
-        # LEGALITY=ILLEGAL
-        # CAP=9223372036854775808
-        # VOLTYPE=LEAF
-        # DESCRIPTION={"DiskAlias":"Fedora-Server-dvd-x86_64-29-1.2.iso", "DiskDescription":"Uploaded disk"} # NOQA: E501 (potentially long line)
-        # IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
-        # PUUID=00000000-0000-0000-0000-000000000000
-        # MTIME=0
-        # POOL_UUID=
-        # TYPE=SPARSE
-        # GEN=0
-        # SEQ=4294967295
-        # EOF
-        {
-            'capacity': MAX_VOLUME_SIZE,
-            'type': 'SPARSE'
-        }
-    ])
+    @pytest.mark.parametrize(
+        'md_params',
+        [
+            # Preallocated block/file example:
+            #
+            # CTIME=1542308390
+            # FORMAT=RAW
+            # DISKTYPE=ISOF
+            # LEGALITY=ILLEGAL
+            # CAP=1125899906842624
+            # VOLTYPE=LEAF
+            # DESCRIPTION={"DiskAlias":"Fedora-Server-dvd-x86_64-29-1.2.iso", "DiskDescription":"Uploaded disk"} # NOQA: E501 (potentially long line)
+            # IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
+            # PUUID=00000000-0000-0000-0000-000000000000
+            # MTIME=0
+            # POOL_UUID=
+            # TYPE=PREALLOCATED
+            # GEN=0
+            # SEQ=4294967295
+            # EOF
+            {'capacity': MAX_PREALLOCATED_SIZE, 'type': 'PREALLOCATED'},
+            # Sparse block/file example:
+            #
+            # CTIME=1542308390
+            # FORMAT=RAW
+            # DISKTYPE=ISOF
+            # LEGALITY=ILLEGAL
+            # CAP=9223372036854775808
+            # VOLTYPE=LEAF
+            # DESCRIPTION={"DiskAlias":"Fedora-Server-dvd-x86_64-29-1.2.iso", "DiskDescription":"Uploaded disk"} # NOQA: E501 (potentially long line)
+            # IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
+            # PUUID=00000000-0000-0000-0000-000000000000
+            # MTIME=0
+            # POOL_UUID=
+            # TYPE=SPARSE
+            # GEN=0
+            # SEQ=4294967295
+            # EOF
+            {'capacity': MAX_VOLUME_SIZE, 'type': 'SPARSE'},
+        ],
+    )
     def test_max_size(self, version, md_params):
         md = volume.VolumeMetadata(
             ctime=1440935038,
@@ -394,8 +403,11 @@ class TestMDSize:
 
         # To see this, run:
         # tox -e storage-py27 tests/storage/volume_metadata_test.py -- -vs
-        print("version={} type={} length={} fields={} free={}"
-              .format(version, md_params['type'], md_len, md_fields, md_free))
+        print(
+            "version={} type={} length={} fields={} free={}".format(
+                version, md_params['type'], md_len, md_fields, md_free
+            )
+        )
 
         assert sc.METADATA_SIZE >= md_len
 
@@ -420,10 +432,9 @@ class TestMDSize:
 
 class TestDictInterface:
 
-    @pytest.mark.parametrize('size', [
-        sc.DESCRIPTION_SIZE,
-        sc.DESCRIPTION_SIZE + 1
-    ])
+    @pytest.mark.parametrize(
+        'size', [sc.DESCRIPTION_SIZE, sc.DESCRIPTION_SIZE + 1]
+    )
     def test_description_trunc(self, size):
         params = make_init_params()
         md = volume.VolumeMetadata(**params)

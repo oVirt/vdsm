@@ -76,9 +76,11 @@ class _VdsProxy(object):
         is returned
         """
         if hasattr(self.vdscli, attr):
+
             def wrapper(*args, **kwargs):
                 result = getattr(self.vdscli, attr)(*args, **kwargs)
                 return _parse_result(result)
+
             return wrapper
 
         raise AttributeError(attr)
@@ -86,6 +88,7 @@ class _VdsProxy(object):
     def netinfo_altering(func):
         """Updates the cached information that might have been altered by an
         api call that has side-effects on the server."""
+
         @wraps(func)
         def call_and_update(self, *args, **kwargs):
             ret = func(self, *args, **kwargs)
@@ -93,6 +96,7 @@ class _VdsProxy(object):
             if self.config is not None:
                 self.config = RunningConfig()
             return ret
+
         return call_and_update
 
     def _get_netinfo(self):
@@ -100,8 +104,10 @@ class _VdsProxy(object):
         try:
             return CachingNetInfo(response[2])
         except IndexError:
-            raise Exception('VdsProxy: getVdsCapabilities failed. '
-                            'code:%s msg:%s' % (response[0], response[1]))
+            raise Exception(
+                'VdsProxy: getVdsCapabilities failed. '
+                'code:%s msg:%s' % (response[0], response[1])
+            )
 
     def _get_net_args(self, vlan, bond, nics, opts):
         if vlan is None:
@@ -134,15 +140,16 @@ class _VdsProxy(object):
         # add calling method for logs
         test_method, code_line = stack[3][3], stack[3][2]
         options['_caller'] = '{}:{}'.format(test_method, code_line)
-        result = self.vdscli.setupNetworks(networks, bonds, options,
-                                           _transport_timeout=90)
+        result = self.vdscli.setupNetworks(
+            networks, bonds, options, _transport_timeout=90
+        )
         return _parse_result(result)
 
     def _vlanInRunningConfig(self, devName, vlanId):
         for attrs in self.config.networks.values():
-            if (int(vlanId) == attrs.get('vlan') and
-                    (attrs.get('bonding') == devName or
-                     attrs.get('nic') == devName)):
+            if int(vlanId) == attrs.get('vlan') and (
+                attrs.get('bonding') == devName or attrs.get('nic') == devName
+            ):
                 return True
         return False
 
@@ -160,11 +167,13 @@ class _VdsProxy(object):
     @contextmanager
     def pinger(self):
         """Keeps pinging vdsm for operations that need it"""
+
         def ping():
             while not done:
                 # TODO: ping is deprecated, use confirmConnectivity instead
                 self.vdscli.ping()
                 time.sleep(1)
+
         try:
             done = False
             pinger_thread = threading.Thread(target=ping)

@@ -26,24 +26,28 @@ class TestHwinfo(VdsmTestCase):
     # TODO: The following tests are testing private functions. We want to avoid
     # that in future. In this case, we have to investigate creation of small
     # module to test device-tree.
-    @permutations([
-        [b'abc', 'abc'],
-        [b'abc\0', 'abc'],
-        [b'abc,\0', 'abc'],
-        [b'\0abc\n', '\0abc\n'],
-    ])
+    @permutations(
+        [
+            [b'abc', 'abc'],
+            [b'abc\0', 'abc'],
+            [b'abc,\0', 'abc'],
+            [b'\0abc\n', '\0abc\n'],
+        ]
+    )
     def test_ppc_device_tree_parsing(self, test_input, expected_result):
         with namedTemporaryDir() as tmpdir:
             with tempfile.NamedTemporaryFile(dir=tmpdir) as f:
                 f.write(test_input)
                 f.flush()
                 result = ppc64HardwareInfo._from_device_tree(
-                    os.path.basename(f.name), tree_path=tmpdir)
+                    os.path.basename(f.name), tree_path=tmpdir
+                )
                 self.assertEqual(expected_result, result)
 
     def test_ppc_device_tree_no_file(self):
         result = ppc64HardwareInfo._from_device_tree(
-            'nonexistent', tree_path='/tmp')
+            'nonexistent', tree_path='/tmp'
+        )
         self.assertEqual('unavailable', result)
 
     @MonkeyPatch(ppc64HardwareInfo, '_from_device_tree', lambda _: 'exists')
@@ -56,7 +60,7 @@ class TestHwinfo(VdsmTestCase):
             'systemFamily': 'PowerNV',
             'systemVersion': 'PowerNV 8247-22L',
             'systemUUID': 'exists',
-            'systemManufacturer': 'exists'
+            'systemManufacturer': 'exists',
         }
 
         result = ppc64HardwareInfo.getHardwareInfoStructure()

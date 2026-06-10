@@ -9,7 +9,7 @@ from vdsm.virt.externaldata import ExternalData
 class TestExternalData(object):
 
     def test_hash(self):
-        """ Make sure secure_hash() is not just plain hash() """
+        """Make sure secure_hash() is not just plain hash()"""
         assert hash("abc") != ExternalData.secure_hash("abc")
 
     def test_update(self):
@@ -22,8 +22,13 @@ class TestExternalData(object):
         # Init
         original_data = data_content
         original_hash = ExternalData.secure_hash(data_content)
-        external = ExternalData("test", logging.getLogger(), read_function,
-                                data_content, original_hash)
+        external = ExternalData(
+            "test",
+            logging.getLogger(),
+            read_function,
+            data_content,
+            original_hash,
+        )
         data = external.data
         assert data.stable_data == data_content
         assert data.engine_hash == original_hash
@@ -66,8 +71,13 @@ class TestExternalData(object):
 
         # Init
         original_hash = ExternalData.secure_hash(data_content)
-        external = ExternalData("test", logging.getLogger(), read_function,
-                                data_content, original_hash)
+        external = ExternalData(
+            "test",
+            logging.getLogger(),
+            read_function,
+            data_content,
+            original_hash,
+        )
         data = external.data
         assert data.stable_data == data_content
         assert data.engine_hash == original_hash

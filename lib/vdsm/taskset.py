@@ -4,7 +4,6 @@
 from vdsm.common import commands
 from . import constants
 
-
 AUTOMATIC = "auto"
 
 _SYS_ONLINE_CPUS = "/sys/devices/system/cpu/online"
@@ -41,11 +40,9 @@ def set(pid, cpu_set, all_tasks=False):
     if all_tasks:
         command.append("--all-tasks")
 
-    command.extend((
-                   '--pid',
-                   '--cpu-list', ','.join(str(i) for i in cpu_set),
-                   str(pid)
-                   ))
+    command.extend(
+        ('--pid', '--cpu-list', ','.join(str(i) for i in cpu_set), str(pid))
+    )
 
     commands.run(command, reset_cpu_affinity=False)
 

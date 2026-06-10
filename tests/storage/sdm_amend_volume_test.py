@@ -39,19 +39,28 @@ DEFAULT_SIZE = MiB
 
 
 @contextmanager
-def make_env(storage_type, fmt, chain_length=1,
-             size=DEFAULT_SIZE, sd_version=3, qcow2_compat='0.10'):
+def make_env(
+    storage_type,
+    fmt,
+    chain_length=1,
+    size=DEFAULT_SIZE,
+    sd_version=3,
+    qcow2_compat='0.10',
+):
     with fake_env(storage_type, sd_version=sd_version) as env:
         rm = FakeResourceManager()
-        with MonkeyPatchScope([
-            (guarded, 'context', fake_guarded_context()),
-            (amend_volume, 'sdCache', env.sdcache),
-            (copy_data, 'sdCache', env.sdcache),
-            (volume_info, 'sdCache', env.sdcache),
-            (blockVolume, 'rm', rm),
-        ]):
-            env.chain = make_qemu_chain(env, size, fmt, chain_length,
-                                        qcow2_compat=qcow2_compat)
+        with MonkeyPatchScope(
+            [
+                (guarded, 'context', fake_guarded_context()),
+                (amend_volume, 'sdCache', env.sdcache),
+                (copy_data, 'sdCache', env.sdcache),
+                (volume_info, 'sdCache', env.sdcache),
+                (blockVolume, 'rm', rm),
+            ]
+        ):
+            env.chain = make_qemu_chain(
+                env, size, fmt, chain_length, qcow2_compat=qcow2_compat
+            )
             yield env
 
 
@@ -59,14 +68,17 @@ def make_env(storage_type, fmt, chain_length=1,
 def test_amend(fake_scheduler, env_type):
     fmt = sc.name2type('cow')
     job_id = make_uuid()
-    with make_env(env_type, fmt, sd_version=4,
-                  qcow2_compat='0.10') as env:
+    with make_env(env_type, fmt, sd_version=4, qcow2_compat='0.10') as env:
         env_vol = env.chain[0]
         generation = env_vol.getMetaParam(sc.GENERATION)
         assert env_vol.getQemuImageInfo()['compat'] == '0.10'
-        vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                   img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
-                   generation=generation)
+        vol = dict(
+            endpoint_type='div',
+            sd_id=env_vol.sdUUID,
+            img_id=env_vol.imgUUID,
+            vol_id=env_vol.volUUID,
+            generation=generation,
+        )
         qcow2_attr = dict(compat='1.1')
         job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
         job.run()
@@ -82,9 +94,13 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
     with make_env(env_type, fmt, sd_version=4) as env:
         env_vol = env.chain[0]
         generation = env_vol.getMetaParam(sc.GENERATION)
-        vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                   img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
-                   generation=generation)
+        vol = dict(
+            endpoint_type='div',
+            sd_id=env_vol.sdUUID,
+            img_id=env_vol.imgUUID,
+            vol_id=env_vol.volUUID,
+            generation=generation,
+        )
         qcow2_attr = dict(compat='1.1')
         job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
         job.run()
@@ -102,9 +118,13 @@ def test_qemu_amend_failure(fake_scheduler, monkeypatch, env_type):
     with make_env(env_type, fmt, sd_version=4) as env:
         env_vol = env.chain[0]
         generation = env_vol.getMetaParam(sc.GENERATION)
-        vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                   img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
-                   generation=generation)
+        vol = dict(
+            endpoint_type='div',
+            sd_id=env_vol.sdUUID,
+            img_id=env_vol.imgUUID,
+            vol_id=env_vol.volUUID,
+            generation=generation,
+        )
         qcow2_attr = dict(compat='1.1')
         job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
         job.run()
@@ -121,9 +141,13 @@ def test_sd_version_no_support_compat(fake_scheduler, env_type):
     with make_env(env_type, fmt, sd_version=3) as env:
         env_vol = env.chain[0]
         generation = env_vol.getMetaParam(sc.GENERATION)
-        vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                   img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
-                   generation=generation)
+        vol = dict(
+            endpoint_type='div',
+            sd_id=env_vol.sdUUID,
+            img_id=env_vol.imgUUID,
+            vol_id=env_vol.volUUID,
+            generation=generation,
+        )
         qcow2_attr = dict(compat='1.1')
         job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
         job.run()

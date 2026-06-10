@@ -38,6 +38,7 @@ class SSLSocket(object):
                 raise
 
         return result
+
     recv = read
 
     def recv_into(self, memview, nbytes=None, flags=0):
@@ -87,9 +88,9 @@ class SSLContext(object):
         context.load_cert_chain(self.cert_file, self.key_file)
 
         return SSLSocket(
-            context.wrap_socket(sock,
-                                server_side=False,
-                                do_handshake_on_connect=True)
+            context.wrap_socket(
+                sock, server_side=False, do_handshake_on_connect=True
+            )
         )
 
 
@@ -105,6 +106,7 @@ class SSLHandshakeDispatcher(object):
 
     where we provide message processing dispatcher as parameter.
     """
+
     log = logging.getLogger("ProtocolDetector.SSLHandshakeDispatcher")
     SSL_HANDSHAKE_TIMEOUT = 10
     LOCAL_ADDRESSES = ('127.0.0.1', '::1')
@@ -135,9 +137,10 @@ class SSLHandshakeDispatcher(object):
         context.load_cert_chain(self._sslctx.cert_file, self._sslctx.key_file)
 
         client_socket = SSLSocket(
-            context.wrap_socket(client_socket,
-                                server_side=True,
-                                do_handshake_on_connect=False))
+            context.wrap_socket(
+                client_socket, server_side=True, do_handshake_on_connect=False
+            )
+        )
 
         dispatcher.socket = client_socket
         self._has_been_set_up = True
@@ -181,7 +184,9 @@ class SSLHandshakeDispatcher(object):
                 if not self._verify_host(peercert, peername):
                     self.log.error(
                         "peer certificate '%s' does not match host name '%s'",
-                        peercert, peername)
+                        peercert,
+                        peername,
+                    )
                     dispatcher.socket.close()
                     return
 
@@ -202,9 +207,9 @@ class SSLHandshakeDispatcher(object):
     def compare_names(src_addr, cert_common_name):
         src_addr = SSLHandshakeDispatcher._normalize_ip_address(src_addr)
         try:
-            cert_common_name = \
-                SSLHandshakeDispatcher._normalize_ip_address(
-                    cert_common_name)
+            cert_common_name = SSLHandshakeDispatcher._normalize_ip_address(
+                cert_common_name
+            )
         except ValueError:
             # used name not address
             pass
@@ -217,8 +222,10 @@ class SSLHandshakeDispatcher(object):
             name, aliaslist, addresslist = socket.gethostbyaddr(src_addr)
             hostnames = [name] + aliaslist + addresslist
 
-            return any(cert_common_name.lower() == hostname.lower()
-                       for hostname in hostnames)
+            return any(
+                cert_common_name.lower() == hostname.lower()
+                for hostname in hostnames
+            )
 
     @staticmethod
     def _normalize_ip_address(addr):
@@ -244,12 +251,18 @@ class SSLHandshakeDispatcher(object):
             elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
                 self.want_write = True
             else:
-                self.log.error("ssl handshake: SSLError, address: {}".format(
-                    dispatcher.socket.getpeername()[0]))
+                self.log.error(
+                    "ssl handshake: SSLError, address: {}".format(
+                        dispatcher.socket.getpeername()[0]
+                    )
+                )
                 dispatcher.close()
         except socket.error:
-            self.log.error("ssl handshake: socket error, address: {}".format(
-                dispatcher.socket.getpeername()[0]))
+            self.log.error(
+                "ssl handshake: socket error, address: {}".format(
+                    dispatcher.socket.getpeername()[0]
+                )
+            )
             dispatcher.close()
         else:
             self.want_read = self.want_write = True
@@ -262,7 +275,9 @@ class SSLHandshakeDispatcher(object):
 def create_ssl_context():
     sslctx = None
     if config.getboolean('vars', 'ssl'):
-        sslctx = SSLContext(key_file=pki.KEY_FILE,
-                            cert_file=pki.CERT_FILE,
-                            ca_certs=pki.CA_FILE)
+        sslctx = SSLContext(
+            key_file=pki.KEY_FILE,
+            cert_file=pki.CERT_FILE,
+            ca_certs=pki.CA_FILE,
+        )
     return sslctx

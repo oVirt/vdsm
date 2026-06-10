@@ -41,17 +41,26 @@ DEFAULT_SIZE = MiB
 
 
 @contextmanager
-def make_env(storage_type, fmt, chain_length=1,
-             size=DEFAULT_SIZE, sd_version=5, qcow2_compat='1.1'):
+def make_env(
+    storage_type,
+    fmt,
+    chain_length=1,
+    size=DEFAULT_SIZE,
+    sd_version=5,
+    qcow2_compat='1.1',
+):
     with fake_env(storage_type, sd_version=sd_version) as env:
         rm = FakeResourceManager()
-        with MonkeyPatchScope([
-            (guarded, 'context', fake_guarded_context()),
-            (volume_info, 'sdCache', env.sdcache),
-            (blockVolume, 'rm', rm),
-        ]):
-            env.chain = make_qemu_chain(env, size, fmt, chain_length,
-                                        qcow2_compat=qcow2_compat)
+        with MonkeyPatchScope(
+            [
+                (guarded, 'context', fake_guarded_context()),
+                (volume_info, 'sdCache', env.sdcache),
+                (blockVolume, 'rm', rm),
+            ]
+        ):
+            env.chain = make_qemu_chain(
+                env, size, fmt, chain_length, qcow2_compat=qcow2_compat
+            )
             yield env
 
 
@@ -75,15 +84,17 @@ def test_add_remove_bitmap(fake_scheduler, env_type):
             'sd_id': top_vol.sdUUID,
             'img_id': top_vol.imgUUID,
             'vol_id': top_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
         job = remove_bitmap.Job(make_uuid(), 0, vol, bitmap1)
         job.run()
 
         assert jobs.STATUS.DONE == job.status
         vol_info = qemuimg.info(top_vol.getVolumePath())
-        bitmaps = [b["name"] for b in
-                   vol_info["format-specific"]["data"].get("bitmaps", [])]
+        bitmaps = [
+            b["name"]
+            for b in vol_info["format-specific"]["data"].get("bitmaps", [])
+        ]
         assert bitmap1 not in bitmaps and bitmap2 in bitmaps
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
 
@@ -102,7 +113,7 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
             'sd_id': top_vol.sdUUID,
             'img_id': top_vol.imgUUID,
             'vol_id': top_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
 
         # Remove bitmap failed for RAW volume
@@ -135,15 +146,17 @@ def test_remove_bitmap_non_leaf_vol(fake_scheduler, env_type):
             'sd_id': base_vol.sdUUID,
             'img_id': base_vol.imgUUID,
             'vol_id': base_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
         job = remove_bitmap.Job(make_uuid(), 0, vol, bitmap1)
         job.run()
 
         assert jobs.STATUS.DONE == job.status
         vol_info = qemuimg.info(base_vol.getVolumePath())
-        bitmaps = [b["name"] for b in
-                   vol_info["format-specific"]["data"].get("bitmaps", [])]
+        bitmaps = [
+            b["name"]
+            for b in vol_info["format-specific"]["data"].get("bitmaps", [])
+        ]
         assert bitmap1 not in bitmaps and bitmap2 in bitmaps
         assert base_vol.getMetaParam(sc.GENERATION) == generation + 1
 
@@ -162,7 +175,7 @@ def test_remove_missing_bitmap(fake_scheduler, env_type):
             'sd_id': top_vol.sdUUID,
             'img_id': top_vol.imgUUID,
             'vol_id': top_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
         job = remove_bitmap.Job(make_uuid(), 0, vol, "bitmap")
         job.run()
@@ -185,11 +198,7 @@ def test_remove_inactive_bitmap(fake_scheduler, env_type):
         base_vol = env.chain[0]
 
         # Add inactive bitmap to base volume
-        op = qemuimg.bitmap_add(
-            base_vol.getVolumePath(),
-            bitmap,
-            enable=False
-        )
+        op = qemuimg.bitmap_add(base_vol.getVolumePath(), bitmap, enable=False)
         op.run()
 
         generation = base_vol.getMetaParam(sc.GENERATION)
@@ -198,7 +207,7 @@ def test_remove_inactive_bitmap(fake_scheduler, env_type):
             'sd_id': base_vol.sdUUID,
             'img_id': base_vol.imgUUID,
             'vol_id': base_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
         job = remove_bitmap.Job(make_uuid(), 0, vol, bitmap)
         job.run()
@@ -237,7 +246,7 @@ def test_remove_invalid_bitmap(fake_scheduler, env_type):
             'sd_id': base_vol.sdUUID,
             'img_id': base_vol.imgUUID,
             'vol_id': base_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
         job = remove_bitmap.Job(make_uuid(), 0, vol, bitmap)
         job.run()

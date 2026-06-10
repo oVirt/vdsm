@@ -18,14 +18,14 @@ LEASE_DEVICES = (
         "sd_id": "sd-1",
         "lease_id": "lease-2",
         "path": "/dev/sd-1/xleases",
-        "offset": 4194304
+        "offset": 4194304,
     },
     {
         "type": vmdevices.hwclass.LEASE,
         "sd_id": "sd-2",
         "lease_id": "lease-1",
         "path": "/data-center/mnt/server:_export/sd-2/dom_md/xleases",
-        "offset": 3145728
+        "offset": 3145728,
     },
 )
 
@@ -34,8 +34,9 @@ LEASE_DEVICES = (
 class TestDevice(XMLTestCase):
 
     def test_getxml(self):
-        spec = dict(sd_id="sd_id", lease_id="lease_id", path="/path",
-                    offset=1048576)
+        spec = dict(
+            sd_id="sd_id", lease_id="lease_id", path="/path", offset=1048576
+        )
         lease = vmdevices.lease.Device(self.log, **spec)
         lease_xml = xmlutils.tostring(lease.getXML())
         xml = """
@@ -49,19 +50,23 @@ class TestDevice(XMLTestCase):
 
     @permutations([["sd_id"], ["lease_id"], ["path"], ["offset"]])
     def test_missing_required_argument(self, missing):
-        kwargs = {"sd_id": "sd_id",
-                  "lease_id": "lease_id",
-                  "path": "path",
-                  "offset": 0}
+        kwargs = {
+            "sd_id": "sd_id",
+            "lease_id": "lease_id",
+            "path": "path",
+            "offset": 0,
+        }
         del kwargs[missing]
         with pytest.raises(vmdevices.lease.MissingArgument):
             vmdevices.lease.Device(self.log, **kwargs)
 
     def test_repr(self):
-        kwargs = {"sd_id": "sd_id",
-                  "lease_id": "lease_id",
-                  "path": "path",
-                  "offset": 0}
+        kwargs = {
+            "sd_id": "sd_id",
+            "lease_id": "lease_id",
+            "path": "path",
+            "offset": 0,
+        }
         lease = vmdevices.lease.Device(self.log, **kwargs)
         for key, value in kwargs.items():
             assert "%s=%s" % (key, value) in repr(lease)
@@ -74,9 +79,7 @@ class TestPrepare(VdsmTestCase):
         storage = FakeStorage()
         key = ("sd_id", "lease_id")
         storage.leases[key] = {"path": "path", "offset": 0}
-        device = {"type": "lease",
-                  "sd_id": "sd_id",
-                  "lease_id": "lease_id"}
+        device = {"type": "lease", "sd_id": "sd_id", "lease_id": "lease_id"}
         expected = device.copy()
         expected["path"] = "path"
         expected["offset"] = 0
@@ -84,19 +87,19 @@ class TestPrepare(VdsmTestCase):
         assert device == expected
 
     def test_skip_prepared(self):
-        device = {"type": "lease",
-                  "sd_id": "sd_id",
-                  "lease_id": "lease_id",
-                  "path": "path",
-                  "offset": 0}
+        device = {
+            "type": "lease",
+            "sd_id": "sd_id",
+            "lease_id": "lease_id",
+            "path": "path",
+            "offset": 0,
+        }
         with self.assertNotRaises():
             vmdevices.lease.prepare(None, [device])
 
     def test_no_such_lease(self):
         storage = FakeStorage()
-        device = {"type": "lease",
-                  "sd_id": "sd_id",
-                  "lease_id": "lease_id"}
+        device = {"type": "lease", "sd_id": "sd_id", "lease_id": "lease_id"}
         with pytest.raises(vmdevices.lease.CannotPrepare):
             vmdevices.lease.prepare(storage, [device])
 
@@ -104,59 +107,73 @@ class TestPrepare(VdsmTestCase):
 @expandPermutations
 class TestFindDevice(VdsmTestCase):
 
-    @permutations([
-        ("sd-1", "lease-2"),
-        ("sd-2", "lease-1"),
-    ])
+    @permutations(
+        [
+            ("sd-1", "lease-2"),
+            ("sd-2", "lease-1"),
+        ]
+    )
     def test_found(self, sd_id, lease_id):
         query = {"sd_id": sd_id, "lease_id": lease_id}
         lease = vmdevices.lease.find_device(self.devices(), query)
         assert lease.sd_id == sd_id
         assert lease.lease_id == lease_id
 
-    @permutations([
-        ("sd-1", "lease-1"),
-        ("sd-2", "lease-2"),
-    ])
+    @permutations(
+        [
+            ("sd-1", "lease-1"),
+            ("sd-2", "lease-2"),
+        ]
+    )
     def test_lookup_error(self, sd_id, lease_id):
         query = {"sd_id": sd_id, "lease_id": lease_id}
         with pytest.raises(LookupError):
             vmdevices.lease.find_device(self.devices(), query)
 
     def devices(self):
-        leases = [vmdevices.lease.Device(self.log, **kwargs)
-                  for kwargs in LEASE_DEVICES]
+        leases = [
+            vmdevices.lease.Device(self.log, **kwargs)
+            for kwargs in LEASE_DEVICES
+        ]
         return {vmdevices.hwclass.LEASE: leases}
 
 
 @expandPermutations
 class TestFindConf(VdsmTestCase):
 
-    @permutations([
-        ("sd-1", "lease-2", 4194304),
-        ("sd-2", "lease-1", 3145728),
-    ])
+    @permutations(
+        [
+            ("sd-1", "lease-2", 4194304),
+            ("sd-2", "lease-1", 3145728),
+        ]
+    )
     def test_find(self, sd_id, lease_id, offset):
-        kwargs = {"type": vmdevices.hwclass.LEASE,
-                  "sd_id": sd_id,
-                  "lease_id": lease_id,
-                  "path": "/dev/%s/xleases" % sd_id,
-                  "offset": offset}
+        kwargs = {
+            "type": vmdevices.hwclass.LEASE,
+            "sd_id": sd_id,
+            "lease_id": lease_id,
+            "path": "/dev/%s/xleases" % sd_id,
+            "offset": offset,
+        }
         lease = vmdevices.lease.Device(self.log, **kwargs)
         conf = vmdevices.lease.find_conf(self.conf(), lease)
         assert conf["sd_id"] == sd_id
         assert conf["lease_id"] == lease_id
 
-    @permutations([
-        ("sd-1", "lease-1", 3145728),
-        ("sd-2", "lease-2", 4194304),
-    ])
+    @permutations(
+        [
+            ("sd-1", "lease-1", 3145728),
+            ("sd-2", "lease-2", 4194304),
+        ]
+    )
     def test_lookup_error(self, sd_id, lease_id, offset):
-        kwargs = {"type": vmdevices.hwclass.LEASE,
-                  "sd_id": sd_id,
-                  "lease_id": lease_id,
-                  "path": "/dev/%s/xleases" % sd_id,
-                  "offset": offset}
+        kwargs = {
+            "type": vmdevices.hwclass.LEASE,
+            "sd_id": sd_id,
+            "lease_id": lease_id,
+            "path": "/dev/%s/xleases" % sd_id,
+            "offset": offset,
+        }
         lease = vmdevices.lease.Device(self.log, **kwargs)
         with pytest.raises(LookupError):
             vmdevices.lease.find_conf(self.conf(), lease)

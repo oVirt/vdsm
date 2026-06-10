@@ -9,8 +9,12 @@ import stat
 import base64
 import errno
 
-from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
-    DISKIMAGE_USER, DISKIMAGE_GROUP
+from vdsm.constants import (
+    EXT_MKFS_MSDOS,
+    EXT_MKISOFS,
+    DISKIMAGE_USER,
+    DISKIMAGE_GROUP,
+)
 from vdsm.constants import P_VDSM_RUN
 from vdsm.common.commands import execCmd
 from vdsm.common.fileutils import rm_file
@@ -58,8 +62,9 @@ def _decodeFilesIntoDir(files, parentdir):
 
 def _commonCleanFs(dirname, media):
     if media is not None:
-        os.chown(media, resolveUid(DISKIMAGE_USER),
-                 resolveGid(DISKIMAGE_GROUP))
+        os.chown(
+            media, resolveUid(DISKIMAGE_USER), resolveGid(DISKIMAGE_GROUP)
+        )
 
     if dirname is not None:
         shutil.rmtree(dirname)
@@ -69,9 +74,11 @@ def getFileName(vmId):
     if not os.path.exists(_P_PAYLOAD_IMAGES):
         try:
             os.mkdir(_P_PAYLOAD_IMAGES)
-            os.chown(_P_PAYLOAD_IMAGES,
-                     resolveUid(DISKIMAGE_USER),
-                     resolveGid(DISKIMAGE_GROUP))
+            os.chown(
+                _P_PAYLOAD_IMAGES,
+                resolveUid(DISKIMAGE_USER),
+                resolveGid(DISKIMAGE_GROUP),
+            )
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
@@ -81,10 +88,13 @@ def getFileName(vmId):
 
 def injectFilesToFs(floppy, files, fstype='auto'):
     path = os.path.abspath(floppy)
-    if not path.startswith(os.path.join(_P_PAYLOAD_IMAGES, '')) and \
-       not path.startswith(os.path.join(_P_OLD_PAYLOAD_IMAGES, '')):
-        raise ValueError('Image %s is not inside %s directories' %
-                         (floppy, [_P_PAYLOAD_IMAGES, _P_OLD_PAYLOAD_IMAGES]))
+    if not path.startswith(
+        os.path.join(_P_PAYLOAD_IMAGES, '')
+    ) and not path.startswith(os.path.join(_P_OLD_PAYLOAD_IMAGES, '')):
+        raise ValueError(
+            'Image %s is not inside %s directories'
+            % (floppy, [_P_PAYLOAD_IMAGES, _P_OLD_PAYLOAD_IMAGES])
+        )
     dirname = None
     try:
         dirname = tempfile.mkdtemp()
@@ -111,8 +121,11 @@ def mkFloppyFs(vmId, files, volumeName=None, path=None):
             command.extend(['-n', volumeName])
         rc, out, err = execCmd(command, raw=True)
         if rc:
-            raise OSError(errno.EIO, "could not create floppy file: "
-                          "code %s, out %s\nerr %s" % (rc, out, err))
+            raise OSError(
+                errno.EIO,
+                "could not create floppy file: "
+                "code %s, out %s\nerr %s" % (rc, out, err),
+            )
         injectFilesToFs(floppy, files, 'vfat')
     finally:
         _commonCleanFs(None, floppy)
@@ -151,8 +164,11 @@ def mkIsoFs(vmId, files, volumeName=None, path=None):
             # skip _commonCleanFs step for missing iso
             isopath = None
 
-            raise OSError(errno.EIO, "could not create iso file: "
-                          "code %s, out %s\nerr %s" % (rc, out, err))
+            raise OSError(
+                errno.EIO,
+                "could not create iso file: "
+                "code %s, out %s\nerr %s" % (rc, out, err),
+            )
 
         _check_attributes(isopath, mode)
 
@@ -164,8 +180,9 @@ def mkIsoFs(vmId, files, volumeName=None, path=None):
 
 def removeFs(path):
     if not os.path.abspath(path).startswith(_P_PAYLOAD_IMAGES):
-        raise Exception('Cannot remove Fs that does not exists in: ' +
-                        _P_PAYLOAD_IMAGES)
+        raise Exception(
+            'Cannot remove Fs that does not exists in: ' + _P_PAYLOAD_IMAGES
+        )
     if os.path.exists(path):
         os.remove(path)
 
@@ -175,5 +192,6 @@ def _check_attributes(path, mode):
 
     current_mode = stat.S_IMODE(info.st_mode)
     if current_mode != mode:
-        logging.warning('wrong mode for %r: expected=%o found=%o',
-                        path, mode, current_mode)
+        logging.warning(
+            'wrong mode for %r: expected=%o found=%o', path, mode, current_mode
+        )

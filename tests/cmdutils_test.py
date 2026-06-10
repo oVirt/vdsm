@@ -29,11 +29,17 @@ class TestRecieveBench(VdsmTestCase):
     BUFSIZE = MiB
 
     def test_plain_read(self):
-        p = subprocess.Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
-                              "count=%d" % self.COUNT],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            [
+                "dd",
+                "if=/dev/zero",
+                "bs=%d" % self.BUFSIZE,
+                "count=%d" % self.COUNT,
+            ],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         start = monotonic_time()
         received = 0
         while True:
@@ -44,17 +50,26 @@ class TestRecieveBench(VdsmTestCase):
         p.wait()
         elapsed = monotonic_time() - start
         received_gb = received / float(GiB)
-        print("%.2fg in %.2f seconds (%.2fg/s)"
-              % (received_gb, elapsed, received_gb / elapsed), end=" ")
+        print(
+            "%.2fg in %.2f seconds (%.2fg/s)"
+            % (received_gb, elapsed, received_gb / elapsed),
+            end=" ",
+        )
         self.assertEqual(received, self.COUNT * self.BUFSIZE)
         self.assertEqual(p.returncode, 0)
 
     def test_read(self):
-        p = subprocess.Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
-                              "count=%d" % self.COUNT],
-                             stdin=None,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            [
+                "dd",
+                "if=/dev/zero",
+                "bs=%d" % self.BUFSIZE,
+                "count=%d" % self.COUNT,
+            ],
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         start = monotonic_time()
         received = 0
         for src, data in cmdutils.receive(p, bufsize=self.BUFSIZE):
@@ -62,16 +77,21 @@ class TestRecieveBench(VdsmTestCase):
                 received += len(data)
         elapsed = monotonic_time() - start
         received_gb = received / float(GiB)
-        print("%.2fg in %.2f seconds (%.2fg/s)"
-              % (received_gb, elapsed, received_gb / elapsed), end=" ")
+        print(
+            "%.2fg in %.2f seconds (%.2fg/s)"
+            % (received_gb, elapsed, received_gb / elapsed),
+            end=" ",
+        )
         self.assertEqual(received, self.COUNT * self.BUFSIZE)
         self.assertEqual(p.returncode, 0)
 
     def test_write(self):
-        p = subprocess.Popen(["dd", "of=/dev/null", "bs=%d" % self.BUFSIZE],
-                             stdin=subprocess.PIPE,
-                             stdout=None,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["dd", "of=/dev/null", "bs=%d" % self.BUFSIZE],
+            stdin=subprocess.PIPE,
+            stdout=None,
+            stderr=subprocess.PIPE,
+        )
         start = monotonic_time()
         total = self.COUNT * self.BUFSIZE
         sent = 0
@@ -89,6 +109,9 @@ class TestRecieveBench(VdsmTestCase):
             pass
         elapsed = monotonic_time() - start
         sent_gb = sent / float(GiB)
-        print("%.2fg in %.2f seconds (%.2fg/s)"
-              % (sent_gb, elapsed, sent_gb / elapsed), end=" ")
+        print(
+            "%.2fg in %.2f seconds (%.2fg/s)"
+            % (sent_gb, elapsed, sent_gb / elapsed),
+            end=" ",
+        )
         self.assertEqual(p.returncode, 0)

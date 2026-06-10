@@ -32,7 +32,6 @@ from vdsm.virt import vmexitreason
 from vdsm.virt import vmstatus
 from vdsm.virt import vmxml
 
-
 MODE_REMOTE = 'remote'
 MODE_FILE = 'file'
 
@@ -41,7 +40,8 @@ METHOD_ONLINE = 'online'
 
 
 incomingMigrations = DynamicBoundedSemaphore(
-    max(1, config.getint('vars', 'max_incoming_migrations')))
+    max(1, config.getint('vars', 'max_incoming_migrations'))
+)
 
 
 CONVERGENCE_SCHEDULE_SET_DOWNTIME = "setDowntime"
@@ -101,6 +101,7 @@ class DomainAdapter(object):
     VM wrapper class that exposes only
     libvirt migration related operations.
     """
+
     def __init__(self, vm):
         self._vm = vm
 
@@ -109,18 +110,33 @@ class SourceThread(object):
     """
     A thread that takes care of migration on the source vdsm.
     """
+
     _RECOVERY_LOOP_PAUSE = 10
     _PARALLEL_CONNECTIONS_DISABLED_VALUE = 0
 
     ongoingMigrations = DynamicBoundedSemaphore(1)
 
-    def __init__(self, vm, dst='', dstparams='',
-                 mode=MODE_REMOTE, method=METHOD_ONLINE,
-                 tunneled=False, dstqemu='', abortOnError=False,
-                 consoleAddress=None, compressed=False,
-                 autoConverge=False, recovery=False, encrypted=False,
-                 cpusets=None, parallel=None, numaNodesets=None,
-                 zerocopy=False, **kwargs):
+    def __init__(
+        self,
+        vm,
+        dst='',
+        dstparams='',
+        mode=MODE_REMOTE,
+        method=METHOD_ONLINE,
+        tunneled=False,
+        dstqemu='',
+        abortOnError=False,
+        consoleAddress=None,
+        compressed=False,
+        autoConverge=False,
+        recovery=False,
+        encrypted=False,
+        cpusets=None,
+        parallel=None,
+        numaNodesets=None,
+        zerocopy=False,
+        **kwargs
+    ):
         self.log = vm.log
         self._vm = vm
         self._dom = DomainAdapter(self._vm)
@@ -138,20 +154,20 @@ class SourceThread(object):
         self._parallel = parallel
         self._zerocopy = zerocopy
         self._maxBandwidth = int(
-            kwargs.get('maxBandwidth') or
-            config.getint('vars', 'migration_max_bandwidth')
+            kwargs.get('maxBandwidth')
+            or config.getint('vars', 'migration_max_bandwidth')
         )
         self._incomingLimit = kwargs.get('incomingLimit')
         self._outgoingLimit = kwargs.get('outgoingLimit')
         self.status = {
-            'status': {
-                'code': 0,
-                'message': 'Migration in progress'}}
+            'status': {'code': 0, 'message': 'Migration in progress'}
+        }
         # we need to guard against concurrent updates only
         self._lock = threading.Lock()
         self._progress = 0
         self._thread = concurrent.thread(
-            self.run, name='migsrc/' + self._vm.id[:8])
+            self.run, name='migsrc/' + self._vm.id[:8]
+        )
         self._preparingMigrationEvt = True
         self._migrationCanceledEvt = threading.Event()
         self._monitorThread = None
@@ -162,13 +178,17 @@ class SourceThread(object):
         else:
             # Needed for Engine < 4.3 or when legacy migration is used
             # as a supposedly rare fallback in Engine >= 4.3.
-            self._convergence_schedule = \
-                self._legacy_convergence_schedule(kwargs.get('downtime'))
-            self.log.info('using a computed convergence schedule for '
-                          'a legacy migration: %s',
-                          self._convergence_schedule)
-        self.log.debug('convergence schedule set to: %s',
-                       str(self._convergence_schedule))
+            self._convergence_schedule = self._legacy_convergence_schedule(
+                kwargs.get('downtime')
+            )
+            self.log.info(
+                'using a computed convergence schedule for '
+                'a legacy migration: %s',
+                self._convergence_schedule,
+            )
+        self.log.debug(
+            'convergence schedule set to: %s', str(self._convergence_schedule)
+        )
         self._state = State.STARTED if recovery else State.INITIALIZED
         self._recovery = recovery
         tunneled = conv.tobool(tunneled)
@@ -177,8 +197,12 @@ class SourceThread(object):
         autoConverge = conv.tobool(autoConverge)
         parallel = self._parallel is not None
         self._migration_flags = self._calculate_migration_flags(
-            tunneled, abortOnError, compressed, autoConverge, encrypted,
-            parallel
+            tunneled,
+            abortOnError,
+            compressed,
+            autoConverge,
+            encrypted,
+            parallel,
         )
         # True if destination host supports disk refresh. Initialized before
         # the first extend of the disk during migration if finished.
@@ -201,9 +225,9 @@ class SourceThread(object):
         managed migration (detected on Vdsm recovery) without the threads
         actually running.
         """
-        return ((self.is_alive() and self._state != State.FAILED) or
-                (self._recovery and
-                 self._vm.lastStatus == vmstatus.MIGRATION_SOURCE))
+        return (self.is_alive() and self._state != State.FAILED) or (
+            self._recovery and self._vm.lastStatus == vmstatus.MIGRATION_SOURCE
+        )
 
     def needs_disk_refresh(self):
         """
@@ -244,7 +268,9 @@ class SourceThread(object):
         if progress < old_progress:
             self.log.info(
                 'new computed progress %d < than old value %d, discarded',
-                progress, old_progress)
+                progress,
+                old_progress,
+            )
 
     def getStat(self):
         """
@@ -273,8 +299,8 @@ class SourceThread(object):
             return
 
         hostPort = _cannonize_host_port(
-            self._dst,
-            config.getint('addresses', 'management_port'))
+            self._dst, config.getint('addresses', 'management_port')
+        )
         self.remoteHost, port = hostPort.rsplit(':', 1)
 
         client = self._createClient(port)
@@ -293,8 +319,9 @@ class SourceThread(object):
             machineParams['migrationDest'] = 'libvirt'
         # Remove & replace CPU pinning added by VDSM
         dom = xmlutils.fromstring(machineParams['_srcDomXML'])
-        dom = cpumanagement.replace_cpu_pinning(self._vm, dom,
-                                                self._destination_cpusets)
+        dom = cpumanagement.replace_cpu_pinning(
+            self._vm, dom, self._destination_cpusets
+        )
         machineParams['_srcDomXML'] = xmlutils.tostring(dom)
         return machineParams
 
@@ -313,9 +340,12 @@ class SourceThread(object):
                 time.sleep(1)
                 lockTimeout -= 1
                 if lockTimeout == 0:
-                    self.log.warning('Agent ' + self._vm.id +
-                                     ' unresponsive. Hiberanting without '
-                                     'desktopLock.')
+                    self.log.warning(
+                        'Agent '
+                        + self._vm.id
+                        + ' unresponsive. Hiberanting without '
+                        'desktopLock.'
+                    )
                     break
             self._vm.pause(vmstatus.SAVING_STATE)
         else:
@@ -351,8 +381,10 @@ class SourceThread(object):
         else:
             self._vm.lastStatus = vmstatus.UP
         self._vm.send_status_event()
-        if (self._vm.lastStatus == vmstatus.PAUSED and
-                self._vm.resume_postponed):
+        if (
+            self._vm.lastStatus == vmstatus.PAUSED
+            and self._vm.resume_postponed
+        ):
             self._vm.maybe_resume()
 
     def _finishSuccessfully(self, machineParams):
@@ -391,18 +423,24 @@ class SourceThread(object):
         e = libvirt.libvirtError(defmsg='')
         # we have to override the value to get what we want
         # err might be None
-        e.err = (libvirt.VIR_ERR_OPERATION_ABORTED,  # error code
-                 libvirt.VIR_FROM_QEMU,              # error domain
-                 'operation aborted',                # error message
-                 libvirt.VIR_ERR_WARNING,            # error level
-                 '', '', '',                         # str1, str2, str3,
-                 -1, -1)                             # int1, int2
+        e.err = (
+            libvirt.VIR_ERR_OPERATION_ABORTED,  # error code
+            libvirt.VIR_FROM_QEMU,  # error domain
+            'operation aborted',  # error message
+            libvirt.VIR_ERR_WARNING,  # error level
+            '',
+            '',
+            '',  # str1, str2, str3,
+            -1,
+            -1,
+        )  # int1, int2
         raise e
 
     def _update_outgoing_limit(self):
         if self._outgoingLimit:
-            self.log.debug('Setting outgoing migration limit to %s',
-                           self._outgoingLimit)
+            self.log.debug(
+                'Setting outgoing migration limit to %s', self._outgoingLimit
+            )
             SourceThread.ongoingMigrations.bound = self._outgoingLimit
 
     @property
@@ -461,18 +499,22 @@ class SourceThread(object):
                     with SourceThread.ongoingMigrations:
                         self.log.info("Migration semaphore: acquired")
                         timeout = config.getint(
-                            'vars', 'guest_lifecycle_event_reply_timeout')
+                            'vars', 'guest_lifecycle_event_reply_timeout'
+                        )
                         if self.hibernating:
                             self._vm.guestAgent.events.before_hibernation(
-                                wait_timeout=timeout)
+                                wait_timeout=timeout
+                            )
                         elif self._enableGuestEvents:
                             self._vm.guestAgent.events.before_migration(
-                                wait_timeout=timeout)
+                                wait_timeout=timeout
+                            )
                         if self._migrationCanceledEvt.is_set():
                             self._raiseAbortError()
-                        self.log.debug("migration semaphore acquired "
-                                       "after %d seconds",
-                                       time.time() - startTime)
+                        self.log.debug(
+                            "migration semaphore acquired " "after %d seconds",
+                            time.time() - startTime,
+                        )
                         self._startUnderlyingMigration(
                             time.time(), machineParams
                         )
@@ -480,20 +522,27 @@ class SourceThread(object):
                 except libvirt.libvirtError as e:
                     if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
                         self.status = response.error(
-                            'migCancelErr', message='Migration canceled')
+                            'migCancelErr', message='Migration canceled'
+                        )
                     # This error occurs when hypervisor cannot start
                     # the migration. For example, when a domain with the same
                     # name already exists on the destination.
-                    elif e.get_error_code() == \
-                            libvirt.VIR_ERR_OPERATION_FAILED:
+                    elif (
+                        e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED
+                    ):
                         self.status = response.error(
-                            'migOperationErr', message=e.get_str2())
+                            'migOperationErr', message=e.get_str2()
+                        )
                     raise
                 except MigrationLimitExceeded:
-                    retry_timeout = config.getint('vars',
-                                                  'migration_retry_timeout')
-                    self.log.debug("Migration destination busy. Initiating "
-                                   "retry in %d seconds.", retry_timeout)
+                    retry_timeout = config.getint(
+                        'vars', 'migration_retry_timeout'
+                    )
+                    self.log.debug(
+                        "Migration destination busy. Initiating "
+                        "retry in %d seconds.",
+                        retry_timeout,
+                    )
                     self._migrationCanceledEvt.wait(retry_timeout)
         except MigrationDestinationSetupError as e:
             self._recover(str(e))
@@ -517,12 +566,14 @@ class SourceThread(object):
             # destination. In some cases some expensive operations can cause
             # the migration to get cancelled right after the transfer started.
             destCreateStartTime = time.time()
-            result = self._destServer.migrationCreate(machineParams,
-                                                      self._incomingLimit)
+            result = self._destServer.migrationCreate(
+                machineParams, self._incomingLimit
+            )
             destCreationTime = time.time() - destCreateStartTime
             startTime += destCreationTime
-            self.log.info('Creation of destination VM took: %d seconds',
-                          destCreationTime)
+            self.log.info(
+                'Creation of destination VM took: %d seconds', destCreationTime
+            )
 
             if response.is_error(result):
                 self.status = result
@@ -530,8 +581,9 @@ class SourceThread(object):
                     raise MigrationLimitExceeded()
                 else:
                     raise MigrationDestinationSetupError(
-                        'migration destination error: ' +
-                        result['status']['message'])
+                        'migration destination error: '
+                        + result['status']['message']
+                    )
 
             self._switch_state(State.STARTED)
 
@@ -541,42 +593,50 @@ class SourceThread(object):
                 if payload_drives:
                     # Currently, only a single payload device may be present
                     payload_alias = payload_drives[0].alias
-                    result = self._destServer.fullList(
-                        vmList=(self._vm.id,)
-                    )
+                    result = self._destServer.fullList(vmList=(self._vm.id,))
                     vm_list = result.get('items')
                     remote_devices = vm_list[0].get('devices')
                     if remote_devices is not None:
                         payload_path = next(
-                            (d['path'] for d in remote_devices
-                             if d.get('alias') == payload_alias),
-                            None
+                            (
+                                d['path']
+                                for d in remote_devices
+                                if d.get('alias') == payload_alias
+                            ),
+                            None,
                         )
                         if payload_path is not None:
-                            self._legacy_payload_path = \
-                                (payload_alias, payload_path)
+                            self._legacy_payload_path = (
+                                payload_alias,
+                                payload_path,
+                            )
 
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'
             else:
                 transport = 'tcp'
             duri = 'qemu+{}://{}/system'.format(
-                transport, normalize_literal_addr(self.remoteHost))
+                transport, normalize_literal_addr(self.remoteHost)
+            )
             dstqemu = self._dstqemu
             if dstqemu:
-                muri = 'tcp://{}'.format(
-                    normalize_literal_addr(dstqemu))
+                muri = 'tcp://{}'.format(normalize_literal_addr(dstqemu))
             else:
                 muri = 'tcp://{}'.format(
-                    normalize_literal_addr(self.remoteHost))
+                    normalize_literal_addr(self.remoteHost)
+                )
 
-            self._vm.log.info('starting migration to %s '
-                              'with miguri %s', duri, muri)
-            self._monitorThread = MonitorThread(self._vm, startTime,
-                                                self._convergence_schedule)
+            self._vm.log.info(
+                'starting migration to %s ' 'with miguri %s', duri, muri
+            )
+            self._monitorThread = MonitorThread(
+                self._vm, startTime, self._convergence_schedule
+            )
             self._perform_with_conv_schedule(duri, muri)
-            self.log.info("migration took %d seconds to complete",
-                          (time.time() - startTime) + destCreationTime)
+            self.log.info(
+                "migration took %d seconds to complete",
+                (time.time() - startTime) + destCreationTime,
+            )
 
     def _perform_migration(self, duri, muri):
         if self._vm.hasSpice and self._vm.client_ip:
@@ -591,8 +651,12 @@ class SourceThread(object):
         params_copy = params.copy()
         params_copy[libvirt.VIR_MIGRATE_PARAM_DEST_XML] = '...'
         flags = self._migration_flags
-        self.log.info("Migrating to %s with params %s and flags %s",
-                      duri, params_copy, flags)
+        self.log.info(
+            "Migrating to %s with params %s and flags %s",
+            duri,
+            params_copy,
+            flags,
+        )
         self._preparingMigrationEvt = False
         if not self._migrationCanceledEvt.is_set():
             # pylint: disable=no-member
@@ -605,8 +669,9 @@ class SourceThread(object):
         if self._maxBandwidth:
             params[libvirt.VIR_MIGRATE_PARAM_BANDWIDTH] = self._maxBandwidth
         if self._parallel is not None:
-            params[libvirt.VIR_MIGRATE_PARAM_PARALLEL_CONNECTIONS] = \
+            params[libvirt.VIR_MIGRATE_PARAM_PARALLEL_CONNECTIONS] = (
                 self._parallel
+            )
         if not self.tunneled:
             params[libvirt.VIR_MIGRATE_PARAM_URI] = str(muri)
         if self._consoleAddress:
@@ -619,8 +684,9 @@ class SourceThread(object):
             # the remote certificate.  Not the migration destination,
             # which may be e.g. an IP address from a migration
             # network, not present in the certificate.
-            params[libvirt.VIR_MIGRATE_PARAM_TLS_DESTINATION] = \
+            params[libvirt.VIR_MIGRATE_PARAM_TLS_DESTINATION] = (
                 normalize_literal_addr(self.remoteHost)
+            )
         xml = self._vm.migratable_domain_xml()
         # REQUIRED_FOR: destination Vdsm < 4.3
         dom = xmlutils.fromstring(xml)
@@ -629,17 +695,20 @@ class SourceThread(object):
             source = dom.find(".//alias[@name='%s']/../source" % (alias,))
             source.set('file', path)
         # Remove & replace CPU pinning added by VDSM
-        dom = cpumanagement.replace_cpu_pinning(self._vm, dom,
-                                                self._destination_cpusets)
+        dom = cpumanagement.replace_cpu_pinning(
+            self._vm, dom, self._destination_cpusets
+        )
         if self._destination_numa_nodesets is not None:
             numatune = dom.find('numatune')
             if numatune is not None:
                 for memnode in vmxml.find_all(numatune, 'memnode'):
                     cellid = int(memnode.get('cellid'))
-                    if (cellid >= 0 and
-                            cellid < len(self._destination_numa_nodesets)):
-                        memnode.set('nodeset',
-                                    self._destination_numa_nodesets[cellid])
+                    if cellid >= 0 and cellid < len(
+                        self._destination_numa_nodesets
+                    ):
+                        memnode.set(
+                            'nodeset', self._destination_numa_nodesets[cellid]
+                        )
         xml = xmlutils.tostring(dom)
         self._vm.log.debug("Migrating domain XML: %s", xml)
         params[libvirt.VIR_MIGRATE_PARAM_DEST_XML] = xml
@@ -653,9 +722,15 @@ class SourceThread(object):
     def migration_flags(self):
         return self._migration_flags
 
-    def _calculate_migration_flags(self, tunneled, abort_on_error,
-                                   compressed, auto_converge, encrypted,
-                                   parallel):
+    def _calculate_migration_flags(
+        self,
+        tunneled,
+        abort_on_error,
+        compressed,
+        auto_converge,
+        encrypted,
+        parallel,
+    ):
         flags = libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER
         if tunneled:
             flags |= libvirt.VIR_MIGRATE_TUNNELLED
@@ -676,7 +751,8 @@ class SourceThread(object):
                 flags |= libvirt.VIR_MIGRATE_ZEROCOPY
             else:
                 self._vm.log.info(
-                    "Zero-copy migration support not available, not enabling")
+                    "Zero-copy migration support not available, not enabling"
+                )
         # Migration may fail immediately when VIR_MIGRATE_POSTCOPY flag is
         # present in the following situations:
         # - The transport is not capable of full bidirectional
@@ -707,6 +783,7 @@ class SourceThread(object):
 
         def downtime_action(downtime):
             return {'params': [str(downtime)], 'name': 'setDowntime'}
+
         init = [downtime_action(next(downtimes))]
         stalling = []
         limit = 1
@@ -714,8 +791,9 @@ class SourceThread(object):
             stalling.append({'action': downtime_action(d), 'limit': limit})
             limit += 1
         stalling.append({'action': downtime_action(d), 'limit': 42})
-        stalling.append({'action': {'params': [], 'name': 'abort'},
-                         'limit': -1})
+        stalling.append(
+            {'action': {'params': [], 'name': 'abort'}, 'limit': -1}
+        )
         return {'init': init, 'stalling': stalling}
 
     def set_max_bandwidth(self, bandwidth):
@@ -759,8 +837,7 @@ class SourceThread(object):
         such a case the source thread must be notified about the failed
         migration.  This is what this method serves for.
         """
-        if self._recovery and \
-           self._vm.lastStatus == vmstatus.MIGRATION_SOURCE:
+        if self._recovery and self._vm.lastStatus == vmstatus.MIGRATION_SOURCE:
             self._recover("Migration failed")
 
     def refresh_destination_disk(self, vol_pdiv):
@@ -772,11 +849,13 @@ class SourceThread(object):
             if response.is_error(caps):
                 self.log.warning(
                     "Failed to get destination host capabilities: %s",
-                    caps["status"]["message"])
+                    caps["status"]["message"],
+                )
                 self._supports_disk_refresh = False
             else:
                 self._supports_disk_refresh = caps.get(
-                    "refresh_disk_supported", False)
+                    "refresh_disk_supported", False
+                )
 
         if not self._supports_disk_refresh:
             raise exception.DiskRefreshNotSupported()
@@ -784,7 +863,8 @@ class SourceThread(object):
         result = self._destServer.refresh_disk(self._vm.id, vol_pdiv)
         if response.is_error(result):
             raise exception.CannotRefreshDisk(
-                reason=result["status"]["message"])
+                reason=result["status"]["message"]
+            )
         return VolumeSize(int(result["apparentsize"]), int(result["truesize"]))
 
 
@@ -794,14 +874,15 @@ def exponential_downtime(downtime, steps):
         base = (downtime - offset) ** (1 / float(steps - 1))
 
         for i in range(steps):
-            yield int(offset + base ** i)
+            yield int(offset + base**i)
     else:
         yield downtime
 
 
 class MonitorThread(object):
     _MIGRATION_MONITOR_INTERVAL = config.getint(
-        'vars', 'migration_monitor_interval')  # seconds
+        'vars', 'migration_monitor_interval'
+    )  # seconds
 
     def __init__(self, vm, startTime, conv_schedule):
         super(MonitorThread, self).__init__()
@@ -813,7 +894,8 @@ class MonitorThread(object):
         self.progress = None
         self._conv_schedule = conv_schedule
         self._thread = concurrent.thread(
-            self.run, name='migmon/' + self._vm.id[:8])
+            self.run, name='migmon/' + self._vm.id[:8]
+        )
 
     def start(self):
         self._thread.start()
@@ -837,12 +919,15 @@ class MonitorThread(object):
                 # thread. Then the domain may no longer be connected when
                 # monitor_migration loop tries to access it. That's harmless
                 # and shouldn't bubble up, let's just finish the thread.
-                self._vm.log.debug('domain disconnected in monitor thread: %s',
-                                   e)
+                self._vm.log.debug(
+                    'domain disconnected in monitor thread: %s', e
+                )
             self._vm.log.debug('stopped migration monitor thread')
         else:
-            self._vm.log.info('migration monitor thread disabled'
-                              ' (monitoring interval set to 0)')
+            self._vm.log.info(
+                'migration monitor thread disabled'
+                ' (monitoring interval set to 0)'
+            )
 
     def monitor_migration(self):
         lowmark = None
@@ -892,7 +977,7 @@ class MonitorThread(object):
                     # migration.  Nothing needs to be done in that case.
                     self._vm.log.debug(
                         'Post-copy migration still in progress: %d',
-                        progress.data_remaining
+                        progress.data_remaining,
                     )
             elif (lowmark is None) or (lowmark > progress.data_remaining):
                 lowmark = progress.data_remaining
@@ -900,10 +985,14 @@ class MonitorThread(object):
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
                     ' > lowmark (%sMiB).',
-                    progress.data_remaining // MiB, lowmark // MiB)
+                    progress.data_remaining // MiB,
+                    lowmark // MiB,
+                )
 
-            if not self._vm.post_copy and\
-               progress.mem_iteration > last_iteration:
+            if (
+                not self._vm.post_copy
+                and progress.mem_iteration > last_iteration
+            ):
                 last_iteration = progress.mem_iteration
                 current_iteration = last_iteration - initial_iteration
                 self._vm.log.debug('new iteration: %i', current_iteration)
@@ -922,14 +1011,19 @@ class MonitorThread(object):
     def _next_action(self, stalling):
         head = self._conv_schedule['stalling'][0]
 
-        self._vm.log.debug('Stalling for %d iterations, '
-                           'checking to make next action: '
-                           '%s', stalling, head)
+        self._vm.log.debug(
+            'Stalling for %d iterations, '
+            'checking to make next action: '
+            '%s',
+            stalling,
+            head,
+        )
         if head['limit'] < stalling:
             self._execute_action_with_params(head['action'])
             self._conv_schedule['stalling'].pop(0)
-            self._vm.log.debug('setting conv schedule to: %s',
-                               self._conv_schedule)
+            self._vm.log.debug(
+                'setting conv schedule to: %s', self._conv_schedule
+            )
 
     def _execute_init(self, init_actions):
         for action_with_params in init_actions:
@@ -954,13 +1048,24 @@ class MonitorThread(object):
             self.stop()
 
 
-_Progress = collections.namedtuple('_Progress', [
-    'job_type', 'time_elapsed', 'data_total',
-    'data_processed', 'data_remaining',
-    'mem_total', 'mem_processed', 'mem_remaining',
-    'mem_bps', 'mem_constant', 'compression_bytes',
-    'dirty_rate', 'mem_iteration'
-])
+_Progress = collections.namedtuple(
+    '_Progress',
+    [
+        'job_type',
+        'time_elapsed',
+        'data_total',
+        'data_processed',
+        'data_remaining',
+        'mem_total',
+        'mem_processed',
+        'mem_remaining',
+        'mem_bps',
+        'mem_constant',
+        'compression_bytes',
+        'dirty_rate',
+        'mem_iteration',
+    ],
+)
 
 
 class Progress(_Progress):
@@ -994,7 +1099,8 @@ class Progress(_Progress):
             ' processed data: %iMB, remaining data: %iMB,'
             ' transfer speed %iMbps, zero pages: %iMB,'
             ' compressed: %iMB, dirty rate: %i,'
-            ' memory iteration: %i' % (
+            ' memory iteration: %i'
+            % (
                 (self.time_elapsed / 1000),
                 self.percentage,
                 (self.data_total // MiB),
@@ -1026,15 +1132,18 @@ def ongoing(stats):
     except KeyError:
         return False
     else:
-        return (job_type != libvirt.VIR_DOMAIN_JOB_NONE and
-                stats['operation'] ==
-                libvirt.VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT)
+        return (
+            job_type != libvirt.VIR_DOMAIN_JOB_NONE
+            and stats['operation']
+            == libvirt.VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT
+        )
 
 
 def __guess_defaults():
     global ADDRESS, PORT
     try:
         from vdsm.config import config
+
         PORT = config.getint('addresses', 'management_port')
         ADDRESS = config.get('addresses', 'management_ip')
         if ADDRESS == '::':

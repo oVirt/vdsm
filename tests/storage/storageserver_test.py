@@ -36,24 +36,33 @@ class TestIscsiConnectionMismatch:
         assert s == "error 1 with 'text'"
 
     def test_format_mismatches_list(self):
-        errors = [IscsiConnection.Mismatch("error 1"),
-                  IscsiConnection.Mismatch("error 2")]
+        errors = [
+            IscsiConnection.Mismatch("error 1"),
+            IscsiConnection.Mismatch("error 2"),
+        ]
         expected = "%s" % str(["error 1", "error 2"])
         assert str(errors) == expected
 
 
 class TestMountConnection:
 
-    @pytest.mark.parametrize("spec, fs_spec, fs_file", [
-        ("server:/a/", "server:/a", "/tmp/server:_a"),
-        ("server:/a//", "server:/a", "/tmp/server:_a"),
-        ("server:/a/b", "server:/a/b", "/tmp/server:_a_b"),
-        ("server:/a//b", "server:/a/b", "/tmp/server:_a_b"),
-        ("server:/a/b_c", "server:/a/b_c", "/tmp/server:_a_b__c"),
-        ("server:/", "server:/", "/tmp/server:_"),
-        ("server:6789:/path", "server:6789:/path", "/tmp/server:6789:_path"),
-        ("server:6789:/", "server:6789:/", "/tmp/server:6789:_"),
-    ])
+    @pytest.mark.parametrize(
+        "spec, fs_spec, fs_file",
+        [
+            ("server:/a/", "server:/a", "/tmp/server:_a"),
+            ("server:/a//", "server:/a", "/tmp/server:_a"),
+            ("server:/a/b", "server:/a/b", "/tmp/server:_a_b"),
+            ("server:/a//b", "server:/a/b", "/tmp/server:_a_b"),
+            ("server:/a/b_c", "server:/a/b_c", "/tmp/server:_a_b__c"),
+            ("server:/", "server:/", "/tmp/server:_"),
+            (
+                "server:6789:/path",
+                "server:6789:/path",
+                "/tmp/server:6789:_path",
+            ),
+            ("server:6789:/", "server:6789:/", "/tmp/server:6789:_"),
+        ],
+    )
     def test_normalize_local_path(self, spec, fs_spec, fs_file):
         con = MountConnection("id", spec, mountClass=FakeMount)
         assert con._mount.fs_spec == fs_spec
@@ -70,16 +79,20 @@ class TestMountConnectionEquality:
     def test_eq_subclass(self):
         class Subclass(MountConnection):
             pass
+
         c1 = MountConnection("id", "server:/path", "vfstype", "options")
         c2 = Subclass("id", "server:/path", "vfstype", "options")
         assert c1 != c2
 
-    @pytest.mark.parametrize("i1,i2,s1,s2,t1,t2,o1,o2", [
-        ("id", "id", "server:/path1", "server:/path2", "t", "t", "o", "o"),
-        ("id", "id", "server:/path", "server:/path", "t1", "t2", "o", "o"),
-        ("id", "id", "server:/path", "server:/path", "t", "t", "o1", "o2"),
-        ("id1", "id2", "server:/path", "server:/path", "t", "t", "o", "o"),
-    ])
+    @pytest.mark.parametrize(
+        "i1,i2,s1,s2,t1,t2,o1,o2",
+        [
+            ("id", "id", "server:/path1", "server:/path2", "t", "t", "o", "o"),
+            ("id", "id", "server:/path", "server:/path", "t1", "t2", "o", "o"),
+            ("id", "id", "server:/path", "server:/path", "t", "t", "o1", "o2"),
+            ("id1", "id2", "server:/path", "server:/path", "t", "t", "o", "o"),
+        ],
+    )
     def test_eq_different(self, i1, i2, s1, s2, t1, t2, o1, o2):
         c1 = MountConnection(i1, s1, t1, o1)
         c2 = MountConnection(i2, s2, t2, o2)
@@ -101,16 +114,29 @@ class TestMountConnectionHash:
     def test_subclass_different_hash(self):
         class Subclass(MountConnection):
             pass
+
         c1 = MountConnection("id", "server:/path", "vfstype", "options")
         c2 = Subclass("id", "server:/path", "vfstype", "options")
         assert hash(c1) != hash(c2)
 
-    @pytest.mark.parametrize("i1,i2,s1,s2,t1,t2,o1,o2", [
-        ("id", "id", "server:/path1", "server:/path2", "t", "t", "o", "o"),
-        ("id", "id", "server:/path", "server:/path", "t1", "t2", "o", "o"),
-        ("id1", "id", "server:/path", "server:/path", "t", "t", "o1", "o2"),
-        ("id2", "id", "server:/path", "server:/path", "t", "t", "o", "o"),
-    ])
+    @pytest.mark.parametrize(
+        "i1,i2,s1,s2,t1,t2,o1,o2",
+        [
+            ("id", "id", "server:/path1", "server:/path2", "t", "t", "o", "o"),
+            ("id", "id", "server:/path", "server:/path", "t1", "t2", "o", "o"),
+            (
+                "id1",
+                "id",
+                "server:/path",
+                "server:/path",
+                "t",
+                "t",
+                "o1",
+                "o2",
+            ),
+            ("id2", "id", "server:/path", "server:/path", "t", "t", "o", "o"),
+        ],
+    )
     def test_not_equal_different_hash(self, i1, i2, s1, s2, t1, t2, o1, o2):
         c1 = MountConnection(i1, s1, t1, o1)
         c2 = MountConnection(i2, s2, t2, o2)
@@ -120,9 +146,9 @@ class TestMountConnectionHash:
 class TestGlusterFSConnection:
 
     def test_mountpoint(self):
-        mount_con = GlusterFSConnection("id",
-                                        "server:/volume",
-                                        mountClass=FakeMount)
+        mount_con = GlusterFSConnection(
+            "id", "server:/volume", mountClass=FakeMount
+        )
         assert mount_con._mount.fs_spec == "server:/volume"
         assert mount_con._mount.fs_file == "/tmp/glusterSD/server:_volume"
 
@@ -133,10 +159,16 @@ class TestGlusterFSConnection:
         def glusterVolumeInfo(volname=None, volfileServer=None):
             assert volname == "music"
             assert volfileServer == "192.168.122.1"
-            return {'music': {'brickCount': '3',
-                              'bricks': ['192.168.122.1:/tmp/music',
-                                         '192.168.122.2:/tmp/music',
-                                         '192.168.122.3:/tmp/music']}}
+            return {
+                'music': {
+                    'brickCount': '3',
+                    'bricks': [
+                        '192.168.122.1:/tmp/music',
+                        '192.168.122.2:/tmp/music',
+                        '192.168.122.3:/tmp/music',
+                    ],
+                }
+            }
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
@@ -153,16 +185,23 @@ class TestGlusterFSConnection:
         monkeypatch.setattr(gluster_cli, 'exists', lambda: True)
 
         def glusterVolumeInfo(volname=None, volfileServer=None):
-            return {'music': {'brickCount': '3',
-                              'bricks': ['192.168.122.5:/tmp/music',
-                                         '192.168.122.2:/tmp/music',
-                                         '192.168.122.3:/tmp/music']}}
+            return {
+                'music': {
+                    'brickCount': '3',
+                    'bricks': [
+                        '192.168.122.5:/tmp/music',
+                        '192.168.122.2:/tmp/music',
+                        '192.168.122.3:/tmp/music',
+                    ],
+                }
+            }
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
         gluster = GlusterFSConnection(id="id", spec="gluster-server:/music")
-        expected_backup_servers = \
+        expected_backup_servers = (
             "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
+        )
         assert gluster.options == expected_backup_servers
 
     def test_duplicate_servers_in_volinfo(self, monkeypatch):
@@ -173,18 +212,25 @@ class TestGlusterFSConnection:
         monkeypatch.setattr(gluster_cli, 'exists', lambda: True)
 
         def glusterVolumeInfo(volname=None, volfileServer=None):
-            return {'music': {'brickCount': '3',
-                              'bricks': ['192.168.122.5:/tmp/music',
-                                         '192.168.122.2:/tmp/music',
-                                         '192.168.122.2:/tmp/music',
-                                         '192.168.122.5:/tmp/music',
-                                         '192.168.122.3:/tmp/music']}}
+            return {
+                'music': {
+                    'brickCount': '3',
+                    'bricks': [
+                        '192.168.122.5:/tmp/music',
+                        '192.168.122.2:/tmp/music',
+                        '192.168.122.2:/tmp/music',
+                        '192.168.122.5:/tmp/music',
+                        '192.168.122.3:/tmp/music',
+                    ],
+                }
+            }
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
         gluster = GlusterFSConnection(id="id", spec="gluster-server:/music")
-        expected_backup_servers = \
+        expected_backup_servers = (
             "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
+        )
         assert gluster.options == expected_backup_servers
 
     def test_gluster_and_user_provided_mount_options(self, monkeypatch):
@@ -192,17 +238,25 @@ class TestGlusterFSConnection:
         monkeypatch.setattr(gluster_cli, 'exists', lambda: True)
 
         def glusterVolumeInfo(volname=None, volfileServer=None):
-            return {'music': {'brickCount': '3',
-                              'bricks': ['192.168.122.1:/tmp/music',
-                                         '192.168.122.2:/tmp/music',
-                                         '192.168.122.3:/tmp/music']}}
+            return {
+                'music': {
+                    'brickCount': '3',
+                    'bricks': [
+                        '192.168.122.1:/tmp/music',
+                        '192.168.122.2:/tmp/music',
+                        '192.168.122.3:/tmp/music',
+                    ],
+                }
+            }
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
-        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music",
-                                      options="option1=val1")
-        expected_options = \
+        gluster = GlusterFSConnection(
+            id="id", spec="192.168.122.1:/music", options="option1=val1"
+        )
+        expected_options = (
             "option1=val1,backup-volfile-servers=192.168.122.2:192.168.122.3"
+        )
         assert gluster.options == expected_options
 
     def test_gluster_replica1_mount_options(self, monkeypatch):
@@ -211,8 +265,12 @@ class TestGlusterFSConnection:
         def glusterVolumeInfo(volname=None, volfileServer=None):
             assert volname == "music"
             assert volfileServer == "192.168.122.1"
-            return {'music': {'brickCount': '1',
-                              'bricks': ['192.168.122.1:/tmp/music']}}
+            return {
+                'music': {
+                    'brickCount': '1',
+                    'bricks': ['192.168.122.1:/tmp/music'],
+                }
+            }
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
@@ -225,19 +283,25 @@ class TestGlusterFSConnection:
             return None
 
         user_options = "backup-volfile-servers=server1:server2"
-        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music",
-                                      options=user_options)
+        gluster = GlusterFSConnection(
+            id="id", spec="192.168.122.1:/music", options=user_options
+        )
         assert gluster.options == user_options
 
     @pytest.mark.parametrize("replica_count", [['1'], ['2'], ['3'], ['4']])
     def test_allowed_gluster_replica_count(self, monkeypatch, replica_count):
         monkeypatch.setattr(storageServer, 'supervdsm', FakeSupervdsm())
         monkeypatch.setattr(
-            GlusterFSConnection, 'ALLOWED_REPLICA_COUNTS', ('1', '3'))
+            GlusterFSConnection, 'ALLOWED_REPLICA_COUNTS', ('1', '3')
+        )
 
         def glusterVolumeInfo(volumeName=None, remoteServer=None):
-            return {'music': {'replicaCount': replica_count,
-                              'volumeType': 'REPLICATE'}}
+            return {
+                'music': {
+                    'replicaCount': replica_count,
+                    'volumeType': 'REPLICATE',
+                }
+            }
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
@@ -250,12 +314,16 @@ class TestGlusterFSConnection:
         gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music")
         assert gluster.options == ""
 
-    @pytest.mark.parametrize("userMountOptions", [
-        '',
-        'backup-volfile-servers=192.168.122.1:192.168.122.2',
-    ])
-    def test_glusterfs_retry_withotut_volfile_server(self, monkeypatch,
-                                                     userMountOptions):
+    @pytest.mark.parametrize(
+        "userMountOptions",
+        [
+            '',
+            'backup-volfile-servers=192.168.122.1:192.168.122.2',
+        ],
+    )
+    def test_glusterfs_retry_withotut_volfile_server(
+        self, monkeypatch, userMountOptions
+    ):
         """
         The test will fail if called with volfileserver, simulating the case
         when a remote server is down. If the caller try again without
@@ -270,18 +338,24 @@ class TestGlusterFSConnection:
             assert volname == "music"
             if volfileServer is not None:
                 raise ge.GlusterException()
-            return {'music': {'brickCount': '2',
-                              'bricks': ['192.168.122.1:/tmp/music',
-                                         '192.168.122.2:/tmp/music']
-                              }
-                    }
+            return {
+                'music': {
+                    'brickCount': '2',
+                    'bricks': [
+                        '192.168.122.1:/tmp/music',
+                        '192.168.122.2:/tmp/music',
+                    ],
+                }
+            }
+
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
-        gluster = GlusterFSConnection(id="id", spec="192.168.122.3:/music",
-                                      options=userMountOptions)
-        expected_volinfo = {'brickCount': '2',
-                            'bricks': ['192.168.122.1:/tmp/music',
-                                       '192.168.122.2:/tmp/music']
-                            }
+        gluster = GlusterFSConnection(
+            id="id", spec="192.168.122.3:/music", options=userMountOptions
+        )
+        expected_volinfo = {
+            'brickCount': '2',
+            'bricks': ['192.168.122.1:/tmp/music', '192.168.122.2:/tmp/music'],
+        }
         assert gluster.volinfo == expected_volinfo
 
 
@@ -299,35 +373,42 @@ class TestGlusterFSNotAccessibleConnection:
         gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music")
         gluster.validate()
 
-    @pytest.mark.parametrize("userMountOptions", [
-        '',
-        'backup-volfile-servers=server1:server2',
-    ])
+    @pytest.mark.parametrize(
+        "userMountOptions",
+        [
+            '',
+            'backup-volfile-servers=server1:server2',
+        ],
+    )
     def test_mount_options(self, monkeypatch, userMountOptions):
         monkeypatch.setattr(storageServer, 'supervdsm', FakeSupervdsm())
         monkeypatch.setattr(gluster_cli, 'exists', lambda: True)
 
         storageServer.supervdsm.glusterVolumeInfo = self.glusterVolumeInfo
 
-        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music",
-                                      options=userMountOptions)
+        gluster = GlusterFSConnection(
+            id="id", spec="192.168.122.1:/music", options=userMountOptions
+        )
         assert gluster.options == userMountOptions
 
 
 def test_prepare_connection_without_initiator_name():
-    con_def = [{
-        "password": "password",
-        "port": "3260",
-        "iqn": "iqn.2016-01.com.ovirt:444",
-        "connection": "192.168.1.2",
-        "ipv6_enabled": "false",
-        "id": "994a711a-60f3-411a-aca2-0b60f01e8b8c",
-        "user": "",
-        "tpgt": "1",
-    }]
+    con_def = [
+        {
+            "password": "password",
+            "port": "3260",
+            "iqn": "iqn.2016-01.com.ovirt:444",
+            "connection": "192.168.1.2",
+            "ipv6_enabled": "false",
+            "id": "994a711a-60f3-411a-aca2-0b60f01e8b8c",
+            "user": "",
+            "tpgt": "1",
+        }
+    ]
 
     con_class, cons = storageServer._prepare_connections(
-        sd.ISCSI_DOMAIN, con_def)
+        sd.ISCSI_DOMAIN, con_def
+    )
     con = cons[0]
 
     # Check we get right connection class.

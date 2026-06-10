@@ -52,10 +52,12 @@ lease_drive_conf = {
     'volumeID': 'volumeID',
     'diskReplicate': '',
     'name': 'vda',
-    'volumeChain': [{
-        'leasePath': 'path',
-        'leaseOffset': 'offset',
-    }],
+    'volumeChain': [
+        {
+            'leasePath': 'path',
+            'leaseOffset': 'offset',
+        }
+    ],
 }
 
 
@@ -73,8 +75,7 @@ def test_has_volume_leases():
 
 
 def test_diskreplicatefinish_transient_disk():
-    src_drive = make_drive(src_drive_conf,
-                           storage.DRIVE_SHARED_TYPE.TRANSIENT)
+    src_drive = make_drive(src_drive_conf, storage.DRIVE_SHARED_TYPE.TRANSIENT)
     _vm = FakeVm([src_drive])
     result = _vm.diskReplicateFinish(src_drive_conf, dst_drive_conf)
 
@@ -140,8 +141,9 @@ def test_replicatefinish_successful():
     # we should have only one device at the end of the replication
     # and its domainID should be the destination's ID
     assert len(_vm._devices) == 1
-    assert (_vm._devices[hwclass.DISK][0]['domainID'] ==
-            dst_drive_conf['domainID'])
+    assert (
+        _vm._devices[hwclass.DISK][0]['domainID'] == dst_drive_conf['domainID']
+    )
 
     # we need to check whether the monitor was disabled during the
     # run of diskReplicateFinish

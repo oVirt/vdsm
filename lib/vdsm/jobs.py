@@ -8,7 +8,6 @@ from vdsm.common import exception
 from vdsm.common import response
 from vdsm.config import config
 
-
 _lock = threading.Lock()
 _jobs = {}
 _scheduler = None
@@ -17,41 +16,47 @@ _notifier = None
 
 
 class STATUS:
-    PENDING = 'pending'    # Job has not started yet
-    RUNNING = 'running'    # Job is running
-    DONE = 'done'          # Job has finished successfully
+    PENDING = 'pending'  # Job has not started yet
+    RUNNING = 'running'  # Job is running
+    DONE = 'done'  # Job has finished successfully
     ABORTING = 'aborting'  # Job is running but abort is in progress
-    ABORTED = 'aborted'    # Job was aborted by user request
-    FAILED = 'failed'      # Job has failed
+    ABORTED = 'aborted'  # Job was aborted by user request
+    FAILED = 'failed'  # Job has failed
 
 
 class ClientError(Exception):
-    ''' Base class for client error '''
+    '''Base class for client error'''
+
     name = None
 
 
 class JobExistsError(ClientError):
-    ''' Job already exists in _jobs collection '''
+    '''Job already exists in _jobs collection'''
+
     name = 'JobExistsError'
 
 
 class NoSuchJob(ClientError):
-    ''' Job does not exist in _jobs collection '''
+    '''Job does not exist in _jobs collection'''
+
     name = 'NoSuchJob'
 
 
 class JobNotDone(ClientError):
-    ''' Job still in progress '''
+    '''Job still in progress'''
+
     name = 'JobNotDone'
 
 
 class JobNotActive(ClientError):
-    ''' Job is not running or pending '''
+    '''Job is not running or pending'''
+
     name = 'JobNotActive'
 
 
 class AbortNotSupported(ClientError):
-    ''' This type of job does not support aborting '''
+    '''This type of job does not support aborting'''
+
     name = 'AbortNotSupported'
 
 
@@ -94,10 +99,12 @@ class Job(object):
         return self._error
 
     def info(self):
-        ret = {'id': self.id,
-               'status': self.status,
-               'description': self.description,
-               'job_type': self.job_type}
+        ret = {
+            'id': self.id,
+            'status': self.status,
+            'description': self.description,
+            'job_type': self.job_type,
+        }
 
         if self.progress is not None:
             ret['progress'] = self.progress
@@ -159,8 +166,10 @@ class Job(object):
                 logging.debug('Refusing to run aborted job %r', self._id)
                 return False
             if self.status != STATUS.PENDING:
-                raise RuntimeError('Attempted to run job %r from state %r' %
-                                   (self._id, self.status))
+                raise RuntimeError(
+                    'Attempted to run job %r from state %r'
+                    % (self._id, self.status)
+                )
             self._status = STATUS.RUNNING
             logging.info("Running job %r...", self.id)
             return True
@@ -175,9 +184,12 @@ class Job(object):
             if self.status == STATUS.ABORTING:
                 logging.info("Abort completed for job %r", self.id)
             else:
-                logging.warning("Unexpected ActionStopped exception in "
-                                "job %r with status %r",
-                                self.id, self.status)
+                logging.warning(
+                    "Unexpected ActionStopped exception in "
+                    "job %r with status %r",
+                    self.id,
+                    self.status,
+                )
             self._status = STATUS.ABORTED
 
     def _run_completed(self):
@@ -227,8 +239,9 @@ class Job(object):
         if self.autodelete:
             timeout = config.getint("jobs", "autodelete_delay")
             if timeout >= 0:
-                logging.info("Job %r will be deleted in %d seconds",
-                             self.id, timeout)
+                logging.info(
+                    "Job %r will be deleted in %d seconds", self.id, timeout
+                )
                 _scheduler.schedule(timeout, self._delete)
 
     def _delete(self):

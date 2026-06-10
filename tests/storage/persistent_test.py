@@ -8,15 +8,15 @@ from vdsm.storage import persistent
 
 
 class ReadError(Exception):
-    """ Raised while reading from storage """
+    """Raised while reading from storage"""
 
 
 class WriteError(Exception):
-    """ Raised while writing to storage """
+    """Raised while writing to storage"""
 
 
 class UserError(Exception):
-    """ Raised by user code inside a transaction """
+    """Raised by user code inside a transaction"""
 
 
 class MemoryBackend(object):
@@ -212,11 +212,13 @@ class TestDictValidator:
         assert b.version == 1
 
     def test_invalidate(self):
-        b = MemoryBackend([
-            "int_str=1",
-            "str_str=2",
-            "_SHA_CKSUM=fd58b7962408a4956bd694d617a1201306b363c2",
-        ])
+        b = MemoryBackend(
+            [
+                "int_str=1",
+                "str_str=2",
+                "_SHA_CKSUM=fd58b7962408a4956bd694d617a1201306b363c2",
+            ]
+        )
         pd = persistent.PersistentDict(b)
         dv = persistent.DictValidator(pd, self.VALID_FIELDS)
 
@@ -267,11 +269,13 @@ class TestPersistentDict:
         assert "key" in pd
 
     def test_get_good_checksum(self):
-        b = MemoryBackend([
-            "key 1=value 1",
-            "key 2=value 2",
-            "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
-        ])
+        b = MemoryBackend(
+            [
+                "key 1=value 1",
+                "key 2=value 2",
+                "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
+            ]
+        )
         pd = persistent.PersistentDict(b)
 
         assert pd["key 1"] == "value 1"
@@ -354,11 +358,13 @@ class TestPersistentDict:
         assert set(pd) == {"key 1", "key 2"}
 
     def test_clear(self):
-        b = MemoryBackend([
-            "key 1=value 1",
-            "key 2=value 2",
-            "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
-        ])
+        b = MemoryBackend(
+            [
+                "key 1=value 1",
+                "key 2=value 2",
+                "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
+            ]
+        )
         pd = persistent.PersistentDict(b)
 
         # Trigger reading from storage.
@@ -432,11 +438,13 @@ class TestPersistentDict:
         assert b.version == 1
 
     def test_invalidate(self):
-        b = MemoryBackend([
-            "key 1=value 1",
-            "key 2=value 2",
-            "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
-        ])
+        b = MemoryBackend(
+            [
+                "key 1=value 1",
+                "key 2=value 2",
+                "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
+            ]
+        )
         pd = persistent.PersistentDict(b)
 
         # Trigger reading from storage.

@@ -30,7 +30,12 @@ class FakeConnection(object):
     def compareCPU(self, xml, flags):
         if self.arch != cpuarch.X86_64:
             return libvirt.VIR_CPU_COMPARE_SUPERSET
-        for model in ('Skylake', 'Broadwell', 'EPYC', 'Opteron',):
+        for model in (
+            'Skylake',
+            'Broadwell',
+            'EPYC',
+            'Opteron',
+        ):
             if model in xml:
                 return libvirt.VIR_CPU_COMPARE_INCOMPATIBLE
         if 'Haswell' in xml:
@@ -45,34 +50,138 @@ class FailingConnection(object):
 
 
 _EXPECTED_CPU_MODELS_X86_64 = (
-    'qemu64', 'qemu32', 'pentium3', 'pentium2', 'pentium', 'kvm64', 'kvm32',
-    'coreduo', 'core2duo', 'Penryn', 'Opteron_G2', 'Opteron_G1', 'Nehalem',
-    'Nehalem-IBRS', 'Conroe', '486',
+    'qemu64',
+    'qemu32',
+    'pentium3',
+    'pentium2',
+    'pentium',
+    'kvm64',
+    'kvm32',
+    'coreduo',
+    'core2duo',
+    'Penryn',
+    'Opteron_G2',
+    'Opteron_G1',
+    'Nehalem',
+    'Nehalem-IBRS',
+    'Conroe',
+    '486',
 )
-_EXPECTED_CPU_MODELS_PPC64LE = ('POWER9', 'POWER8',)
+_EXPECTED_CPU_MODELS_PPC64LE = (
+    'POWER9',
+    'POWER8',
+)
 _EXPECTED_CPU_MODELS_S390X = (
-    'z10EC-base', 'z9EC-base', 'z196.2-base', 'z900-base', 'z990',
-    'z900.2-base', 'z900.3', 'z114', 'z890-base', 'z13.2-base', 'zEC12.2',
-    'z10BC', 'z900.2', 'z10BC.2', 'z196', 'z9EC', 'z990-base', 'z10EC.3',
-    'z900', 'z9EC.3-base', 'z990.5-base', 'z10EC.2', 'z9BC.2', 'z10EC',
-    'z990.3-base', 'z13s', 'z10EC.3-base', 'zEC12.2-base', 'z890.3-base',
-    'z9EC.3', 'z990.5', 'z13', 'z13s-base', 'z14-base', 'z9EC.2', 'z990.4',
-    'zEC12-base', 'z9EC.2-base', 'zBC12', 'z196.2', 'z990.3', 'z990.2-base',
-    'z900.3-base', 'z890.3', 'z10EC.2-base', 'z990.2', 'z890.2', 'zBC12-base',
-    'z800-base', 'zEC12', 'z9BC.2-base', 'z9BC', 'z10BC.2-base', 'z990.4-base',
-    'qemu', 'z10BC-base', 'z9BC-base', 'z800', 'z890.2-base', 'z13.2',
-    'z114-base', 'z196-base', 'z13-base', 'z890',
+    'z10EC-base',
+    'z9EC-base',
+    'z196.2-base',
+    'z900-base',
+    'z990',
+    'z900.2-base',
+    'z900.3',
+    'z114',
+    'z890-base',
+    'z13.2-base',
+    'zEC12.2',
+    'z10BC',
+    'z900.2',
+    'z10BC.2',
+    'z196',
+    'z9EC',
+    'z990-base',
+    'z10EC.3',
+    'z900',
+    'z9EC.3-base',
+    'z990.5-base',
+    'z10EC.2',
+    'z9BC.2',
+    'z10EC',
+    'z990.3-base',
+    'z13s',
+    'z10EC.3-base',
+    'zEC12.2-base',
+    'z890.3-base',
+    'z9EC.3',
+    'z990.5',
+    'z13',
+    'z13s-base',
+    'z14-base',
+    'z9EC.2',
+    'z990.4',
+    'zEC12-base',
+    'z9EC.2-base',
+    'zBC12',
+    'z196.2',
+    'z990.3',
+    'z990.2-base',
+    'z900.3-base',
+    'z890.3',
+    'z10EC.2-base',
+    'z990.2',
+    'z890.2',
+    'zBC12-base',
+    'z800-base',
+    'zEC12',
+    'z9BC.2-base',
+    'z9BC',
+    'z10BC.2-base',
+    'z990.4-base',
+    'qemu',
+    'z10BC-base',
+    'z9BC-base',
+    'z800',
+    'z890.2-base',
+    'z13.2',
+    'z114-base',
+    'z196-base',
+    'z13-base',
+    'z890',
 )
 
 _EXPECTED_CPU_FEATURES_X86_64 = [
-    'vme', 'ss', 'pclmuldq', 'pcid', 'x2apic', 'tsc-deadline', 'hypervisor',
-    'arat', 'tsc_adjust', 'stibp', 'pdpe1gb', 'rdtscp', 'invtsc',
+    'vme',
+    'ss',
+    'pclmuldq',
+    'pcid',
+    'x2apic',
+    'tsc-deadline',
+    'hypervisor',
+    'arat',
+    'tsc_adjust',
+    'stibp',
+    'pdpe1gb',
+    'rdtscp',
+    'invtsc',
 ]
 _EXPECTED_CPU_FEATURES_PPC_64 = []
 _EXPECTED_CPU_FEATURES_S390X = [
-    'aen', 'cmmnt', 'aefsi', 'mepoch', 'msa8', 'msa7', 'msa6', 'msa5', 'msa4',
-    'msa3', 'msa2', 'msa1', 'sthyi', 'edat', 'ri', 'edat2', 'vx', 'ipter',
-    'vxeh', 'vxpd', 'esop', 'iep', 'cte', 'gs', 'zpci', 'sea_esop2', 'te',
+    'aen',
+    'cmmnt',
+    'aefsi',
+    'mepoch',
+    'msa8',
+    'msa7',
+    'msa6',
+    'msa5',
+    'msa4',
+    'msa3',
+    'msa2',
+    'msa1',
+    'sthyi',
+    'edat',
+    'ri',
+    'edat2',
+    'vx',
+    'ipter',
+    'vxeh',
+    'vxpd',
+    'esop',
+    'iep',
+    'cte',
+    'gs',
+    'zpci',
+    'sea_esop2',
+    'te',
     'cmm',
 ]
 
@@ -82,25 +191,33 @@ class TestDomCaps(TestCaseBase):
 
     def testCpuTypeS390X(self):
         conn = FakeConnection(cpuarch.S390X)
-        dom_models = machinetype.domain_cpu_models(conn, cpuarch.S390X,
-                                                   'custom')
+        dom_models = machinetype.domain_cpu_models(
+            conn, cpuarch.S390X, 'custom'
+        )
         exp_models = {'z14-base': 'yes', 'z14': 'no'}
         for model, usable in exp_models.items():
             self.assertEqual(dom_models[model], usable)
 
-    @permutations([
-        # arch, expected_models
-        [cpuarch.X86_64, _EXPECTED_CPU_MODELS_X86_64],
-        [cpuarch.PPC64LE, _EXPECTED_CPU_MODELS_PPC64LE],
-        [cpuarch.S390X, _EXPECTED_CPU_MODELS_S390X],
-    ])
+    @permutations(
+        [
+            # arch, expected_models
+            [cpuarch.X86_64, _EXPECTED_CPU_MODELS_X86_64],
+            [cpuarch.PPC64LE, _EXPECTED_CPU_MODELS_PPC64LE],
+            [cpuarch.S390X, _EXPECTED_CPU_MODELS_S390X],
+        ]
+    )
     def test_cpu_models(self, arch, expected_models):
         machinetype.compatible_cpu_models.invalidate()
-        with MonkeyPatchScope([
+        with MonkeyPatchScope(
+            [
                 (machinetype.cpuarch, 'real', lambda: arch),
-                (machinetype.libvirtconnection, 'get',
-                 lambda: FakeConnection(arch)),
-        ]):
+                (
+                    machinetype.libvirtconnection,
+                    'get',
+                    lambda: FakeConnection(arch),
+                ),
+            ]
+        ):
             result = machinetype.compatible_cpu_models()
         result = set(result)
         expected = set(['model_' + m for m in expected_models])
@@ -108,33 +225,48 @@ class TestDomCaps(TestCaseBase):
 
     def test_libvirt_exception(self):
         machinetype.compatible_cpu_models.invalidate()
-        with MonkeyPatchScope([
-                (machinetype.libvirtconnection, 'get',
-                 lambda: FailingConnection()),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (
+                    machinetype.libvirtconnection,
+                    'get',
+                    lambda: FailingConnection(),
+                ),
+            ]
+        ):
             result = machinetype.compatible_cpu_models()
             self.assertEqual(result, [])
 
-    @permutations([
-        # arch, expected_features
-        [cpuarch.X86_64, _EXPECTED_CPU_FEATURES_X86_64],
-        [cpuarch.PPC64LE, _EXPECTED_CPU_FEATURES_PPC_64],
-        [cpuarch.S390X, _EXPECTED_CPU_FEATURES_S390X],
-    ])
+    @permutations(
+        [
+            # arch, expected_features
+            [cpuarch.X86_64, _EXPECTED_CPU_FEATURES_X86_64],
+            [cpuarch.PPC64LE, _EXPECTED_CPU_FEATURES_PPC_64],
+            [cpuarch.S390X, _EXPECTED_CPU_FEATURES_S390X],
+        ]
+    )
     def test_cpu_features(self, arch, expected_features):
         machinetype.cpu_features.invalidate()
         conn = FakeConnection(arch)
-        with MonkeyPatchScope([
+        with MonkeyPatchScope(
+            [
                 (machinetype.cpuarch, 'real', lambda: arch),
-                (machinetype.libvirtconnection, 'get', lambda: conn), ]):
+                (machinetype.libvirtconnection, 'get', lambda: conn),
+            ]
+        ):
             result = machinetype.cpu_features()
             self.assertEqual(result, expected_features)
 
     def test_libvirt_exception_cpu_features(self):
         machinetype.cpu_features.invalidate()
-        with MonkeyPatchScope([
-                (machinetype.libvirtconnection, 'get',
-                 lambda: FailingConnection()),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (
+                    machinetype.libvirtconnection,
+                    'get',
+                    lambda: FailingConnection(),
+                ),
+            ]
+        ):
             result = machinetype.cpu_features()
             self.assertEqual(result, [])

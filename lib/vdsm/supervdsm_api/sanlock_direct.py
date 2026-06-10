@@ -8,15 +8,17 @@ from . import expose
 
 @expose
 def sanlock_direct_run_dump(
-        path,
-        offset=0,
-        size=None,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M):
+    path,
+    offset=0,
+    size=None,
+    block_size=sc.BLOCK_SIZE_512,
+    alignment=sc.ALIGNMENT_1M,
+):
 
     return sanlock_direct.run_dump(
         path=path,
         offset=offset,
         size=size,
         block_size=block_size,
-        alignment=alignment)
+        alignment=alignment,
+    )

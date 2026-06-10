@@ -38,10 +38,12 @@ class TotalCpuSample(object):
 
     The sample is taken at initialization time and can't be updated.
     """
+
     def __init__(self):
         with open('/proc/stat') as f:
-            self.user, userNice, self.sys, self.idle = \
-                map(int, f.readline().split()[1:5])
+            self.user, userNice, self.sys, self.idle = map(
+                int, f.readline().split()[1:5]
+            )
         self.user += userNice
 
 
@@ -51,6 +53,7 @@ class CpuCoreSample(object):
 
     The sample is taken at initialization time and can't be updated.
     """
+
     CPU_CORE_STATS_PATTERN = re.compile(r'cpu(\d+)\s+(.*)')
 
     def __init__(self):
@@ -60,8 +63,9 @@ class CpuCoreSample(object):
                 match = self.CPU_CORE_STATS_PATTERN.match(line)
                 if match:
                     coreSample = {}
-                    user, userNice, sys, idle = \
-                        map(int, match.group(2).split()[0:4])
+                    user, userNice, sys, idle = map(
+                        int, match.group(2).split()[0:4]
+                    )
                     coreSample['user'] = user
                     coreSample['userNice'] = userNice
                     coreSample['sys'] = sys
@@ -79,6 +83,7 @@ class NumaNodeMemorySample(object):
 
     The sample is taken at initialization time and can't be updated.
     """
+
     def __init__(self):
         self.nodesMemSample = {}
         numaTopology = numa.topology()
@@ -95,11 +100,13 @@ class NumaNodeMemorySample(object):
             # memory as used
             nodeMemSample['memPercent'] = 100
             if int(memInfo['total']) != 0:
-                nodeMemSample['memPercent'] = 100 - \
-                    int(100.0 * int(memInfo['free']) // int(memInfo['total']))
+                nodeMemSample['memPercent'] = 100 - int(
+                    100.0 * int(memInfo['free']) // int(memInfo['total'])
+                )
             page_sizes = list(numaTopology[nodeIndex]['hugepages'].keys())
-            nodeMemSample['hugepages'] = \
-                numa.free_pages_by_cell(page_sizes, idx)
+            nodeMemSample['hugepages'] = numa.free_pages_by_cell(
+                page_sizes, idx
+            )
             self.nodesMemSample[nodeIndex] = nodeMemSample
 
 
@@ -109,10 +116,10 @@ class PidCpuSample(object):
 
     The sample is taken at initialization time and can't be updated.
     """
+
     def __init__(self, pid):
         with open('/proc/%s/stat' % pid) as stat:
-            self.user, self.sys = \
-                map(int, stat.read().split()[13:15])
+            self.user, self.sys = map(int, stat.read().split()[13:15])
 
 
 class HostSample(object):
@@ -121,6 +128,7 @@ class HostSample(object):
 
     Contains the state of the host at the time of initialization.
     """
+
     MONITORED_PATHS = ['/tmp', '/var/log', P_VDSM_RUN]
 
     def _getDiskStats(self):
@@ -147,10 +155,12 @@ class HostSample(object):
         self.ncpus = os.sysconf('SC_NPROCESSORS_ONLN')
         self.totcpu = TotalCpuSample()
         meminfo = utils.readMemInfo()
-        freeOrCached = (meminfo['MemFree'] +
-                        meminfo['Cached'] +
-                        meminfo['Buffers'] +
-                        meminfo['SReclaimable'])
+        freeOrCached = (
+            meminfo['MemFree']
+            + meminfo['Cached']
+            + meminfo['Buffers']
+            + meminfo['SReclaimable']
+        )
         self.memUsed = 100 - int(100.0 * (freeOrCached) / meminfo['MemTotal'])
         self.anonHugePages = meminfo.get('AnonHugePages', 0) // KiB
         try:
@@ -162,7 +172,7 @@ class HostSample(object):
         try:
             with open(_THP_STATE_PATH) as f:
                 s = f.read()
-                self.thpState = s[s.index('[') + 1:s.index(']')]
+                self.thpState = s[s.index('[') + 1 : s.index(']')]
         except:
             self.thpState = 'never'
         self.hugepages = hugepages.state()
@@ -178,8 +188,9 @@ class SampleWindow(object):
 
     def __init__(self, size, timefn=time.time):
         if size < _MINIMUM_SAMPLES:
-            raise ValueError("window size must be not less than %i" %
-                             _MINIMUM_SAMPLES)
+            raise ValueError(
+                "window size must be not less than %i" % _MINIMUM_SAMPLES
+            )
 
         self._samples = deque(maxlen=size)
         self._timefn = timefn
@@ -217,17 +228,17 @@ class SampleWindow(object):
         return self._samples[-nth]
 
 
-_StatsSample = namedtuple('StatsSample',
-                          ['first_value', 'last_value',
-                           'interval', 'stats_age'])
+_StatsSample = namedtuple(
+    'StatsSample', ['first_value', 'last_value', 'interval', 'stats_age']
+)
 
 
 class StatsSample(_StatsSample):
     def is_empty(self):
         return (
-            self.first_value is None and
-            self.last_value is None and
-            self.interval is None
+            self.first_value is None
+            and self.last_value is None
+            and self.interval is None
         )
 
 
@@ -300,8 +311,7 @@ class StatsCache(object):
             if first_sample is None or last_sample is None:
                 return StatsSample(None, None, None, stats_age)
 
-            return StatsSample(first_sample, last_sample,
-                               interval, stats_age)
+            return StatsSample(first_sample, last_sample, interval, stats_age)
 
     def get_batch(self):
         """
@@ -316,11 +326,13 @@ class StatsCache(object):
             ts = self._clock()
             return {
                 vm_id: StatsSample(
-                    first_batch[vm_id], last_batch[vm_id], interval,
-                    ts - self._vm_last_timestamp[vm_id]
+                    first_batch[vm_id],
+                    last_batch[vm_id],
+                    interval,
+                    ts - self._vm_last_timestamp[vm_id],
                 )
-                for vm_id in last_batch if (vm_id in first_batch and
-                                            vm_id in self._vm_last_timestamp)
+                for vm_id in last_batch
+                if (vm_id in first_batch and vm_id in self._vm_last_timestamp)
             }
 
     def clock(self):
@@ -348,7 +360,9 @@ class StatsCache(object):
             else:
                 self._log.warning(
                     'dropped stale old sample: sampled %f stored %f',
-                    monotonic_ts, last_sample_time)
+                    monotonic_ts,
+                    last_sample_time,
+                )
 
     def _update_ts(self, bulk_stats, monotonic_ts):
         # FIXME: this is expected to be costly performance-wise.
@@ -370,18 +384,24 @@ _TTL = 40.0
 
 
 BULK_STATS_TYPES = (
-    libvirt.VIR_DOMAIN_STATS_STATE |
-    libvirt.VIR_DOMAIN_STATS_CPU_TOTAL |
-    libvirt.VIR_DOMAIN_STATS_BALLOON |
-    libvirt.VIR_DOMAIN_STATS_VCPU |
-    libvirt.VIR_DOMAIN_STATS_INTERFACE |
-    libvirt.VIR_DOMAIN_STATS_BLOCK
+    libvirt.VIR_DOMAIN_STATS_STATE
+    | libvirt.VIR_DOMAIN_STATS_CPU_TOTAL
+    | libvirt.VIR_DOMAIN_STATS_BALLOON
+    | libvirt.VIR_DOMAIN_STATS_VCPU
+    | libvirt.VIR_DOMAIN_STATS_INTERFACE
+    | libvirt.VIR_DOMAIN_STATS_BLOCK
 )
 
 
 class VMBulkstatsMonitor(object):
-    def __init__(self, conn, get_vms, stats_cache,
-                 stats_types=BULK_STATS_TYPES, ttl=_TTL):
+    def __init__(
+        self,
+        conn,
+        get_vms,
+        stats_cache,
+        stats_types=BULK_STATS_TYPES,
+        ttl=_TTL,
+    ):
         self._conn = conn
         self._get_vms = get_vms
         self._stats_cache = stats_cache
@@ -406,14 +426,16 @@ class VMBulkstatsMonitor(object):
                 # This is expected to be the common case.
                 # If everything's ok, we can skip all the costly checks.
                 bulk_stats = self._conn.getAllDomainStats(
-                    stats=self._stats_types, flags=flags)
+                    stats=self._stats_types, flags=flags
+                )
             else:
                 # A previous call got stuck, or not every domain
                 # has properly recovered. Thus we query only responsive ones.
                 responsive_doms = self._get_responsive_doms()
                 if responsive_doms:
                     bulk_stats = self._conn.domainListGetStats(
-                        responsive_doms, stats=self._stats_types, flags=flags)
+                        responsive_doms, stats=self._stats_types, flags=flags
+                    )
                 else:
                     bulk_stats = []
         except Exception:
@@ -427,8 +449,11 @@ class VMBulkstatsMonitor(object):
         if log_status:
             self._log.debug(
                 'sampled timestamp %r elapsed %.3f acquired %r domains %s',
-                timestamp, self._stats_cache.clock() - timestamp, acquired,
-                'all' if fast_path else len(responsive_doms))
+                timestamp,
+                self._stats_cache.clock() - timestamp,
+                acquired,
+                'all' if fast_path else len(responsive_doms),
+            )
 
     def _get_responsive_doms(self):
         vms = self._get_vms()
@@ -470,5 +495,4 @@ class HostMonitor(object):
 
 
 def _translate(bulk_stats):
-    return dict((dom.UUIDString(), stats)
-                for dom, stats in bulk_stats)
+    return dict((dom.UUIDString(), stats) for dom, stats in bulk_stats)

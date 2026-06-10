@@ -24,10 +24,16 @@ import pytest
 @expandPermutations
 class DeviceToXMLTests(XMLTestCase):
 
-    PCI_ADDR = \
+    PCI_ADDR = (
         'bus="0x00" domain="0x0000" function="0x0" slot="0x03" type="pci"'
-    PCI_ADDR_DICT = {'slot': '0x03', 'bus': '0x00', 'domain': '0x0000',
-                     'function': '0x0', 'type': 'pci'}
+    )
+    PCI_ADDR_DICT = {
+        'slot': '0x03',
+        'bus': '0x00',
+        'domain': '0x0000',
+        'function': '0x0',
+        'type': 'pci',
+    }
 
     def setUp(self):
         self.log = logging.getLogger('test.virt')
@@ -48,12 +54,17 @@ class DeviceToXMLTests(XMLTestCase):
             </target>
         </memory>
         """
-        params = {'device': 'memory', 'type': 'memory',
-                  'size': 1024, 'node': 0}
+        params = {
+            'device': 'memory',
+            'type': 'memory',
+            'size': 1024,
+            'node': 0,
+        }
         self.assertXMLEqual(vmdevices.core.memory_xml(params), memoryXML)
 
     def test_interface(self):
-        interfaceXML = """
+        interfaceXML = (
+            """
             <interface type="bridge"> <address %s/>
                 <mac address="52:54:00:59:F5:3F"/>
                 <model type="virtio"/>
@@ -69,23 +80,32 @@ class DeviceToXMLTests(XMLTestCase):
                     <inbound average="1000" burst="1024" peak="5000"/>
                     <outbound average="128" burst="256"/>
                 </bandwidth>
-            </interface>""" % self.PCI_ADDR
+            </interface>"""
+            % self.PCI_ADDR
+        )
 
-        dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
-               'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
-               'device': 'bridge', 'type': 'interface',
-               'bootOrder': '1', 'filter': 'no-mac-spoofing',
-               'specParams': {'inbound': {'average': 1000, 'peak': 5000,
-                                          'burst': 1024},
-                              'outbound': {'average': 128, 'burst': 256}},
-               'custom': {'queues': '7'},
-               'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'},
-               }
+        dev = {
+            'nicModel': 'virtio',
+            'macAddr': '52:54:00:59:F5:3F',
+            'network': 'ovirtmgmt',
+            'address': self.PCI_ADDR_DICT,
+            'device': 'bridge',
+            'type': 'interface',
+            'bootOrder': '1',
+            'filter': 'no-mac-spoofing',
+            'specParams': {
+                'inbound': {'average': 1000, 'peak': 5000, 'burst': 1024},
+                'outbound': {'average': 128, 'burst': 256},
+            },
+            'custom': {'queues': '7'},
+            'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'},
+        }
         iface = vmdevices.network.Interface(self.log, **dev)
         self.assertXMLEqual(xmlutils.tostring(iface.getXML()), interfaceXML)
 
     def test_interface_filter_parameters(self):
-        interfaceXML = """
+        interfaceXML = (
+            """
             <interface type="bridge"> <address %s/>
                 <mac address="52:54:00:59:F5:3F"/>
                 <model type="virtio"/>
@@ -100,13 +120,19 @@ class DeviceToXMLTests(XMLTestCase):
                 <tune>
                     <sndbuf>0</sndbuf>
                 </tune>
-            </interface>""" % self.PCI_ADDR
+            </interface>"""
+            % self.PCI_ADDR
+        )
 
         dev = {
-            'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
-            'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
-            'device': 'bridge', 'type': 'interface',
-            'bootOrder': '1', 'filter': 'clean-traffic',
+            'nicModel': 'virtio',
+            'macAddr': '52:54:00:59:F5:3F',
+            'network': 'ovirtmgmt',
+            'address': self.PCI_ADDR_DICT,
+            'device': 'bridge',
+            'type': 'interface',
+            'bootOrder': '1',
+            'filter': 'clean-traffic',
             'filterParameters': [
                 {'name': 'IP', 'value': '10.0.0.1'},
                 {'name': 'IP', 'value': '10.0.0.2'},
@@ -117,11 +143,13 @@ class DeviceToXMLTests(XMLTestCase):
         iface = vmdevices.network.Interface(self.log, **dev)
         self.assertXMLEqual(xmlutils.tostring(iface.getXML()), interfaceXML)
 
-    @permutations([
-        # base_spec_params:
-        [{}],
-        [{'inbound': {'average': 512}, 'outbound': {'average': 512}}],
-    ])
+    @permutations(
+        [
+            # base_spec_params:
+            [{}],
+            [{'inbound': {'average': 512}, 'outbound': {'average': 512}}],
+        ]
+    )
     def test_update_bandwidth_xml(self, base_spec_params):
         specParams = {
             'inbound': {
@@ -213,7 +241,9 @@ class ParsingHelperTests(XMLTestCase):
           <address domain='{domain}' bus='{bus}'
             slot='{slot}' function='{function}'/>
           <alias name='{alias}'/>
-        </device>""".format(**params)
+        </device>""".format(
+            **params
+        )
         dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
@@ -223,7 +253,9 @@ class ParsingHelperTests(XMLTestCase):
     def test_missing_address(self):
         XML = u"""<device type='fake'>
           <alias name='{alias}'/>
-        </device>""".format(alias=self.ALIAS)
+        </device>""".format(
+            alias=self.ALIAS
+        )
         dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
@@ -235,7 +267,9 @@ class ParsingHelperTests(XMLTestCase):
         XML = u"""<device type='fake'>
           <address domain='{domain}' bus='{bus}'
             slot='{slot}' function='{function}'/>
-        </device>""".format(**params)
+        </device>""".format(
+            **params
+        )
         dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
@@ -271,46 +305,63 @@ class ParsingHelperTests(XMLTestCase):
         )
         assert attrs == {'foo': 'bar', 'fizz': 'buzz'}
 
-    @permutations([
-        # xml_data, dev_type
-        [u'''<interface type='network' />''', 'network'],
-        [u'''<console type="pty" />''', 'pty'],
-        [u'''<controller type='usb' index='0' />''', 'usb'],
-        [u'''<sound model="ac97"/>''', 'sound'],
-        [u'''<tpm model='tpm-tis'/>''', 'tpm'],
-    ])
+    @permutations(
+        [
+            # xml_data, dev_type
+            [u'''<interface type='network' />''', 'network'],
+            [u'''<console type="pty" />''', 'pty'],
+            [u'''<controller type='usb' index='0' />''', 'usb'],
+            [u'''<sound model="ac97"/>''', 'sound'],
+            [u'''<tpm model='tpm-tis'/>''', 'tpm'],
+        ]
+    )
     def test_find_device_type(self, xml_data, dev_type):
-        assert dev_type == \
-            vmdevices.core.find_device_type(xmlutils.fromstring(xml_data))
+        assert dev_type == vmdevices.core.find_device_type(
+            xmlutils.fromstring(xml_data)
+        )
 
-    @permutations([
-        # xml_data, alias
-        # well formed XMLs
-        [u'''<interface><alias name="net0" /></interface>''', 'net0'],
-        [u'''<console type="pty" />''', ''],
-        # malformed XMLs
-        [u'''<controller><alias>foobar</alias></controller>''', ''],
-    ])
+    @permutations(
+        [
+            # xml_data, alias
+            # well formed XMLs
+            [u'''<interface><alias name="net0" /></interface>''', 'net0'],
+            [u'''<console type="pty" />''', ''],
+            # malformed XMLs
+            [u'''<controller><alias>foobar</alias></controller>''', ''],
+        ]
+    )
     def test_find_device_alias(self, xml_data, alias):
-        assert alias == \
-            vmdevices.core.find_device_alias(xmlutils.fromstring(xml_data))
+        assert alias == vmdevices.core.find_device_alias(
+            xmlutils.fromstring(xml_data)
+        )
 
-    @permutations([
-        # xml_data, address
-        [u'''<interface>
+    @permutations(
+        [
+            # xml_data, address
+            [
+                u'''<interface>
                 <source>
                   <address type='pci' domain='0x0000' bus='0x00'
                    slot='0x04' function='0x0'/>
                 </source>
               </interface>''',
-         None],
-        [u'''<interface>
+                None,
+            ],
+            [
+                u'''<interface>
                 <address type='pci' domain='0x0000' bus='0x00'
                   slot='0x04' function='0x0'/>
               </interface>''',
-         {'bus': '0x00', 'domain': '0x0000',
-          'function': '0x0', 'slot': '0x04', 'type': 'pci'}],
-        [u'''<interface>
+                {
+                    'bus': '0x00',
+                    'domain': '0x0000',
+                    'function': '0x0',
+                    'slot': '0x04',
+                    'type': 'pci',
+                },
+            ],
+            [
+                u'''<interface>
                 <address type='pci' domain='0x0000' bus='0x00'
                   slot='0x04' function='0x0'/>
                 <source>
@@ -318,39 +369,52 @@ class ParsingHelperTests(XMLTestCase):
                     slot='0x02' function='0x5'/>
                 </source>
               </interface>''',
-         {'bus': '0x00', 'domain': '0x0000',
-          'function': '0x0', 'slot': '0x04', 'type': 'pci'}],
-    ])
+                {
+                    'bus': '0x00',
+                    'domain': '0x0000',
+                    'function': '0x0',
+                    'slot': '0x04',
+                    'type': 'pci',
+                },
+            ],
+        ]
+    )
     def test_find_device_guest_address(self, xml_data, address):
-        assert address == \
-            vmdevices.core.find_device_guest_address(
-                xmlutils.fromstring(xml_data)
-            )
+        assert address == vmdevices.core.find_device_guest_address(
+            xmlutils.fromstring(xml_data)
+        )
 
 
 # the alias is not rendered by getXML, so having it would make
 # the test fail
 _CONTROLLERS_XML = [
-    [u"<controller type='virtio-serial' index='0' ports='16'>"
-     u"<address type='pci' domain='0x0000' bus='0x00'"
-     u" slot='0x07' function='0x0'/>"
-     u"</controller>"],
-    [u"<controller type='usb' index='0'>"
-     u"<address type='pci' domain='0x0000' bus='0x00'"
-     u" slot='0x01' function='0x2'/>"
-     u"</controller>"],
+    [
+        u"<controller type='virtio-serial' index='0' ports='16'>"
+        u"<address type='pci' domain='0x0000' bus='0x00'"
+        u" slot='0x07' function='0x0'/>"
+        u"</controller>"
+    ],
+    [
+        u"<controller type='usb' index='0'>"
+        u"<address type='pci' domain='0x0000' bus='0x00'"
+        u" slot='0x01' function='0x2'/>"
+        u"</controller>"
+    ],
     [u"<controller type='pci' index='0' model='pci-root' />"],
     [u"<controller type='ccid' index='0' />"],
     [u"<controller type='ide' index='0'/>"],
-    [u"<controller type='scsi' index='0' model='virtio-scsi'>"
-     u"<address type='pci' domain='0x0000' bus='0x00' slot='0x0b'"
-     u" function='0x0'/>"
-     u"<driver iothread='4'/>"
-     u"</controller>"],
+    [
+        u"<controller type='scsi' index='0' model='virtio-scsi'>"
+        u"<address type='pci' domain='0x0000' bus='0x00' slot='0x0b'"
+        u" function='0x0'/>"
+        u"<driver iothread='4'/>"
+        u"</controller>"
+    ],
 ]
 
 _TRANSIENT_STORAGE_TEST_DATA = [
-    [u'''<disk device="disk" snapshot="no" type="block">
+    [
+        u'''<disk device="disk" snapshot="no" type="block">
         <source dev="/var/lib/vdsm/transient">
             <seclabel model="dac" relabel="no" type="none" />
         </source>
@@ -359,19 +423,23 @@ _TRANSIENT_STORAGE_TEST_DATA = [
         <driver cache="writethrough" error_policy="stop"
                 io="native" name="qemu" type="qcow2"/>
     </disk>''',
-     {'shared': 'transient'}],
-    [u'''<disk device="disk" snapshot="no" type="file">
+        {'shared': 'transient'},
+    ],
+    [
+        u'''<disk device="disk" snapshot="no" type="file">
             <source file="/var/lib/vdsm/transient"/>
             <target bus="scsi" dev="sda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="writethrough" error_policy="stop"
                     io="threads" name="qemu" type="qcow2"/>
         </disk>''',
-     {'shared': 'transient'}]
+        {'shared': 'transient'},
+    ],
 ]
 
 _STORAGE_TEST_DATA = [
-    [u'''<disk device="disk" snapshot="no" type="block">
+    [
+        u'''<disk device="disk" snapshot="no" type="block">
             <source dev="/path/to/volume">
                 <seclabel model="dac" relabel="no" type="none" />
             </source>
@@ -380,8 +448,10 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" discard="unmap" error_policy="stop"
                     io="native" name="qemu" type="raw"/>
         </disk>''',
-     {}],
-    [u'''<disk device="disk" snapshot="no" type="block">
+        {},
+    ],
+    [
+        u'''<disk device="disk" snapshot="no" type="block">
             <source dev="/path/to/volume">
                 <seclabel model="dac" relabel="no" type="none" />
             </source>
@@ -390,8 +460,10 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" discard="unmap" error_policy="enospace"
                     io="native" name="qemu" type="raw"/>
         </disk>''',
-     {}],
-    [u'''<disk device="disk" snapshot="no" type="block">
+        {},
+    ],
+    [
+        u'''<disk device="disk" snapshot="no" type="block">
             <source dev="/path/to/volume">
                 <seclabel model="dac" relabel="no" type="none" />
             </source>
@@ -400,8 +472,10 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="native" name="qemu" type="raw"/>
         </disk>''',
-     {}],
-    [u'''<disk device="disk" snapshot="no" type="file">
+        {},
+    ],
+    [
+        u'''<disk device="disk" snapshot="no" type="file">
             <source file="/path/to/volume">
                 <seclabel model="dac" relabel="no" type="none" />
             </source>
@@ -410,8 +484,10 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
-     {}],
-    [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+        {},
+    ],
+    [
+        u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
             <source dev="/dev/mapper/lun1">
                 <seclabel model="dac" relabel="no" type="none" />
             </source>
@@ -419,8 +495,10 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="native" name="qemu" type="raw"/>
         </disk>''',
-     {}],
-    [u'''<disk device="disk" snapshot="no" type="network">
+        {},
+    ],
+    [
+        u'''<disk device="disk" snapshot="no" type="network">
             <source name="poolname/volumename" protocol="rbd">
                 <host name="1.2.3.41" port="6789" transport="tcp"/>
                 <host name="1.2.3.42" port="6789" transport="tcp"/>
@@ -429,8 +507,10 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
-     {}],
-    [u'''<disk device="disk" snapshot="no" type="network">
+        {},
+    ],
+    [
+        u'''<disk device="disk" snapshot="no" type="network">
             <source name="poolname/volumename" protocol="rbd">
                 <host name="1.2.3.41" port="6789" transport="tcp"/>
                 <host name="1.2.3.42" port="6789" transport="tcp"/>
@@ -443,8 +523,10 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
-     {}],
-    [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+        {},
+    ],
+    [
+        u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
             <address bus="0" controller="0" target="0" type="drive" unit="0" />
             <source dev="/dev/mapper/36001405b3b7829f14c1400d925eefebb">
                 <seclabel model="dac" relabel="no" type="none" />
@@ -453,8 +535,10 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop" io="native"
                     name="qemu" type="raw" />
         </disk>''',
-     {}],
-    [u'''<disk device="cdrom" snapshot="no" type="file">
+        {},
+    ],
+    [
+        u'''<disk device="cdrom" snapshot="no" type="file">
             <source file="/run/vdsm/payload/{guid}.{hashsum}.img"
                 startupPolicy="optional">
                 <seclabel model="dac" relabel="no" type="none" />
@@ -462,11 +546,15 @@ _STORAGE_TEST_DATA = [
             <target bus="ide" dev="hdd" />
             <readonly />
             <driver error_policy="report" name="qemu" type="raw" />
-        </disk>'''.format(guid='8a1dc504-9d00-48f3-abdc-c70404e6f7e2',
-                          hashsum='4137dc5fb55e021fbfd2653621d9d194'),
-     {}],
+        </disk>'''.format(
+            guid='8a1dc504-9d00-48f3-abdc-c70404e6f7e2',
+            hashsum='4137dc5fb55e021fbfd2653621d9d194',
+        ),
+        {},
+    ],
     # cdrom from Engine 4.2.0, using error_policy="report"
-    [u'''<disk type="file" device="cdrom" snapshot="no">
+    [
+        u'''<disk type="file" device="cdrom" snapshot="no">
             <address bus="1" controller="0" unit="0" type="drive" target="0"/>
             <source file="" startupPolicy="optional">
                 <seclabel model="dac" relabel="no" type="none" />
@@ -475,8 +563,10 @@ _STORAGE_TEST_DATA = [
             <readonly/>
             <driver name="qemu" type="raw" error_policy="report"/>
          </disk>''',
-     {}],
-    [u'''<disk device="disk" snapshot="no" type="block">
+        {},
+    ],
+    [
+        u'''<disk device="disk" snapshot="no" type="block">
             <source dev="/path/to/volume">
                 <seclabel model="dac" relabel="no" type="none" />
             </source>
@@ -490,9 +580,11 @@ _STORAGE_TEST_DATA = [
                 <write_iops_sec>100000</write_iops_sec>
             </iotune>
         </disk>''',
-     {}],
+        {},
+    ],
     # disk from Engine 4.2.0
-    [u'''<disk snapshot="no" type="block" device="disk">
+    [
+        u'''<disk snapshot="no" type="block" device="disk">
             <address bus="0" controller="0" unit="0" type="drive" target="0"/>
             <source dev="/rhev/data-center/mnt/blockSD/a/images/b/c">
                 <seclabel model="dac" relabel="no" type="none" />
@@ -504,9 +596,11 @@ _STORAGE_TEST_DATA = [
               error_policy="stop" cache="none"/>
             <alias name="ua-58ca6050-0134-00d6-0053-000000000388"/>
         </disk>''',
-     {}],
+        {},
+    ],
     # cache attribute taken from XML for non-transient disks
-    [u'''<disk device="disk" snapshot="no" type="file">
+    [
+        u'''<disk device="disk" snapshot="no" type="file">
             <source file="/path/to/volume">
                 <seclabel model="dac" relabel="no" type="none" />
             </source>
@@ -515,35 +609,44 @@ _STORAGE_TEST_DATA = [
             <driver cache="writethrough" error_policy="enospace"
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
-     {}],
+        {},
+    ],
 ]
 
 
 _HOSTDEV_XML = [
-    [u'''<hostdev mode='subsystem' type='pci' managed='no'>
+    [
+        u'''<hostdev mode='subsystem' type='pci' managed='no'>
       <source>
         <address domain='0x0000' bus='0x00' slot='0x19' function='0x0'/>
       </source>
       <boot order='1'/>
-    </hostdev>'''],
-    [u'''<hostdev managed="no" mode="subsystem" type="usb">
+    </hostdev>'''
+    ],
+    [
+        u'''<hostdev managed="no" mode="subsystem" type="usb">
       <source>
         <address bus="1" device="1"/>
       </source>
-    </hostdev>'''],
-    [u'''<hostdev managed="no" mode="subsystem" rawio="yes" type="scsi">
+    </hostdev>'''
+    ],
+    [
+        u'''<hostdev managed="no" mode="subsystem" rawio="yes" type="scsi">
       <source>
         <adapter name="scsi_host0"/>
         <address bus="0" target="0" unit="0"/>
       </source>
-    </hostdev>'''],
-    [u'''<hostdev mode='subsystem' type='pci' managed='no'>
+    </hostdev>'''
+    ],
+    [
+        u'''<hostdev mode='subsystem' type='pci' managed='no'>
       <source>
         <address domain='0x0000' bus='0x00' slot='0x19' function='0x0'/>
       </source>
       <address type='pci' domain='0x0000' bus='0x00'
         slot='0x03' function='0x0'/>
-    </hostdev>'''],
+    </hostdev>'''
+    ],
 ]
 
 _MDEV_XML = u'''<hostdev mode="subsystem" model="vfio-pci" type="mdev">
@@ -565,11 +668,10 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             vmdevices.core.Base.from_xml_tree(
                 self.log,
                 xmlutils.fromstring(generic_xml),
-                meta={'vmid': 'VMID'}
+                meta={'vmid': 'VMID'},
             )
         except NotImplementedError as exc:
-            assert vmdevices.core.Base.__name__ == \
-                str(exc)
+            assert vmdevices.core.Base.__name__ == str(exc)
         except Exception as ex:
             raise AssertionError('from_xml_tree raise unexpected %s', ex)
         else:
@@ -609,7 +711,8 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             </interface>'''
         meta = {'vmid': 'VMID'}
         self._check_roundtrip(
-            vmdevices.network.Interface, interface_xml, meta=meta)
+            vmdevices.network.Interface, interface_xml, meta=meta
+        )
 
     def test_interface_mtu(self):
         interface_xml = u'''
@@ -625,7 +728,8 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             </interface>'''
         meta = {'vmid': 'VMID'}
         self._check_roundtrip(
-            vmdevices.network.Interface, interface_xml, meta=meta)
+            vmdevices.network.Interface, interface_xml, meta=meta
+        )
 
     def test_interface_isolated(self):
         interface_xml = u'''
@@ -640,13 +744,16 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             </interface>'''
         meta = {'vmid': 'VMID'}
         self._check_roundtrip(
-            vmdevices.network.Interface, interface_xml, meta=meta)
+            vmdevices.network.Interface, interface_xml, meta=meta
+        )
 
-    @permutations([
-        # link state
-        ('up',),
-        ('down',),
-    ])
+    @permutations(
+        [
+            # link state
+            ('up',),
+            ('down',),
+        ]
+    )
     def test_interface_link_state(self, link_state):
         interface_xml = u'''
             <interface type="bridge">
@@ -657,10 +764,13 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <source bridge="ovirtmgmt"/>
                 <link state="{link_state}"/>
                 <boot order="1"/>
-            </interface>'''.format(link_state=link_state)
+            </interface>'''.format(
+            link_state=link_state
+        )
         meta = {'vmid': 'VMID'}
         self._check_roundtrip(
-            vmdevices.network.Interface, interface_xml, meta=meta)
+            vmdevices.network.Interface, interface_xml, meta=meta
+        )
 
     def test_interface_empty_bridge(self):
         interface_xml = u'''
@@ -688,7 +798,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             vmdevices.network.Interface,
             interface_xml,
             meta=meta,
-            expected_xml=expected_xml
+            expected_xml=expected_xml,
         )
 
     def test_interface_vmfex(self):
@@ -715,7 +825,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             vmdevices.network.Interface,
             interface_xml,
             meta=meta,
-            expected_xml=expected_xml
+            expected_xml=expected_xml,
         )
 
     def test_interface_sriov_only_host_address(self):
@@ -739,11 +849,12 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <driver name="vfio"/>
             </interface>'''
         meta = {'vmid': 'VMID'}
-        with MonkeyPatchScope([
-            (hostdev, 'libvirtconnection', FakeLibvirtConnection())
-        ]):
+        with MonkeyPatchScope(
+            [(hostdev, 'libvirtconnection', FakeLibvirtConnection())]
+        ):
             self._check_roundtrip(
-                vmdevices.network.Interface, interface_xml, meta=meta)
+                vmdevices.network.Interface, interface_xml, meta=meta
+            )
 
     def test_interface_sriov_with_host_and_guest_address(self):
         """
@@ -768,11 +879,12 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <driver name="vfio"/>
             </interface>'''
         meta = {'vmid': 'VMID'}
-        with MonkeyPatchScope([
-            (hostdev, 'libvirtconnection', FakeLibvirtConnection())
-        ]):
+        with MonkeyPatchScope(
+            [(hostdev, 'libvirtconnection', FakeLibvirtConnection())]
+        ):
             self._check_roundtrip(
-                vmdevices.network.Interface, interface_xml, meta=meta)
+                vmdevices.network.Interface, interface_xml, meta=meta
+            )
 
     def test_interface_hostdev(self):
         interface_xml = u'''
@@ -788,28 +900,35 @@ class DeviceXMLRoundTripTests(XMLTestCase):
               <driver name='vfio'/>
             </interface>'''
         meta = {'vmid': 'VMID'}
-        with MonkeyPatchScope([
-            (hostdev.libvirtconnection, 'get', hostdevlib.Connection),
-            (vmdevices.hostdevice, 'detach_detachable',
-                lambda *args, **kwargs: None),
-            (vmdevices.hostdevice, 'reattach_detachable',
-                lambda *args, **kwargs: None),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (hostdev.libvirtconnection, 'get', hostdevlib.Connection),
+                (
+                    vmdevices.hostdevice,
+                    'detach_detachable',
+                    lambda *args, **kwargs: None,
+                ),
+                (
+                    vmdevices.hostdevice,
+                    'reattach_detachable',
+                    lambda *args, **kwargs: None,
+                ),
+            ]
+        ):
             self._check_roundtrip(
-                vmdevices.network.Interface, interface_xml, meta=meta)
+                vmdevices.network.Interface, interface_xml, meta=meta
+            )
 
     def test_storage(self):
         with pytest.raises(NotImplementedError):
-            vmdevices.storage.Drive.from_xml_tree(
-                self.log, None, {}
-            )
+            vmdevices.storage.Drive.from_xml_tree(self.log, None, {})
 
     @permutations(_STORAGE_TEST_DATA)
     def test_storage_from_xml(self, storage_xml, meta):
         dev = vmdevices.storage.Drive(
-            self.log, **vmdevices.storagexml.parse(
-                xmlutils.fromstring(storage_xml),
-                {} if meta is None else meta
+            self.log,
+            **vmdevices.storagexml.parse(
+                xmlutils.fromstring(storage_xml), {} if meta is None else meta
             )
         )
         self._check_device_xml(dev, storage_xml)
@@ -817,9 +936,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     @permutations(_TRANSIENT_STORAGE_TEST_DATA)
     def test_transient_storage_from_xml(self, storage_xml, meta):
         dev = vmdevices.storage.Drive(
-            self.log, **vmdevices.storagexml.parse(
-                xmlutils.fromstring(storage_xml),
-                {} if meta is None else meta
+            self.log,
+            **vmdevices.storagexml.parse(
+                xmlutils.fromstring(storage_xml), {} if meta is None else meta
             )
         )
         assert dev.shared == vmdevices.storage.DRIVE_SHARED_TYPE.TRANSIENT
@@ -844,10 +963,8 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                     io="threads" name="qemu" type="raw"/>
         </disk>'''
         dev = vmdevices.storage.Drive(
-            self.log, **vmdevices.storagexml.parse(
-                xmlutils.fromstring(storage_xml),
-                {}
-            )
+            self.log,
+            **vmdevices.storagexml.parse(xmlutils.fromstring(storage_xml), {})
         )
         self._check_device_xml(dev, expected_xml)
 
@@ -876,13 +993,12 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         # (see below for more details).
         expected_xml = cdrom_xml.format(
             driver_xml=u'''<driver name="qemu" type="raw"
-            error_policy="stop"/>''')
+            error_policy="stop"/>'''
+        )
 
         dev = vmdevices.storage.Drive(
-            self.log, **vmdevices.storagexml.parse(
-                xmlutils.fromstring(source_xml),
-                {}
-            )
+            self.log,
+            **vmdevices.storagexml.parse(xmlutils.fromstring(source_xml), {})
         )
         # everything which is not related to the driver element should be
         # derived from the source XML, thus the source and the expected
@@ -917,15 +1033,16 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         dev = klass.from_xml_tree(
             self.log,
             xmlutils.fromstring(dev_xml),
-            {} if meta is None else meta
+            {} if meta is None else meta,
         )
         self._check_device_attrs(dev)
         self._check_device_xml(dev, dev_xml, expected_xml)
 
     def _check_device_attrs(self, dev):
         assert hasattr(dev, 'specParams')
-        if (isinstance(dev, vmdevices.network.Interface) or
-                isinstance(dev, vmdevices.storage.Drive)):
+        if isinstance(dev, vmdevices.network.Interface) or isinstance(
+            dev, vmdevices.storage.Drive
+        ):
             assert hasattr(dev, 'vm_custom')
 
     def _check_device_xml(self, dev, dev_xml, expected_xml=None):
@@ -989,7 +1106,7 @@ class DeviceFromXMLTests(XMLTestCase):
                 'openstack/content/0000': 'AAA',
                 'openstack/latest/meta_data.json': 'BBB',
                 'openstack/latest/user_data': 'CCC',
-            }
+            },
         }
 
         md_desc = metadata.Descriptor.from_xml(_DRIVE_PAYLOAD_XML)
@@ -1260,8 +1377,7 @@ class DeviceMetadataMatchTests(XMLTestCase):
         )
 
         disk_objs = [
-            vmdevices.storage.Drive(self.log, **params)
-            for params in drives
+            vmdevices.storage.Drive(self.log, **params) for params in drives
         ]
 
         rbd_drive = lookup.drive_by_name(disk_objs, 'sda')
@@ -1274,8 +1390,7 @@ class DeviceMetadataMatchTests(XMLTestCase):
         )
 
         disk_objs = [
-            vmdevices.storage.Drive(self.log, **params)
-            for params in drives
+            vmdevices.storage.Drive(self.log, **params) for params in drives
         ]
 
         drive = lookup.drive_by_name(disk_objs, 'sdb')
@@ -1288,8 +1403,7 @@ class DeviceMetadataMatchTests(XMLTestCase):
         )
 
         disk_objs = [
-            vmdevices.storage.Drive(self.log, **params)
-            for params in drives
+            vmdevices.storage.Drive(self.log, **params) for params in drives
         ]
 
         drive = lookup.drive_by_name(disk_objs, 'sdc')
@@ -1301,8 +1415,7 @@ class DeviceMetadataMatchTests(XMLTestCase):
         )
 
         disk_objs = [
-            vmdevices.storage.Drive(self.log, **params)
-            for params in drives
+            vmdevices.storage.Drive(self.log, **params) for params in drives
         ]
 
         drive = lookup.drive_by_name(disk_objs, 'sdd')

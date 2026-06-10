@@ -10,14 +10,16 @@ from vdsm.common import commands
 from vdsm.common import libvirtconnection
 from vdsm.common.cmdutils import CommandPath
 
-NumaTopology = namedtuple('NumaTopology',
-                          ['topology', 'distances', 'cpu_topology',
-                           'cpu_info', 'core_cpus'])
-CpuTopology = namedtuple('CpuTopology',
-                         ['sockets', 'cores', 'threads', 'online_cpus'])
-CpuInfo = namedtuple('CpuInfo',
-                     ['cpu_id', 'numa_cell_id', 'socket_id', 'die_id',
-                      'core_id'])
+NumaTopology = namedtuple(
+    'NumaTopology',
+    ['topology', 'distances', 'cpu_topology', 'cpu_info', 'core_cpus'],
+)
+CpuTopology = namedtuple(
+    'CpuTopology', ['sockets', 'cores', 'threads', 'online_cpus']
+)
+CpuInfo = namedtuple(
+    'CpuInfo', ['cpu_id', 'numa_cell_id', 'socket_id', 'die_id', 'core_id']
+)
 
 
 _SYSCTL = CommandPath("sysctl", "/sbin/sysctl", "/usr/sbin/sysctl")
@@ -134,8 +136,10 @@ def memory_by_cell(index):
 
 
 def pages_by_cell(cell, index):
-    pages = {int(page.get('size')): {'totalPages': page.text}
-             for page in cell.findall('pages')}
+    pages = {
+        int(page.get('size')): {'totalPages': page.text}
+        for page in cell.findall('pages')
+    }
     return pages
 
 
@@ -146,10 +150,10 @@ def free_pages_by_cell(page_sizes, numa_index):
     if page_sizes:
         conn = libvirtconnection.get()
         libvirt_freepages = conn.getFreePages(page_sizes, numa_index, 1)
-        free_pages = \
-            {int(page_size): {'freePages': free_pages}
-             for page_size, free_pages in
-                libvirt_freepages[numa_index].items()}
+        free_pages = {
+            int(page_size): {'freePages': free_pages}
+            for page_size, free_pages in libvirt_freepages[numa_index].items()
+        }
     return free_pages
 
 
@@ -196,8 +200,11 @@ def update():
         for cpu in cell.findall('cpus/cpu'):
             cpu_id = int(cpu.get('id'))
             topology[cell_id]['cpus'].append(cpu_id)
-            if cpu.get('siblings') and cpu.get('socket_id') and \
-                    cpu.get('core_id'):
+            if (
+                cpu.get('siblings')
+                and cpu.get('socket_id')
+                and cpu.get('core_id')
+            ):
                 core_id = int(cpu.get('core_id'))
                 die_id = int(cpu.get('die_id', 0))
                 socket_id = int(cpu.get('socket_id'))
@@ -205,17 +212,23 @@ def update():
                 sockets.add(socket_id)
                 siblings.add(cpu.get('siblings'))
                 cpu_info.append(
-                    CpuInfo(cpu_id=cpu_id, numa_cell_id=int(cell_id),
-                            socket_id=socket_id, die_id=die_id,
-                            core_id=core_id))
+                    CpuInfo(
+                        cpu_id=cpu_id,
+                        numa_cell_id=int(cell_id),
+                        socket_id=socket_id,
+                        die_id=die_id,
+                        core_id=core_id,
+                    )
+                )
                 core_cpus[(socket_id, die_id, core_id)].add(cpu_id)
 
         if cell.find('distances') is not None:
             for sibling in cell.find('distances').findall('sibling'):
                 distances[cell_id].append(int(sibling.get('value')))
 
-    cpu_topology = CpuTopology(len(sockets), len(siblings),
-                               len(online_cpus), online_cpus)
+    cpu_topology = CpuTopology(
+        len(sockets), len(siblings), len(online_cpus), online_cpus
+    )
 
     if not cells:
         hostcputop = caps.find('.host/cpu/topology')
@@ -227,9 +240,11 @@ def update():
 
             online_cpus = taskset.online_cpus()
 
-            cpu_topology = CpuTopology(socketnum, corenum,
-                                       threadnum, online_cpus)
+            cpu_topology = CpuTopology(
+                socketnum, corenum, threadnum, online_cpus
+            )
 
-    _cache.numa = NumaTopology(topology, distances, cpu_topology, cpu_info,
-                               core_cpus)
+    _cache.numa = NumaTopology(
+        topology, distances, cpu_topology, cpu_info, core_cpus
+    )
     _cache.capabilities = capabilities

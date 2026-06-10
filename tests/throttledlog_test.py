@@ -40,8 +40,9 @@ class TestThrottledLogging(VdsmTestCase):
         throttledlog.throttle('test', 3)
         for i in range(5):
             throttledlog.debug('test', "Cycle: %s", i)
-        self.assertEqual(throttledlog._logger.messages,
-                         ['Cycle: 0', 'Cycle: 3'])
+        self.assertEqual(
+            throttledlog._logger.messages, ['Cycle: 0', 'Cycle: 3']
+        )
 
     @MonkeyPatch(throttledlog, "_logger", FakeLogger(logging.INFO))
     def test_no_logging(self):
@@ -55,8 +56,10 @@ class TestThrottledLogging(VdsmTestCase):
         throttledlog.throttle('test', 3)
         for i in range(5):
             throttledlog.debug('other', "Cycle: %s", i)
-        self.assertEqual(throttledlog._logger.messages,
-                         ['Cycle: %s' % (i,) for i in range(5)])
+        self.assertEqual(
+            throttledlog._logger.messages,
+            ['Cycle: %s' % (i,) for i in range(5)],
+        )
 
     @MonkeyPatch(throttledlog, "_logger", FakeLogger(logging.DEBUG))
     @MonkeyPatch(throttledlog, "monotonic_time", FakeTime())
@@ -65,13 +68,23 @@ class TestThrottledLogging(VdsmTestCase):
         for i in range(12):
             throttledlog.debug('test', "Cycle: %s", i)
             throttledlog.monotonic_time.time += 1.0
-        self.assertEqual(throttledlog._logger.messages,
-                         ['Cycle: %s' % (i,) for i in (0, 7, 10,)])
+        self.assertEqual(
+            throttledlog._logger.messages,
+            [
+                'Cycle: %s' % (i,)
+                for i in (
+                    0,
+                    7,
+                    10,
+                )
+            ],
+        )
 
     @MonkeyPatch(throttledlog, "_logger", FakeLogger(logging.WARNING))
     def test_logging_warning(self):
         throttledlog.throttle('test', 4)
         for i in range(7):
             throttledlog.warning('test', "Cycle: %s", i)
-        self.assertEqual(throttledlog._logger.messages,
-                         ['Cycle: 0', 'Cycle: 4'])
+        self.assertEqual(
+            throttledlog._logger.messages, ['Cycle: 0', 'Cycle: 4']
+        )

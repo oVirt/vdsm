@@ -46,7 +46,8 @@ def copyToImage(dstImgPath, methodArgs):
 
     log.info("Copy to image %s", dstImgPath)
     with utils.stopwatch(
-            "Copy %s bytes" % totalSize, level=logging.INFO, log=log):
+        "Copy %s bytes" % totalSize, level=logging.INFO, log=log
+    ):
         p = commands.start(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         with commands.terminating(p):
             _copyData(fileObj, p.stdin, totalSize)
@@ -77,7 +78,8 @@ def copyFromImage(dstImgPath, methodArgs):
 
     log.info("Copy from image %s", dstImgPath)
     with utils.stopwatch(
-            "Copy %s bytes" % total_size, level=logging.INFO, log=log):
+        "Copy %s bytes" % total_size, level=logging.INFO, log=log
+    ):
         p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         with commands.terminating(p):
             _copyData(p.stdout, fileObj, bytes_left)
@@ -96,8 +98,10 @@ def _copyData(inFile, outFile, totalSize):
             raise se.MiscFileReadException(error)
 
         if not data:
-            error = "partial data %s from %s" % \
-                    (bytesToRead - totalSize, bytesToRead)
+            error = "partial data %s from %s" % (
+                bytesToRead - totalSize,
+                bytesToRead,
+            )
             log.error(error)
             raise se.MiscFileReadException(error)
 

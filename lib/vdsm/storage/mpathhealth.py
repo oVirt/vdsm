@@ -31,9 +31,9 @@ class Monitor(object):
         self._thread = None
         self._done = threading.Event()
         self._interval = interval
-        self._thread = concurrent.thread(self._run,
-                                         name="mpathhealth",
-                                         log=log)
+        self._thread = concurrent.thread(
+            self._run, name="mpathhealth", log=log
+        )
         # Used for synchronization during testing
         self.callback = _NULL_CALLBACK
 
@@ -98,11 +98,17 @@ class Monitor(object):
                     log.warning(
                         "Multipath device %r has failed paths %r, no valid "
                         "paths",
-                        guid, failed_paths)
+                        guid,
+                        failed_paths,
+                    )
                 else:
-                    log.info("Multipath device %r has failed paths %r,"
-                             " %r valid paths",
-                             guid, failed_paths, valid_paths)
+                    log.info(
+                        "Multipath device %r has failed paths %r,"
+                        " %r valid paths",
+                        guid,
+                        failed_paths,
+                        valid_paths,
+                    )
         # Call to devicemapper.multipath_status() can block,
         # so we update the report status dictionary only when we are done.
         with self._lock:

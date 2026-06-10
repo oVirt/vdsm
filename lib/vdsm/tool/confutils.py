@@ -84,10 +84,7 @@ def get_persisted_files(files):
     """
     get files where vdsm is expected to add a section.
     """
-    return [
-        cfile['path'] for cfile in files.values()
-        if cfile['persisted']
-    ]
+    return [cfile['path'] for cfile in files.values() if cfile['persisted']]
 
 
 def open_config(path, conf_version):

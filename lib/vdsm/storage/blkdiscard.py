@@ -27,7 +27,8 @@ def discard(device):
     """
     cmd = [
         _blkdiscard.cmd,
-        "--step", "%d" % OPTIMAL_DISCARD_STEP,
+        "--step",
+        "%d" % OPTIMAL_DISCARD_STEP,
     ]
     cmd.append(device)
     commands.run(cmd)
@@ -42,10 +43,14 @@ def zeroout_operation(device, size):
         device (str): The path to the block device to zero.
         size (int): The number of bytes to zero.
     """
-    return operation.Command([
-        _blkdiscard.cmd,
-        "--zeroout",
-        "--step", "%d" % OPTIMAL_DISCARD_STEP,
-        "--length", "%d" % size,
-        device,
-    ])
+    return operation.Command(
+        [
+            _blkdiscard.cmd,
+            "--zeroout",
+            "--step",
+            "%d" % OPTIMAL_DISCARD_STEP,
+            "--length",
+            "%d" % size,
+            device,
+        ]
+    )

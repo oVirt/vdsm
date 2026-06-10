@@ -59,7 +59,8 @@ def main():
     args = parse_args()
     logging.basicConfig(
         level=logging.DEBUG,
-        format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s")
+        format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s",
+    )
     old_master = args.old_master
     new_master = args.new_master
 
@@ -72,13 +73,20 @@ def main():
             master_ver = int(pool_info['info']['master_ver']) + 1
 
         for i in range(1, args.iterations + 1):
-            log.info("Cycle %s/%s, switching master from %s to %s version %s",
-                     i, args.iterations, old_master, new_master, master_ver)
+            log.info(
+                "Cycle %s/%s, switching master from %s to %s version %s",
+                i,
+                args.iterations,
+                old_master,
+                new_master,
+                master_ver,
+            )
             task_id = cli.StoragePool.switchMaster(
                 storagepoolID=args.pool_id,
                 oldMasterUUID=old_master,
                 newMasterUUID=new_master,
-                masterVersion=master_ver)
+                masterVersion=master_ver,
+            )
             log.info("Task id: %s", task_id)
 
             # Example Task.getStatus response:
@@ -101,25 +109,33 @@ def main():
             pool_info = cli.StoragePool.getInfo(storagepoolID=args.pool_id)
             if pool_info['info']['master_ver'] != master_ver:
                 raise RuntimeError(
-                    "Unexpected master_ver value: expecting: {} actual: {}"
-                    .format(master_ver, pool_info['info']['master_ver']))
+                    "Unexpected master_ver value: expecting: {} actual: {}".format(
+                        master_ver, pool_info['info']['master_ver']
+                    )
+                )
 
             if pool_info['info']['master_uuid'] != new_master:
                 raise RuntimeError(
-                    "Unexpected master_uuid value: expecting: {} actual: {}"
-                    .format(new_master, pool_info['info']['master_uuid']))
+                    "Unexpected master_uuid value: expecting: {} actual: {}".format(
+                        new_master, pool_info['info']['master_uuid']
+                    )
+                )
 
             new_master_info = cli.StorageDomain.getInfo(
-                storagedomainID=new_master)
+                storagedomainID=new_master
+            )
             if new_master_info['role'] != "Master":
                 raise RuntimeError(
-                    "Role for new master domain didn't change to Master")
+                    "Role for new master domain didn't change to Master"
+                )
 
             old_master_info = cli.StorageDomain.getInfo(
-                storagedomainID=old_master)
+                storagedomainID=old_master
+            )
             if old_master_info['role'] != "Regular":
                 raise RuntimeError(
-                    "Role for old master domain didn't change to Regular")
+                    "Role for old master domain didn't change to Regular"
+                )
 
             log.info("Master switched successfully")
             new_master, old_master = old_master, new_master
@@ -133,30 +149,35 @@ def parse_args():
         "--pool-id",
         type=str,
         required=True,
-        help="The storage pool associated with the storage domains")
+        help="The storage pool associated with the storage domains",
+    )
 
     p.add_argument(
         "--old-master",
         type=str,
         required=True,
-        help="The current master storage domain UUID")
+        help="The current master storage domain UUID",
+    )
 
     p.add_argument(
         "--new-master",
         type=str,
         required=True,
-        help="The new master storage domain UUID")
+        help="The new master storage domain UUID",
+    )
 
     p.add_argument(
         "--master-version",
         type=int,
-        help="The new master's version (default is current version + 1)")
+        help="The new master's version (default is current version + 1)",
+    )
 
     p.add_argument(
         "--iterations",
         default=1,
         type=int,
-        help="The iterations number for switching the master (default is 1)")
+        help="The iterations number for switching the master (default is 1)",
+    )
 
     return p.parse_args()
 

@@ -73,7 +73,8 @@ class MonitorCallback(object):
 @pytest.fixture
 def tmp_monitor(monkeypatch):
     monkeypatch.setattr(
-        devicemapper, "multipath_status", FakeMultipathStatus())
+        devicemapper, "multipath_status", FakeMultipathStatus()
+    )
     monitor = mpathhealth.Monitor(MONITOR_INTERVAL)
     monitor.callback = MonitorCallback()
     yield monitor
@@ -92,19 +93,13 @@ def test_no_info(tmp_monitor):
 
 def test_failed_path(tmp_monitor):
     devicemapper.multipath_status.out = {
-        "uuid-1": [
-            PathStatus("8:11", "F"),
-            PathStatus("6:66", "A")
-        ]
+        "uuid-1": [PathStatus("8:11", "F"), PathStatus("6:66", "A")]
     }
     tmp_monitor.start()
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-1": {
-            "failed_paths": ["8:11"],
-            "valid_paths": 1
-        }
+        "uuid-1": {"failed_paths": ["8:11"], "valid_paths": 1}
     }
 
 
@@ -117,15 +112,10 @@ def test_removed_uuid(tmp_monitor):
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-1": {
-            "failed_paths": ["8:11"],
-            "valid_paths": 0
-        }
+        "uuid-1": {"failed_paths": ["8:11"], "valid_paths": 0}
     }
 
-    devicemapper.multipath_status.out = {
-        "uuid-2": [PathStatus("6:66", "A")]
-    }
+    devicemapper.multipath_status.out = {"uuid-2": [PathStatus("6:66", "A")]}
     tmp_monitor.callback.resume()
     tmp_monitor.callback.wait()
 
@@ -137,61 +127,43 @@ def test_removed_device(tmp_monitor):
         "uuid-1": [
             PathStatus("8:44", "A"),
             PathStatus("8:11", "A"),
-            PathStatus("8:32", "F")
+            PathStatus("8:32", "F"),
         ]
     }
     tmp_monitor.start()
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-1": {
-            "failed_paths": ["8:32"],
-            "valid_paths": 2
-        }
+        "uuid-1": {"failed_paths": ["8:32"], "valid_paths": 2}
     }
 
     devicemapper.multipath_status.out = {
-        "uuid-1": [
-            PathStatus("8:44", "A"),
-            PathStatus("8:32", "F")
-        ]
+        "uuid-1": [PathStatus("8:44", "A"), PathStatus("8:32", "F")]
     }
     tmp_monitor.callback.resume()
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-1": {
-            "failed_paths": ["8:32"],
-            "valid_paths": 1
-        }
+        "uuid-1": {"failed_paths": ["8:32"], "valid_paths": 1}
     }
 
 
 def test_multiple_mpath(tmp_monitor):
 
     devicemapper.multipath_status.out = {
-        "uuid-1": [
-            PathStatus("8:11", "F"),
-            PathStatus("6:66", "A")
-        ],
+        "uuid-1": [PathStatus("8:11", "F"), PathStatus("6:66", "A")],
         "uuid-2": [
             PathStatus("7:12", "A"),
             PathStatus("8:32", "F"),
-            PathStatus("12:16", "A")
-        ]
+            PathStatus("12:16", "A"),
+        ],
     }
     tmp_monitor.start()
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-2": {
-            "failed_paths": ["8:32"],
-            "valid_paths": 2
-        },
-        "uuid-1": {
-            "failed_paths": ["8:11"],
-            "valid_paths": 1
-        }
+        "uuid-2": {"failed_paths": ["8:32"], "valid_paths": 2},
+        "uuid-1": {"failed_paths": ["8:11"], "valid_paths": 1},
     }
 
 
@@ -200,59 +172,44 @@ def test_reinstated(tmp_monitor):
         "uuid-1": [
             PathStatus("8:11", "A"),
             PathStatus("8:32", "F"),
-            PathStatus("6:66", "F")
+            PathStatus("6:66", "F"),
         ]
     }
     tmp_monitor.start()
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-1": {
-            "failed_paths": ["6:66", "8:32"],
-            "valid_paths": 1
-        }
+        "uuid-1": {"failed_paths": ["6:66", "8:32"], "valid_paths": 1}
     }
 
     devicemapper.multipath_status.out = {
         "uuid-1": [
             PathStatus("8:11", "A"),
             PathStatus("8:32", "A"),
-            PathStatus("6:66", "F")
+            PathStatus("6:66", "F"),
         ]
     }
     tmp_monitor.callback.resume()
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-1": {
-            "failed_paths": ["6:66"],
-            "valid_paths": 2
-        }
+        "uuid-1": {"failed_paths": ["6:66"], "valid_paths": 2}
     }
 
 
 def test_reinstated_last_failed(tmp_monitor):
     devicemapper.multipath_status.out = {
-        "uuid-1": [
-            PathStatus("8:11", "A"),
-            PathStatus("6:66", "F")
-        ]
+        "uuid-1": [PathStatus("8:11", "A"), PathStatus("6:66", "F")]
     }
     tmp_monitor.start()
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-1": {
-            "failed_paths": ["6:66"],
-            "valid_paths": 1
-        }
+        "uuid-1": {"failed_paths": ["6:66"], "valid_paths": 1}
     }
 
     devicemapper.multipath_status.out = {
-        "uuid-1": [
-            PathStatus("8:11", "A"),
-            PathStatus("6:66", "A")
-        ]
+        "uuid-1": [PathStatus("8:11", "A"), PathStatus("6:66", "A")]
     }
     tmp_monitor.callback.resume()
     tmp_monitor.callback.wait()
@@ -266,30 +223,16 @@ def test_error(tmp_monitor):
         raise RuntimeError
 
     def status_before_fail():
-        return {
-            "uuid-1": [
-                PathStatus("8:11", "A"),
-                PathStatus("6:66", "F")
-            ]
-        }
+        return {"uuid-1": [PathStatus("8:11", "A"), PathStatus("6:66", "F")]}
 
     def status_after_fail():
         return {
-            "uuid-1": [
-                PathStatus("8:11", "A"),
-                PathStatus("6:66", "A")
-            ],
-            "uuid-2": [
-                PathStatus("3:34", "F"),
-                PathStatus("7:17", "A")
-            ]
+            "uuid-1": [PathStatus("8:11", "A"), PathStatus("6:66", "A")],
+            "uuid-2": [PathStatus("3:34", "F"), PathStatus("7:17", "A")],
         }
 
     initial_health_status = {
-        "uuid-1": {
-            "failed_paths": ["6:66"],
-            "valid_paths": 1
-        }
+        "uuid-1": {"failed_paths": ["6:66"], "valid_paths": 1}
     }
 
     # Testing working cycle
@@ -313,8 +256,5 @@ def test_error(tmp_monitor):
     tmp_monitor.callback.wait()
 
     assert tmp_monitor.status() == {
-        "uuid-2": {
-            "failed_paths": ["3:34"],
-            "valid_paths": 1
-        }
+        "uuid-2": {"failed_paths": ["3:34"], "valid_paths": 1}
     }

@@ -25,7 +25,7 @@ from vdsm.storage import fileUtils
 from vdsm.storage import misc
 
 from monkeypatch import MonkeyPatch
-from . marks import requires_root
+from .marks import requires_root
 
 
 EXT_DD = "/bin/dd"
@@ -157,7 +157,7 @@ class TestParseHumanReadableSize(VdsmTestCase):
         for i in range(1, 1000):
             for schar, power in [("T", 40), ("G", 30), ("M", 20), ("K", 10)]:
                 expected = misc.parseHumanReadableSize("%d%s" % (i, schar))
-                self.assertEqual(expected, (2 ** power) * i)
+                self.assertEqual(expected, (2**power) * i)
 
     def testInvalidInput(self):
         """
@@ -238,25 +238,30 @@ class TestValidateSize(VdsmTestCase):
 
     @permutations(
         # size, result
-        [("512", 512),
-         ("513", 513),
-         (u"1073741824", 1073741824),
-         ])
+        [
+            ("512", 512),
+            ("513", 513),
+            (u"1073741824", 1073741824),
+        ]
+    )
     def test_valid_size(self, size, result):
         self.assertEqual(misc.validateSize(size, "size"), result)
 
-    @permutations([
-        # size
-        [2097152],  # 1GiB in blocks
-        [1000.14],
-        ["one"],
-        ["nan"],
-        ["3.14"],
-        ["-1"],
-    ])
+    @permutations(
+        [
+            # size
+            [2097152],  # 1GiB in blocks
+            [1000.14],
+            ["one"],
+            ["nan"],
+            ["3.14"],
+            ["-1"],
+        ]
+    )
     def test_invalid_size(self, size):
-        self.assertRaises(misc.se.InvalidParameterException,
-                          misc.validateSize, size, "size")
+        self.assertRaises(
+            misc.se.InvalidParameterException, misc.validateSize, size, "size"
+        )
 
 
 class TestValidateUuid(VdsmTestCase):
@@ -276,36 +281,55 @@ class TestValidateUuid(VdsmTestCase):
         """
         Test that validator detects when a non HEX char is in the input.
         """
-        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                          "Dc08ff668-4072-4191-9fbb-f1c8f2daz333")
+        self.assertRaises(
+            misc.se.InvalidParameterException,
+            misc.validateUUID,
+            "Dc08ff668-4072-4191-9fbb-f1c8f2daz333",
+        )
 
     def testInvalidInputInteger(self):
         """
         Test that validator detects when an integer is in the input.
         """
-        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                          23)
+        self.assertRaises(
+            misc.se.InvalidParameterException, misc.validateUUID, 23
+        )
 
     def testInvalidInputUTF(self):
         """
         Test that validator detects encoded utf-8 is in the input
         """
-        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                          u'\xe4\xbd\xa0\xe5\xa5\xbd')
+        self.assertRaises(
+            misc.se.InvalidParameterException,
+            misc.validateUUID,
+            u'\xe4\xbd\xa0\xe5\xa5\xbd',
+        )
 
     def testWrongLength(self):
         """
         Test that the validator detects when the input is not in the correct
         length
         """
-        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                          "Dc08ff668-4072-4191-9fbb-f1c8f2daa33")
-        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                          "Dc08ff668-4072-4191-9fb-f1c8f2daa333")
-        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                          "Dc08ff68-4072-4191-9fbb-f1c8f2daa333")
-        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                          "Dc08ff668-4072-4191-9fbb-f1c8f2daa3313")
+        self.assertRaises(
+            misc.se.InvalidParameterException,
+            misc.validateUUID,
+            "Dc08ff668-4072-4191-9fbb-f1c8f2daa33",
+        )
+        self.assertRaises(
+            misc.se.InvalidParameterException,
+            misc.validateUUID,
+            "Dc08ff668-4072-4191-9fb-f1c8f2daa333",
+        )
+        self.assertRaises(
+            misc.se.InvalidParameterException,
+            misc.validateUUID,
+            "Dc08ff68-4072-4191-9fbb-f1c8f2daa333",
+        )
+        self.assertRaises(
+            misc.se.InvalidParameterException,
+            misc.validateUUID,
+            "Dc08ff668-4072-4191-9fbb-f1c8f2daa3313",
+        )
 
 
 class TestParseBool(VdsmTestCase):
@@ -338,8 +362,13 @@ class TestValidateDDBytes(VdsmTestCase):
         """
         count = 802
         with tempfile.NamedTemporaryFile() as f:
-            cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
-                   'count=%d' % count]
+            cmd = [
+                EXT_DD,
+                "bs=1",
+                "if=/dev/urandom",
+                'of=%s' % f.name,
+                'count=%d' % count,
+            ]
             rc, out, err = commands.execCmd(cmd)
 
         self.assertTrue(misc.validateDDBytes(err, count))
@@ -350,8 +379,13 @@ class TestValidateDDBytes(VdsmTestCase):
         """
         count = 802
         with tempfile.NamedTemporaryFile() as f:
-            cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
-                   'count=%d' % count]
+            cmd = [
+                EXT_DD,
+                "bs=1",
+                "if=/dev/urandom",
+                'of=%s' % f.name,
+                'count=%d' % count,
+            ]
             rc, out, err = commands.execCmd(cmd)
 
         self.assertFalse(misc.validateDDBytes(err, count + 1))
@@ -360,12 +394,18 @@ class TestValidateDDBytes(VdsmTestCase):
         """
         Test that the method handles wired input.
         """
-        self.assertRaises(misc.se.InvalidParameterException,
-                          misc.validateDDBytes,
-                          ["I AM", "PRETENDING TO", "BE DD"], "BE")
-        self.assertRaises(misc.se.InvalidParameterException,
-                          misc.validateDDBytes,
-                          ["I AM", "PRETENDING TO", "BE DD"], 32)
+        self.assertRaises(
+            misc.se.InvalidParameterException,
+            misc.validateDDBytes,
+            ["I AM", "PRETENDING TO", "BE DD"],
+            "BE",
+        )
+        self.assertRaises(
+            misc.se.InvalidParameterException,
+            misc.validateDDBytes,
+            ["I AM", "PRETENDING TO", "BE DD"],
+            32,
+        )
 
 
 class TestReadBlock(VdsmTestCase):
@@ -404,9 +444,10 @@ class TestReadBlock(VdsmTestCase):
         # Figure out what outcome should be
         timesInSize = int(size / dataLength) + 1
         relOffset = offset % dataLength
-        expectedResultData = (writeData * timesInSize)
-        expectedResultData = (expectedResultData[relOffset:] +
-                              expectedResultData[:relOffset])
+        expectedResultData = writeData * timesInSize
+        expectedResultData = (
+            expectedResultData[relOffset:] + expectedResultData[:relOffset]
+        )
         expectedResultData = expectedResultData[:size]
         block = misc.readblock(path, offset, size)
 
@@ -419,16 +460,26 @@ class TestReadBlock(VdsmTestCase):
         Make sure that we check for invalid (non 512 aligned) offset.
         """
         offset = 513
-        self.assertRaises(misc.se.MiscBlockReadException, misc.readblock,
-                          "/dev/urandom", offset, 512)
+        self.assertRaises(
+            misc.se.MiscBlockReadException,
+            misc.readblock,
+            "/dev/urandom",
+            offset,
+            512,
+        )
 
     def testInvalidSize(self):
         """
         Make sure that we check for invalid (non 512 aligned) size.
         """
         size = 513
-        self.assertRaises(misc.se.MiscBlockReadException, misc.readblock,
-                          "/dev/urandom", 512, size)
+        self.assertRaises(
+            misc.se.MiscBlockReadException,
+            misc.readblock,
+            "/dev/urandom",
+            512,
+            size,
+        )
 
     def testReadingMoreTheFileSize(self):
         """
@@ -442,8 +493,9 @@ class TestReadBlock(VdsmTestCase):
 
         path = self._createTempFile(offset + size - 100, writeData)
 
-        self.assertRaises(misc.se.MiscBlockReadIncomplete, misc.readblock,
-                          path, offset, size)
+        self.assertRaises(
+            misc.se.MiscBlockReadIncomplete, misc.readblock, path, offset, size
+        )
 
         os.unlink(path)
 
@@ -494,8 +546,7 @@ class TestCleanUpDir(VdsmTestCase):
         fileUtils.cleanupdir(baseDir, ignoreErrors=True)
         self.assertTrue(os.path.lexists(baseDir))
 
-        self.assertRaises(RuntimeError, fileUtils.cleanupdir,
-                          baseDir, False)
+        self.assertRaises(RuntimeError, fileUtils.cleanupdir, baseDir, False)
         self.assertTrue(os.path.lexists(baseDir))
 
 
@@ -687,12 +738,16 @@ class TestDynamicBarrier(VdsmTestCase):
         barrier.exit()
 
 
-@pytest.mark.parametrize("check_str,result", [
-    pytest.param(
-        u"The quick brown fox jumps over the lazy dog.", True, id="Ascii"),
-    pytest.param(u"\u05d0", False, id="Unicode"),
-    pytest.param(u"", True, id="Empty"),
-])
+@pytest.mark.parametrize(
+    "check_str,result",
+    [
+        pytest.param(
+            u"The quick brown fox jumps over the lazy dog.", True, id="Ascii"
+        ),
+        pytest.param(u"\u05d0", False, id="Unicode"),
+        pytest.param(u"", True, id="Empty"),
+    ],
+)
 def test_isAscii(check_str, result):
     assert misc.isAscii(check_str) == result
 
@@ -702,13 +757,16 @@ def test_checkBytes():
         misc.isAscii(b"bytes")
 
 
-@pytest.mark.parametrize("length, offset, expected", [
-    (100, 100, (4, 25, 25)),
-    (512, 512, (512, 1, 1)),
-    (1, 1024, (1, 1, 1024)),
-    (10240, 512, (512, 20, 1)),
-    (1, 1, (1, 1, 1)),
-])
+@pytest.mark.parametrize(
+    "length, offset, expected",
+    [
+        (100, 100, (4, 25, 25)),
+        (512, 512, (512, 1, 1)),
+        (1, 1024, (1, 1, 1024)),
+        (10240, 512, (512, 20, 1)),
+        (1, 1, (1, 1, 1)),
+    ],
+)
 def test_align_data(length, offset, expected):
     alignment = misc._alignData(length, offset)
     assert alignment == expected
@@ -724,8 +782,7 @@ def test_walk_skip_dirs(tmpdir):
     include_dir.join("included_file").write("")
 
     include_seen = included_file_seen = False
-    for root, dirs, files in misc.walk(
-            str(top), skip=(str(skip_dir),)):
+    for root, dirs, files in misc.walk(str(top), skip=(str(skip_dir),)):
         assert "skip" not in dirs
         assert "skipped_file" not in files
         if "include" in dirs:

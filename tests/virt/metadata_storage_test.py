@@ -10,6 +10,7 @@ from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
 from testlib import XMLTestCase
+
 # ugly, temporary hack until we need to keep around those tests
 from .metadata_test import FakeDomain
 
@@ -19,7 +20,13 @@ from .metadata_test import FakeDomain
 # and have no special meaning
 
 
-_TestData = namedtuple('_TestData', ('conf', 'metadata_xml',))
+_TestData = namedtuple(
+    '_TestData',
+    (
+        'conf',
+        'metadata_xml',
+    ),
+)
 
 
 _CDROM_DATA = _TestData(
@@ -29,7 +36,7 @@ _CDROM_DATA = _TestData(
             'controller': '0',
             'target': '0',
             'type': 'drive',
-            'unit': '0'
+            'unit': '0',
         },
         'device': 'cdrom',
         'deviceId': 'e59c985c-46c2-4489-b355-a6f374125eb9',
@@ -77,7 +84,7 @@ _CDROM_PAYLOAD_DATA = _TestData(
                     'openstack/content/0000': 'something',
                     'openstack/latest/meta_data.json': 'something',
                     'openstack/latest/user_data': 'something',
-                }
+                },
             }
         },
         'readonly': 'true',
@@ -121,7 +128,7 @@ _CDROM_CHANGE_DATA = _TestData(
             'imageID': '89f05c7d-b961-4935',
             'poolID': '13345997-b94f-42dd',
             'volumeID': '626a493f-5214-4337',
-        }
+        },
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -147,7 +154,7 @@ _DISK_DATA = _TestData(
             'domain': '0x0000',
             'function': '0x0',
             'slot': '0x05',
-            'type': 'pci'
+            'type': 'pci',
         },
         'bootOrder': '1',
         'device': 'disk',
@@ -164,14 +171,16 @@ _DISK_DATA = _TestData(
         'shared': 'false',
         'type': 'disk',
         'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
-        'volumeChain': [{
-            'domainID': 'c578566d-bc61-420c-8f1e-8dfa0a18efd5',
-            'imageID': '66441539-f7ac-4946-8a25-75e422f939d4',
-            'leaseOffset': 109051904,
-            'leasePath': '/dev/UUID/leases',
-            'path': '/rhev/data-center/omitted/for/brevity',
-            'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
-        }],
+        'volumeChain': [
+            {
+                'domainID': 'c578566d-bc61-420c-8f1e-8dfa0a18efd5',
+                'imageID': '66441539-f7ac-4946-8a25-75e422f939d4',
+                'leaseOffset': 109051904,
+                'leasePath': '/dev/UUID/leases',
+                'path': '/rhev/data-center/omitted/for/brevity',
+                'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
+            }
+        ],
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -220,7 +229,7 @@ _DISK_DATA_CUSTOM = _TestData(
             'domain': '0x0000',
             'function': '0x0',
             'slot': '0x04',
-            'type': 'pci'
+            'type': 'pci',
         },
         'bootOrder': '2',
         'device': 'disk',
@@ -237,7 +246,7 @@ _DISK_DATA_CUSTOM = _TestData(
         'shared': 'false',
         'type': 'disk',
         'volumeID': '845e57e7-3b16-4cf3-a812-7175f956d2bb',
-        'vm_custom': {'viodiskcache': 'writethrough'}
+        'vm_custom': {'viodiskcache': 'writethrough'},
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -287,7 +296,7 @@ _DISK_DATA_SGIO = _TestData(
             'controller': '0',
             'type': 'drive',
             'target': '0',
-            'unit': '0'
+            'unit': '0',
         },
         'device': 'lun',
         'discard': False,
@@ -386,7 +395,7 @@ _DISK_DATA_NETWORK = _TestData(
             </hostInfo>
         </hosts>
     </device>
-    </vm>"""
+    </vm>""",
 )
 
 _DISK_DATA_REPLICA = _TestData(
@@ -408,7 +417,7 @@ _DISK_DATA_REPLICA = _TestData(
             'format': 'cow',
             'path': '/path/to/replica',
             'propagateErrors': 'off',
-        }
+        },
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -434,7 +443,7 @@ _DISK_DATA_REPLICA = _TestData(
             <viodiskcache>writethrough</viodiskcache>
         </vm_custom>
     </device>
-    </vm>"""
+    </vm>""",
 )
 
 
@@ -481,7 +490,8 @@ class DescriptorStorageMetadataTests(XMLTestCase):
         dev = vmxml.find_first(root, 'device')
         vmxml.append_child(dev, etree_child=xmlutils.fromstring(xml_snippet))
         data = _TestData(
-            copy.deepcopy(_DISK_DATA.conf), xmlutils.tostring(root))
+            copy.deepcopy(_DISK_DATA.conf), xmlutils.tostring(root)
+        )
         self._check_drive_from_metadata_xml(data)
 
     def test_disk_ignore_volumeinfo_to_metadata_xml(self):
@@ -526,10 +536,7 @@ class DescriptorStorageMetadataTests(XMLTestCase):
             dev.update(data.conf)
         dom = FakeDomain()
         desc.dump(dom)
-        self.assertXMLEqual(
-            list(dom.xml.values())[0],
-            data.metadata_xml
-        )
+        self.assertXMLEqual(list(dom.xml.values())[0], data.metadata_xml)
 
 
 def _get_drive_conf_identifying_attrs(conf):

@@ -61,8 +61,9 @@ class CheckService(object):
     def __init__(self):
         self._lock = threading.Lock()
         self._loop = asyncevent.EventLoop()
-        self._thread = concurrent.thread(self._loop.run_forever,
-                                         name="check/loop")
+        self._thread = concurrent.thread(
+            self._loop.run_forever, name="check/loop"
+        )
         self._checkers = {}
 
     def start(self):
@@ -103,8 +104,9 @@ class CheckService(object):
         with self._lock:
             if path in self._checkers:
                 raise RuntimeError("Already checking path %r" % path)
-            checker = DirectioChecker(self._loop, path, complete,
-                                      interval=interval)
+            checker = DirectioChecker(
+                self._loop, path, complete, interval=interval
+            )
             self._checkers[path] = checker
         self._loop.call_soon_threadsafe(checker.start)
 
@@ -259,15 +261,21 @@ class DirectioChecker(object):
         assert self._state is RUNNING
         if self._proc:
             if self._completed:
-                _log.warning("Checker %r is blocked for %.2f seconds",
-                             self._path, self._loop.time() - self._check_time)
+                _log.warning(
+                    "Checker %r is blocked for %.2f seconds",
+                    self._path,
+                    self._loop.time() - self._check_time,
+                )
             else:
                 self._read_timeout()
             return
         self._completed = False
         self._check_time = self._loop.time()
-        _log.debug("START check %r (delay=%.2f)",
-                   self._path, self._check_time - self._looper.deadline)
+        _log.debug(
+            "START check %r (delay=%.2f)",
+            self._path,
+            self._check_time - self._looper.deadline,
+        )
         try:
             self._start_process()
         except Exception as e:
@@ -279,14 +287,21 @@ class DirectioChecker(object):
         Starts a dd process performing direct I/O to path, reading the process
         stderr. When stderr has closed, _read_completed will be called.
         """
-        cmd = [constants.EXT_DD, "if=%s" % self._path, "of=/dev/null",
-               "bs=4096", "count=1", "iflag=direct"]
+        cmd = [
+            constants.EXT_DD,
+            "if=%s" % self._path,
+            "of=/dev/null",
+            "bs=4096",
+            "count=1",
+            "iflag=direct",
+        ]
         cmd = cmdutils.wrap_command(cmd)
         self._proc = subprocess.Popen(
-            cmd, stdin=None, stdout=None,
-            stderr=subprocess.PIPE)
+            cmd, stdin=None, stdout=None, stderr=subprocess.PIPE
+        )
         self._reader = self._loop.create_dispatcher(
-            asyncevent.BufferedReader, self._proc.stderr, self._read_completed)
+            asyncevent.BufferedReader, self._proc.stderr, self._read_completed
+        )
 
     def _read_timeout(self):
         """
@@ -296,10 +311,12 @@ class DirectioChecker(object):
         assert self._state is not IDLE
         self._completed = True
         elapsed = self._loop.time() - self._check_time
-        _log.debug("FINISH check %r timeout (elapsed=%.02f)",
-                   self._path, elapsed)
-        result = CheckResult(self._path, 1, "Read timeout", self._check_time,
-                             elapsed)
+        _log.debug(
+            "FINISH check %r timeout (elapsed=%.02f)", self._path, elapsed
+        )
+        result = CheckResult(
+            self._path, 1, "Read timeout", self._check_time, elapsed
+        )
         try:
             self._complete(result)
         except Exception:
@@ -324,8 +341,9 @@ class DirectioChecker(object):
         # About 95% of runs, the process has terminated at this point. If not,
         # start the reaper to wait for it.
         if rc is None:
-            self._reaper = asyncevent.Reaper(self._loop, self._proc,
-                                             self._check_completed)
+            self._reaper = asyncevent.Reaper(
+                self._loop, self._proc, self._check_completed
+            )
             return
         self._check_completed(rc)
 
@@ -343,19 +361,19 @@ class DirectioChecker(object):
             return
         self._completed = True
         elapsed = self._loop.time() - self._check_time
-        _log.debug("FINISH check %r (rc=%s, elapsed=%.02f)",
-                   self._path, rc, elapsed)
-        result = CheckResult(self._path, rc, self._err, self._check_time,
-                             elapsed)
+        _log.debug(
+            "FINISH check %r (rc=%s, elapsed=%.02f)", self._path, rc, elapsed
+        )
+        result = CheckResult(
+            self._path, rc, self._err, self._check_time, elapsed
+        )
         try:
             self._complete(result)
         except Exception:
             _log.exception("Unhandled error in complete callback")
 
     def __repr__(self):
-        info = [self.__class__.__name__,
-                self._path,
-                self._state]
+        info = [self.__class__.__name__, self._path, self._state]
         if self._state is RUNNING:
             info.append("next_check=%.2f" % self._looper.deadline)
         return "<%s at 0x%x>" % (" ".join(info), id(self))
@@ -382,8 +400,9 @@ class CheckResult(object):
         stats = self.err.splitlines()[-1]
         match = self._PATTERN.match(stats)
         if not match:
-            raise exception.MiscFileReadException(self.path,
-                                                  "no match: %r" % stats)
+            raise exception.MiscFileReadException(
+                self.path, "no match: %r" % stats
+            )
         seconds = match.group(1)
         try:
             return float(seconds)
@@ -392,5 +411,11 @@ class CheckResult(object):
 
     def __repr__(self):
         return "<%s path=%s rc=%d err=%r time=%.2f elapsed=%.2f at 0x%x>" % (
-            self.__class__.__name__, self.path, self.rc, self.err, self.time,
-            self.elapsed, id(self))
+            self.__class__.__name__,
+            self.path,
+            self.rc,
+            self.err,
+            self.time,
+            self.elapsed,
+            id(self),
+        )

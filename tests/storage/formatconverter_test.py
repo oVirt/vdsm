@@ -16,9 +16,9 @@ from vdsm.storage import sd
 from vdsm.storage.formatconverter import _v3_reset_meta_volsize
 from vdsm.storage.sdc import sdCache
 
-from . storagetestlib import fake_volume
-from . constants import CLEARED_VOLUME_METADATA
-from . marks import requires_root
+from .storagetestlib import fake_volume
+from .constants import CLEARED_VOLUME_METADATA
+from .marks import requires_root
 
 # This metadata is missing required keys (DOMAIN, VOLTYPE, LEGALITY).
 INVALID_VOLUME_METADATA = b"""\
@@ -31,7 +31,9 @@ IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
 PUUID=00000000-0000-0000-0000-000000000000
 TYPE=PREALLOCATED
 EOF
-""".ljust(sc.METADATA_SIZE, b"\0")
+""".ljust(
+    sc.METADATA_SIZE, b"\0"
+)
 
 
 @pytest.fixture(params=[sc.RAW_FORMAT, sc.COW_FORMAT])
@@ -65,7 +67,8 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
         hostId=1,
         imageRepo=dom,
         isMsd=False,
-        targetFormat='4')
+        targetFormat='4',
+    )
 
     # LocalFS do not support external leases, so the only change is the
     # version.
@@ -73,8 +76,9 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
 
 
 @pytest.mark.parametrize("src_version", [3, 4])
-def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
-                               fake_rescan, fake_task, src_version):
+def test_convert_to_v5_localfs(
+    tmpdir, tmp_repo, tmp_db, fake_access, fake_rescan, fake_task, src_version
+):
     dom = tmp_repo.create_localfs_domain(name="domain", version=src_version)
 
     # Create some volumes in v4 format.
@@ -88,7 +92,8 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
             volFormat=sc.COW_FORMAT,
-            volUUID=str(uuid.uuid4()))
+            volUUID=str(uuid.uuid4()),
+        )
 
     # Record domain and volumes metadata before conversion.
     old_dom_md = dom.getMetadata()
@@ -109,7 +114,8 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
-        volUUID=vol_id)
+        volUUID=vol_id,
+    )
 
     partly_deleted_vol = dom.produceVolume(img_id, vol_id)
     meta_path = partly_deleted_vol.getMetaVolumePath()
@@ -131,7 +137,8 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
-        volUUID=vol_id)
+        volUUID=vol_id,
+    )
 
     invalid_md_vol = dom.produceVolume(img_id, vol_id)
     meta_path = invalid_md_vol.getMetaVolumePath()
@@ -150,7 +157,8 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
         hostId=1,
         imageRepo=dom,
         isMsd=False,
-        targetFormat='5')
+        targetFormat='5',
+    )
 
     # Verify changes in domain metadata.
 
@@ -192,9 +200,16 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
 @requires_root
 @pytest.mark.root
 @pytest.mark.parametrize("src_version", [3, 4])
-def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
-                             fake_rescan, fake_task, fake_sanlock,
-                             src_version):
+def test_convert_to_v5_block(
+    tmpdir,
+    tmp_repo,
+    tmp_storage,
+    tmp_db,
+    fake_rescan,
+    fake_task,
+    fake_sanlock,
+    src_version,
+):
     sd_uuid = str(uuid.uuid4())
 
     dev = tmp_storage.create_device(20 * GiB)
@@ -207,7 +222,8 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         domClass=sd.DATA_DOMAIN,
         vgUUID=vg.uuid,
         version=src_version,
-        storageType=sd.ISCSI_DOMAIN)
+        storageType=sd.ISCSI_DOMAIN,
+    )
 
     sdCache.knownSDs[sd_uuid] = blockSD.findDomain
     sdCache.manuallyAddDomain(dom)
@@ -229,7 +245,8 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
             volFormat=sc.COW_FORMAT,
-            volUUID=str(uuid.uuid4()))
+            volUUID=str(uuid.uuid4()),
+        )
 
     # Record domain and volumes metadata before conversion.
     old_dom_md = dom.getMetadata()
@@ -250,7 +267,8 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
-        volUUID=vol_id)
+        volUUID=vol_id,
+    )
 
     partly_deleted_vol = dom.produceVolume(img_id, vol_id)
     slot = partly_deleted_vol.getMetadataId()[1]
@@ -271,7 +289,8 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
-        volUUID=vol_id)
+        volUUID=vol_id,
+    )
 
     invalid_md_vol = dom.produceVolume(img_id, vol_id)
     slot = invalid_md_vol.getMetadataId()[1]
@@ -289,7 +308,8 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         hostId=1,
         imageRepo=dom,
         isMsd=False,
-        targetFormat='5')
+        targetFormat='5',
+    )
 
     # Verify changes in domain metadata.
 

@@ -108,7 +108,7 @@ def translate_linux_osinfo(os_info):
             'distribution': os_info[prefix + 'name'],
             'version': os_info[prefix + 'version-id'],
             'codename': os_info[prefix + 'variant'],
-        }
+        },
     }
 
 
@@ -148,7 +148,7 @@ def translate_windows_osinfo(os_info):
             'distribution': '',
             'version': os_info[prefix + 'kernel-version'],
             'codename': os_info[prefix + 'pretty-name'],
-        }
+        },
     }
 
 

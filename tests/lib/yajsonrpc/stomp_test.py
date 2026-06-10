@@ -4,10 +4,12 @@
 import queue
 from uuid import uuid4
 
-from testlib import VdsmTestCase as TestCaseBase, \
-    expandPermutations, \
-    permutations, \
-    dummyTextGenerator
+from testlib import (
+    VdsmTestCase as TestCaseBase,
+    expandPermutations,
+    permutations,
+    dummyTextGenerator,
+)
 
 from testValidation import broken_on_ci
 
@@ -63,41 +65,55 @@ class StompTests(TestCaseBase):
 
     @broken_on_ci(
         "Fails randomly in oVirt CI, see https://gerrit.ovirt.org/c/95899/",
-        name="TRAVIS_CI")
-    @permutations([
-        # size, use_ssl
-        (1024, True),
-        (1024, False),
-        (4096, True),
-        (4096, False),
-        (16384, True),
-        (16384, False),
-    ])
+        name="TRAVIS_CI",
+    )
+    @permutations(
+        [
+            # size, use_ssl
+            (1024, True),
+            (1024, False),
+            (4096, True),
+            (4096, False),
+            (16384, True),
+            (16384, False),
+        ]
+    )
     def test_echo(self, size, use_ssl):
         data = dummyTextGenerator(size)
         ssl_ctx = self.ssl_ctx if use_ssl else None
 
         with constructAcceptor(self.log, ssl_ctx, _SampleBridge()) as acceptor:
-            with utils.closing(StandAloneRpcClient(acceptor._host,
-                                                   acceptor._port,
-                                                   'jms.topic.vdsm_requests',
-                                                   str(uuid4()),
-                                                   ssl_ctx, False)) as client:
-                self.assertEqual(client.callMethod('echo', (data,),
-                                                   str(uuid4())),
-                                 data)
+            with utils.closing(
+                StandAloneRpcClient(
+                    acceptor._host,
+                    acceptor._port,
+                    'jms.topic.vdsm_requests',
+                    str(uuid4()),
+                    ssl_ctx,
+                    False,
+                )
+            ) as client:
+                self.assertEqual(
+                    client.callMethod('echo', (data,), str(uuid4())), data
+                )
 
     @permutations(_USE_SSL)
     def test_event(self, use_ssl):
         ssl_ctx = self.ssl_ctx if use_ssl else None
 
-        with constructAcceptor(self.log, ssl_ctx, _SampleBridge(),
-                               'jms.queue.events') as acceptor:
-            with utils.closing(StandAloneRpcClient(acceptor._host,
-                                                   acceptor._port,
-                                                   'jms.topic.vdsm_requests',
-                                                   'jms.queue.events',
-                                                   ssl_ctx, False)) as client:
+        with constructAcceptor(
+            self.log, ssl_ctx, _SampleBridge(), 'jms.queue.events'
+        ) as acceptor:
+            with utils.closing(
+                StandAloneRpcClient(
+                    acceptor._host,
+                    acceptor._port,
+                    'jms.topic.vdsm_requests',
+                    'jms.queue.events',
+                    ssl_ctx,
+                    False,
+                )
+            ) as client:
 
                 event_queue = queue.Queue()
                 custom_topic = 'jms.queue.events'

@@ -18,15 +18,18 @@ from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import storage
 
 # Block device Information from libvirt block stats API.
-BlockInfo = namedtuple("BlockInfo", [
-    "index",
-    "name",
-    "path",
-    "allocation",
-    "capacity",
-    "physical",
-    "threshold",
-])
+BlockInfo = namedtuple(
+    "BlockInfo",
+    [
+        "index",
+        "name",
+        "path",
+        "allocation",
+        "capacity",
+        "physical",
+        "threshold",
+    ],
+)
 
 
 class ImprobableAllocationError(RuntimeError):
@@ -130,7 +133,9 @@ class VolumeMonitor(object):
         target = format_target(drive.name, index)
         self._log.info(
             'Setting block threshold to %s bytes for drive %r apparentsize %s',
-            threshold, target, apparentsize
+            threshold,
+            target,
+            apparentsize,
         )
         try:
             # TODO: find a good way to expose Vm._dom as public property.
@@ -147,11 +152,17 @@ class VolumeMonitor(object):
             if exc.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
                 self._log.debug(
                     "Domain not connected, skipping set block threshold for"
-                    "drive %r: %s", drive.name, exc)
+                    "drive %r: %s",
+                    drive.name,
+                    exc,
+                )
             else:
                 self._log.error(
                     'Failed to set block threshold for drive %r (%s): %s',
-                    drive.name, drive.path, exc)
+                    drive.name,
+                    drive.path,
+                    exc,
+                )
         except Exception:
             drive.threshold_state = storage.BLOCK_THRESHOLD.UNSET
             raise
@@ -193,8 +204,13 @@ class VolumeMonitor(object):
                        causing the event to trigger
             excess: amount (in bytes) written past the threshold
         """
-        self._log.info('Block threshold %s exceeded by %s for drive %r (%s)',
-                       threshold, excess, target, path)
+        self._log.info(
+            'Block threshold %s exceeded by %s for drive %r (%s)',
+            threshold,
+            excess,
+            target,
+            path,
+        )
 
         drive_name, index = parse_target(target)
 
@@ -204,16 +220,20 @@ class VolumeMonitor(object):
         # TODO: Remove when bug is fixed.
         if index is None:
             self._log.debug(
-                'Ignoring unexpected event for drive %r', drive_name)
+                'Ignoring unexpected event for drive %r', drive_name
+            )
             return
 
         try:
             drive = lookup.drive_by_name(
-                self._vm.getDiskDevices()[:], drive_name)
+                self._vm.getDiskDevices()[:], drive_name
+            )
         except LookupError:
             self._log.warning(
                 'Unknown drive %r for vm %s - ignored block threshold event',
-                drive_name, self._vm.id)
+                drive_name,
+                self._vm.id,
+            )
         else:
             if drive.on_block_threshold(path):
                 self._extend_drive_soon(drive)
@@ -232,20 +252,23 @@ class VolumeMonitor(object):
         try:
             self._dispatch(
                 partial(self._extend_drive, drive),
-                timeout=config.getfloat("thinp", "extend_timeout"))
+                timeout=config.getfloat("thinp", "extend_timeout"),
+            )
         except exception.ResourceExhausted:
             # Drive will be extended later by the periodic monitor.
             self._log.warning(
                 "Executor queue full, extending drive %s in the next "
                 "monitoring cycle",
-                drive.name)
+                drive.name,
+            )
 
     def _extend_drive(self, drive):
         if not self._update_block_info([drive]):
             self._log.warning(
                 "Cannot update block info for drive %s, retrying in "
                 "the next monitoring cycle",
-                drive.name)
+                drive.name,
+            )
             return
 
         timeout = config.getfloat("thinp", "extend_timeout")
@@ -256,7 +279,8 @@ class VolumeMonitor(object):
             self._log.warning(
                 "Timeout acquiring monitor lock for drive %s, retrying "
                 "in the next monitoring cycle",
-                drive.name)
+                drive.name,
+            )
 
     # Monitoring volumes.
 
@@ -280,7 +304,8 @@ class VolumeMonitor(object):
                 self._log.debug(
                     "Timeout acquiring monitor lock for drive %s, retrying "
                     "in next monitoring cycle",
-                    drive.name)
+                    drive.name,
+                )
 
     def _update_block_info(self, drives):
         """
@@ -316,7 +341,9 @@ class VolumeMonitor(object):
         else:
             self._log.warning(
                 "Unexpected threshold state %s for drive %s",
-                drive.threshold_state, drive.name)
+                drive.threshold_state,
+                drive.name,
+            )
 
     def _handle_unset(self, drive):
         """
@@ -333,7 +360,8 @@ class VolumeMonitor(object):
             # guest exceeds the threshold. If we will miss the event,
             # on_enospc() will be called.
             self._set_threshold(
-                drive, drive.block_info.physical, drive.block_info.index)
+                drive, drive.block_info.physical, drive.block_info.index
+            )
 
     def _handle_exceeded(self, drive, urgent=False):
         """
@@ -354,25 +382,30 @@ class VolumeMonitor(object):
             # again if the drive will be resized.
             self._log.info(
                 "Drive %s extended to maximum size, disabling monitoring",
-                drive.name)
+                drive.name,
+            )
             drive.threshold_state = storage.BLOCK_THRESHOLD.DISABLED
             return
 
         if not urgent and self._recently_started_extend(drive):
             self._log.debug(
-                "Drive %s extension in progress, retrying later",
-                drive.name)
+                "Drive %s extension in progress, retrying later", drive.name
+            )
             return
 
         drive.extend_time = time.monotonic()
 
         self._log.info(
             "Requesting an extension for volume %s on domain %s block_info %s",
-            drive.volumeID, drive.domainID, drive.block_info)
+            drive.volumeID,
+            drive.domainID,
+            drive.block_info,
+        )
 
         # New size includes one chunk of free space.
         new_size = drive.getNextVolumeSize(
-            drive.block_info.physical, drive.block_info.capacity)
+            drive.block_info.physical, drive.block_info.capacity
+        )
 
         self.extend_volume(drive, drive.volumeID, new_size)
 
@@ -384,7 +417,8 @@ class VolumeMonitor(object):
 
     def _drive_needs_extend(self, drive):
         nextPhysSize = drive.getNextVolumeSize(
-            drive.block_info.physical, drive.block_info.capacity)
+            drive.block_info.physical, drive.block_info.capacity
+        )
 
         # NOTE: the intent of this check is to prevent faulty images to
         # trick qemu in requesting extremely large extensions (BZ#998443).
@@ -403,7 +437,8 @@ class VolumeMonitor(object):
             self._vm.pause(pauseCode='EOTHER')
             raise ImprobableAllocationError(
                 "Improbable allocation, pausing the VM to avoid corruption: "
-                f"{drive.block_info}")
+                f"{drive.block_info}"
+            )
 
         free_space = drive.block_info.physical - drive.block_info.allocation
         return free_space < drive.watermarkLimit
@@ -425,8 +460,11 @@ class VolumeMonitor(object):
             iterable of storage.Drives that needs to be checked
             for extension.
         """
-        return [drive for drive in self._vm.getDiskDevices()
-                if drive.needs_monitoring()]
+        return [
+            drive
+            for drive in self._vm.getDiskDevices()
+            if drive.needs_monitoring()
+        ]
 
     # Querying libvirt
 
@@ -467,7 +505,8 @@ class VolumeMonitor(object):
             name = block_stats.get(f"block.{i}.name")
             if name is None:
                 self._log.warning(
-                    "Missing block.%s.name in block stats, skipping node", i)
+                    "Missing block.%s.name in block stats, skipping node", i
+                )
                 continue
 
             result[index] = BlockInfo(
@@ -497,7 +536,8 @@ class VolumeMonitor(object):
                 replica["domainID"],
                 replica["poolID"],
                 replica["imageID"],
-                replica["volumeID"])
+                replica["volumeID"],
+            )
             block_info = block_info._replace(physical=volsize.apparentsize)
 
         return block_info
@@ -537,11 +577,11 @@ class VolumeMonitor(object):
             clock.start("total")
 
         if vmDrive.replicaChunked:
-            self._extend_replica(
-                vmDrive, newSize, clock, callback=callback)
+            self._extend_replica(vmDrive, newSize, clock, callback=callback)
         else:
             self._extend_volume(
-                vmDrive, volumeID, newSize, clock, callback=callback)
+                vmDrive, volumeID, newSize, clock, callback=callback
+            )
 
     def _extend_replica(self, drive, newSize, clock, callback=None):
         clock.start("extend-replica")
@@ -556,10 +596,11 @@ class VolumeMonitor(object):
             'callback': callback,
         }
         self._log.debug(
-            "Requesting an extension for the volume replication: %s",
-            volInfo)
+            "Requesting an extension for the volume replication: %s", volInfo
+        )
         self._vm.cif.irs.sendExtendMsg(
-            drive.poolID, volInfo, newSize, self._extend_replica_completed)
+            drive.poolID, volInfo, newSize, self._extend_replica_completed
+        )
 
     def _extend_replica_completed(self, volInfo):
         clock = volInfo["clock"]
@@ -570,24 +611,32 @@ class VolumeMonitor(object):
 
         self._verify_volume_extension(volInfo)
         vmDrive = lookup.drive_by_name(
-            self._vm.getDiskDevices()[:], volInfo['name'])
+            self._vm.getDiskDevices()[:], volInfo['name']
+        )
         if not vmDrive.chunked:
             # This was a replica only extension, we are done.
             clock.stop("total")
             self._log.info(
-                "Extend replica %s completed %s", volInfo["volumeID"], clock)
+                "Extend replica %s completed %s", volInfo["volumeID"], clock
+            )
             return
 
         self._log.debug(
             "Requesting extension for the original drive: %s (domainID: %s, "
             "volumeID: %s)",
-            vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
+            vmDrive.name,
+            vmDrive.domainID,
+            vmDrive.volumeID,
+        )
         self._extend_volume(
-            vmDrive, vmDrive.volumeID, volInfo['newSize'], clock,
-            callback=volInfo["callback"])
+            vmDrive,
+            vmDrive.volumeID,
+            volInfo['newSize'],
+            clock,
+            callback=volInfo["callback"],
+        )
 
-    def _extend_volume(self, vmDrive, volumeID, newSize, clock,
-                       callback=None):
+    def _extend_volume(self, vmDrive, volumeID, newSize, clock, callback=None):
         clock.start("extend-volume")
         volInfo = {
             'domainID': vmDrive.domainID,
@@ -602,7 +651,8 @@ class VolumeMonitor(object):
         }
         self._log.debug("Requesting an extension for the volume: %s", volInfo)
         self._vm.cif.irs.sendExtendMsg(
-            vmDrive.poolID, volInfo, newSize, self._extend_volume_completed)
+            vmDrive.poolID, volInfo, newSize, self._extend_volume_completed
+        )
 
     def _extend_volume_completed(self, volInfo):
         callback = None
@@ -624,7 +674,8 @@ class VolumeMonitor(object):
             # drive.
 
             drive = lookup.drive_by_name(
-                self._vm.getDiskDevices()[:], volInfo['name'])
+                self._vm.getDiskDevices()[:], volInfo['name']
+            )
             timeout = config.getfloat("thinp", "refresh_timeout")
 
             with drive.monitor_lock(timeout):
@@ -634,8 +685,8 @@ class VolumeMonitor(object):
 
                 clock.stop("total")
                 self._log.info(
-                    "Extend volume %s completed %s",
-                    volInfo["volumeID"], clock)
+                    "Extend volume %s completed %s", volInfo["volumeID"], clock
+                )
 
                 if not volInfo['internal']:
                     self.update_drive_volume_size(drive, volSize)
@@ -646,7 +697,8 @@ class VolumeMonitor(object):
             self._log.warning(
                 "Migration destination host does not support "
                 "extending disk during migration, disabling disk "
-                "extension during migration")
+                "extension during migration"
+            )
             self.disable()
             error = e
         except virdomain.NotConnectedError as e:
@@ -661,17 +713,22 @@ class VolumeMonitor(object):
             volInfo['domainID'],
             volInfo['poolID'],
             volInfo['imageID'],
-            volInfo['volumeID'])
+            volInfo['volumeID'],
+        )
 
         self._log.debug(
             "Verifying extension for volume %s, requested size %s, current "
             "size %s",
-            volInfo['volumeID'], volInfo['newSize'], volSize.apparentsize)
+            volInfo['volumeID'],
+            volInfo['newSize'],
+            volSize.apparentsize,
+        )
 
         if volSize.apparentsize < volInfo['newSize']:
             raise RuntimeError(
-                "Volume extension failed for %s (domainID: %s, volumeID: %s)" %
-                (volInfo['name'], volInfo['domainID'], volInfo['volumeID']))
+                "Volume extension failed for %s (domainID: %s, volumeID: %s)"
+                % (volInfo['name'], volInfo['domainID'], volInfo['volumeID'])
+            )
 
         return volSize
 

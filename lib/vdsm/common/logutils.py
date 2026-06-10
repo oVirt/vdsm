@@ -31,7 +31,7 @@ def funcName(func):
 
 def call2str(func, args, kwargs, printers={}):
     kwargs = kwargs.copy()
-    varnames = func.__code__.co_varnames[:func.__code__.co_argcount]
+    varnames = func.__code__.co_varnames[: func.__code__.co_argcount]
     if ismethod(func):
         args = [func.__self__] + list(args)
         func = func.__func__
@@ -41,7 +41,7 @@ def call2str(func, args, kwargs, printers={}):
 
     defaults = func.__defaults__ if func.__defaults__ else []
 
-    for name, val in zip(varnames[-len(defaults):], defaults):
+    for name, val in zip(varnames[-len(defaults) :], defaults):
         if name not in kwargs:
             kwargs[name] = val
 
@@ -80,8 +80,10 @@ class Head:
         self.max_items = max_items
 
     def __repr__(self):
-        items = [str(item)
-                 for item in itertools.islice(self.items, self.max_items + 1)]
+        items = [
+            str(item)
+            for item in itertools.islice(self.items, self.max_items + 1)
+        ]
         suffix = "]"
         if len(items) > self.max_items:
             items.pop()
@@ -111,8 +113,7 @@ class SimpleLogAdapter(logging.LoggerAdapter):
             "(task='xxxyyy', res='foo.bar.baz') Message"
         """
         self.logger = logger
-        items = ", ".join(
-            "%s='%s'" % (k, v) for k, v in context.items())
+        items = ", ".join("%s='%s'" % (k, v) for k, v in context.items())
         self.prefix = "(%s) " % items
 
     def process(self, msg, kwargs):
@@ -142,7 +143,8 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
     def _open(self):
         if (os.geteuid() != self._uid) or (os.getegid() != self._gid):
             raise RuntimeError(
-                "Attempt to open log with incorrect credentials")
+                "Attempt to open log with incorrect credentials"
+            )
         return logging.handlers.WatchedFileHandler._open(self)
 
     def flush(self):
@@ -156,8 +158,7 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
 
 class TimezoneFormatter(logging.Formatter):
     def converter(self, timestamp):
-        return datetime.datetime.fromtimestamp(timestamp,
-                                               tz.tzlocal())
+        return datetime.datetime.fromtimestamp(timestamp, tz.tzlocal())
 
     def formatTime(self, record, datefmt=None):
         ct = self.converter(record.created)
@@ -167,7 +168,7 @@ class TimezoneFormatter(logging.Formatter):
             s = "%s,%03d%s" % (
                 ct.strftime('%Y-%m-%d %H:%M:%S'),
                 record.msecs,
-                ct.strftime('%z')
+                ct.strftime('%z'),
             )
         return s
 
@@ -324,12 +325,17 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
             logging.critical(
                 "ThreadedHandler is overloaded, dropped %d log messages in "
                 "the last %d seconds (max pending: %d)",
-                dropped_records, interval, max_pending)
+                dropped_records,
+                interval,
+                max_pending,
+            )
         else:
             logging.debug(
                 "ThreadedHandler is ok in the last %d seconds "
                 "(max pending: %d)",
-                interval, max_pending)
+                interval,
+                max_pending,
+            )
 
     def _run(self):
         while True:
@@ -396,7 +402,10 @@ def set_level(level_name, name=''):
     logger = logging.getLogger(log_name)
     logging.info(
         'Setting log level on %r to %s (%d)',
-        logger.name, level_name, log_level)
+        logger.name,
+        level_name,
+        log_level,
+    )
     logger.setLevel(log_level)
 
 
@@ -418,6 +427,7 @@ def traceback(log=None, msg="Unhandled exception"):
     :param msg: Use specified message for the exception
     :type msg: str
     """
+
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*a, **kw):
@@ -427,5 +437,7 @@ def traceback(log=None, msg="Unhandled exception"):
                 logger = log or logging.getLogger()
                 logger.exception(msg)
                 raise  # Do not swallow
+
         return wrapper
+
     return decorator

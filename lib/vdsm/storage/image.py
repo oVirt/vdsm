@@ -59,9 +59,10 @@ def _deleteImage(dom, imgUUID, postZero, discard):
 
 
 class Image:
-    """ Actually represents a whole virtual disk.
-        Consist from chain of volumes.
+    """Actually represents a whole virtual disk.
+    Consist from chain of volumes.
     """
+
     log = logging.getLogger('storage.image')
     _fakeTemplateLock = threading.Lock()
 
@@ -96,22 +97,25 @@ class Image:
             image=src_vol_params['path'],
             format=sc.fmt2str(src_vol_params['volFormat']),
             output_format=qemuimg.FORMAT.QCOW2,
-            is_block=src_vol_params["block"])
+            is_block=src_vol_params["block"],
+        )
 
         # Adds extra room so we don't have to extend this disk immediately
         # when a vm is started.
         chunk_size_mb = config.getint("irs", "volume_utilization_chunk_mb")
         chunk_size = chunk_size_mb * MiB
-        required = (qemu_measure["required"] + chunk_size)
+        required = qemu_measure["required"] + chunk_size
         # Limit estimates size by maximum size.
         vol_class = sdCache.produce(dst_sd_id).getVolumeClass()
-        max_size = vol_class.max_size(src_vol_params['capacity'],
-                                      sc.COW_FORMAT)
+        max_size = vol_class.max_size(
+            src_vol_params['capacity'], sc.COW_FORMAT
+        )
         allocation = min(required, max_size)
 
         # Return estimated size of allocation.
-        self.log.debug("Estimated allocation for qcow2 volume:"
-                       "%d", allocation)
+        self.log.debug(
+            "Estimated allocation for qcow2 volume:" "%d", allocation
+        )
         return allocation
 
     def estimateChainSize(self, sdUUID, imgUUID, volUUID, capacity):
@@ -194,8 +198,12 @@ class Image:
                 break
 
             if parentUUID in seen:
-                self.log.error("Image %s volume %s has invalid parent UUID %s",
-                               imgUUID, srcVol.volUUID, parentUUID)
+                self.log.error(
+                    "Image %s volume %s has invalid parent UUID %s",
+                    imgUUID,
+                    srcVol.volUUID,
+                    parentUUID,
+                )
                 raise se.ImageIsNotLegalChain(imgUUID)
 
             srcVol = srcVol.getParentVolume()
@@ -227,8 +235,12 @@ class Image:
                 destDom = sdCache.produce(sdUUID)
                 volclass = destDom.getVolumeClass()
                 # Validate that the destination template exists and accessible
-                volclass(self.repoPath, sdUUID, volParams['imgUUID'],
-                         volParams['volUUID'])
+                volclass(
+                    self.repoPath,
+                    sdUUID,
+                    volParams['imgUUID'],
+                    volParams['volUUID'],
+                )
             except (se.VolumeDoesNotExist, se.ImagePathError):
                 try:
                     # Create fake parent volume
@@ -238,28 +250,38 @@ class Image:
                         volFormat=sc.COW_FORMAT,
                         preallocate=sc.SPARSE_VOL,
                         diskType=volParams['disktype'],
-                        volUUID=volParams['volUUID'], desc="Fake volume",
+                        volUUID=volParams['volUUID'],
+                        desc="Fake volume",
                         srcImgUUID=sc.BLANK_UUID,
-                        srcVolUUID=sc.BLANK_UUID)
+                        srcVolUUID=sc.BLANK_UUID,
+                    )
 
-                    vol = destDom.produceVolume(imgUUID=volParams['imgUUID'],
-                                                volUUID=volParams['volUUID'])
+                    vol = destDom.produceVolume(
+                        imgUUID=volParams['imgUUID'],
+                        volUUID=volParams['volUUID'],
+                    )
                     # Mark fake volume as "FAKE"
                     vol.setLegality(sc.FAKE_VOL)
                     # Mark fake volume as shared
                     vol.setShared()
                     # Now we should re-link all hardlinks of this template in
                     # all VMs based on it
-                    destDom.templateRelink(volParams['imgUUID'],
-                                           volParams['volUUID'])
+                    destDom.templateRelink(
+                        volParams['imgUUID'], volParams['volUUID']
+                    )
 
-                    self.log.debug("Succeeded to create fake image %s in "
-                                   "domain %s", volParams['imgUUID'],
-                                   destDom.sdUUID)
+                    self.log.debug(
+                        "Succeeded to create fake image %s in " "domain %s",
+                        volParams['imgUUID'],
+                        destDom.sdUUID,
+                    )
                 except Exception:
-                    self.log.error("Failure to create fake image %s in domain "
-                                   "%s", volParams['imgUUID'], destDom.sdUUID,
-                                   exc_info=True)
+                    self.log.error(
+                        "Failure to create fake image %s in domain " "%s",
+                        volParams['imgUUID'],
+                        destDom.sdUUID,
+                        exc_info=True,
+                    )
 
     def isLegal(self, sdUUID, imgUUID):
         """
@@ -269,8 +291,12 @@ class Image:
             legal = True
             volclass = sdCache.produce(sdUUID).getVolumeClass()
             vollist = volclass.getImageVolumes(sdUUID, imgUUID)
-            self.log.info("image %s in domain %s has vollist %s", imgUUID,
-                          sdUUID, str(vollist))
+            self.log.info(
+                "image %s in domain %s has vollist %s",
+                imgUUID,
+                sdUUID,
+                str(vollist),
+            )
             for v in vollist:
                 vol = volclass(self.repoPath, sdUUID, imgUUID, v)
                 if not vol.isLegal() or vol.isFake():
@@ -299,7 +325,8 @@ class Image:
             # Find all volumes of source image
             srcChain = self.getChain(srcSdUUID, imgUUID)
             log_str = logutils.volume_chain_to_str(
-                vol.volUUID for vol in srcChain)
+                vol.volUUID for vol in srcChain
+            )
             self.log.info("Source chain=%s ", log_str)
         except se.StorageException:
             self.log.error("Unexpected error", exc_info=True)
@@ -309,13 +336,13 @@ class Image:
             raise se.SourceImageActionError(imgUUID, srcSdUUID, str(e))
 
         fakeTemplate = False
-        pimg = sc.BLANK_UUID    # standalone chain
+        pimg = sc.BLANK_UUID  # standalone chain
         # check if the chain is build above a template, or it is a standalone
         pvol = srcChain[0].getParentVolume()
         if pvol:
             # find out parent volume parameters
             volParams = pvol.getVolumeParams()
-            pimg = volParams['imgUUID']      # pimg == template image
+            pimg = volParams['imgUUID']  # pimg == template image
             if destDom.isBackup():
                 # FIXME: This workaround help as copy VM to the backup domain
                 #        without its template. We will create fake template
@@ -325,15 +352,20 @@ class Image:
 
         @contextmanager
         def justLogIt(img):
-            self.log.debug("You don't really need lock parent of image %s",
-                           img)
+            self.log.debug(
+                "You don't really need lock parent of image %s", img
+            )
             yield
 
-        dstImageResourcesNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE,
-                                                     destDom.sdUUID)
+        dstImageResourcesNamespace = rm.getNamespace(
+            sc.IMAGE_NAMESPACE, destDom.sdUUID
+        )
         # In destination domain we need to lock image's template if exists
-        with rm.acquireResource(dstImageResourcesNamespace, pimg, rm.SHARED) \
-                if pimg != sc.BLANK_UUID else justLogIt(imgUUID):
+        with (
+            rm.acquireResource(dstImageResourcesNamespace, pimg, rm.SHARED)
+            if pimg != sc.BLANK_UUID
+            else justLogIt(imgUUID)
+        ):
             if fakeTemplate:
                 self.createFakeTemplate(destDom.sdUUID, volParams)
 
@@ -348,8 +380,10 @@ class Image:
                     # we create the target as a sparse volume (since it will be
                     # soon filled with the data coming from the copy) and then
                     # we change its metadata back to the original value.
-                    if (destDom.supportsSparseness or
-                            volParams['volFormat'] != sc.RAW_FORMAT):
+                    if (
+                        destDom.supportsSparseness
+                        or volParams['volFormat'] != sc.RAW_FORMAT
+                    ):
                         tmpVolPreallocation = sc.SPARSE_VOL
                     else:
                         tmpVolPreallocation = sc.PREALLOCATED_VOL
@@ -363,10 +397,12 @@ class Image:
                         volUUID=srcVol.volUUID,
                         desc=volParams['descr'],
                         srcImgUUID=pimg,
-                        srcVolUUID=volParams['parent'])
+                        srcVolUUID=volParams['parent'],
+                    )
 
-                    dstVol = destDom.produceVolume(imgUUID=imgUUID,
-                                                   volUUID=srcVol.volUUID)
+                    dstVol = destDom.produceVolume(
+                        imgUUID=imgUUID, volUUID=srcVol.volUUID
+                    )
 
                     # Extend volume (for LV only) size to the actual size
                     dstVol.extend(volParams['apparentsize'])
@@ -374,8 +410,10 @@ class Image:
                     # Change destination volume metadata to preallocated in
                     # case we've used a sparse volume to accelerate the
                     # volume creation
-                    if volParams['prealloc'] == sc.PREALLOCATED_VOL \
-                            and tmpVolPreallocation != sc.PREALLOCATED_VOL:
+                    if (
+                        volParams['prealloc'] == sc.PREALLOCATED_VOL
+                        and tmpVolPreallocation != sc.PREALLOCATED_VOL
+                    ):
                         dstVol.setType(sc.PREALLOCATED_VOL)
 
                     dstChain.append(dstVol)
@@ -384,8 +422,9 @@ class Image:
                     raise
                 except Exception as e:
                     self.log.error("Unexpected error", exc_info=True)
-                    raise se.DestImageActionError(imgUUID, destDom.sdUUID,
-                                                  str(e))
+                    raise se.DestImageActionError(
+                        imgUUID, destDom.sdUUID, str(e)
+                    )
 
                 # only base may have a different parent image
                 pimg = imgUUID
@@ -409,8 +448,9 @@ class Image:
             for srcVol in chains['srcChain']:
                 # Do the actual copy
                 try:
-                    dstVol = destDom.produceVolume(imgUUID=imgUUID,
-                                                   volUUID=srcVol.volUUID)
+                    dstVol = destDom.produceVolume(
+                        imgUUID=imgUUID, volUUID=srcVol.volUUID
+                    )
 
                     if workarounds.invalid_vm_conf_disk(srcVol):
                         srcFormat = dstFormat = qemuimg.FORMAT.RAW
@@ -422,7 +462,8 @@ class Image:
 
                     if parentVol is not None:
                         backing = volume.getBackingVolumePath(
-                            imgUUID, parentVol.volUUID)
+                            imgUUID, parentVol.volUUID
+                        )
                         backingFormat = sc.fmt2str(parentVol.getFormat())
                     else:
                         backing = None
@@ -437,14 +478,16 @@ class Image:
                         backing=backing,
                         backingFormat=backingFormat,
                         unordered_writes=destDom.recommends_unordered_writes(
-                            dstVol.getFormat()),
+                            dstVol.getFormat()
+                        ),
                         create=dstVol.requires_create(),
                         target_is_zero=dstVol.zero_initialized(),
                     )
                     with utils.stopwatch(
-                            "Copy volume {}".format(srcVol.volUUID),
-                            level=logging.INFO,
-                            log=self.log):
+                        "Copy volume {}".format(srcVol.volUUID),
+                        level=logging.INFO,
+                        log=self.log,
+                    ):
                         self._run_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
@@ -452,9 +495,14 @@ class Image:
                     self.log.error("Unexpected error", exc_info=True)
                     raise
                 except Exception:
-                    self.log.error("Copy image error: image=%s, src domain=%s,"
-                                   " dst domain=%s", imgUUID, srcSdUUID,
-                                   destDom.sdUUID, exc_info=True)
+                    self.log.error(
+                        "Copy image error: image=%s, src domain=%s,"
+                        " dst domain=%s",
+                        imgUUID,
+                        srcSdUUID,
+                        destDom.sdUUID,
+                        exc_info=True,
+                    )
                     raise se.CopyImageError()
         finally:
             # teardown volumes
@@ -463,8 +511,9 @@ class Image:
     def _finalizeDestinationImage(self, destDom, imgUUID, chains, force):
         for srcVol in chains['srcChain']:
             try:
-                dstVol = destDom.produceVolume(imgUUID=imgUUID,
-                                               volUUID=srcVol.volUUID)
+                dstVol = destDom.produceVolume(
+                    imgUUID=imgUUID, volUUID=srcVol.volUUID
+                )
                 # In case of copying template, we should set the destination
                 # volume as SHARED (after copy because otherwise prepare as RW
                 # would fail)
@@ -479,15 +528,32 @@ class Image:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.DestImageActionError(imgUUID, destDom.sdUUID, str(e))
 
-    def move(self, srcSdUUID, dstSdUUID, imgUUID, vmUUID, op, postZero, force,
-             discard):
+    def move(
+        self,
+        srcSdUUID,
+        dstSdUUID,
+        imgUUID,
+        vmUUID,
+        op,
+        postZero,
+        force,
+        discard,
+    ):
         """
         Move/Copy image between storage domains within same storage pool
         """
-        self.log.info("srcSdUUID=%s dstSdUUID=%s imgUUID=%s vmUUID=%s op=%s "
-                      "force=%s postZero=%s discard=%s", srcSdUUID, dstSdUUID,
-                      imgUUID, vmUUID, OP_TYPES[op], str(force), str(postZero),
-                      discard)
+        self.log.info(
+            "srcSdUUID=%s dstSdUUID=%s imgUUID=%s vmUUID=%s op=%s "
+            "force=%s postZero=%s discard=%s",
+            srcSdUUID,
+            dstSdUUID,
+            imgUUID,
+            vmUUID,
+            OP_TYPES[op],
+            str(force),
+            str(postZero),
+            discard,
+        )
 
         destDom = sdCache.produce(dstSdUUID)
         # If image already exists check whether it illegal/fake, overwrite it
@@ -496,8 +562,11 @@ class Image:
         # We must first remove the previous instance of image (if exists)
         # in destination domain, if we got the overwrite command
         if force:
-            self.log.info("delete image %s on domain %s before overwriting",
-                          imgUUID, destDom.sdUUID)
+            self.log.info(
+                "delete image %s on domain %s before overwriting",
+                imgUUID,
+                destDom.sdUUID,
+            )
             _deleteImage(destDom, imgUUID, postZero, discard)
 
         chains = self._createTargetImage(destDom, srcSdUUID, imgUUID)
@@ -518,12 +587,19 @@ class Image:
                 dom = sdCache.produce(srcSdUUID)
                 _deleteImage(dom, imgUUID, postZero, discard)
             except se.StorageException:
-                self.log.warning("Failed to remove img: %s from srcDom %s: "
-                                 "after it was copied to: %s", imgUUID,
-                                 srcSdUUID, dstSdUUID)
+                self.log.warning(
+                    "Failed to remove img: %s from srcDom %s: "
+                    "after it was copied to: %s",
+                    imgUUID,
+                    srcSdUUID,
+                    dstSdUUID,
+                )
 
-        self.log.info("%s task on image %s was successfully finished",
-                      OP_TYPES[op], imgUUID)
+        self.log.info(
+            "%s task on image %s was successfully finished",
+            OP_TYPES[op],
+            imgUUID,
+        )
         return True
 
     @deprecated
@@ -566,11 +642,18 @@ class Image:
 
         dstDom = sdCache.produce(dstSdUUID)
 
-        self._interImagesCopy(dstDom, sdUUID, imgUUID,
-                              {'srcChain': srcChain, 'dstChain': dstChain})
-        self._finalizeDestinationImage(dstDom, imgUUID,
-                                       {'srcChain': srcChain,
-                                        'dstChain': dstChain}, False)
+        self._interImagesCopy(
+            dstDom,
+            sdUUID,
+            imgUUID,
+            {'srcChain': srcChain, 'dstChain': dstChain},
+        )
+        self._finalizeDestinationImage(
+            dstDom,
+            imgUUID,
+            {'srcChain': srcChain, 'dstChain': dstChain},
+            False,
+        )
 
     def __cleanupCopy(self, srcVol, dstVol):
         """
@@ -600,21 +683,46 @@ class Image:
             if not pvol.isLegal() or pvol.isFake():
                 raise se.ImageIsNotLegalChain(imgUUID)
 
-    def copyCollapsed(self, sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
-                      dstVolUUID, descr, dstSdUUID, volType, volFormat,
-                      preallocate, postZero, force, discard):
+    def copyCollapsed(
+        self,
+        sdUUID,
+        vmUUID,
+        srcImgUUID,
+        srcVolUUID,
+        dstImgUUID,
+        dstVolUUID,
+        descr,
+        dstSdUUID,
+        volType,
+        volFormat,
+        preallocate,
+        postZero,
+        force,
+        discard,
+    ):
         """
         Create new template/volume from VM.
         Do it by collapse and copy the whole chain (baseVolUUID->srcVolUUID)
         """
-        self.log.info("sdUUID=%s vmUUID=%s srcImgUUID=%s srcVolUUID=%s "
-                      "dstImgUUID=%s dstVolUUID=%s dstSdUUID=%s volType=%s "
-                      "volFormat=%s preallocate=%s force=%s postZero=%s "
-                      "discard=%s",
-                      sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
-                      dstVolUUID, dstSdUUID, volType,
-                      sc.type2name(volFormat), sc.type2name(preallocate),
-                      str(force), str(postZero), discard)
+        self.log.info(
+            "sdUUID=%s vmUUID=%s srcImgUUID=%s srcVolUUID=%s "
+            "dstImgUUID=%s dstVolUUID=%s dstSdUUID=%s volType=%s "
+            "volFormat=%s preallocate=%s force=%s postZero=%s "
+            "discard=%s",
+            sdUUID,
+            vmUUID,
+            srcImgUUID,
+            srcVolUUID,
+            dstImgUUID,
+            dstVolUUID,
+            dstSdUUID,
+            volType,
+            sc.type2name(volFormat),
+            sc.type2name(preallocate),
+            str(force),
+            str(postZero),
+            discard,
+        )
         try:
             srcVol = dstVol = None
 
@@ -626,8 +734,9 @@ class Image:
 
             # find src volume
             try:
-                srcVol = volclass(self.repoPath, sdUUID, srcImgUUID,
-                                  srcVolUUID)
+                srcVol = volclass(
+                    self.repoPath, sdUUID, srcImgUUID, srcVolUUID
+                )
             except se.StorageException:
                 raise
             except Exception as e:
@@ -652,7 +761,8 @@ class Image:
                 # TODO: This is needed only when copying to qcow2-thin volume
                 # on block storage. Move into calculate_initial_size.
                 dst_vol_allocation = self.calculate_vol_alloc(
-                    sdUUID, volParams, dstSdUUID, dstVolFormat)
+                    sdUUID, volParams, dstSdUUID, dstVolFormat
+                )
 
                 # Find out dest volume parameters
                 if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
@@ -662,7 +772,8 @@ class Image:
                     destDom.supportsSparseness,
                     dstVolFormat,
                     volParams['prealloc'],
-                    dst_vol_allocation)
+                    dst_vol_allocation,
+                )
 
                 self.log.info(
                     "Copy source %s:%s:%s to destination %s:%s:%s "
@@ -674,7 +785,8 @@ class Image:
                     dstImgUUID,
                     dstVolUUID,
                     volParams['capacity'],
-                    initial_size)
+                    initial_size,
+                )
 
                 # If image already exists check whether it illegal/fake,
                 # overwrite it
@@ -685,8 +797,11 @@ class Image:
                 # exists) in destination domain, if we got the overwrite
                 # command
                 if force:
-                    self.log.info("delete image %s on domain %s before "
-                                  "overwriting", dstImgUUID, dstSdUUID)
+                    self.log.info(
+                        "delete image %s on domain %s before " "overwriting",
+                        dstImgUUID,
+                        dstSdUUID,
+                    )
                     _deleteImage(destDom, dstImgUUID, postZero, discard)
 
                 destDom.createVolume(
@@ -699,18 +814,21 @@ class Image:
                     desc=descr,
                     srcImgUUID=sc.BLANK_UUID,
                     srcVolUUID=sc.BLANK_UUID,
-                    initial_size=initial_size)
+                    initial_size=initial_size,
+                )
 
                 dstVol = sdCache.produce(dstSdUUID).produceVolume(
-                    imgUUID=dstImgUUID, volUUID=dstVolUUID)
+                    imgUUID=dstImgUUID, volUUID=dstVolUUID
+                )
 
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 raise
             except Exception as e:
                 self.log.error("Unexpected error", exc_info=True)
-                raise se.CopyImageError("Destination volume %s error: %s" %
-                                        (dstVolUUID, str(e)))
+                raise se.CopyImageError(
+                    "Destination volume %s error: %s" % (dstVolUUID, str(e))
+                )
 
             try:
                 # Start the actual copy image procedure
@@ -724,20 +842,23 @@ class Image:
                         dstFormat=sc.fmt2str(dstVolFormat),
                         dstQcow2Compat=destDom.qcow2_compat(),
                         unordered_writes=destDom.recommends_unordered_writes(
-                            dstVolFormat),
+                            dstVolFormat
+                        ),
                         create=dstVol.requires_create(),
                         target_is_zero=dstVol.zero_initialized(),
                     )
                     with utils.stopwatch(
-                            "Copy volume {}".format(srcVol.volUUID),
-                            level=logging.INFO,
-                            log=self.log):
+                        "Copy volume {}".format(srcVol.volUUID),
+                        level=logging.INFO,
+                        log=self.log,
+                    ):
                         self._run_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
                 except cmdutils.Error as e:
-                    self.log.exception('conversion failure for volume %s',
-                                       srcVol.volUUID)
+                    self.log.exception(
+                        'conversion failure for volume %s', srcVol.volUUID
+                    )
                     raise se.CopyImageError(str(e))
 
                 # Mark volume as SHARED
@@ -754,18 +875,24 @@ class Image:
                 raise
             except Exception as e:
                 self.log.error("Unexpected error", exc_info=True)
-                raise se.CopyImageError("src image=%s, dst image=%s: msg=%s" %
-                                        (srcImgUUID, dstImgUUID, str(e)))
+                raise se.CopyImageError(
+                    "src image=%s, dst image=%s: msg=%s"
+                    % (srcImgUUID, dstImgUUID, str(e))
+                )
 
-            self.log.info("Finished copying %s:%s -> %s:%s", sdUUID,
-                          srcVolUUID, dstSdUUID, dstVolUUID)
+            self.log.info(
+                "Finished copying %s:%s -> %s:%s",
+                sdUUID,
+                srcVolUUID,
+                dstSdUUID,
+                dstVolUUID,
+            )
             # TODO: handle return status
             return dstVolUUID
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)
 
-    def calculate_initial_size(self, is_file, format, prealloc,
-                               estimate):
+    def calculate_initial_size(self, is_file, format, prealloc, estimate):
         """
         Return the initial size for creating a volume during copyCollapsed.
 
@@ -790,8 +917,9 @@ class Image:
         # Otherwise no initial size is used.
         return None
 
-    def calculate_vol_alloc(self, src_sd_id, src_vol_params,
-                            dst_sd_id, dst_vol_format):
+    def calculate_vol_alloc(
+        self, src_sd_id, src_vol_params, dst_sd_id, dst_vol_format
+    ):
         """
         Calculate destination volume allocation size for copying source volume.
 
@@ -824,7 +952,8 @@ class Image:
                         src_sd_id,
                         src_vol_params['imgUUID'],
                         src_vol_params['volUUID'],
-                        src_vol_params['capacity'])
+                        src_vol_params['capacity'],
+                    )
                 else:
                     # source 'cow' without parent.
                     # Use estimate for supporting compressed source images, for
@@ -894,7 +1023,8 @@ class Image:
                 self.log.info(
                     "Leaf volume %s is ILLEGAL but is part of the actual chain"
                     " - marking it LEGAL so it can be used again.",
-                    tailVol.volUUID)
+                    tailVol.volUUID,
+                )
                 tailVol.setLegality(sc.LEGAL_VOL)
             # Case 4 - do nothing.
             return
@@ -906,7 +1036,8 @@ class Image:
             self.log.info(
                 "Leaf volume %s is being removed from the actual chain. "
                 "Marking it ILLEGAL to prevent data corruption",
-                subChainTailVol.volUUID)
+                subChainTailVol.volUUID,
+            )
             subChainTailVol.setLegality(sc.ILLEGAL_VOL)
         else:
             # Case 2 - remove internal volume.
@@ -914,9 +1045,11 @@ class Image:
                 self.log.info(
                     "Internal volume %s removed from actual chain, linking "
                     "child volume %s to parent volume %s",
-                    subChainTailVol, childID, dstParent)
-                sdDom.produceVolume(imgUUID, childID). \
-                    setParentMeta(dstParent)
+                    subChainTailVol,
+                    childID,
+                    dstParent,
+                )
+                sdDom.produceVolume(imgUUID, childID).setParentMeta(dstParent)
 
     def reconcileVolumeChain(self, sdUUID, imgUUID, leafVolUUID):
         """
@@ -967,8 +1100,10 @@ class Image:
 
         template = chain[0].getParentVolume()
         if template or len(chain) > 1:
-            self.log.error("Importing and exporting an image with more "
-                           "than one volume is not supported")
+            self.log.error(
+                "Importing and exporting an image with more "
+                "than one volume is not supported"
+            )
             raise se.CopyImageError()
 
         domain.activateVolumes(imgUUID, volUUIDs=[chain[0].volUUID])
@@ -983,7 +1118,8 @@ class Image:
             glance.upload_image(
                 vol.getVolumePath(),
                 methodArgs["url"],
-                headers=methodArgs.get("headers"))
+                headers=methodArgs.get("headers"),
+            )
         finally:
             domain.deactivateImage(imgUUID)
 
@@ -995,13 +1131,14 @@ class Image:
             self._check_sharing_method(methodArgs)
             # Extend the volume (if relevant) to the image size
             image_info = glance.image_info(
-                methodArgs.get('url'),
-                headers=methodArgs.get("headers"))
+                methodArgs.get('url'), headers=methodArgs.get("headers")
+            )
             vol.extend(image_info["size"])
             glance.download_image(
                 vol.getVolumePath(),
                 methodArgs["url"],
-                headers=methodArgs.get("headers"))
+                headers=methodArgs.get("headers"),
+            )
         finally:
             domain.deactivateImage(imgUUID)
 

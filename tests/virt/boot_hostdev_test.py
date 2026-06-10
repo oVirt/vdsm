@@ -218,7 +218,7 @@ _EXPECTED_HOSTDEV_XML = {
             <boot order='1'/>
           </hostdev>
         </devices>
-      </domain>"""
+      </domain>""",
 }
 
 
@@ -248,7 +248,8 @@ class BootHostdevHookTests(XMLTestCase):
         with temporaryPath(data=domxml.encode('utf-8')) as temp_path:
             env = self._setup_env(temp_path, boot_hostdev)
             rc, out, err = commands.execCmd(
-                [sys.executable, _HOOK_PATH], env=env)
+                [sys.executable, _HOOK_PATH], env=env
+            )
             with io.open(temp_path, 'r') as outxml:
                 outxml = outxml.read()
             return outxml, rc, out, err

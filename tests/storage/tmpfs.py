@@ -9,7 +9,7 @@ from vdsm.common import commands
 from vdsm.common.units import GiB
 from vdsm.storage import constants as sc
 
-from . cleanup import CleanupError
+from .cleanup import CleanupError
 
 log = logging.getLogger("test")
 
@@ -19,6 +19,7 @@ class TemporaryFS(object):
     Temporary file system created on provided device. Contains also support for
     mounting newly created FS.
     """
+
     def __init__(self, tmp_storage):
         self.tmp_storage = tmp_storage
         self._mounts = {}
@@ -29,7 +30,8 @@ class TemporaryFS(object):
         it to specified directory.
         """
         loopback_path = self.tmp_storage.create_device(
-            filesystem.size, sector_size=filesystem.block_size)
+            filesystem.size, sector_size=filesystem.block_size
+        )
 
         try:
             commands.run(["mkfs", "-t", filesystem.fs_type, loopback_path])
@@ -70,9 +72,12 @@ class FileSystem(namedtuple("FileSystem", ("fs_type", "block_size", "size"))):
     """
     Class for keeping information about created files system.
     """
+
     __slots__ = ()
 
-    def __new__(cls, fs_type="ext4", block_size=sc.BLOCK_SIZE_512,
-                size=10 * GiB):
+    def __new__(
+        cls, fs_type="ext4", block_size=sc.BLOCK_SIZE_512, size=10 * GiB
+    ):
         return super(FileSystem, cls).__new__(
-            cls, fs_type=fs_type, block_size=block_size, size=size)
+            cls, fs_type=fs_type, block_size=block_size, size=size
+        )

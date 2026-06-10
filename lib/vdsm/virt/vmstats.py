@@ -9,7 +9,6 @@ from vdsm.utils import convertToStr
 
 from vdsm.virt.utils import isVdsmImage
 
-
 _log = logging.getLogger('virt.vmstats')
 
 
@@ -42,8 +41,9 @@ def translate(vm_stats):
                 # with numbers bigger than int32_t
                 for ioTune in value:
                     ioTune["ioTune"] = dict(
-                        (k, convertToStr(v)) for k, v
-                        in ioTune["ioTune"].items())
+                        (k, convertToStr(v))
+                        for k, v in ioTune["ioTune"].items()
+                    )
                 stats[var] = vm_stats[var]
         elif type(vm_stats[var]) is not dict:
             stats[var] = convertToStr(vm_stats[var])
@@ -71,11 +71,9 @@ def tune_io(vm, stats):
     for disk in vm.getDiskDevices():
         iotune = disk.iotune
         if iotune:
-            io_tune_info.append({
-                "name": disk.name,
-                "path": disk.path,
-                "ioTune": iotune
-            })
+            io_tune_info.append(
+                {"name": disk.name, "path": disk.path, "ioTune": iotune}
+            )
 
     stats['ioTune'] = io_tune_info
 
@@ -102,9 +100,7 @@ def cpu(stats, first_sample, last_sample, interval):
     if first_sample is None or last_sample is None:
         return None
     if interval <= 0:
-        _log.warning(
-            'invalid interval %i when computing CPU stats',
-            interval)
+        _log.warning('invalid interval %i when computing CPU stats', interval)
         return None
 
     keys = ('cpu.system', 'cpu.user')
@@ -113,18 +109,23 @@ def cpu(stats, first_sample, last_sample, interval):
     if all(k in s for k in keys for s in samples):
         # TODO: cpuUsage should have the same type as cpuUser and cpuSys.
         # we may block the str() when xmlrpc is deserted.
-        stats['cpuUsage'] = str(last_sample['cpu.system'] +
-                                last_sample['cpu.user'])
+        stats['cpuUsage'] = str(
+            last_sample['cpu.system'] + last_sample['cpu.user']
+        )
 
-        cpu_sys = ((last_sample['cpu.user'] - first_sample['cpu.user']) +
-                   (last_sample['cpu.system'] - first_sample['cpu.system']))
+        cpu_sys = (last_sample['cpu.user'] - first_sample['cpu.user']) + (
+            last_sample['cpu.system'] - first_sample['cpu.system']
+        )
         stats['cpuSys'] = _usage_percentage(cpu_sys, interval)
 
         if all('cpu.time' in s for s in samples):
             stats['cpuUser'] = _usage_percentage(
-                ((last_sample['cpu.time'] - first_sample['cpu.time']) -
-                 cpu_sys),
-                interval)
+                (
+                    (last_sample['cpu.time'] - first_sample['cpu.time'])
+                    - cpu_sys
+                ),
+                interval,
+            )
             # To avoid negative values of stats['cpuUser']. It was coming
             # negative due to less accuracy of user_time and system_time
             # values (upto 2 decimal) as compared to cpu_time values
@@ -147,20 +148,25 @@ def balloon(vm, stats, sample):
     # Do not return any balloon status info before we get all data
     # MOM will ignore VMs with missing balloon information instead
     # using incomplete data and computing wrong balloon targets
-    if (balloon_info and balloon_info['target'] is not None and
-            sample is not None):
+    if (
+        balloon_info
+        and balloon_info['target'] is not None
+        and sample is not None
+    ):
 
         balloon_cur = 0
         with _skip_if_missing_stats(vm):
             balloon_cur = sample['balloon.current']
 
-        stats['balloonInfo'].update({
-            'balloon_max': str(max_mem),
-            'balloon_min': str(balloon_info['minimum']),
-            'balloon_cur': str(balloon_cur),
-            'balloon_target': str(balloon_info['target']),
-            'ballooning_enabled': balloon_info['enabled'],
-        })
+        stats['balloonInfo'].update(
+            {
+                'balloon_max': str(max_mem),
+                'balloon_min': str(balloon_info['minimum']),
+                'balloon_cur': str(balloon_cur),
+                'balloon_target': str(balloon_info['target']),
+                'ballooning_enabled': balloon_info['enabled'],
+            }
+        )
 
 
 def cpu_count(stats, sample):
@@ -176,9 +182,9 @@ def cpu_count(stats, sample):
             _log.error('Failed to get VM cpu count')
 
 
-def _nic_traffic(vm_obj, nic,
-                 start_sample, start_index,
-                 end_sample, end_index):
+def _nic_traffic(
+    vm_obj, nic, start_sample, start_index, end_sample, end_index
+):
     """
     Return per-nic statistics packed into a dictionary
     - macAddr
@@ -228,7 +234,9 @@ def networks(vm, stats, first_sample, last_sample, interval):
     if interval <= 0:
         _log.warning(
             'invalid interval %i when computing network stats for vm %s',
-            interval, vm.id)
+            interval,
+            vm.id,
+        )
         return None
 
     first_indexes = _find_bulk_stats_reverse_map(first_sample, 'net')
@@ -248,9 +256,13 @@ def networks(vm, stats, first_sample, last_sample, interval):
             continue
 
         stats['network'][nic.name] = _nic_traffic(
-            vm, nic,
-            first_sample, first_indexes[nic.name],
-            last_sample, last_indexes[nic.name])
+            vm,
+            nic,
+            first_sample,
+            first_indexes[nic.name],
+            last_sample,
+            last_indexes[nic.name],
+        )
 
     return stats
 
@@ -284,32 +296,48 @@ def disks(vm, stats, first_sample, last_sample, interval):
         try:
             drive_stats = disk_info(vm_drive)
 
-            if (vm_drive.name in first_indexes and
-               vm_drive.name in last_indexes):
+            if (
+                vm_drive.name in first_indexes
+                and vm_drive.name in last_indexes
+            ):
                 # will be None if sampled during recovery
                 if interval <= 0:
                     _log.warning(
                         'invalid interval %i when calculating '
                         'stats for vm %s disk %s',
-                        interval, vm.id, vm_drive.name)
+                        interval,
+                        vm.id,
+                        vm_drive.name,
+                    )
                 else:
                     drive_stats.update(
                         _disk_rate(
-                            first_sample, first_indexes[vm_drive.name],
-                            last_sample, last_indexes[vm_drive.name],
-                            interval))
+                            first_sample,
+                            first_indexes[vm_drive.name],
+                            last_sample,
+                            last_indexes[vm_drive.name],
+                            interval,
+                        )
+                    )
                 drive_stats.update(
                     _disk_latency(
-                        first_sample, first_indexes[vm_drive.name],
-                        last_sample, last_indexes[vm_drive.name]))
+                        first_sample,
+                        first_indexes[vm_drive.name],
+                        last_sample,
+                        last_indexes[vm_drive.name],
+                    )
+                )
                 drive_stats.update(
                     _disk_iops_bytes(
-                        first_sample, first_indexes[vm_drive.name],
-                        last_sample, last_indexes[vm_drive.name]))
+                        first_sample,
+                        first_indexes[vm_drive.name],
+                        last_sample,
+                        last_indexes[vm_drive.name],
+                    )
+                )
 
         except AttributeError:
-            _log.exception("Disk %s stats not available",
-                           vm_drive.name)
+            _log.exception("Disk %s stats not available", vm_drive.name)
 
         disk_stats[vm_drive.name] = drive_stats
 
@@ -359,16 +387,22 @@ def _disk_rate(first_sample, first_index, last_sample, last_index, interval):
 def _disk_latency(first_sample, first_index, last_sample, last_index):
     stats = {}
 
-    for name, mode in (('readLatency', 'rd'),
-                       ('writeLatency', 'wr'),
-                       ('flushLatency', 'fl')):
+    for name, mode in (
+        ('readLatency', 'rd'),
+        ('writeLatency', 'wr'),
+        ('flushLatency', 'fl'),
+    ):
         try:
             last_key = "block.%d.%s" % (last_index, mode)
             first_key = "block.%d.%s" % (first_index, mode)
-            operations = (last_sample[last_key + ".reqs"] -
-                          first_sample[first_key + ".reqs"])
-            elapsed_time = (last_sample[last_key + ".times"] -
-                            first_sample[first_key + ".times"])
+            operations = (
+                last_sample[last_key + ".reqs"]
+                - first_sample[first_key + ".reqs"]
+            )
+            elapsed_time = (
+                last_sample[last_key + ".times"]
+                - first_sample[first_key + ".times"]
+            )
         except KeyError:
             continue
         if operations:
@@ -382,10 +416,12 @@ def _disk_latency(first_sample, first_index, last_sample, last_index):
 def _disk_iops_bytes(first_sample, first_index, last_sample, last_index):
     stats = {}
 
-    for name, mode, field in (('readOps', 'rd', 'reqs'),
-                              ('writeOps', 'wr', 'reqs'),
-                              ('readBytes', 'rd', 'bytes'),
-                              ('writtenBytes', 'wr', 'bytes')):
+    for name, mode, field in (
+        ('readOps', 'rd', 'reqs'),
+        ('writeOps', 'wr', 'reqs'),
+        ('readBytes', 'rd', 'bytes'),
+        ('writtenBytes', 'wr', 'bytes'),
+    ):
         key = 'block.%d.%s.%s' % (last_index, mode, field)
         try:
             value = last_sample[key]
@@ -397,7 +433,7 @@ def _disk_iops_bytes(first_sample, first_index, last_sample, last_index):
 
 
 def _usage_percentage(val, interval):
-    return 100 * val / interval / 1000 ** 3
+    return 100 * val / interval / 1000**3
 
 
 def _find_bulk_stats_reverse_map(stats, group):
@@ -436,22 +472,24 @@ def memory(stats, first_sample, last_sample, interval):
         # guests with kernel at least 4.16 we can obtain sum of buffers and
         # caches in balloon.disk_caches.
         mem_stats['mem_free'] = str(
-            last_sample.get('balloon.unused', 0) +
-            last_sample.get('balloon.disk_caches', 0))
+            last_sample.get('balloon.unused', 0)
+            + last_sample.get('balloon.disk_caches', 0)
+        )
 
-    if first_sample is not None and last_sample is not None \
-            and interval > 0:
+    if first_sample is not None and last_sample is not None and interval > 0:
         stats_map = {
             'swap_in': 'balloon.swap_in',
             'swap_out': 'balloon.swap_out',
             'majflt': 'balloon.major_fault',
             'minflt': 'balloon.minor_fault',
         }
-        for (k, v) in stats_map.items():
+        for k, v in stats_map.items():
             # pylint: disable=round-builtin
-            mem_stats[k] = int(round((
-                last_sample.get(v, 0) - first_sample.get(v, 0)
-            ) / interval))
+            mem_stats[k] = int(
+                round(
+                    (last_sample.get(v, 0) - first_sample.get(v, 0)) / interval
+                )
+            )
 
         # This stat is deprecated
         mem_stats['pageflt'] = mem_stats['majflt'] + mem_stats['minflt']

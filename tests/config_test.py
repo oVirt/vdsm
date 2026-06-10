@@ -28,10 +28,13 @@ def fakedirs():
         runtime_dir = os.path.join(tmpdir, 'run')
         dirs = (admin_dir, vendor_dir, runtime_dir)
         with MonkeyPatchScope(
-            [(common_config, '_SYSCONFDIR', admin_dir),
-             (common_config, '_DROPPIN_BASES', dirs),
-             (common_config, 'parameters', parameters),
-             (config, 'parameters', parameters)]):
+            [
+                (common_config, '_SYSCONFDIR', admin_dir),
+                (common_config, '_DROPPIN_BASES', dirs),
+                (common_config, 'parameters', parameters),
+                (config, 'parameters', parameters),
+            ]
+        ):
             yield dirs
 
 
@@ -91,7 +94,8 @@ class TestConfig(VdsmTestCase):
         with fakedirs() as (admin_dir, vendor_dir, runtime_dir):
             create_conf(admin_dir, '[test]\nkey = default conf\n')
             create_dropin(
-                runtime_dir, '51_runtime.conf', '[test]\nkey = runtime\n')
+                runtime_dir, '51_runtime.conf', '[test]\nkey = runtime\n'
+            )
 
             cfg = config.load('vdsm')
             self.assertEqual(cfg.get('test', 'key'), 'runtime')
@@ -99,7 +103,8 @@ class TestConfig(VdsmTestCase):
     def test_ignore_invalid_conf_suffix(self):
         with fakedirs() as (admin_dir, vendor_dir, runtime_dir):
             create_dropin(
-                runtime_dir, '50_invalid_name', '[test]\nkey = runtime\n')
+                runtime_dir, '50_invalid_name', '[test]\nkey = runtime\n'
+            )
 
             cfg = config.load('vdsm')
             self.assertTrue(cfg.get('test', 'key'), 'default value')
@@ -132,7 +137,8 @@ class TestConfig(VdsmTestCase):
         """
         with fakedirs() as (admin_dir, vendor_dir, runtime_dir):
             create_dropin(
-                runtime_dir, '51_runtime.conf', '[test]\nkey = runtime\n')
+                runtime_dir, '51_runtime.conf', '[test]\nkey = runtime\n'
+            )
 
             cfg = config.load('vdsm')
             self.assertEqual(cfg.getint('test', 'num'), 0)

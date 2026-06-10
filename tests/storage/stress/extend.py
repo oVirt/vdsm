@@ -100,10 +100,12 @@ terminated = threading.Event()
 
 
 class CommandError(Exception):
-    msg = ("Command {self.cmd} failed\n"
-           "rc={self.rc}\n"
-           "out={self.out}\n"
-           "err={self.err}")
+    msg = (
+        "Command {self.cmd} failed\n"
+        "rc={self.rc}\n"
+        "out={self.out}\n"
+        "err={self.err}"
+    )
 
     def __init__(self, cmd, rc, out, err):
         self.cmd = cmd
@@ -157,7 +159,9 @@ backup {
  retain_min=50
  retain_days=0
 }
-""".replace("\n", " ")
+""".replace(
+        "\n", " "
+    )
 
     # Limit number of concurrent lvm commands, so waiting during a retry
     # loop (holding the semaphore) will lower the load on the manager
@@ -183,12 +187,18 @@ backup {
 
         return self.run(
             "lvcreate",
-            "--autobackup", "n",
-            "--contiguous", "n",
-            "--activate", "n",
-            "--size", "%sm" % size_mb,
-            "--name", lv_name,
-            self.vg_name)
+            "--autobackup",
+            "n",
+            "--contiguous",
+            "n",
+            "--activate",
+            "n",
+            "--size",
+            "%sm" % size_mb,
+            "--name",
+            lv_name,
+            self.vg_name,
+        )
 
     def extend_lv(self, lv_name, size_mb):
         if self.read_only:
@@ -200,9 +210,12 @@ backup {
 
         return self.run(
             "lvextend",
-            "--autobackup", "n",
-            "--size", "+%sm" % size_mb,
-            full_name)
+            "--autobackup",
+            "n",
+            "--size",
+            "+%sm" % size_mb,
+            full_name,
+        )
 
     def refresh_lv(self, lv_name):
         full_name = self.lv_full_name(lv_name)
@@ -243,21 +256,24 @@ backup {
 
         self.run(
             "pvcreate",
-            "--metadatasize", extent_size,
-            "--metadatacopies", "2",
-            "--metadataignore", "y",
-            *self.pv_names)
+            "--metadatasize",
+            extent_size,
+            "--metadatacopies",
+            "2",
+            "--metadataignore",
+            "y",
+            *self.pv_names
+        )
 
-        self.run(
-            "pvchange",
-            "--metadataignore", "n",
-            self.pv_names[0])
+        self.run("pvchange", "--metadataignore", "n", self.pv_names[0])
 
         self.run(
             "vgcreate",
-            "--physicalextentsize", extent_size,
+            "--physicalextentsize",
+            extent_size,
             self.vg_name,
-            *self.pv_names)
+            *self.pv_names
+        )
 
     def remove_vg(self):
         if self.read_only:
@@ -265,10 +281,7 @@ backup {
 
         logging.info("deleting vg %s", self.vg_name)
 
-        self.run(
-            "lvchange",
-            "--available", "n",
-            self.vg_name)
+        self.run("lvchange", "--available", "n", self.vg_name)
 
         self.run("vgremove", self.vg_name)
 
@@ -277,7 +290,7 @@ backup {
     def run(self, command, *args):
         config = self.CONFIG % {
             "filter": self.format_filter(),
-            "locking_type": "4" if self.read_only else "1"
+            "locking_type": "4" if self.read_only else "1",
         }
         cmd = [command, "--config", config]
         if self.verbose:
@@ -417,10 +430,7 @@ def run_regular(options):
 
     for i in range(options.concurrency):
         name = "worker-%03d" % i
-        t = threading.Thread(
-            target=regular_worker,
-            name=name,
-            args=(options,))
+        t = threading.Thread(target=regular_worker, name=name, args=(options,))
         t.daemon = True
         t.start()
         workers.append(t)
@@ -466,10 +476,12 @@ def log_stats(options):
     """
     # 2019-01-06 20:46:44,210 INFO    (MainThread) starting 50 workers
     log_re = re.compile(
-        r"(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d),\d\d\d ([A-Z]+)\s+\(.+\) (.+)")
+        r"(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d),\d\d\d ([A-Z]+)\s+\(.+\) (.+)"
+    )
     retry_re = re.compile(r"Retry (\d+) failed")
     action_re = re.compile(
-        r"(creating|removing|activating|deactivating|extending|refreshing) ")
+        r"(creating|removing|activating|deactivating|extending|refreshing) "
+    )
     read_only = ("activating", "deactivating", "refreshing")
     datestamp_fmt = "%Y-%m-%d %H:%M:%S"
 
@@ -486,7 +498,8 @@ def log_stats(options):
 
             if start_datetime is None:
                 start_datetime = datetime.datetime.strptime(
-                    datestamp, datestamp_fmt)
+                    datestamp, datestamp_fmt
+                )
 
             if level == "INFO":
                 m = action_re.match(message)
@@ -571,10 +584,7 @@ def regular_worker(options):
 def run(cmd):
     logging.debug("running %s", cmd)
 
-    p = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     out, err = p.communicate()
 
@@ -583,8 +593,8 @@ def run(cmd):
 
     if err:
         logging.warning(
-            "succeeded with warnings cmd=%r out=%r err=%r",
-            cmd, out, err)
+            "succeeded with warnings cmd=%r out=%r err=%r", cmd, out, err
+        )
     else:
         logging.debug("succeeded out=%r", out)
 
@@ -595,33 +605,24 @@ def add_common_options(parser):
     # Optional arguments
 
     parser.add_argument(
-        "-d", "--debug",
-        action="store_true",
-        help="show debug logs")
+        "-d", "--debug", action="store_true", help="show debug logs"
+    )
 
     parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="lvm command verbosity")
+        "-v", "--verbose", action="store_true", help="lvm command verbosity"
+    )
 
 
 def add_vg_options(parser):
-    parser.add_argument(
-        "vg_name",
-        help="volume group name")
+    parser.add_argument("vg_name", help="volume group name")
 
-    parser.add_argument(
-        "pv_name",
-        nargs="+",
-        help="pv names used by the vg")
+    parser.add_argument("pv_name", nargs="+", help="pv names used by the vg")
 
 
 def add_manager_options(parser):
     parser.add_argument(
-        "-p", "--manager-port",
-        type=int,
-        default=8000,
-        help="manager port")
+        "-p", "--manager-port", type=int, default=8000, help="manager port"
+    )
 
 
 parser = argparse.ArgumentParser()
@@ -629,9 +630,7 @@ subparsers = parser.add_subparsers(title="commands")
 
 # run-manager command.
 
-run_manager_parser = subparsers.add_parser(
-    "run-manager",
-    help="run manager")
+run_manager_parser = subparsers.add_parser("run-manager", help="run manager")
 
 add_common_options(run_manager_parser)
 add_manager_options(run_manager_parser)
@@ -642,46 +641,50 @@ run_manager_parser.set_defaults(command=run_manager)
 # run-regular command.
 
 run_regular_parser = subparsers.add_parser(
-    "run-regular",
-    help="run regular host flows")
+    "run-regular", help="run regular host flows"
+)
 
 add_common_options(run_regular_parser)
 add_manager_options(run_regular_parser)
 
 run_regular_parser.add_argument(
-    "-r", "--read-only",
+    "-r",
+    "--read-only",
     action="store_true",
-    help="Enable read-only mode (default False)")
+    help="Enable read-only mode (default False)",
+)
 
 run_regular_parser.add_argument(
-    "-c", "--concurrency",
+    "-c",
+    "--concurrency",
     type=int,
     default=50,
-    help="number of workers (default 50)")
+    help="number of workers (default 50)",
+)
 
 run_regular_parser.add_argument(
-    "-n", "--iterations",
+    "-n",
+    "--iterations",
     type=int,
     default=10,
-    help="number of iteration per worker")
+    help="number of iteration per worker",
+)
 
 run_regular_parser.add_argument(
-    "-e", "--extend-delay",
+    "-e",
+    "--extend-delay",
     type=int,
     default=1,
-    help="average time to wait between extends in seconds (default 1)")
+    help="average time to wait between extends in seconds (default 1)",
+)
 
 run_regular_parser.add_argument(
-    "-s", "--lv-size-mb",
-    type=int,
-    default=128,
-    help="lv size in megabytes")
+    "-s", "--lv-size-mb", type=int, default=128, help="lv size in megabytes"
+)
 
 # Required arguments.
 
-run_regular_parser.add_argument(
-    "manager_host",
-    help="manager node address")
+run_regular_parser.add_argument("manager_host", help="manager node address")
 
 add_vg_options(run_regular_parser)
 
@@ -690,8 +693,8 @@ run_regular_parser.set_defaults(command=run_regular)
 # create-vg command
 
 create_vg_parser = subparsers.add_parser(
-    "create-vg",
-    help="create vg for testing")
+    "create-vg", help="create vg for testing"
+)
 
 add_common_options(create_vg_parser)
 
@@ -701,9 +704,7 @@ create_vg_parser.set_defaults(command=create_vg)
 
 # remove-vg command
 
-remove_vg_parser = subparsers.add_parser(
-    "remove-vg",
-    help="remove testing vg")
+remove_vg_parser = subparsers.add_parser("remove-vg", help="remove testing vg")
 
 add_common_options(remove_vg_parser)
 
@@ -714,12 +715,10 @@ remove_vg_parser.set_defaults(command=remove_vg)
 # log-stats command
 
 log_stats_parser = subparsers.add_parser(
-    "log-stats",
-    help="show stats from run log")
+    "log-stats", help="show stats from run log"
+)
 
-log_stats_parser.add_argument(
-    "logfile",
-    help="log file to analyze")
+log_stats_parser.add_argument("logfile", help="log file to analyze")
 
 add_common_options(log_stats_parser)
 
@@ -731,6 +730,7 @@ options = parser.parse_args()
 
 logging.basicConfig(
     level=logging.DEBUG if options.debug else logging.INFO,
-    format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s")
+    format="%(asctime)s %(levelname)-7s (%(threadName)s) %(message)s",
+)
 
 options.command(options)

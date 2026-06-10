@@ -23,9 +23,9 @@ class FakeModule:
         pass
 
     def isClean(self):
-        return (self.a == self.olda and
-                self.b == self.oldb and
-                self.c == self.oldc)
+        return (
+            self.a == self.olda and self.b == self.oldb and self.c == self.oldc
+        )
 
 
 def patched(*args, **kw):
@@ -96,10 +96,12 @@ class TestMonkeyPatchFixture(VdsmTestCase):
     def __init__(self, *a, **kw):
         super(VdsmTestCase, self).__init__(*a, **kw)
         self.module = FakeModule()
-        self.patch = monkeypatch.Patch([
-            (self.module, 'a', patched),
-            (self.module, 'b', patched),
-        ])
+        self.patch = monkeypatch.Patch(
+            [
+                (self.module, 'a', patched),
+                (self.module, 'b', patched),
+            ]
+        )
 
     def setUp(self):
         self.assertTrue(self.module.isClean())

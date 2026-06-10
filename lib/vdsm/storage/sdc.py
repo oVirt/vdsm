@@ -5,6 +5,7 @@
 Cache module provides general purpose (more or less) cache infrastructure
 for keeping storage related data that is expensive to harvest, but needed often
 """
+
 import logging
 import threading
 
@@ -60,9 +61,8 @@ class StorageDomainCache:
     def refreshStorage(self, resize=True):
         self.log.info("Refreshing storage domain cache (resize=%s)", resize)
         with utils.stopwatch(
-                "Refreshing storage domain cache",
-                level=logging.INFO,
-                log=self.log):
+            "Refreshing storage domain cache", level=logging.INFO, log=self.log
+        ):
             self.__staleStatus = self.STORAGE_REFRESHING
 
             multipath.rescan()
@@ -151,9 +151,10 @@ class StorageDomainCache:
 
         self.log.info("Looking up domain %s", sdUUID)
         with utils.stopwatch(
-                "Looking up domain {}".format(sdUUID),
-                level=logging.INFO,
-                log=self.log):
+            "Looking up domain {}".format(sdUUID),
+            level=logging.INFO,
+            log=self.log,
+        ):
             for mod in (blockSD, glusterSD, localFsSD, nfsSD):
                 try:
                     return mod.findDomain(sdUUID)
@@ -162,7 +163,9 @@ class StorageDomainCache:
                 except Exception:
                     self.log.error(
                         "Error while looking for domain `%s`",
-                        sdUUID, exc_info=True)
+                        sdUUID,
+                        exc_info=True,
+                    )
 
         raise se.StorageDomainDoesNotExist(sdUUID)
 
@@ -184,7 +187,8 @@ class StorageDomainCache:
 
     def manuallyAddDomain(self, domain):
         self.log.info(
-            "Adding domain %s to storage domain cache", domain.sdUUID)
+            "Adding domain %s to storage domain cache", domain.sdUUID
+        )
         with self._syncroot:
             self.__domainCache[domain.sdUUID] = domain
 

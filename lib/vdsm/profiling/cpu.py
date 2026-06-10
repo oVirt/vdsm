@@ -24,8 +24,14 @@ _profiler = None
 
 class Profiler(object):
 
-    def __init__(self, filename, format='pstat', clock='cpu', builtins=True,
-                 threads=True):
+    def __init__(
+        self,
+        filename,
+        format='pstat',
+        clock='cpu',
+        builtins=True,
+        threads=True,
+    ):
         self.filename = filename
         self.format = format
         self.clock = clock
@@ -73,7 +79,7 @@ class Profiler(object):
 
 
 def start():
-    """ Starts application wide CPU profiling """
+    """Starts application wide CPU profiling"""
     global _profiler
     if is_enabled():
         with _lock:
@@ -84,12 +90,13 @@ def start():
                 format=config.get('devel', 'cpu_profile_format'),
                 clock=config.get('devel', 'cpu_profile_clock'),
                 builtins=config.getboolean('devel', 'cpu_profile_builtins'),
-                threads=True)
+                threads=True,
+            )
             _profiler.start()
 
 
 def stop():
-    """ Stops application wide CPU profiling """
+    """Stops application wide CPU profiling"""
     global _profiler
     if is_enabled():
         with _lock:
@@ -106,20 +113,29 @@ def is_running():
         return yappi and yappi.is_running()
 
 
-def profile(filename, format='pstat', clock='cpu', builtins=True,
-            threads=True):
+def profile(
+    filename, format='pstat', clock='cpu', builtins=True, threads=True
+):
     """
     Profile decorated function, saving profile to filename using format.
 
     Note: you cannot use this when the application wide profile is enabled, or
     profile multiple functions in the same code path.
     """
+
     def decorator(f):
         @wraps(f)
         def wrapper(*a, **kw):
-            profiler = Profiler(filename, format=format, clock=clock,
-                                builtins=builtins, threads=threads)
+            profiler = Profiler(
+                filename,
+                format=format,
+                clock=clock,
+                builtins=builtins,
+                threads=threads,
+            )
             with profiler:
                 return f(*a, **kw)
+
         return wrapper
+
     return decorator

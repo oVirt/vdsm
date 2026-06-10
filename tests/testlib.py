@@ -55,9 +55,11 @@ class Sigargs(object):
     def __init__(self, func):
         try:
             from inspect import signature
+
             self._py3 = True
         except ImportError:  # py2
             from inspect import getargspec as signature
+
             self._py3 = False
         self._sig = signature(func)
 
@@ -73,8 +75,11 @@ class Sigargs(object):
     @property
     def varargs(self):
         if self._py3:
-            varargs = [arg.name for arg in self._sig.parameters.values()
-                       if arg.kind == arg.VAR_KEYWORD]
+            varargs = [
+                arg.name
+                for arg in self._sig.parameters.values()
+                if arg.kind == arg.VAR_KEYWORD
+            ]
             return None if varargs == [] else varargs
         else:
             return self._sig.varargs
@@ -82,8 +87,11 @@ class Sigargs(object):
     @property
     def keywords(self):
         if self._py3:
-            keywords = [arg.name for arg in self._sig.parameters.values()
-                        if arg.kind == arg.KEYWORD_ONLY]
+            keywords = [
+                arg.name
+                for arg in self._sig.parameters.values()
+                if arg.kind == arg.KEYWORD_ONLY
+            ]
             return None if keywords == [] else keywords
         else:
             return self._sig.keywords
@@ -91,21 +99,26 @@ class Sigargs(object):
     @property
     def defaults(self):
         if self._py3:
-            return [arg.name for arg in self._sig.parameters.values()
-                    if arg.default]
+            return [
+                arg.name
+                for arg in self._sig.parameters.values()
+                if arg.default
+            ]
         else:
             return self._sig.defaults
 
 
 def dummyTextGenerator(size):
-    text = ("Lorem ipsum dolor sit amet, consectetur adipisicing elit, "
-            "sed do eiusmod tempor incididunt ut labore et dolore magna "
-            "aliqua. Ut enim ad minim veniam, quis nostrud exercitation "
-            "ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis "
-            "aute irure dolor in reprehenderit in voluptate velit esse cillum "
-            "dolore eu fugiat nulla pariatur. Excepteur sint occaecat "
-            "cupidatat non proident, sunt in culpa qui officia deserunt "
-            "mollit anim id est laborum. ")
+    text = (
+        "Lorem ipsum dolor sit amet, consectetur adipisicing elit, "
+        "sed do eiusmod tempor incididunt ut labore et dolore magna "
+        "aliqua. Ut enim ad minim veniam, quis nostrud exercitation "
+        "ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis "
+        "aute irure dolor in reprehenderit in voluptate velit esse cillum "
+        "dolore eu fugiat nulla pariatur. Excepteur sint occaecat "
+        "cupidatat non proident, sunt in culpa qui officia deserunt "
+        "mollit anim id est laborum. "
+    )
     d, m = divmod(size, len(text))
     return (text * d) + text[:m]
 
@@ -204,19 +217,26 @@ def make_file(path, size=0):
 
 def _vdsm_machine():
     return (
-        _ARCH_REAL if _ARCH_REAL in (
+        _ARCH_REAL
+        if _ARCH_REAL
+        in (
             # FIXME: this duplicates caps.Architecture, but
             # we cannot import caps.py in this module.
-            'x86_64', 'ppc64', 'ppc64le'
-        ) else _ARCH_FAKE
+            'x86_64',
+            'ppc64',
+            'ppc64le',
+        )
+        else _ARCH_FAKE
     )
 
 
 class VdsmTestCase(unittest.TestCase):
 
-    _patch_arch = Patch([
-        (platform, "machine", _vdsm_machine),
-    ])
+    _patch_arch = Patch(
+        [
+            (platform, "machine", _vdsm_machine),
+        ]
+    )
 
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
@@ -233,12 +253,13 @@ class VdsmTestCase(unittest.TestCase):
 
     def retryAssert(self, *args, **kwargs):
         '''Keep retrying an assertion if AssertionError is raised.
-           See function utils.retry for the meaning of the arguments.
+        See function utils.retry for the meaning of the arguments.
         '''
         # the utils module only can be imported correctly after
         # hackVdsmModule() is called. Do not import it at the
         # module level.
         from vdsm.common.function import retry
+
         return retry(expectedException=AssertionError, *args, **kwargs)
 
     def assertNotRaises(self, callableObj=None, *args, **kwargs):
@@ -265,7 +286,8 @@ class VdsmTestCase(unittest.TestCase):
         raise RuntimeError(
             "assertEquals is deprecated, please use assertEqual\n"
             "See https://docs.python.org/2/library/unittest.html"
-            "#deprecated-aliases")
+            "#deprecated-aliases"
+        )
 
 
 class XMLTestCase(VdsmTestCase):
@@ -281,9 +303,12 @@ class XMLTestCase(VdsmTestCase):
         actual = normalized(xml)
         expected = normalized(expectedXML)
 
-        self.assertEqual(actual, expected,
-                         "XMLs are different:\nActual:\n%s\nExpected:\n%s\n" %
-                         (actual, expected))
+        self.assertEqual(
+            actual,
+            expected,
+            "XMLs are different:\nActual:\n%s\nExpected:\n%s\n"
+            % (actual, expected),
+        )
 
     def assert_dom_xml_equal(self, dom, expected_xml):
         xml = xmlutils.tostring(dom)
@@ -319,6 +344,7 @@ class AssertingLock(object):
     """
     Lock that raises when trying to acquire a locked lock.
     """
+
     def __init__(self):
         self._lock = threading.Lock()
 
@@ -371,13 +397,16 @@ def run():
     if not any(arg for arg in pytest_args if not arg.startswith('-')):
         pytest_args.append('.')
 
-    exit_code = pytest.main(pytest_args, plugins=[
-        SlowTestsPlugin(),
-        StressTestsPlugin(),
-        ThreadLeakPlugin(),
-        ProcessLeakPlugin(),
-        FileLeakPlugin(),
-    ])
+    exit_code = pytest.main(
+        pytest_args,
+        plugins=[
+            SlowTestsPlugin(),
+            StressTestsPlugin(),
+            ThreadLeakPlugin(),
+            ProcessLeakPlugin(),
+            FileLeakPlugin(),
+        ],
+    )
 
     sys.exit(exit_code)
 
@@ -389,7 +418,7 @@ def make_config(tunables):
     """
     cfg = configparser.ConfigParser()
     vdsm.config.set_defaults(cfg)
-    for (section, key, value) in tunables:
+    for section, key, value in tunables:
         cfg.set(section, key, value)
     return cfg
 
@@ -415,6 +444,7 @@ def recorded(meth):
             pass
 
     """
+
     @wraps(meth)
     def wrapper(obj, *args, **kwargs):
         if inspect.isclass(obj):
@@ -428,6 +458,7 @@ def recorded(meth):
             setattr(obj, name, recording)
         recording.append((meth.__name__, args, kwargs))
         return meth(obj, *args, **kwargs)
+
     return wrapper
 
 
@@ -479,6 +510,7 @@ def forked(f):
     Decorator for running a test in a child process. Excpetions in the child
     process will be re-raised in the parent.
     """
+
     @functools.wraps(f)
     def wrapper(*a, **kw):
         r, w = os.pipe()
@@ -534,6 +566,7 @@ def maybefail(meth):
         del obj.errors["method_name"]
 
     """
+
     @functools.wraps(meth)
     def wrapper(self, *args, **kwargs):
         try:
@@ -541,6 +574,7 @@ def maybefail(meth):
         except KeyError:
             return meth(self, *args, **kwargs)
         raise exception
+
     return wrapper
 
 

@@ -22,9 +22,7 @@ def _dump_pickled_schema(schema_path, pickled_schema_path):
     with io.open(schema_path, 'rb') as f:
         loaded_schema = _load_yaml_file(f)
         with io.open(pickled_schema_path, 'wb') as pickled_schema:
-            pickle.dump(loaded_schema,
-                        pickled_schema,
-                        protocol=4)
+            pickle.dump(loaded_schema, pickled_schema, protocol=4)
 
 
 def main():

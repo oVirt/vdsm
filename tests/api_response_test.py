@@ -50,9 +50,7 @@ class TestResponse(TestCaseBase):
 
     def test_success_with_wrong_return(self):
         vmList = ['foobar']  # wrong type as per @api.method contract
-        self.assertRaises(TypeError,
-                          self.vm.succeed_with_return,
-                          vmList)
+        self.assertRaises(TypeError, self.vm.succeed_with_return, vmList)
 
     def test_success_with_return_dict_override_message(self):
         message = 'this message overrides the default'

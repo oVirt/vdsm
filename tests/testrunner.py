@@ -24,20 +24,24 @@ def configureLogging():
             filename=TEST_LOG,
             filemode='a',
             format='%(asctime)s,%(msecs)03d %(levelname)-7s (%(threadName)s) '
-                   '[%(name)s] %(message)s (%(module)s:%(lineno)d)',
+            '[%(name)s] %(message)s (%(module)s:%(lineno)d)',
             datefmt='%H:%M:%S',
-            level=logging.DEBUG)
+            level=logging.DEBUG,
+        )
 
 
 if __name__ == '__main__':
     if "--help" in sys.argv:
-        print("testrunner options:\n"
-              "--local-modules   use vdsm modules from source tree, "
-              "instead of installed ones.\n")
+        print(
+            "testrunner options:\n"
+            "--local-modules   use vdsm modules from source tree, "
+            "instead of installed ones.\n"
+        )
 
     if findRemove(sys.argv, "--local-modules"):
         from vdsm import constants
         from vdsm.common import constants as common_constants
+
         common_constants.P_VDSM = constants.P_VDSM = "../vdsm/"
 
     configureLogging()

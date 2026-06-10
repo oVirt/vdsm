@@ -47,8 +47,14 @@ class TemporaryRepo(object):
         os.remove(dom_link)
 
     def create_localfs_domain(
-            self, name, version, block_size=sc.BLOCK_SIZE_512,
-            max_hosts=sc.HOSTS_4K_1M, filesystem=None, remote_path=None):
+        self,
+        name,
+        version,
+        block_size=sc.BLOCK_SIZE_512,
+        max_hosts=sc.HOSTS_4K_1M,
+        filesystem=None,
+        remote_path=None,
+    ):
         """
         Create local FS file storage domain in the repository.
 
@@ -68,8 +74,12 @@ class TemporaryRepo(object):
             self._connect_loopbackfs(remote_path, filesystem)
 
         domain = self._create_domain(
-            name, version, remote_path, block_size=block_size,
-            max_hosts=max_hosts)
+            name,
+            version,
+            remote_path,
+            block_size=block_size,
+            max_hosts=max_hosts,
+        )
         # To make sure we read metadata from storage in tests, invalidate
         # metadata now.
         domain.invalidateMetadata()
@@ -92,8 +102,13 @@ class TemporaryRepo(object):
         self.tmp_fs.destroy_filesystem(remote_path)
 
     def _create_domain(
-            self, name, version, remote_path, block_size=sc.BLOCK_SIZE_512,
-            max_hosts=sc.HOSTS_4K_1M):
+        self,
+        name,
+        version,
+        remote_path,
+        block_size=sc.BLOCK_SIZE_512,
+        max_hosts=sc.HOSTS_4K_1M,
+    ):
         sd_uuid = str(uuid.uuid4())
 
         dom = localFsSD.LocalFsStorageDomain.create(
@@ -104,7 +119,8 @@ class TemporaryRepo(object):
             version=version,
             storageType=sd.LOCALFS_DOMAIN,
             block_size=block_size,
-            max_hosts=max_hosts)
+            max_hosts=max_hosts,
+        )
 
         sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
         sdCache.manuallyAddDomain(dom)

@@ -166,8 +166,14 @@ class FakeDomainManifest(object):
 
     @recorded
     def validateCreateVolumeParams(
-            self, volFormat, srcVolUUID, diskType=None, preallocate=None,
-            add_bitmaps=False, bitmap=None):
+        self,
+        volFormat,
+        srcVolUUID,
+        diskType=None,
+        preallocate=None,
+        add_bitmaps=False,
+        bitmap=None,
+    ):
         pass
 
     @recorded
@@ -319,8 +325,21 @@ class FakeVolumeManifest(object):
 
     @classmethod
     @recorded
-    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
-                    voltype, disktype, desc="", legality=None, sequence=0):
+    def newMetadata(
+        cls,
+        metaId,
+        sdUUID,
+        imgUUID,
+        puuid,
+        size,
+        format,
+        type,
+        voltype,
+        disktype,
+        desc="",
+        legality=None,
+        sequence=0,
+    ):
         pass
 
     @recorded
@@ -494,8 +513,9 @@ class FakeVolumeManifest(object):
         pass
 
     @recorded
-    def prepare(self, rw=True, justme=False,
-                chainrw=False, setrw=False, force=False):
+    def prepare(
+        self, rw=True, justme=False, chainrw=False, setrw=False, force=False
+    ):
         pass
 
     @classmethod
@@ -553,8 +573,9 @@ class FakeBlockVolumeManifest(FakeVolumeManifest):
 
     @classmethod
     @recorded
-    def calculate_volume_alloc_size(cls, preallocate, vol_format, capacity,
-                                    initial_size):
+    def calculate_volume_alloc_size(
+        cls, preallocate, vol_format, capacity, initial_size
+    ):
         pass
 
 
@@ -605,6 +626,7 @@ class RedirectionChecker(object):
     instance accessible via the 'target_name" attribute.  The target class
     methods must use the @recorded decorator.
     """
+
     def __init__(self, source_instance, target_name):
         self.source_instance = source_instance
         self.target_name = target_name
@@ -636,26 +658,31 @@ class RedirectionChecker(object):
 @expandPermutations
 class DomainTestMixin(object):
 
-    @permutations([
-        ['supports_external_leases', 1],
-    ])
+    @permutations(
+        [
+            ['supports_external_leases', 1],
+        ]
+    )
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
 
-    @permutations([
-        ['sdUUID', 'a6ecac0a-5c6b-46d7-9ba5-df8b34df2d01'],
-        ['domaindir', '/a/b/c'],
-        ['_metadata', {}],
-        ['mountpoint', '/a/b'],
-    ])
+    @permutations(
+        [
+            ['sdUUID', 'a6ecac0a-5c6b-46d7-9ba5-df8b34df2d01'],
+            ['domaindir', '/a/b/c'],
+            ['_metadata', {}],
+            ['mountpoint', '/a/b'],
+        ]
+    )
     def test_property(self, prop, val):
         self.assertEqual(getattr(self.domain, prop), val)
 
     def test_getrepopath(self):
         # The private method _getRepoPath in StorageDomain calls the public
         # method getRepoPath in the StorageDomainManifest.
-        self.checker.check_method('_getRepoPath', (),
-                                  [('getRepoPath', (), {})])
+        self.checker.check_method(
+            '_getRepoPath', (), [('getRepoPath', (), {})]
+        )
 
     def test_validate_create_volume_params(self):
         result = [
@@ -667,67 +694,74 @@ class DomainTestMixin(object):
                     "preallocate": None,
                     "add_bitmaps": False,
                     "bitmap": None,
-                }
+                },
             )
         ]
         self.checker.check_method(
-            "validateCreateVolumeParams", ("1", "2", "3"), result)
+            "validateCreateVolumeParams", ("1", "2", "3"), result
+        )
 
     def test_nonexisting_function(self):
-        self.assertRaises(AttributeError,
-                          self.checker.check_method_call, 'foo')
+        self.assertRaises(
+            AttributeError, self.checker.check_method_call, 'foo'
+        )
 
-    @permutations([
-        # dom method, manifest method, nargs
-        ['getClusterLease', 'getDomainLease', 0],
-        ['acquireClusterLock', 'acquireDomainLock', 1],
-        ['releaseClusterLock', 'releaseDomainLock', 0],
-        ['inspectClusterLock', 'inspectDomainLock', 0],
-        ['_makeClusterLock', '_makeDomainLock', 1],
-    ])
+    @permutations(
+        [
+            # dom method, manifest method, nargs
+            ['getClusterLease', 'getDomainLease', 0],
+            ['acquireClusterLock', 'acquireDomainLock', 1],
+            ['releaseClusterLock', 'releaseDomainLock', 0],
+            ['inspectClusterLock', 'inspectDomainLock', 0],
+            ['_makeClusterLock', '_makeDomainLock', 1],
+        ]
+    )
     def test_clusterlock(self, dom_method, manifest_method, nr_args):
         args = tuple(range(nr_args))
-        self.checker.check_method(dom_method, args,
-                                  [(manifest_method, args, {})])
+        self.checker.check_method(
+            dom_method, args, [(manifest_method, args, {})]
+        )
 
-    @permutations([
-        ['getMonitoringPath', 0],
-        ['replaceMetadata', 1],
-        ['getVSize', 2],
-        ['getVAllocSize', 2],
-        ['getLeasesFilePath', 0],
-        ['getIdsFilePath', 0],
-        ['getIsoDomainImagesDir', 0],
-        ['getMDPath', 0],
-        ['getMetaParam', 1],
-        ['getVersion', 0],
-        ['supportsSparseness', 0],
-        ['recommends_unordered_writes', 1],
-        ['qcow2_compat', 0],
-        ['getMetadata', 0],
-        ['getFormat', 0],
-        ['getPools', 0],
-        ['getStorageType', 0],
-        ['getDomainRole', 0],
-        ['getDomainClass', 0],
-        ['isISO', 0],
-        ['isBackup', 0],
-        ['isData', 0],
-        ['deleteImage', 3],
-        ['purgeImage', 4],
-        ['getAllImages', 0],
-        ['getAllVolumes', 0],
-        ['getReservedId', 0],
-        ['acquireHostId', 2],
-        ['releaseHostId', 3],
-        ['hasHostId', 1],
-        ['getHostStatus', 1],
-        ['hasVolumeLeases', 0],
-        ['refreshDirTree', 0],
-        ['refresh', 0],
-        ['getVolumeLease', 2],
-        ['external_leases_path', 0],
-    ])
+    @permutations(
+        [
+            ['getMonitoringPath', 0],
+            ['replaceMetadata', 1],
+            ['getVSize', 2],
+            ['getVAllocSize', 2],
+            ['getLeasesFilePath', 0],
+            ['getIdsFilePath', 0],
+            ['getIsoDomainImagesDir', 0],
+            ['getMDPath', 0],
+            ['getMetaParam', 1],
+            ['getVersion', 0],
+            ['supportsSparseness', 0],
+            ['recommends_unordered_writes', 1],
+            ['qcow2_compat', 0],
+            ['getMetadata', 0],
+            ['getFormat', 0],
+            ['getPools', 0],
+            ['getStorageType', 0],
+            ['getDomainRole', 0],
+            ['getDomainClass', 0],
+            ['isISO', 0],
+            ['isBackup', 0],
+            ['isData', 0],
+            ['deleteImage', 3],
+            ['purgeImage', 4],
+            ['getAllImages', 0],
+            ['getAllVolumes', 0],
+            ['getReservedId', 0],
+            ['acquireHostId', 2],
+            ['releaseHostId', 3],
+            ['hasHostId', 1],
+            ['getHostStatus', 1],
+            ['hasVolumeLeases', 0],
+            ['refreshDirTree', 0],
+            ['refresh', 0],
+            ['getVolumeLease', 2],
+            ['external_leases_path', 0],
+        ]
+    )
     def test_common_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
@@ -744,18 +778,22 @@ class TestBlockDomain(DomainTestMixin, VdsmTestCase):
             result = [('acquireVolumeMetadataSlot', (0,), {})]
             self.assertEqual(self.domain._manifest.__calls__, result)
 
-    @permutations([
-        ['extend', 2],
-        ['resizePV', 1],
-        ['readMetadataMapping', 0],
-        ['rmDCImgDir', 2],
-    ])
+    @permutations(
+        [
+            ['extend', 2],
+            ['resizePV', 1],
+            ['readMetadataMapping', 0],
+            ['rmDCImgDir', 2],
+        ]
+    )
     def test_block_functions(self, fn, nargs=0):
         self.checker.check_method_call(fn, nargs)
 
-    @permutations([
-        ['getMetaDataMapping', 2],
-    ])
+    @permutations(
+        [
+            ['getMetaDataMapping', 2],
+        ]
+    )
     def test_block_classmethod(self, fn, nargs=0):
         self.checker.check_classmethod_call(fn, nargs)
 
@@ -773,91 +811,96 @@ class TestFileDomain(DomainTestMixin, VdsmTestCase):
 @expandPermutations
 class VolumeTestMixin(object):
 
-    @permutations([
-        ['sdUUID', 'b4502284-2101-4c5c-ada0-6a196fb30315'],
-        ['imgUUID', 'e2a325e4-62be-4939-8145-72277c270e8e'],
-        ['volUUID', '6aab5eb4-2a8b-4cb7-a0b7-bc6f61de3e18'],
-        ['repoPath', '/rhev/data-center'],
-        ['imagePath', '/a/b'],
-        ['volumePath', '/a/b/c'],
-        ['voltype', None],
-    ])
+    @permutations(
+        [
+            ['sdUUID', 'b4502284-2101-4c5c-ada0-6a196fb30315'],
+            ['imgUUID', 'e2a325e4-62be-4939-8145-72277c270e8e'],
+            ['volUUID', '6aab5eb4-2a8b-4cb7-a0b7-bc6f61de3e18'],
+            ['repoPath', '/rhev/data-center'],
+            ['imagePath', '/a/b'],
+            ['volumePath', '/a/b/c'],
+            ['voltype', None],
+        ]
+    )
     def test_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
 
-    @permutations([
-        ['getVolumePath', 0],
-        ['getMetadataId', 0],
-        ['getMetadata', 1],
-        ['getMetaParam', 1],
-        ['getParent', 0],
-        ['setLeaf', 0],
-        ['isLeaf', 0],
-        ['getVolType', 0],
-        ['getChildren', 0],
-        ['isShared', 0],
-        ['setInternal', 0],
-        ['recheckIfLeaf', 0],
-        ['getImage', 0],
-        ['setDescription', 1],
-        ['getDescription', 0],
-        ['getLegality', 0],
-        ['setLegality', 1],
-        ['setDomain', 1],
-        ['setShared', 0],
-        ['updateInvalidatedSize', 0],
-        ['getType', 0],
-        ['setType', 1],
-        ['getDiskType', 0],
-        ['getFormat', 0],
-        ['setFormat', 1],
-        ['isLegal', 0],
-        ['isFake', 0],
-        ['isInternal', 0],
-        ['isSparse', 0],
-        ['getVolumeSize', 0],
-        ['getVolumeTrueSize', 0],
-        ['metadata2info', 1],
-        ['getInfo', 0],
-        ['getVmVolumeInfo', 0],
-        ['getVolumeParams', 0],
-        ['validateDelete', 0],
-        ['refreshVolume', 0],
-        ['_share', 1],
-        ['_shareLease', 1],
-        ['prepare', 5],
-        ['optimal_size', 0],
-    ])
+    @permutations(
+        [
+            ['getVolumePath', 0],
+            ['getMetadataId', 0],
+            ['getMetadata', 1],
+            ['getMetaParam', 1],
+            ['getParent', 0],
+            ['setLeaf', 0],
+            ['isLeaf', 0],
+            ['getVolType', 0],
+            ['getChildren', 0],
+            ['isShared', 0],
+            ['setInternal', 0],
+            ['recheckIfLeaf', 0],
+            ['getImage', 0],
+            ['setDescription', 1],
+            ['getDescription', 0],
+            ['getLegality', 0],
+            ['setLegality', 1],
+            ['setDomain', 1],
+            ['setShared', 0],
+            ['updateInvalidatedSize', 0],
+            ['getType', 0],
+            ['setType', 1],
+            ['getDiskType', 0],
+            ['getFormat', 0],
+            ['setFormat', 1],
+            ['isLegal', 0],
+            ['isFake', 0],
+            ['isInternal', 0],
+            ['isSparse', 0],
+            ['getVolumeSize', 0],
+            ['getVolumeTrueSize', 0],
+            ['metadata2info', 1],
+            ['getInfo', 0],
+            ['getVmVolumeInfo', 0],
+            ['getVolumeParams', 0],
+            ['validateDelete', 0],
+            ['refreshVolume', 0],
+            ['_share', 1],
+            ['_shareLease', 1],
+            ['prepare', 5],
+            ['optimal_size', 0],
+        ]
+    )
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
     def test_newmetadata(self):
         args = (
-            1,             # metaId
+            1,  # metaId
             uuid.uuid4(),  # sdUUID
             uuid.uuid4(),  # imgUUID
             uuid.uuid4(),  # puuid
-            1000,          # capacity
-            1,             # format
-            2,             # type
-            sc.LEAF_VOL,   # voltype
-            'file',        # disktype
-            '',            # description
+            1000,  # capacity
+            1,  # format
+            2,  # type
+            sc.LEAF_VOL,  # voltype
+            'file',  # disktype
+            '',  # description
             sc.LEGAL_VOL,
         )
         kwargs = {"sequence": 0}
         self.checker.check_classmethod_call_args_kwargs(
-            "newMetadata",
-            *args,
-            **kwargs)
+            "newMetadata", *args, **kwargs
+        )
 
-    @permutations([
-        ['_putMetadata', 2],
-        ['createMetadata', 2],
-        ['newVolumeLease', 3],
-        ['getImageVolumes', 2],
-        ['teardown', 3],
-    ])
+    @permutations(
+        [
+            ['_putMetadata', 2],
+            ['createMetadata', 2],
+            ['newVolumeLease', 3],
+            ['getImageVolumes', 2],
+            ['teardown', 3],
+        ]
+    )
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
 
@@ -869,25 +912,29 @@ class TestBlockVolume(VolumeTestMixin, VdsmTestCase):
         self.volume = FakeBlockVolume()
         self.checker = RedirectionChecker(self.volume, '_manifest')
 
-    @permutations([
-        ['getMetaSlot', 0],
-        ['getParentMeta', 0],
-        ['getParentTag', 0],
-        ['getVolumeTag', 1],
-        ['changeVolumeTag', 2],
-        ['setParentMeta', 1],
-        ['setParentTag', 1],
-        ['_setrw', 1],
-        ['getDevPath', 0],
-        ['removeMetadata', 1],
-    ])
+    @permutations(
+        [
+            ['getMetaSlot', 0],
+            ['getParentMeta', 0],
+            ['getParentTag', 0],
+            ['getVolumeTag', 1],
+            ['changeVolumeTag', 2],
+            ['setParentMeta', 1],
+            ['setParentTag', 1],
+            ['_setrw', 1],
+            ['getDevPath', 0],
+            ['removeMetadata', 1],
+        ]
+    )
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
-    @permutations([
-        ['calculate_volume_alloc_size', 4],
-        ['max_size', 2],
-    ])
+    @permutations(
+        [
+            ['calculate_volume_alloc_size', 4],
+            ['max_size', 2],
+        ]
+    )
     def test_block_classmethod(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
 
@@ -899,30 +946,38 @@ class TestFileVolume(VolumeTestMixin, VdsmTestCase):
         self.volume = FakeFileVolume()
         self.checker = RedirectionChecker(self.volume, '_manifest')
 
-    @permutations([
-        ['oop', 'oop'],
-    ])
+    @permutations(
+        [
+            ['oop', 'oop'],
+        ]
+    )
     def test_file_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
 
     # TODO: Test getLeaseVolumePath with no arguments
-    @permutations([
-        ['getMetaVolumePath', 1],
-        ['getLeaseVolumePath', 1],
-        ['_setrw', 1],
-        ['removeMetadata', 0],
-    ])
+    @permutations(
+        [
+            ['getMetaVolumePath', 1],
+            ['getLeaseVolumePath', 1],
+            ['_setrw', 1],
+            ['removeMetadata', 0],
+        ]
+    )
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
-    @permutations([
-        ['file_setrw', 2],
-    ])
+    @permutations(
+        [
+            ['file_setrw', 2],
+        ]
+    )
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
 
-    @permutations([
-        ['max_size', 2],
-    ])
+    @permutations(
+        [
+            ['max_size', 2],
+        ]
+    )
     def test_file_classmethod(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)

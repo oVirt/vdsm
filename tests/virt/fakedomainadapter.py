@@ -116,7 +116,8 @@ class FakeDomainAdapter(object):
                 return checkpoint
 
         raise fake.libvirt_error(
-            [libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT], "Checkpoint not found")
+            [libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT], "Checkpoint not found"
+        )
 
     @maybefail
     def listAllCheckpoints(self, flags=None):
@@ -125,8 +126,8 @@ class FakeDomainAdapter(object):
     @maybefail
     def checkpointCreateXML(self, checkpoint_xml, flags=None):
         expected_flags = (
-            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE |
-            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE
+            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
+            | libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE
         )
         assert flags == expected_flags
 
@@ -141,9 +142,13 @@ class FakeDomainAdapter(object):
                     return
 
             raise fake.libvirt_error(
-                [libvirt.VIR_ERR_INVALID_DOMAIN_CHECKPOINT,
-                 '', "Invalid checkpoint error"],
-                "Fake checkpoint error")
+                [
+                    libvirt.VIR_ERR_INVALID_DOMAIN_CHECKPOINT,
+                    '',
+                    "Invalid checkpoint error",
+                ],
+                "Fake checkpoint error",
+            )
 
     def _generate_backup_xml(self, backup_xml):
         """
@@ -225,8 +230,10 @@ class FakeDomainAdapter(object):
             if disk.get("exportname") is None:
                 disk.set("exportname", disk.get("name"))
 
-            if (disk.get("incrementala") is None and
-                    disk.get("backupmode") == "incremental"):
+            if (
+                disk.get("incrementala") is None
+                and disk.get("backupmode") == "incremental"
+            ):
                 disk.set("incremental", incremental.text)
 
             disk.set("index", str(self.next_index))

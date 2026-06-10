@@ -50,10 +50,18 @@ class Executor(object):
       of threads when many tasks are stuck.
 
     """
+
     _log = logging.getLogger('Executor')
 
-    def __init__(self, name, workers_count, max_tasks, scheduler,
-                 max_workers=None, log=None):
+    def __init__(
+        self,
+        name,
+        workers_count,
+        max_tasks,
+        scheduler,
+        max_workers=None,
+        log=None,
+    ):
         """
         :param name: Name of the executor; no special purpose, just for
           logging and debugging.
@@ -98,7 +106,7 @@ class Executor(object):
             self._workers_count,
             self._max_workers,  # either None or int
             repr(self._tasks),
-            id(self)
+            id(self),
         )
 
     @property
@@ -162,9 +170,10 @@ class Executor(object):
         return len(self._workers)
 
     def _may_add_workers(self):
-        return (self._active_workers < self._workers_count and
-                (self._max_workers is None or
-                 self._total_workers < self._max_workers))
+        return self._active_workers < self._workers_count and (
+            self._max_workers is None
+            or self._total_workers < self._max_workers
+        )
 
     def _worker_discarded(self, worker):
         """
@@ -187,11 +196,16 @@ class Executor(object):
 
         # intentionally done outside the lock
         if not worker_added:
-            self._log.warning("Too many workers (limit=%s), not adding more",
-                              self._max_workers)
+            self._log.warning(
+                "Too many workers (limit=%s), not adding more",
+                self._max_workers,
+            )
         # this is a debug helper, it is not that important to be precise
-        self._log.warning("executor state: count=%d workers=%s",
-                          self._total_workers, self._workers)
+        self._log.warning(
+            "executor state: count=%d workers=%s",
+            self._total_workers,
+            self._workers,
+        )
 
     def _worker_stopped(self, worker):
         """
@@ -213,8 +227,11 @@ class Executor(object):
                 worker_added = True
 
         if worker_added:
-            self._log.info("New worker added (%s active, %s total workers)",
-                           self._active_workers, self._total_workers)
+            self._log.info(
+                "New worker added (%s active, %s total workers)",
+                self._active_workers,
+                self._total_workers,
+            )
 
     def _next_task(self):
         """
@@ -240,7 +257,7 @@ _STOP = object()
 
 
 class _WorkerDiscarded(Exception):
-    """ Raised if worker was discarded during execution of a task """
+    """Raised if worker was discarded during execution of a task"""
 
 
 class _Worker(object):
@@ -314,7 +331,8 @@ class _Worker(object):
     def _check_after(self, timeout):
         if timeout is not None:
             check_task = functools.partial(
-                self._check_task, self._task_counter)
+                self._check_task, self._task_counter
+            )
             return self._scheduler.schedule(timeout, check_task)
         return None
 
@@ -340,8 +358,9 @@ class _Worker(object):
                 trace = concurrent.format_traceback(self._thread.ident)
             except KeyError:
                 trace = "(traceback not available)"
-            self._log.warning("Worker blocked: %s, traceback:\n%s", self,
-                              trace)
+            self._log.warning(
+                "Worker blocked: %s, traceback:\n%s", self, trace
+            )
 
     def __repr__(self):
         return "<Worker name=%s %s%s task#=%s at 0x%x>" % (
@@ -349,7 +368,7 @@ class _Worker(object):
             "running %s" % (self._task,) if self._task else "waiting",
             " discarded" if self._discarded else "",
             self._task_counter,
-            id(self)
+            id(self),
         )
 
 
@@ -377,7 +396,7 @@ class Task(object):
             self._callable,
             self.timeout,
             self.duration,
-            id(self)
+            id(self),
         )
 
 
@@ -415,7 +434,7 @@ class TaskQueue(object):
             self._max_tasks,
             len(self._tasks),
             repr(self._tasks),
-            id(self)
+            id(self),
         )
 
     def put(self, task):
@@ -428,7 +447,8 @@ class TaskQueue(object):
                 raise exception.ResourceExhausted(
                     "Too many tasks",
                     resource=self._name,
-                    current_tasks=self._max_tasks)
+                    current_tasks=self._max_tasks,
+                )
             self._tasks.append(task)
             self._cond.notify()
 

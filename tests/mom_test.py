@@ -42,7 +42,7 @@ class DummyMomApi(object):
                 "ksm_merge_across_nodes": 1,
                 "ksm_pages_to_scan": 5,
                 "ksm_pages_sharing": 100,
-                "ksmd_cpu_usage": 15
+                "ksmd_cpu_usage": 15,
             }
         }
 
@@ -152,7 +152,7 @@ class MomPolicyTests(TestCase):
             "ksmMergeAcrossNodes": True,
             "ksmState": False,
             "ksmPages": 5,
-            "memShared": 100 * cpuarch.PAGE_SIZE_BYTES // MiB
+            "memShared": 100 * cpuarch.PAGE_SIZE_BYTES // MiB,
         }
 
         self.assertEqual(stats, expected)
@@ -160,4 +160,5 @@ class MomPolicyTests(TestCase):
     def _check_policy_equal(self, policy_a, policy_b):
         self.assertEqual(
             sorted(set(policy_a.split('\n'))),
-            sorted(set(policy_b.split('\n'))))
+            sorted(set(policy_b.split('\n'))),
+        )

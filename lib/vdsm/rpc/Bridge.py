@@ -15,10 +15,10 @@ from vdsm.api import vdsmapi
 from vdsm.config import config
 from vdsm.network.netinfo.addresses import getDeviceByIP
 
-
 try:
     import vdsm.gluster.apiwrapper as gapi
     from vdsm.gluster import exception as ge
+
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
@@ -41,15 +41,19 @@ class InvalidCall(Exception):
         self.error = error
 
     def __str__(self):
-        return ("Attempt to call function: %s with arguments: %s error: %s" %
-                (self.function, self.arguments, self.error))
+        return "Attempt to call function: %s with arguments: %s error: %s" % (
+            self.function,
+            self.arguments,
+            self.error,
+        )
 
 
 class DynamicBridge(object):
     def __init__(self):
         api_strict_mode = config.getboolean('devel', 'api_strict_mode')
-        self._schema = vdsmapi.Schema.vdsm_api(api_strict_mode,
-                                               with_gluster=_glusterEnabled)
+        self._schema = vdsmapi.Schema.vdsm_api(
+            api_strict_mode, with_gluster=_glusterEnabled
+        )
 
         self._event_schema = vdsmapi.Schema.vdsm_events(api_strict_mode)
 
@@ -196,13 +200,19 @@ class DynamicBridge(object):
             else:
                 ret = retfield(result)
         elif _glusterEnabled and className.startswith('Gluster'):
-            ret = dict([(key, value) for key, value in result.items()
-                        if key != 'status'])
+            ret = dict(
+                [
+                    (key, value)
+                    for key, value in result.items()
+                    if key != 'status'
+                ]
+            )
         else:
             ret = self._get_result(result, retfield)
 
-        self._schema.verify_retval(vdsmapi.MethodRep(className, methodName),
-                                   ret)
+        self._schema.verify_retval(
+            vdsmapi.MethodRep(className, methodName), ret
+        )
         return ret
 
 

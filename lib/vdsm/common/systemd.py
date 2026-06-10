@@ -16,8 +16,15 @@ class Accounting(object):
     BlockIO = 'BlockIO'
 
 
-def run(cmd, scope=False, unit=None, slice=None, uid=None, gid=None,
-        accounting=None):
+def run(
+    cmd,
+    scope=False,
+    unit=None,
+    slice=None,
+    uid=None,
+    gid=None,
+    accounting=None,
+):
     """
     Run a command using systemd-run.
 
@@ -30,13 +37,21 @@ def run(cmd, scope=False, unit=None, slice=None, uid=None, gid=None,
         slice=slice,
         uid=uid,
         gid=gid,
-        accounting=accounting)
+        accounting=accounting,
+    )
 
     return commands.run(cmd)
 
 
-def wrap(cmd, scope=False, unit=None, slice=None, uid=None, gid=None,
-         accounting=None):
+def wrap(
+    cmd,
+    scope=False,
+    unit=None,
+    slice=None,
+    uid=None,
+    gid=None,
+    accounting=None,
+):
     """
     Wrap a command with systemd-run invocation.
 
@@ -55,7 +70,8 @@ def wrap(cmd, scope=False, unit=None, slice=None, uid=None, gid=None,
     if gid is not None:
         command.append('--gid=%s' % gid)
     if accounting is not None:
-        command.extend(['--property={}Accounting=1'.format(acct)
-                        for acct in accounting])
+        command.extend(
+            ['--property={}Accounting=1'.format(acct) for acct in accounting]
+        )
     command.extend(cmd)
     return command

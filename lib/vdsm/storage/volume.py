@@ -186,8 +186,9 @@ class VolumeManifest(object):
         # always report the version. The clusterlock should be fixed to match
         # the schema.
         try:
-            version, host_id = sd_manifest.inspectVolumeLease(self.imgUUID,
-                                                              self.volUUID)
+            version, host_id = sd_manifest.inspectVolumeLease(
+                self.imgUUID, self.volUUID
+            )
         except clusterlock.InvalidLeaseName as e:
             self.log.warning("Cannot get lease status: %s", e)
             return None
@@ -216,15 +217,19 @@ class VolumeManifest(object):
             "mtime": "0",
             "legality": meta.get(sc.LEGALITY, ""),
             "generation": meta.get(sc.GENERATION, sc.DEFAULT_GENERATION),
-            "sequence": meta.get(sc.SEQUENCE, sc.DEFAULT_SEQUENCE)
+            "sequence": meta.get(sc.SEQUENCE, sc.DEFAULT_SEQUENCE),
         }
 
     def getInfo(self):
         """
         Get volume info
         """
-        self.log.info("Info request: sdUUID=%s imgUUID=%s volUUID = %s ",
-                      self.sdUUID, self.imgUUID, self.volUUID)
+        self.log.info(
+            "Info request: sdUUID=%s imgUUID=%s volUUID = %s ",
+            self.sdUUID,
+            self.imgUUID,
+            self.volUUID,
+        )
         info = {}
         try:
             meta = self.getMetadata()
@@ -239,8 +244,9 @@ class VolumeManifest(object):
             # If volume doesn't have 'lease', we will not return it as part
             # of the volume info.
             sd_manifest = sdCache.produce_manifest(self.sdUUID)
-            _, path, offset = sd_manifest.getVolumeLease(self.imgUUID,
-                                                         self.volUUID)
+            _, path, offset = sd_manifest.getVolumeLease(
+                self.imgUUID, self.volUUID
+            )
             if path is not None:
                 leaseinfo = {"path": path, "offset": offset}
                 leasestatus = self.getLeaseStatus()
@@ -262,8 +268,13 @@ class VolumeManifest(object):
         # (because of VDC constraints)
         if info.get('legality', None) == sc.ILLEGAL_VOL:
             info['status'] = sc.ILLEGAL_VOL
-        self.log.info("%s/%s/%s info is %s",
-                      self.sdUUID, self.imgUUID, self.volUUID, str(info))
+        self.log.info(
+            "%s/%s/%s info is %s",
+            self.sdUUID,
+            self.imgUUID,
+            self.volUUID,
+            str(info),
+        )
         return info
 
     def getQemuImageInfo(self):
@@ -273,9 +284,8 @@ class VolumeManifest(object):
         # As this helper may be called while the VM is running,
         # use unsafe=True when calling qemuimg.info()
         info = qemuimg.info(
-            self.getVolumePath(),
-            sc.fmt2str(self.getFormat()),
-            unsafe=True)
+            self.getVolumePath(), sc.fmt2str(self.getFormat()), unsafe=True
+        )
 
         # Build result according to the schema.
 
@@ -292,9 +302,9 @@ class VolumeManifest(object):
             result["compat"] = info["format-specific"]["data"]["compat"]
             if "bitmaps" in info["format-specific"]["data"]:
                 result["bitmaps"] = [
-                    Qcow2BitmapInfo(bitmap["name"],
-                                    bitmap["granularity"],
-                                    bitmap["flags"])
+                    Qcow2BitmapInfo(
+                        bitmap["name"], bitmap["granularity"], bitmap["flags"]
+                    )
                     for bitmap in info["format-specific"]["data"]["bitmaps"]
                 ]
 
@@ -334,8 +344,9 @@ class VolumeManifest(object):
             meta[key] = value
             self.setMetadata(meta)
         except Exception:
-            self.log.error("Volume.setMetaParam: %s: %s=%s" %
-                           (self.volUUID, key, value))
+            self.log.error(
+                "Volume.setMetaParam: %s: %s=%s" % (self.volUUID, key, value)
+            )
             raise
 
     @deprecated  # valid for domain version < 3
@@ -395,8 +406,13 @@ class VolumeManifest(object):
         Set Volume Legality
             'legality' - volume legality
         """
-        self.log.info("sdUUID=%s imgUUID=%s volUUID = %s legality = %s ",
-                      self.sdUUID, self.imgUUID, self.volUUID, legality)
+        self.log.info(
+            "sdUUID=%s imgUUID=%s volUUID = %s legality = %s ",
+            self.sdUUID,
+            self.imgUUID,
+            self.volUUID,
+            legality,
+        )
         self.setMetaParam(sc.LEGALITY, legality)
 
     def setDomain(self, sdUUID):
@@ -434,24 +450,30 @@ class VolumeManifest(object):
         if vol_attr.type is not None:
             if meta[sc.VOLTYPE] != sc.type2name(sc.LEAF_VOL):
                 raise se.InvalidVolumeUpdate(
-                    self.volUUID, "%s Volume cannot be updated to %s"
-                                  % (meta[sc.VOLTYPE], vol_attr.type))
+                    self.volUUID,
+                    "%s Volume cannot be updated to %s"
+                    % (meta[sc.VOLTYPE], vol_attr.type),
+                )
 
             # In block volume the parent is saved in LV tag
             # In File volume, getParent will read the metadata again
             puuid = self.getParent()
             if puuid is not None and puuid != sc.BLANK_UUID:
                 raise se.InvalidVolumeUpdate(
-                    self.volUUID, "Volume with parent %s cannot update to %s"
-                                  % (puuid, vol_attr.type))
+                    self.volUUID,
+                    "Volume with parent %s cannot update to %s"
+                    % (puuid, vol_attr.type),
+                )
 
             meta[sc.VOLTYPE] = vol_attr.type
 
         if vol_attr.legality is not None:
             if meta[sc.LEGALITY] == vol_attr.legality:
                 raise se.InvalidVolumeUpdate(
-                    self.volUUID, "%s Volume cannot be updated to %s"
-                                  % (vol_attr.legality, vol_attr.legality))
+                    self.volUUID,
+                    "%s Volume cannot be updated to %s"
+                    % (vol_attr.legality, vol_attr.legality),
+                )
 
             meta[sc.LEGALITY] = vol_attr.legality
 
@@ -466,9 +488,13 @@ class VolumeManifest(object):
 
         meta[sc.GENERATION] = next_gen
 
-        self.log.info("Updating volume attributes on %s"
-                      " (generation=%d, attributes=%s)",
-                      self.volUUID, next_gen, vol_attr)
+        self.log.info(
+            "Updating volume attributes on %s"
+            " (generation=%d, attributes=%s)",
+            self.volUUID,
+            next_gen,
+            vol_attr,
+        )
         self.setMetadata(meta)
 
         if vol_attr.type is not None:
@@ -529,7 +555,11 @@ class VolumeManifest(object):
         if capacity < virtual_size:
             self.log.warning(
                 "Repairing wrong %s for volume %s stored=%d actual=%d",
-                sc.CAPACITY, self.volUUID, capacity, virtual_size)
+                sc.CAPACITY,
+                self.volUUID,
+                capacity,
+                virtual_size,
+            )
             self.setMetaParam(sc.CAPACITY, virtual_size)
 
     def setType(self, prealloc):
@@ -544,15 +574,17 @@ class VolumeManifest(object):
         """
         try:
             if self.isShared():
-                raise se.CannotDeleteSharedVolume("img %s vol %s" %
-                                                  (self.imgUUID, self.volUUID))
+                raise se.CannotDeleteSharedVolume(
+                    "img %s vol %s" % (self.imgUUID, self.volUUID)
+                )
         except se.InvalidMetadata as e:
             # In case of metadata key error, we have corrupted
             # volume (One of metadata corruptions may be
             # previous volume deletion failure).
             # So, there is no reasons to avoid its deletion
-            self.log.warning("Volume %s metadata error (%s)",
-                             self.volUUID, str(e))
+            self.log.warning(
+                "Volume %s metadata error (%s)", self.volUUID, str(e)
+            )
         if self.getChildren():
             raise se.VolumeImageHasChildren(self)
 
@@ -561,9 +593,21 @@ class VolumeManifest(object):
         cls._putMetadata(metaId, meta)
 
     @classmethod
-    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, capacity, format,
-                    type, voltype, disktype, desc="", legality=sc.ILLEGAL_VOL,
-                    sequence=0):
+    def newMetadata(
+        cls,
+        metaId,
+        sdUUID,
+        imgUUID,
+        puuid,
+        capacity,
+        format,
+        type,
+        voltype,
+        disktype,
+        desc="",
+        legality=sc.ILLEGAL_VOL,
+        sequence=0,
+    ):
         meta = VolumeMetadata(
             domain=sdUUID,
             image=imgUUID,
@@ -600,19 +644,33 @@ class VolumeManifest(object):
             return sd_manifest.produceVolume(self.imgUUID, puuid)
         return None
 
-    def prepare(self, rw=True, justme=False,
-                chainrw=False, setrw=False, force=False,
-                allow_illegal=False):
+    def prepare(
+        self,
+        rw=True,
+        justme=False,
+        chainrw=False,
+        setrw=False,
+        force=False,
+        allow_illegal=False,
+    ):
         """
         Prepare volume for use by consumer.
         If justme is false, the entire COW chain is prepared.
         Note: setrw arg may be used only by SPM flows.
         """
-        self.log.info("Preparing volume %s/%s with parameters:"
-                      "justme=%s, rw=%s, setrw=%s, chainrw=%s, force=%s,"
-                      "allow_illegal=%s",
-                      self.sdUUID, self.volUUID, justme, rw, setrw, chainrw,
-                      force, allow_illegal)
+        self.log.info(
+            "Preparing volume %s/%s with parameters:"
+            "justme=%s, rw=%s, setrw=%s, chainrw=%s, force=%s,"
+            "allow_illegal=%s",
+            self.sdUUID,
+            self.volUUID,
+            justme,
+            rw,
+            setrw,
+            chainrw,
+            force,
+            allow_illegal,
+        )
 
         if not force:
             # Cannot prepare ILLEGAL volume when allow_illegal is not True
@@ -621,12 +679,17 @@ class VolumeManifest(object):
 
             if rw and self.isShared():
                 if chainrw:
-                    rw = False      # Shared cannot be set RW
+                    rw = False  # Shared cannot be set RW
                 else:
                     raise se.SharedVolumeNonWritable(self)
 
-            if (not chainrw and rw and self.isInternal() and setrw and
-                    not self.recheckIfLeaf()):
+            if (
+                not chainrw
+                and rw
+                and self.isInternal()
+                and setrw
+                and not self.recheckIfLeaf()
+            ):
                 raise se.InternalVolumeNonWritable(self)
 
         self.llPrepare(rw=rw, setrw=setrw)
@@ -637,8 +700,9 @@ class VolumeManifest(object):
                 return True
             pvol = self.getParentVolume()
             if pvol:
-                pvol.prepare(rw=chainrw, justme=False,
-                             chainrw=chainrw, setrw=setrw)
+                pvol.prepare(
+                    rw=chainrw, justme=False, chainrw=chainrw, setrw=setrw
+                )
         except Exception:
             self.log.error("Unexpected error", exc_info=True)
             self.teardown(self.sdUUID, self.volUUID)
@@ -697,9 +761,13 @@ class VolumeManifest(object):
         actual_gen = self.getMetaParam(sc.GENERATION)
         if requested_gen is not None and actual_gen != requested_gen:
             raise se.GenerationMismatch(requested_gen, actual_gen)
-        self.log.info("Starting volume operation on %s (generation=%d, "
-                      "set_illegal=%s)",
-                      self.volUUID, actual_gen, set_illegal)
+        self.log.info(
+            "Starting volume operation on %s (generation=%d, "
+            "set_illegal=%s)",
+            self.volUUID,
+            actual_gen,
+            set_illegal,
+        )
         if set_illegal:
             self.setLegality(sc.ILLEGAL_VOL)
 
@@ -715,8 +783,11 @@ class VolumeManifest(object):
             metadata[sc.LEGALITY] = sc.LEGAL_VOL
         metadata[sc.GENERATION] = next_gen
         self.setMetadata(metadata)
-        self.log.info("Volume operation completed on %s (generation=%d)",
-                      self.volUUID, next_gen)
+        self.log.info(
+            "Volume operation completed on %s (generation=%d)",
+            self.volUUID,
+            next_gen,
+        )
 
     @classmethod
     def max_size(cls, virtual_size, format):
@@ -870,9 +941,22 @@ class Volume(object):
     manifestClass = VolumeManifest
 
     @classmethod
-    def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None,
-                add_bitmaps=False, bitmap=None):
+    def _create(
+        cls,
+        dom,
+        imgUUID,
+        volUUID,
+        capacity,
+        volFormat,
+        preallocate,
+        volParent,
+        srcImgUUID,
+        srcVolUUID,
+        volPath,
+        initial_size=None,
+        add_bitmaps=False,
+        bitmap=None,
+    ):
         raise NotImplementedError
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
@@ -922,7 +1006,7 @@ class Volume(object):
         return self._manifest.getParent()
 
     def getChildren(self):
-        """ Return children volume UUIDs.
+        """Return children volume UUIDs.
 
         Children can be found in any image of the volume SD.
         """
@@ -969,29 +1053,41 @@ class Volume(object):
     # TODO: remove this in the next version.
     @classmethod
     def killProcRollback(cls, taskObj, pid, ctime):
-        cls.log.info('ignoring killProcRollback request for pid %s and '
-                     'ctime %s', pid, ctime)
+        cls.log.info(
+            'ignoring killProcRollback request for pid %s and ' 'ctime %s',
+            pid,
+            ctime,
+        )
 
     @classmethod
     # metaID0 is different between file and block volumes. For file volumes,
     # the value is the volume path, while for block volumes, the value is the
     # storage domain UUID.
-    def renameLeaseRollback(cls, taskObj, metaID0, leaseOffset, sdUUID,
-                            volUUID):
-        cls.log.info("Rolling back lease rename (metaID0=%s, "
-                     "leaseOffset=%s, sdUUID=%s, volUUID=%s)",
-                     metaID0, leaseOffset, sdUUID, volUUID)
+    def renameLeaseRollback(
+        cls, taskObj, metaID0, leaseOffset, sdUUID, volUUID
+    ):
+        cls.log.info(
+            "Rolling back lease rename (metaID0=%s, "
+            "leaseOffset=%s, sdUUID=%s, volUUID=%s)",
+            metaID0,
+            leaseOffset,
+            sdUUID,
+            volUUID,
+        )
         try:
             metaID = (metaID0, int(leaseOffset))
             cls.newVolumeLease(metaID, sdUUID, volUUID)
         except Exception:
-            cls.log.exception("Could not rollback lease rename (metaID=%s, "
-                              "sdUUID=%s, volUUID=%s)",
-                              metaID, sdUUID, volUUID)
+            cls.log.exception(
+                "Could not rollback lease rename (metaID=%s, "
+                "sdUUID=%s, volUUID=%s)",
+                metaID,
+                sdUUID,
+                volUUID,
+            )
 
     def renameLease(self, metaID, newUUID, recovery=True):
-        self.log.debug("Renaming volume lease %s to %s",
-                       self.volUUID, newUUID)
+        self.log.debug("Renaming volume lease %s to %s", self.volUUID, newUUID)
         if recovery:
             clsModule, clsName = self._getModuleAndClass()
             vars.task.pushRecovery(
@@ -1002,7 +1098,9 @@ class Volume(object):
                     "renameLeaseRollback",
                     # Convert metaID to strings because task.Recovery supports
                     # only string types.
-                    [metaID[0], str(metaID[1]), self.sdUUID, self.volUUID]))
+                    [metaID[0], str(metaID[1]), self.sdUUID, self.volUUID],
+                )
+            )
         self.newVolumeLease(metaID, self.sdUUID, newUUID)
 
     def clone(self, dstPath, volFormat, capacity, add_bitmaps=False):
@@ -1012,15 +1110,19 @@ class Volume(object):
         wasleaf = False
         taskName = "parent volume rollback: " + self.volUUID
         vars.task.pushRecovery(
-            task.Recovery(taskName, "volume", "Volume",
-                          "parentVolumeRollback",
-                          [self.sdUUID, self.imgUUID, self.volUUID]))
+            task.Recovery(
+                taskName,
+                "volume",
+                "Volume",
+                "parentVolumeRollback",
+                [self.sdUUID, self.imgUUID, self.volUUID],
+            )
+        )
         if self.isLeaf():
             wasleaf = True
             self.setInternal()
         try:
-            self.log.debug('cloning volume %s to %s', self.volumePath,
-                           dstPath)
+            self.log.debug('cloning volume %s to %s', self.volumePath, dstPath)
             parent = getBackingVolumePath(self.imgUUID, self.volUUID)
             domain = sdCache.produce(self.sdUUID)
             # Using unsafe=True in order to create volumes when the backing
@@ -1033,11 +1135,16 @@ class Volume(object):
                 format=sc.fmt2str(volFormat),
                 qcow2Compat=domain.qcow2_compat(),
                 backingFormat=sc.fmt2str(self.getFormat()),
-                unsafe=True)
+                unsafe=True,
+            )
             operation.run()
         except Exception as e:
-            self.log.exception('cannot clone image %s volume %s to %s',
-                               self.imgUUID, self.volUUID, dstPath)
+            self.log.exception(
+                'cannot clone image %s volume %s to %s',
+                self.imgUUID,
+                self.volUUID,
+                dstPath,
+            )
             # FIXME: might race with other clones
             if wasleaf:
                 self.setLeaf()
@@ -1058,7 +1165,9 @@ class Volume(object):
             self.log.error(
                 "Cannot clone bitmaps to child volume %r, the next backup "
                 "will be a full backup: %s",
-                child_path, e)
+                child_path,
+                e,
+            )
         finally:
             self.teardown(self.sdUUID, self.volUUID, justme=False)
 
@@ -1076,7 +1185,10 @@ class Volume(object):
             cls.log.error(
                 "Cannot create bitmap %r in volume %r, the next "
                 "backup will be a full backup: %s",
-                bitmap, vol_path, e)
+                bitmap,
+                vol_path,
+                e,
+            )
 
     def _shareLease(self, dstImgPath):
         self._manifest._shareLease(dstImgPath)
@@ -1098,8 +1210,13 @@ class Volume(object):
 
         try:
             vars.task.pushRecovery(
-                task.Recovery("Share volume rollback: %s" % dstPath, clsModule,
-                              clsName, "shareVolumeRollback", [dstPath])
+                task.Recovery(
+                    "Share volume rollback: %s" % dstPath,
+                    clsModule,
+                    clsName,
+                    "shareVolumeRollback",
+                    [dstPath],
+                )
             )
 
             self._share(dstImgPath)
@@ -1112,11 +1229,12 @@ class Volume(object):
 
     @classmethod
     def parentVolumeRollback(cls, taskObj, sdUUID, pimgUUID, pvolUUID):
-        cls.log.info("parentVolumeRollback: sdUUID=%s pimgUUID=%s"
-                     " pvolUUID=%s" % (sdUUID, pimgUUID, pvolUUID))
+        cls.log.info(
+            "parentVolumeRollback: sdUUID=%s pimgUUID=%s"
+            " pvolUUID=%s" % (sdUUID, pimgUUID, pvolUUID)
+        )
         if pvolUUID != sc.BLANK_UUID and pimgUUID != sc.BLANK_UUID:
-            pvol = sdCache.produce(sdUUID).produceVolume(pimgUUID,
-                                                         pvolUUID)
+            pvol = sdCache.produce(sdUUID).produceVolume(pimgUUID, pvolUUID)
             pvol.prepare()
             try:
                 pvol.recheckIfLeaf()
@@ -1127,8 +1245,10 @@ class Volume(object):
 
     @classmethod
     def startCreateVolumeRollback(cls, taskObj, sdUUID, imgUUID, volUUID):
-        cls.log.info("startCreateVolumeRollback: sdUUID=%s imgUUID=%s "
-                     "volUUID=%s " % (sdUUID, imgUUID, volUUID))
+        cls.log.info(
+            "startCreateVolumeRollback: sdUUID=%s imgUUID=%s "
+            "volUUID=%s " % (sdUUID, imgUUID, volUUID)
+        )
         # This rollback doesn't actually do anything.
         # In general the createVolume rollbacks are a list of small rollbacks
         # that are replaced by the one major rollback at the end of the task.
@@ -1141,11 +1261,14 @@ class Volume(object):
         pass
 
     @classmethod
-    def createVolumeRollback(cls, taskObj, repoPath,
-                             sdUUID, imgUUID, volUUID, imageDir):
-        cls.log.info("createVolumeRollback: repoPath=%s sdUUID=%s imgUUID=%s "
-                     "volUUID=%s imageDir=%s" %
-                     (repoPath, sdUUID, imgUUID, volUUID, imageDir))
+    def createVolumeRollback(
+        cls, taskObj, repoPath, sdUUID, imgUUID, volUUID, imageDir
+    ):
+        cls.log.info(
+            "createVolumeRollback: repoPath=%s sdUUID=%s imgUUID=%s "
+            "volUUID=%s imageDir=%s"
+            % (repoPath, sdUUID, imgUUID, volUUID, imageDir)
+        )
         vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
         pvol = vol.getParentVolume()
         # Remove volume
@@ -1161,10 +1284,25 @@ class Volume(object):
                 fileUtils.cleanupdir(imageDir)
 
     @classmethod
-    def create(cls, repoPath, sdUUID, imgUUID, capacity, volFormat,
-               preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-               initial_size=None, add_bitmaps=False, legal=True,
-               sequence=0, bitmap=None):
+    def create(
+        cls,
+        repoPath,
+        sdUUID,
+        imgUUID,
+        capacity,
+        volFormat,
+        preallocate,
+        diskType,
+        volUUID,
+        desc,
+        srcImgUUID,
+        srcVolUUID,
+        initial_size=None,
+        add_bitmaps=False,
+        legal=True,
+        sequence=0,
+        bitmap=None,
+    ):
         """
         Create a new volume with given size or snapshot
             'capacity' - in bytes
@@ -1186,7 +1324,8 @@ class Volume(object):
             if initial_size < 0:
                 cls.log.error("initial_size %d is negative", initial_size)
                 raise se.InvalidParameterException(
-                    "initial size", initial_size)
+                    "initial size", initial_size
+                )
 
         # Round size and initial size to block size. To make code simple,
         # always round to 4k.
@@ -1198,8 +1337,13 @@ class Volume(object):
 
         dom = sdCache.produce(sdUUID)
         dom.validateCreateVolumeParams(
-            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
-            add_bitmaps=add_bitmaps, bitmap=bitmap)
+            volFormat,
+            srcVolUUID,
+            diskType=diskType,
+            preallocate=preallocate,
+            add_bitmaps=add_bitmaps,
+            bitmap=bitmap,
+        )
 
         imgPath = dom.create_image(imgUUID)
 
@@ -1223,18 +1367,22 @@ class Volume(object):
                 if add_bitmaps and volParent.getFormat() != sc.COW_FORMAT:
                     raise se.UnsupportedOperation(
                         "Cannot add bitmaps from parent volume with raw "
-                        "format", srcVolUUID=srcVolUUID)
+                        "format",
+                        srcVolUUID=srcVolUUID,
+                    )
 
                 if not volParent.isLegal():
                     raise se.createIllegalVolumeSnapshotError(
-                        volParent.volUUID)
+                        volParent.volUUID
+                    )
 
                 if imgUUID != srcImgUUID:
                     if add_bitmaps:
                         raise se.UnsupportedOperation(
                             "Cannot add bitmaps from template volume",
                             srcImgUUID=srcImgUUID,
-                            srcVolUUID=srcVolUUID)
+                            srcVolUUID=srcVolUUID,
+                        )
 
                     volParent.share(imgPath)
                     volParent = cls(repoPath, sdUUID, imgUUID, srcVolUUID)
@@ -1245,8 +1393,9 @@ class Volume(object):
         except Exception as e:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.VolumeCannotGetParent(
-                "Couldn't get parent %s for volume %s: %s" %
-                (srcVolUUID, volUUID, e))
+                "Couldn't get parent %s for volume %s: %s"
+                % (srcVolUUID, volUUID, e)
+            )
 
         if volParent:
             # Requested capacity must not be smaller than parent capacity,
@@ -1255,7 +1404,9 @@ class Volume(object):
             if capacity < volParent.getCapacity():
                 cls.log.error(
                     "Requested capacity %d < parent capacity %d",
-                    capacity, volParent.getCapacity())
+                    capacity,
+                    volParent.getCapacity(),
+                )
                 raise se.InvalidParameterException("capacity", capacity)
 
         try:
@@ -1263,27 +1414,49 @@ class Volume(object):
 
             # Rollback sentinel to mark the start of the task
             vars.task.pushRecovery(
-                task.Recovery(task.ROLLBACK_SENTINEL, clsModule, clsName,
-                              "startCreateVolumeRollback",
-                              [sdUUID, imgUUID, volUUID])
+                task.Recovery(
+                    task.ROLLBACK_SENTINEL,
+                    clsModule,
+                    clsName,
+                    "startCreateVolumeRollback",
+                    [sdUUID, imgUUID, volUUID],
+                )
             )
 
             # Create volume rollback
             vars.task.pushRecovery(
-                task.Recovery("Halfbaked volume rollback", clsModule, clsName,
-                              "halfbakedVolumeRollback",
-                              [sdUUID, volUUID, volPath])
+                task.Recovery(
+                    "Halfbaked volume rollback",
+                    clsModule,
+                    clsName,
+                    "halfbakedVolumeRollback",
+                    [sdUUID, volUUID, volPath],
+                )
             )
 
             # Specific volume creation (block, file, etc...)
             try:
-                metaId = cls._create(dom, imgUUID, volUUID, capacity,
-                                     volFormat, preallocate, volParent,
-                                     srcImgUUID, srcVolUUID, volPath,
-                                     initial_size=initial_size,
-                                     add_bitmaps=add_bitmaps, bitmap=bitmap)
-            except (se.VolumeAlreadyExists, se.CannotCreateLogicalVolume,
-                    se.VolumeCreationError, se.InvalidParameterException) as e:
+                metaId = cls._create(
+                    dom,
+                    imgUUID,
+                    volUUID,
+                    capacity,
+                    volFormat,
+                    preallocate,
+                    volParent,
+                    srcImgUUID,
+                    srcVolUUID,
+                    volPath,
+                    initial_size=initial_size,
+                    add_bitmaps=add_bitmaps,
+                    bitmap=bitmap,
+                )
+            except (
+                se.VolumeAlreadyExists,
+                se.CannotCreateLogicalVolume,
+                se.VolumeCreationError,
+                se.InvalidParameterException,
+            ) as e:
                 cls.log.error("Failed to create volume %s: %s", volPath, e)
                 vars.task.popRecovery()
                 raise
@@ -1295,28 +1468,51 @@ class Volume(object):
             if volFormat == sc.RAW_FORMAT:
                 apparent_size = dom.getVSize(imgUUID, volUUID)
                 if apparent_size < capacity:
-                    cls.log.error("The volume %s apparent size %s is "
-                                  "smaller than the requested capacity %s",
-                                  volUUID, apparent_size, capacity)
+                    cls.log.error(
+                        "The volume %s apparent size %s is "
+                        "smaller than the requested capacity %s",
+                        volUUID,
+                        apparent_size,
+                        capacity,
+                    )
                     raise se.VolumeCreationError()
                 if apparent_size > capacity:
-                    cls.log.info("The requested size for volume %s doesn't "
-                                 "match the granularity on domain %s, updating"
-                                 " the volume capacity from %s to %s",
-                                 volUUID, sdUUID, capacity, apparent_size)
+                    cls.log.info(
+                        "The requested size for volume %s doesn't "
+                        "match the granularity on domain %s, updating"
+                        " the volume capacity from %s to %s",
+                        volUUID,
+                        sdUUID,
+                        capacity,
+                        apparent_size,
+                    )
                     capacity = apparent_size
 
             vars.task.pushRecovery(
-                task.Recovery("Create volume metadata rollback", clsModule,
-                              clsName, "createVolumeMetadataRollback",
-                              [str(x) for x in metaId])
+                task.Recovery(
+                    "Create volume metadata rollback",
+                    clsModule,
+                    clsName,
+                    "createVolumeMetadataRollback",
+                    [str(x) for x in metaId],
+                )
             )
 
             legality = sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL
-            cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, capacity,
-                            sc.type2name(volFormat), sc.type2name(preallocate),
-                            volType, diskType, desc, legality,
-                            sequence=sequence)
+            cls.newMetadata(
+                metaId,
+                sdUUID,
+                imgUUID,
+                srcVolUUID,
+                capacity,
+                sc.type2name(volFormat),
+                sc.type2name(preallocate),
+                volType,
+                diskType,
+                desc,
+                legality,
+                sequence=sequence,
+            )
 
             if dom.hasVolumeLeases():
                 cls.newVolumeLease(metaId, sdUUID, volUUID)
@@ -1326,14 +1522,19 @@ class Volume(object):
             raise
         except Exception as e:
             cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeCreationError("Volume creation %s failed: %s" %
-                                         (volUUID, e))
+            raise se.VolumeCreationError(
+                "Volume creation %s failed: %s" % (volUUID, e)
+            )
 
         # Remove the rollback for the halfbaked volume
         vars.task.replaceRecoveries(
-            task.Recovery("Create volume rollback", clsModule, clsName,
-                          "createVolumeRollback",
-                          [repoPath, sdUUID, imgUUID, volUUID, imgPath])
+            task.Recovery(
+                "Create volume rollback",
+                clsModule,
+                clsName,
+                "createVolumeRollback",
+                [repoPath, sdUUID, imgUUID, volUUID, imgPath],
+            )
         )
 
         return volUUID
@@ -1356,30 +1557,42 @@ class Volume(object):
     def syncMetadata(self):
         volFormat = self.getFormat()
         if volFormat != sc.RAW_FORMAT:
-            self.log.error("impossible to update metadata for volume %s "
-                           "its format is not RAW", self.volUUID)
+            self.log.error(
+                "impossible to update metadata for volume %s "
+                "its format is not RAW",
+                self.volUUID,
+            )
             return
 
         new_vol_capacity = self.getVolumeSize()
         old_vol_capacity = self.getCapacity()
 
         if old_vol_capacity == new_vol_capacity:
-            self.log.debug("capacity metadata %s is up to date for volume %s",
-                           old_vol_capacity, self.volUUID)
+            self.log.debug(
+                "capacity metadata %s is up to date for volume %s",
+                old_vol_capacity,
+                self.volUUID,
+            )
         else:
-            self.log.debug("updating metadata for volume %s changing the "
-                           "capacity %s to %s", self.volUUID, old_vol_capacity,
-                           new_vol_capacity)
+            self.log.debug(
+                "updating metadata for volume %s changing the "
+                "capacity %s to %s",
+                self.volUUID,
+                old_vol_capacity,
+                new_vol_capacity,
+            )
             self.setCapacity(new_vol_capacity)
 
     @classmethod
     def extendSizeFinalize(cls, taskObj, sdUUID, imgUUID, volUUID):
-        cls.log.debug("finalizing size extension for volume %s on domain "
-                      "%s", volUUID, sdUUID)
+        cls.log.debug(
+            "finalizing size extension for volume %s on domain " "%s",
+            volUUID,
+            sdUUID,
+        )
         # The rollback consists in just updating the metadata to be
         # consistent with the volume real/virtual size.
-        sdCache.produce(sdUUID) \
-               .produceVolume(imgUUID, volUUID).syncMetadata()
+        sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).syncMetadata()
 
     def extendSize(self, new_capacity):
         """
@@ -1388,10 +1601,16 @@ class Volume(object):
         if self.isShared():
             raise se.VolumeNonWritable(self.volUUID)
 
-        if (self.getFormat() == sc.COW_FORMAT and
-                self.getType() == sc.SPARSE_VOL):
-            self.log.debug("skipping cow sparse size extension for volume %s "
-                           "to capacity %s", self.volUUID, new_capacity)
+        if (
+            self.getFormat() == sc.COW_FORMAT
+            and self.getType() == sc.SPARSE_VOL
+        ):
+            self.log.debug(
+                "skipping cow sparse size extension for volume %s "
+                "to capacity %s",
+                self.volUUID,
+                new_capacity,
+            )
             return
 
         # Note: This function previously prohibited extending non-leaf volumes.
@@ -1405,23 +1624,39 @@ class Volume(object):
         cur_raw_capacity = self.getVolumeSize()
 
         if new_capacity < cur_raw_capacity:
-            self.log.error("current capacity of volume %s is larger than the "
-                           "capacity requested in the extension (%s > %s)",
-                           self.volUUID, cur_raw_capacity, new_capacity)
+            self.log.error(
+                "current capacity of volume %s is larger than the "
+                "capacity requested in the extension (%s > %s)",
+                self.volUUID,
+                cur_raw_capacity,
+                new_capacity,
+            )
             raise se.VolumeResizeValueError(new_capacity)
 
         if new_capacity == cur_raw_capacity:
-            self.log.debug("the requested capacity %s is equal to the current "
-                           "capacity %s, skipping extension", new_capacity,
-                           cur_raw_capacity)
+            self.log.debug(
+                "the requested capacity %s is equal to the current "
+                "capacity %s, skipping extension",
+                new_capacity,
+                cur_raw_capacity,
+            )
         else:
-            self.log.info("executing a raw capacity extension for volume %s "
-                          "from capacity %s to capacity %s", self.volUUID,
-                          cur_raw_capacity, new_capacity)
-            vars.task.pushRecovery(task.Recovery(
-                "Extend size for volume: " + self.volUUID, "volume",
-                "Volume", "extendSizeFinalize",
-                [self.sdUUID, self.imgUUID, self.volUUID]))
+            self.log.info(
+                "executing a raw capacity extension for volume %s "
+                "from capacity %s to capacity %s",
+                self.volUUID,
+                cur_raw_capacity,
+                new_capacity,
+            )
+            vars.task.pushRecovery(
+                task.Recovery(
+                    "Extend size for volume: " + self.volUUID,
+                    "volume",
+                    "Volume",
+                    "extendSizeFinalize",
+                    [self.sdUUID, self.imgUUID, self.volUUID],
+                )
+            )
             self._extendSize(new_capacity)
 
         self.syncMetadata()  # update the metadata
@@ -1521,8 +1756,9 @@ class Volume(object):
         """
         return self._manifest.recheckIfLeaf()
 
-    def prepare(self, rw=True, justme=False,
-                chainrw=False, setrw=False, force=False):
+    def prepare(
+        self, rw=True, justme=False, chainrw=False, setrw=False, force=False
+    ):
         return self._manifest.prepare(rw, justme, chainrw, setrw, force)
 
     @classmethod
@@ -1533,12 +1769,35 @@ class Volume(object):
         return self._manifest.metadata2info(meta)
 
     @classmethod
-    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, capacity, format,
-                    type, voltype, disktype, desc="", legality=sc.ILLEGAL_VOL,
-                    sequence=0):
+    def newMetadata(
+        cls,
+        metaId,
+        sdUUID,
+        imgUUID,
+        puuid,
+        capacity,
+        format,
+        type,
+        voltype,
+        disktype,
+        desc="",
+        legality=sc.ILLEGAL_VOL,
+        sequence=0,
+    ):
         return cls.manifestClass.newMetadata(
-            metaId, sdUUID, imgUUID, puuid, capacity, format, type, voltype,
-            disktype, desc, legality, sequence=sequence)
+            metaId,
+            sdUUID,
+            imgUUID,
+            puuid,
+            capacity,
+            format,
+            type,
+            voltype,
+            disktype,
+            desc,
+            legality,
+            sequence=sequence,
+        )
 
     def getInfo(self):
         return self._manifest.getInfo()
@@ -1552,8 +1811,9 @@ class Volume(object):
         """
         puuid = self.getParent()
         if puuid and puuid != sc.BLANK_UUID:
-            return sdCache.produce(self.sdUUID).produceVolume(self.imgUUID,
-                                                              puuid)
+            return sdCache.produce(self.sdUUID).produceVolume(
+                self.imgUUID, puuid
+            )
         return None
 
     def setParent(self, puuid):
@@ -1623,6 +1883,7 @@ class VolumeLease(guarded.AbstractLock):
     """
     Extend AbstractLock so Volume Leases may be used with guarded utilities.
     """
+
     def __init__(self, host_id, sd_id, img_id, vol_id):
         self._host_id = host_id
         self._sd_id = sd_id

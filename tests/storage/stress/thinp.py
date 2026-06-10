@@ -30,20 +30,22 @@ CHUNK = 128 * MiB
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    "-r", "--rate",
+    "-r",
+    "--rate",
     type=lambda s: int(s) * MiB,
     default=500 * MiB,
-    help="Write rate in MiB per second (default 500)")
+    help="Write rate in MiB per second (default 500)",
+)
 
 parser.add_argument(
-    "-s", "--size",
+    "-s",
+    "--size",
     type=lambda s: int(s) * GiB,
     default=50 * GiB,
-    help="Size in GiB (default 50)")
+    help="Size in GiB (default 50)",
+)
 
-parser.add_argument(
-    "path",
-    help="Device path (e.g. /dev/sdb)")
+parser.add_argument("path", help="Device path (e.g. /dev/sdb)")
 
 args = parser.parse_args()
 

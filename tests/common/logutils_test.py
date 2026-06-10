@@ -18,14 +18,22 @@ from vdsm.common import logutils
 
 class TestAllVmStats(TestCaseBase):
 
-    _STATS = [{'foo': 'bar',
-               'status': 'Up',
-               'vmId': u'43f02a2d-e563-4f11-a7bc-9ee191cfeba1'},
-              {'foo': 'bar',
-               'status': 'Powering up',
-               'vmId': u'bd0d066b-971e-42f8-8bc6-d647ab7e0e70'}]
-    _SIMPLIFIED = ({u'43f02a2d-e563-4f11-a7bc-9ee191cfeba1': 'Up',
-                    u'bd0d066b-971e-42f8-8bc6-d647ab7e0e70': 'Powering up'})
+    _STATS = [
+        {
+            'foo': 'bar',
+            'status': 'Up',
+            'vmId': u'43f02a2d-e563-4f11-a7bc-9ee191cfeba1',
+        },
+        {
+            'foo': 'bar',
+            'status': 'Powering up',
+            'vmId': u'bd0d066b-971e-42f8-8bc6-d647ab7e0e70',
+        },
+    ]
+    _SIMPLIFIED = {
+        u'43f02a2d-e563-4f11-a7bc-9ee191cfeba1': 'Up',
+        u'bd0d066b-971e-42f8-8bc6-d647ab7e0e70': 'Powering up',
+    }
 
     def test_allvmstats(self):
         data = logutils.AllVmStatsValue(self._STATS)
@@ -78,7 +86,8 @@ class TestSetLevel(TestCaseBase):
 def threaded_handler(capacity, target, adaptive=True):
     # Start the handler explicitly for deterministic capacity handling.
     handler = logutils.ThreadedHandler(
-        capacity, adaptive=adaptive, start=False)
+        capacity, adaptive=adaptive, start=False
+    )
     with closing(handler):
         handler.setTarget(target)
         logger = logging.Logger("test")
@@ -127,16 +136,20 @@ class TestThreadedHandler(TestCaseBase):
     #   queue is 60% full, so we want to check critical messages, which are
     #   dropped only when the queue is 100% full.
 
-    @permutations([
-        # adaptive, level
-        (False, logging.DEBUG),
-        (True, logging.CRITICAL),
-    ])
+    @permutations(
+        [
+            # adaptive, level
+            (False, logging.DEBUG),
+            (True, logging.CRITICAL),
+        ]
+    )
     def test_capacity(self, adaptive, level):
         target = Handler()
 
-        with threaded_handler(
-                100, target, adaptive=adaptive) as (handler, logger):
+        with threaded_handler(100, target, adaptive=adaptive) as (
+            handler,
+            logger,
+        ):
             for _ in range(100):
                 logger.log(level, "It works!")
             handler.start()
@@ -144,18 +157,22 @@ class TestThreadedHandler(TestCaseBase):
         # We expect that no message will be dropped.
         self.assertEqual(target.messages, ["It works!"] * 100)
 
-    @permutations([
-        # adaptive, level
-        (False, logging.DEBUG),
-        (True, logging.CRITICAL),
-    ])
+    @permutations(
+        [
+            # adaptive, level
+            (False, logging.DEBUG),
+            (True, logging.CRITICAL),
+        ]
+    )
     def test_drop_new_messages(self, adaptive, level):
         target = Handler()
 
         # This handler will queue up to 10 messages. Logging 20 messages
         # will drop the newest 10 messages.
-        with threaded_handler(
-                10, target, adaptive=adaptive) as (handler, logger):
+        with threaded_handler(10, target, adaptive=adaptive) as (
+            handler,
+            logger,
+        ):
             for i in range(20):
                 logger.log(level, "Message %d", i)
             handler.start()
@@ -222,17 +239,21 @@ class TestThreadedHandler(TestCaseBase):
 
         self.assertEqual(target.messages[100:], [])
 
-    @permutations([
-        # adaptive, level
-        (False, logging.DEBUG),
-        (True, logging.CRITICAL),
-    ])
+    @permutations(
+        [
+            # adaptive, level
+            (False, logging.DEBUG),
+            (True, logging.CRITICAL),
+        ]
+    )
     def test_blocked_handler(self, adaptive, level):
         # Simulate a handler blocked on storage.
         target = Handler()
         target.lock.acquire()
-        with threaded_handler(
-                100, target, adaptive=adaptive) as (handler, logger):
+        with threaded_handler(100, target, adaptive=adaptive) as (
+            handler,
+            logger,
+        ):
             handler.start()
             for _ in range(100):
                 logger.log(level, "It works!")
@@ -244,17 +265,21 @@ class TestThreadedHandler(TestCaseBase):
         # We expect that no message will be dropped.
         self.assertEqual(target.messages, ["It works!"] * 100)
 
-    @permutations([
-        # adaptive, level
-        (False, logging.DEBUG),
-        (True, logging.CRITICAL),
-    ])
+    @permutations(
+        [
+            # adaptive, level
+            (False, logging.DEBUG),
+            (True, logging.CRITICAL),
+        ]
+    )
     def test_slow_handler(self, adaptive, level):
         # Test that logging threads are not delayed by a slow handler.
         target = Handler(0.1)
 
-        with threaded_handler(
-                10, target, adaptive=adaptive) as (handler, logger):
+        with threaded_handler(10, target, adaptive=adaptive) as (
+            handler,
+            logger,
+        ):
             handler.start()
 
             def worker(n):
@@ -275,19 +300,23 @@ class TestThreadedHandler(TestCaseBase):
         print("workers_time %s" % workers_time)
         self.assertLess(max(workers_time), 0.1)
 
-    @permutations([
-        # adaptive, level
-        (False, logging.DEBUG),
-        (True, logging.CRITICAL),
-    ])
+    @permutations(
+        [
+            # adaptive, level
+            (False, logging.DEBUG),
+            (True, logging.CRITICAL),
+        ]
+    )
     def test_deferred_flushing(self, adaptive, level):
         # Time logging of 1000 messages with slow handler. This should take at
         # least 10 seconds with standard logging handlers, but only fraction of
         # the time with deferred flushing.
         target = Handler(0.01)
 
-        with threaded_handler(
-                1000, target, adaptive=adaptive) as (handler, logger):
+        with threaded_handler(1000, target, adaptive=adaptive) as (
+            handler,
+            logger,
+        ):
             handler.start()
 
             def worker(n):
@@ -306,21 +335,25 @@ class TestThreadedHandler(TestCaseBase):
         # failures on overloaded slave.
         self.assertLess(elapsed, 1.0)
 
-        print("Logged %d messages in %.2f seconds" % (
-              len(target.messages), elapsed))
+        print(
+            "Logged %d messages in %.2f seconds"
+            % (len(target.messages), elapsed)
+        )
 
 
 @expandPermutations
 class TestHeadFormatter(TestCaseBase):
-    @permutations([
-        # items, limit, result
-        ({i: i for i in range(5)}, 2, "[0, 1, ...]"),
-        ({i: i for i in range(5)}, 5, "[0, 1, 2, 3, 4]"),
-        (list(range(5)), 2, "[0, 1, ...]"),
-        (list(range(5)), 5, "[0, 1, 2, 3, 4]"),
-        (iter(range(2**32)), 5, "[0, 1, 2, 3, 4, ...]"),
-        ((i for i in range(2**32)), 5, "[0, 1, 2, 3, 4, ...]"),
-        ([], 0, "[]"),
-    ])
+    @permutations(
+        [
+            # items, limit, result
+            ({i: i for i in range(5)}, 2, "[0, 1, ...]"),
+            ({i: i for i in range(5)}, 5, "[0, 1, 2, 3, 4]"),
+            (list(range(5)), 2, "[0, 1, ...]"),
+            (list(range(5)), 5, "[0, 1, 2, 3, 4]"),
+            (iter(range(2**32)), 5, "[0, 1, 2, 3, 4, ...]"),
+            ((i for i in range(2**32)), 5, "[0, 1, 2, 3, 4, ...]"),
+            ([], 0, "[]"),
+        ]
+    )
     def test_head(self, items, limit, result):
         self.assertEqual(str(logutils.Head(items, max_items=limit)), result)

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 """Collect host capabilities"""
+
 import os
 import logging
 
@@ -83,7 +84,9 @@ def get():
             'socket_id': cpu.socket_id,
             'die_id': cpu.die_id,
             'core_id': cpu.core_id,
-        } for cpu in numa.cpu_info()]
+        }
+        for cpu in numa.cpu_info()
+    ]
 
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
@@ -109,14 +112,17 @@ def get():
     caps['kernelArgs'] = osinfo.kernel_args()
     caps['nestedVirtualization'] = osinfo.nested_virtualization().enabled
     caps['emulatedMachines'] = machinetype.emulated_machines(
-        cpuarch.effective())
+        cpuarch.effective()
+    )
     caps['ISCSIInitiatorName'] = _getIscsiIniName()
     caps['HBAInventory'] = hba.HBAInventory()
     caps['vmTypes'] = ['kvm']
 
     caps['memSize'] = str(utils.readMemInfo()['MemTotal'] // 1024)
-    caps['reservedMem'] = str(config.getint('vars', 'host_mem_reserve') +
-                              config.getint('vars', 'extra_mem_reserve'))
+    caps['reservedMem'] = str(
+        config.getint('vars', 'host_mem_reserve')
+        + config.getint('vars', 'extra_mem_reserve')
+    )
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
 
     caps['rngSources'] = rngsources.list_available()
@@ -138,6 +144,7 @@ def get():
     caps['additionalFeatures'] = ['libgfapi_supported']
     if osinfo.glusterEnabled:
         from vdsm.gluster.api import glusterAdditionalFeatures
+
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
     caps['hostedEngineDeployed'] = _isHostedEngineDeployed()
     caps['hugepages'] = hugepages.supported()
@@ -185,8 +192,10 @@ def _isHostedEngineDeployed():
     try:
         is_deployed = client.is_deployed
     except AttributeError:
-        logging.warning("The installed version of hosted engine doesn't "
-                        "support the checking of deployment status.")
+        logging.warning(
+            "The installed version of hosted engine doesn't "
+            "support the checking of deployment status."
+        )
         return False
 
     return is_deployed()
@@ -201,8 +210,10 @@ def _isVncEncrypted():
     try:
         return supervdsm.getProxy().check_qemu_conf_contains('vnc_tls', '1')
     except:
-        logging.error("Supervdsm was not able to read VNC TLS config. "
-                      "Check supervdsmd log for details.")
+        logging.error(
+            "Supervdsm was not able to read VNC TLS config. "
+            "Check supervdsmd log for details."
+        )
     return False
 
 
@@ -225,7 +236,7 @@ def _getFipsEnabled():
     """
     Read FIPS status using sysctl
     """
-    SYSCTL_FIPS_COMMAND = ["/usr/sbin/sysctl", "crypto.fips_enabled"],
+    SYSCTL_FIPS_COMMAND = (["/usr/sbin/sysctl", "crypto.fips_enabled"],)
 
     try:
         output = commands.run(*SYSCTL_FIPS_COMMAND)
@@ -260,8 +271,9 @@ def _getFlagsAndFeatures():
     # of flags (domcapabilities also return the content of
     # arch_capabilities). The sets overlap, so we convert
     # list -> set -> list to remove duplicates.
-    flags_and_features = list(set(cpuinfo.flags() +
-                                  machinetype.cpu_features()))
+    flags_and_features = list(
+        set(cpuinfo.flags() + machinetype.cpu_features())
+    )
     cpu_models = machinetype.compatible_cpu_models()
     # Easier to add here than in Engine:
     # If -IBRS suffix is present in any of the compatible CPU models,

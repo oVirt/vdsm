@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 from vdsm.common import xmlutils
-from vdsm.virt.domain_descriptor import (DomainDescriptor,
-                                         MutableDomainDescriptor)
+from vdsm.virt.domain_descriptor import (
+    DomainDescriptor,
+    MutableDomainDescriptor,
+)
 from testlib import VdsmTestCase, XMLTestCase, permutations, expandPermutations
 
 
@@ -147,9 +149,9 @@ class DevicesHashTests(VdsmTestCase):
 @expandPermutations
 class DomainDescriptorTests(XMLTestCase):
 
-    @permutations([[NO_DEVICES, None],
-                   [EMPTY_DEVICES, None],
-                   [MEMORY_SIZE, 1024]])
+    @permutations(
+        [[NO_DEVICES, None], [EMPTY_DEVICES, None], [MEMORY_SIZE, 1024]]
+    )
     def test_memory_size(self, domain_xml, result):
         desc = DomainDescriptor(domain_xml)
         assert desc.get_memory_size() == result
@@ -159,72 +161,91 @@ class DomainDescriptorTests(XMLTestCase):
         desc = descriptor(SOME_DEVICES)
         self.assertXMLEqual(desc.xml, SOME_DEVICES)
 
-    @permutations([[DomainDescriptor, 'device', 2],
-                   [DomainDescriptor, 'nonexistent', 0],
-                   [MutableDomainDescriptor, 'device', 2],
-                   [MutableDomainDescriptor, 'nonexistent', 0]])
+    @permutations(
+        [
+            [DomainDescriptor, 'device', 2],
+            [DomainDescriptor, 'nonexistent', 0],
+            [MutableDomainDescriptor, 'device', 2],
+            [MutableDomainDescriptor, 'nonexistent', 0],
+        ]
+    )
     def test_device_elements(self, descriptor, tag, result):
         desc = descriptor(SOME_DEVICES)
         assert len(list(desc.get_device_elements(tag))) == result
 
-    @permutations([
-        [DomainDescriptor, 'device', {}, 2],
-        [DomainDescriptor, 'device', {'name': 'foo'}, 1],
-        [DomainDescriptor, 'device', {'inexistent': 'attr'}, 0],
-        [DomainDescriptor, 'nonexistent', {}, 0],
-        [MutableDomainDescriptor, 'device', {}, 2],
-        [MutableDomainDescriptor, 'device', {'name': 'foo'}, 1],
-        [MutableDomainDescriptor, 'device', {'inexistent': 'attr'}, 0],
-        [MutableDomainDescriptor, 'nonexistent', {}, 0]
-    ])
-    def test_device_elements_with_attrs(self, descriptor, tag, attrs,
-                                        expected):
+    @permutations(
+        [
+            [DomainDescriptor, 'device', {}, 2],
+            [DomainDescriptor, 'device', {'name': 'foo'}, 1],
+            [DomainDescriptor, 'device', {'inexistent': 'attr'}, 0],
+            [DomainDescriptor, 'nonexistent', {}, 0],
+            [MutableDomainDescriptor, 'device', {}, 2],
+            [MutableDomainDescriptor, 'device', {'name': 'foo'}, 1],
+            [MutableDomainDescriptor, 'device', {'inexistent': 'attr'}, 0],
+            [MutableDomainDescriptor, 'nonexistent', {}, 0],
+        ]
+    )
+    def test_device_elements_with_attrs(
+        self, descriptor, tag, attrs, expected
+    ):
         desc = descriptor(SOME_DEVICES)
-        assert len(list(
-            desc.get_device_elements_with_attrs(tag, **attrs)
-        )) == expected
+        assert (
+            len(list(desc.get_device_elements_with_attrs(tag, **attrs)))
+            == expected
+        )
 
-    @permutations([
-        # attrs, expected_devs
-        [{}, 3],
-        [{'device': 'disk'}, 2],
-        [{'device': 'cdrom'}, 1],
-        [{'device': 'disk', 'name': 'vda'}, 1],
-    ])
+    @permutations(
+        [
+            # attrs, expected_devs
+            [{}, 3],
+            [{'device': 'disk'}, 2],
+            [{'device': 'cdrom'}, 1],
+            [{'device': 'disk', 'name': 'vda'}, 1],
+        ]
+    )
     def test_device_element_with_attrs_selection(self, attrs, expected_devs):
         desc = DomainDescriptor(SOME_DISK_DEVICES)
-        assert len(list(
-            desc.get_device_elements_with_attrs('disk', **attrs)
-        )) == expected_devs
+        assert (
+            len(list(desc.get_device_elements_with_attrs('disk', **attrs)))
+            == expected_devs
+        )
 
-    @permutations([
-        # xml_data, expected
-        [MEMORY_SIZE, False],
-        [METADATA, True],
-    ])
+    @permutations(
+        [
+            # xml_data, expected
+            [MEMORY_SIZE, False],
+            [METADATA, True],
+        ]
+    )
     def test_metadata(self, xml_data, expected):
         desc = DomainDescriptor(xml_data)
         found = desc.metadata is not None
         assert found == expected
 
-    @permutations([
-        # values, expected_metadata
-        [{'foo': 'baz'},
-         """<?xml version='1.0' encoding='utf-8'?>
+    @permutations(
+        [
+            # values, expected_metadata
+            [
+                {'foo': 'baz'},
+                """<?xml version='1.0' encoding='utf-8'?>
          <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
            <ovirt-vm:vm>
              <ovirt-vm:foo>baz</ovirt-vm:foo>
            </ovirt-vm:vm>
-         </metadata>"""],
-        [{'foo': 'bar', 'answer': 42},
-         """<?xml version='1.0' encoding='utf-8'?>
+         </metadata>""",
+            ],
+            [
+                {'foo': 'bar', 'answer': 42},
+                """<?xml version='1.0' encoding='utf-8'?>
          <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
            <ovirt-vm:vm>
              <ovirt-vm:answer type="int">42</ovirt-vm:answer>
              <ovirt-vm:foo>bar</ovirt-vm:foo>
            </ovirt-vm:vm>
-         </metadata>"""],
-    ])
+         </metadata>""",
+            ],
+        ]
+    )
     def test_metadata_descriptor(self, values, expected_metadata):
         desc = MutableDomainDescriptor(METADATA)
         with desc.metadata_descriptor() as md:
@@ -233,24 +254,27 @@ class DomainDescriptorTests(XMLTestCase):
 
         desc2 = DomainDescriptor(desc.xml)
         self.assertXMLEqual(
-            expected_metadata,
-            xmlutils.tostring(desc2.metadata, pretty=True)
+            expected_metadata, xmlutils.tostring(desc2.metadata, pretty=True)
         )
 
-    @permutations([
-        [ON_REBOOT_DESTROY, 'destroy'],
-        [ON_REBOOT_RESTART, 'restart'],
-        [NO_REBOOT, None]
-    ])
+    @permutations(
+        [
+            [ON_REBOOT_DESTROY, 'destroy'],
+            [ON_REBOOT_RESTART, 'restart'],
+            [NO_REBOOT, None],
+        ]
+    )
     def test_on_reboot_config(self, xml_data, expected):
         desc = DomainDescriptor(xml_data)
         reboot_config = desc.on_reboot_config()
         assert reboot_config == expected
 
-    @permutations([
-        [VCPU, 10],
-        [VCPU_CURRENT, 5],
-    ])
+    @permutations(
+        [
+            [VCPU, 10],
+            [VCPU_CURRENT, 5],
+        ]
+    )
     def test_get_number_of_cpus(self, xml_data, expected):
         desc = DomainDescriptor(xml_data)
         cpus = desc.get_number_of_cpus()

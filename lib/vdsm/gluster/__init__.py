@@ -4,9 +4,17 @@
 import os
 import tempfile
 
-MODULE_LIST = ('cli', 'hooks', 'services', 'tasks',
-               'gfapi', 'storagedev', 'api', 'events',
-               'thinstorage')
+MODULE_LIST = (
+    'cli',
+    'hooks',
+    'services',
+    'tasks',
+    'gfapi',
+    'storagedev',
+    'api',
+    'events',
+    'thinstorage',
+)
 
 
 def gluster_mgmt_api(func):
@@ -23,12 +31,14 @@ def listPublicFunctions(gluster_mgmt_enabled=True):
     methods = []
     for modName in MODULE_LIST:
         try:
-            module = __import__('vdsm.gluster.' + modName,
-                                fromlist=['gluster'])
+            module = __import__(
+                'vdsm.gluster.' + modName, fromlist=['gluster']
+            )
             for name in dir(module):
                 func = getattr(module, name)
-                if callable(func) and \
-                        _shouldPublish(func, gluster_mgmt_enabled):
+                if callable(func) and _shouldPublish(
+                    func, gluster_mgmt_enabled
+                ):
                     funcName = 'gluster%s%s' % (name[0].upper(), name[1:])
                     methods.append((funcName, func))
         except ImportError:
@@ -44,8 +54,9 @@ def _shouldPublish(func, gluster_mgmt_enabled):
 
 
 def safeWrite(fileName, content):
-    with tempfile.NamedTemporaryFile(dir=os.path.dirname(fileName),
-                                     delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(
+        dir=os.path.dirname(fileName), delete=False
+    ) as tmp:
         tmp.write(content)
         tmpFileName = tmp.name
         os.rename(tmpFileName, fileName)

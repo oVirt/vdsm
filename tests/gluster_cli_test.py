@@ -96,50 +96,62 @@ class GlusterCliTests(TestCaseBase):
 </cliOutput>
 """
         tree = etree.fromstring(out)
-        oVolumeInfo = \
-            {'music': {'isArbiter': True,
-                       'brickCount': '2',
-                       'bricks': ['192.168.122.2:/tmp/m_b1',
-                                  '192.168.122.2:/tmp/m_b2'],
-                       'distCount': '2',
-                       'bricksInfo': [{
-                           'name': '192.168.122.2:/tmp/m_b1',
-                           'isArbiter': True,
-                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
-                       }, {
-                           'name': '192.168.122.2:/tmp/m_b2',
-                           'isArbiter': True,
-                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
-                       }],
-                       'options': {'auth.allow': '*'},
-                       'replicaCount': '2',
-                       'stripeCount': '1',
-                       'disperseCount': '0',
-                       'redundancyCount': '0',
-                       'transportType': [gcli.TransportType.TCP],
-                       'uuid': 'b3114c71-741b-4c6f-a39e-80384c4ea3cf',
-                       'volumeName': 'music',
-                       'volumeStatus': gcli.VolumeStatus.ONLINE,
-                       'volumeType': 'REPLICATE'},
-             'test1': {'isArbiter': False,
-                       'brickCount': '1',
-                       'bricks': ['192.168.122.2:/tmp/t_b1'],
-                       'distCount': '1',
-                       'bricksInfo': [{
-                           'name': '192.168.122.2:/tmp/t_b1',
-                           'isArbiter': False,
-                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
-                       }],
-                       'options': {},
-                       'replicaCount': '1',
-                       'stripeCount': '1',
-                       'disperseCount': '0',
-                       'redundancyCount': '0',
-                       'transportType': [gcli.TransportType.RDMA],
-                       'uuid': 'b444ed94-f346-4cda-bd55-0282f21d22db',
-                       'volumeName': 'test1',
-                       'volumeStatus': gcli.VolumeStatus.OFFLINE,
-                       'volumeType': 'DISTRIBUTE'}}
+        oVolumeInfo = {
+            'music': {
+                'isArbiter': True,
+                'brickCount': '2',
+                'bricks': [
+                    '192.168.122.2:/tmp/m_b1',
+                    '192.168.122.2:/tmp/m_b2',
+                ],
+                'distCount': '2',
+                'bricksInfo': [
+                    {
+                        'name': '192.168.122.2:/tmp/m_b1',
+                        'isArbiter': True,
+                        'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d',
+                    },
+                    {
+                        'name': '192.168.122.2:/tmp/m_b2',
+                        'isArbiter': True,
+                        'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d',
+                    },
+                ],
+                'options': {'auth.allow': '*'},
+                'replicaCount': '2',
+                'stripeCount': '1',
+                'disperseCount': '0',
+                'redundancyCount': '0',
+                'transportType': [gcli.TransportType.TCP],
+                'uuid': 'b3114c71-741b-4c6f-a39e-80384c4ea3cf',
+                'volumeName': 'music',
+                'volumeStatus': gcli.VolumeStatus.ONLINE,
+                'volumeType': 'REPLICATE',
+            },
+            'test1': {
+                'isArbiter': False,
+                'brickCount': '1',
+                'bricks': ['192.168.122.2:/tmp/t_b1'],
+                'distCount': '1',
+                'bricksInfo': [
+                    {
+                        'name': '192.168.122.2:/tmp/t_b1',
+                        'isArbiter': False,
+                        'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d',
+                    }
+                ],
+                'options': {},
+                'replicaCount': '1',
+                'stripeCount': '1',
+                'disperseCount': '0',
+                'redundancyCount': '0',
+                'transportType': [gcli.TransportType.RDMA],
+                'uuid': 'b444ed94-f346-4cda-bd55-0282f21d22db',
+                'volumeName': 'test1',
+                'volumeStatus': gcli.VolumeStatus.OFFLINE,
+                'volumeType': 'DISTRIBUTE',
+            },
+        }
         volumeInfo = gcli._parseVolumeInfo(tree)
         self.assertEqual(volumeInfo, oVolumeInfo)
 
@@ -212,50 +224,62 @@ class GlusterCliTests(TestCaseBase):
             </cliOutput>
             """
         tree = etree.fromstring(out)
-        oVolumeInfo = \
-            {'music': {'isArbiter': True,
-                       'brickCount': '2',
-                       'bricks': ['192.168.122.2:/tmp/m_b1',
-                                  '192.168.122.2:/tmp/m_b2'],
-                       'distCount': '2',
-                       'bricksInfo': [{
-                           'name': '192.168.122.2:/tmp/m_b1',
-                           'isArbiter': True,
-                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
-                       }, {
-                           'name': '192.168.122.2:/tmp/m_b2',
-                           'isArbiter': True,
-                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
-                       }],
-                       'options': {'auth.allow': '*'},
-                       'replicaCount': '2',
-                       'stripeCount': '1',
-                       'disperseCount': '0',
-                       'redundancyCount': '0',
-                       'transportType': [gcli.TransportType.TCP],
-                       'uuid': 'b3114c71-741b-4c6f-a39e-80384c4ea3cf',
-                       'volumeName': 'music',
-                       'volumeStatus': gcli.VolumeStatus.ONLINE,
-                       'volumeType': 'REPLICATE'},
-             'test1': {'isArbiter': False,
-                       'brickCount': '1',
-                       'bricks': ['192.168.122.2:/tmp/t_b1'],
-                       'distCount': '1',
-                       'bricksInfo': [{
-                           'name': '192.168.122.2:/tmp/t_b1',
-                           'isArbiter': False,
-                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
-                       }],
-                       'options': {},
-                       'replicaCount': '1',
-                       'stripeCount': '1',
-                       'disperseCount': '0',
-                       'redundancyCount': '0',
-                       'transportType': [gcli.TransportType.RDMA],
-                       'uuid': 'b444ed94-f346-4cda-bd55-0282f21d22db',
-                       'volumeName': 'test1',
-                       'volumeStatus': gcli.VolumeStatus.OFFLINE,
-                       'volumeType': 'DISTRIBUTE'}}
+        oVolumeInfo = {
+            'music': {
+                'isArbiter': True,
+                'brickCount': '2',
+                'bricks': [
+                    '192.168.122.2:/tmp/m_b1',
+                    '192.168.122.2:/tmp/m_b2',
+                ],
+                'distCount': '2',
+                'bricksInfo': [
+                    {
+                        'name': '192.168.122.2:/tmp/m_b1',
+                        'isArbiter': True,
+                        'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d',
+                    },
+                    {
+                        'name': '192.168.122.2:/tmp/m_b2',
+                        'isArbiter': True,
+                        'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d',
+                    },
+                ],
+                'options': {'auth.allow': '*'},
+                'replicaCount': '2',
+                'stripeCount': '1',
+                'disperseCount': '0',
+                'redundancyCount': '0',
+                'transportType': [gcli.TransportType.TCP],
+                'uuid': 'b3114c71-741b-4c6f-a39e-80384c4ea3cf',
+                'volumeName': 'music',
+                'volumeStatus': gcli.VolumeStatus.ONLINE,
+                'volumeType': 'REPLICATE',
+            },
+            'test1': {
+                'isArbiter': False,
+                'brickCount': '1',
+                'bricks': ['192.168.122.2:/tmp/t_b1'],
+                'distCount': '1',
+                'bricksInfo': [
+                    {
+                        'name': '192.168.122.2:/tmp/t_b1',
+                        'isArbiter': False,
+                        'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d',
+                    }
+                ],
+                'options': {},
+                'replicaCount': '1',
+                'stripeCount': '1',
+                'disperseCount': '0',
+                'redundancyCount': '0',
+                'transportType': [gcli.TransportType.RDMA],
+                'uuid': 'b444ed94-f346-4cda-bd55-0282f21d22db',
+                'volumeName': 'test1',
+                'volumeStatus': gcli.VolumeStatus.OFFLINE,
+                'volumeType': 'DISTRIBUTE',
+            },
+        }
         volumeInfo = gcli._parseVolumeInfo(tree)
         self.assertEqual(volumeInfo, oVolumeInfo)
 
@@ -274,14 +298,22 @@ class GlusterCliTests(TestCaseBase):
 </cliOutput>
 """
         tree = etree.fromstring(out)
-        hostList = \
-            gcli._parsePeerStatus(tree, 'fedora-16-test',
-                                  '711d2887-3222-46d8-801a-7e3f646bdd4d',
-                                  gcli.HostStatus.CONNECTED)
-        self.assertEqual(hostList,
-                         [{'hostname': 'fedora-16-test',
-                           'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
-                           'status': gcli.HostStatus.CONNECTED}])
+        hostList = gcli._parsePeerStatus(
+            tree,
+            'fedora-16-test',
+            '711d2887-3222-46d8-801a-7e3f646bdd4d',
+            gcli.HostStatus.CONNECTED,
+        )
+        self.assertEqual(
+            hostList,
+            [
+                {
+                    'hostname': 'fedora-16-test',
+                    'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
+                    'status': gcli.HostStatus.CONNECTED,
+                }
+            ],
+        )
 
     def _parsePeerStatus_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -315,23 +347,37 @@ class GlusterCliTests(TestCaseBase):
 </cliOutput>
 """
         tree = etree.fromstring(out)
-        hostList = \
-            gcli._parsePeerStatus(tree, 'fedora-16-test',
-                                  '711d2887-3222-46d8-801a-7e3f646bdd4d',
-                                  gcli.HostStatus.CONNECTED)
-        self.assertEqual(hostList,
-                         [{'hostname': 'fedora-16-test',
-                           'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
-                           'status': gcli.HostStatus.CONNECTED},
-                          {'hostname': '192.168.2.21',
-                           'uuid': '610f466c-781a-4e04-8f67-8eba9a201867',
-                           'status': gcli.HostStatus.CONNECTED},
-                          {'hostname': 'FC16-1',
-                           'uuid': '12345678-781a-aaaa-bbbb-8eba9a201867',
-                           'status': gcli.HostStatus.DISCONNECTED},
-                          {'hostname': 'FC16-2',
-                           'uuid': '12345678-cccc-aaaa-bbbb-8eba9a201867',
-                           'status': gcli.HostStatus.UNKNOWN}])
+        hostList = gcli._parsePeerStatus(
+            tree,
+            'fedora-16-test',
+            '711d2887-3222-46d8-801a-7e3f646bdd4d',
+            gcli.HostStatus.CONNECTED,
+        )
+        self.assertEqual(
+            hostList,
+            [
+                {
+                    'hostname': 'fedora-16-test',
+                    'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
+                    'status': gcli.HostStatus.CONNECTED,
+                },
+                {
+                    'hostname': '192.168.2.21',
+                    'uuid': '610f466c-781a-4e04-8f67-8eba9a201867',
+                    'status': gcli.HostStatus.CONNECTED,
+                },
+                {
+                    'hostname': 'FC16-1',
+                    'uuid': '12345678-781a-aaaa-bbbb-8eba9a201867',
+                    'status': gcli.HostStatus.DISCONNECTED,
+                },
+                {
+                    'hostname': 'FC16-2',
+                    'uuid': '12345678-cccc-aaaa-bbbb-8eba9a201867',
+                    'status': gcli.HostStatus.UNKNOWN,
+                },
+            ],
+        )
 
     def test_parsePeerStatus(self):
         self._parsePeerStatus_empty_test()
@@ -403,34 +449,48 @@ class GlusterCliTests(TestCaseBase):
 """
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatus(tree)
-        self.assertEqual(status,
-                         {'bricks': [{'brick': '192.168.122.2:/tmp/music-b1',
-                                      'hostuuid':
-                                      'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                                      'pid': '1313',
-                                      'port': '49152',
-                                      'rdma_port': 'N/A',
-                                      'status': 'ONLINE'},
-                                     {'brick': '192.168.122.2:/tmp/music-b2',
-                                      'hostuuid':
-                                      'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                                      'pid': '1335',
-                                      'port': '49153',
-                                      'rdma_port': 'N/A',
-                                      'status': 'ONLINE'}],
-                          'name': 'music',
-                          'nfs': [{'hostname': '192.168.122.2',
-                                   'hostuuid':
-                                   'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                                   'pid': '1357',
-                                   'port': '38467',
-                                   'rdma_port': 'N/A',
-                                   'status': 'ONLINE'}],
-                          'shd': [{'hostname': '192.168.122.2',
-                                   'hostuuid':
-                                   'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                                   'pid': '1375',
-                                   'status': 'ONLINE'}]})
+        self.assertEqual(
+            status,
+            {
+                'bricks': [
+                    {
+                        'brick': '192.168.122.2:/tmp/music-b1',
+                        'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                        'pid': '1313',
+                        'port': '49152',
+                        'rdma_port': 'N/A',
+                        'status': 'ONLINE',
+                    },
+                    {
+                        'brick': '192.168.122.2:/tmp/music-b2',
+                        'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                        'pid': '1335',
+                        'port': '49153',
+                        'rdma_port': 'N/A',
+                        'status': 'ONLINE',
+                    },
+                ],
+                'name': 'music',
+                'nfs': [
+                    {
+                        'hostname': '192.168.122.2',
+                        'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                        'pid': '1357',
+                        'port': '38467',
+                        'rdma_port': 'N/A',
+                        'status': 'ONLINE',
+                    }
+                ],
+                'shd': [
+                    {
+                        'hostname': '192.168.122.2',
+                        'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                        'pid': '1375',
+                        'status': 'ONLINE',
+                    }
+                ],
+            },
+        )
 
     def _parseVolumeStatusDetail_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -476,26 +536,31 @@ class GlusterCliTests(TestCaseBase):
   </volStatus>
 </cliOutput>"""
         tree = etree.fromstring(out)
-        oStatus = \
-            {'bricks': [{'blockSize': '4096',
-                         'brick': '192.168.122.2:/tmp/music-b1',
-                         'hostuuid':
-                         'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                         'device': '/dev/vda1',
-                         'fsName': 'ext4',
-                         'mntOptions': 'rw,seclabel,relatime,data=ordered',
-                         'sizeFree': '4271.328',
-                         'sizeTotal': '7982.934'},
-                        {'blockSize': '4096',
-                         'brick': '192.168.122.2:/tmp/music-b2',
-                         'hostuuid':
-                         'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                         'device': '/dev/vda1',
-                         'fsName': 'ext4',
-                         'mntOptions': 'rw,seclabel,relatime,data=ordered',
-                         'sizeFree': '4271.328',
-                         'sizeTotal': '7982.934'}],
-             'name': 'music'}
+        oStatus = {
+            'bricks': [
+                {
+                    'blockSize': '4096',
+                    'brick': '192.168.122.2:/tmp/music-b1',
+                    'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                    'device': '/dev/vda1',
+                    'fsName': 'ext4',
+                    'mntOptions': 'rw,seclabel,relatime,data=ordered',
+                    'sizeFree': '4271.328',
+                    'sizeTotal': '7982.934',
+                },
+                {
+                    'blockSize': '4096',
+                    'brick': '192.168.122.2:/tmp/music-b2',
+                    'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                    'device': '/dev/vda1',
+                    'fsName': 'ext4',
+                    'mntOptions': 'rw,seclabel,relatime,data=ordered',
+                    'sizeFree': '4271.328',
+                    'sizeTotal': '7982.934',
+                },
+            ],
+            'name': 'music',
+        }
         status = gcli._parseVolumeStatusDetail(tree)
         self.assertEqual(status, oStatus)
 
@@ -561,24 +626,40 @@ class GlusterCliTests(TestCaseBase):
         status = gcli._parseVolumeStatusClients(tree)
         self.assertEqual(set(status.keys()), {'bricks', 'name'})
         self.assertEqual(status['name'], 'music')
-        oBricks = [{'brick': '192.168.122.2:/tmp/music-b1',
-                    'hostuuid':
-                    'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                    'clientsStatus': [{'bytesRead': '1172',
-                                       'bytesWrite': '792',
-                                       'hostname': '192.168.122.2:1021'},
-                                      {'bytesRead': '10076',
-                                       'bytesWrite': '12152',
-                                       'hostname': '192.168.122.2:1011'}]},
-                   {'brick': '192.168.122.2:/tmp/music-b2',
-                    'hostuuid':
-                    'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                    'clientsStatus': [{'bytesRead': '1172',
-                                       'bytesWrite': '792',
-                                       'hostname': '192.168.122.2:1020'},
-                                      {'bytesRead': '10864',
-                                       'bytesWrite': '12816',
-                                       'hostname': '192.168.122.2:1010'}]}]
+        oBricks = [
+            {
+                'brick': '192.168.122.2:/tmp/music-b1',
+                'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                'clientsStatus': [
+                    {
+                        'bytesRead': '1172',
+                        'bytesWrite': '792',
+                        'hostname': '192.168.122.2:1021',
+                    },
+                    {
+                        'bytesRead': '10076',
+                        'bytesWrite': '12152',
+                        'hostname': '192.168.122.2:1011',
+                    },
+                ],
+            },
+            {
+                'brick': '192.168.122.2:/tmp/music-b2',
+                'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                'clientsStatus': [
+                    {
+                        'bytesRead': '1172',
+                        'bytesWrite': '792',
+                        'hostname': '192.168.122.2:1020',
+                    },
+                    {
+                        'bytesRead': '10864',
+                        'bytesWrite': '12816',
+                        'hostname': '192.168.122.2:1010',
+                    },
+                ],
+            },
+        ]
         self.assertEqual(status['bricks'], oBricks)
 
     def _parseVolumeStatusMem_test(self):
@@ -947,274 +1028,347 @@ class GlusterCliTests(TestCaseBase):
   </volStatus>
 </cliOutput>
 """
-        ostatus = \
-            {'bricks': [{'brick': '192.168.122.2:/tmp/music-b1',
-                         'hostuuid':
-                         'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                         'mallinfo': {'arena': '606208',
-                                      'fordblks': '132000',
-                                      'fsmblks': '64',
-                                      'hblkhd': '15179776',
-                                      'hblks': '12',
-                                      'keepcost': '130224',
-                                      'ordblks': '6',
-                                      'smblks': '1',
-                                      'uordblks': '474208',
-                                      'usmblks': '0'},
-                         'mempool': [{'allocCount': '0',
-                                      'coldCount': '1024',
-                                      'hotCount': '0',
-                                      'maxAlloc': '0',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-server:fd_t',
-                                      'padddedSizeOf': '100',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '0',
-                                      'coldCount': '16384',
-                                      'hotCount': '0',
-                                      'maxAlloc': '0',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-server:dentry_t',
-                                      'padddedSizeOf': '84',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '1',
-                                      'coldCount': '16383',
-                                      'hotCount': '1',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-server:inode_t',
-                                      'padddedSizeOf': '148',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '1',
-                                      'coldCount': '32',
-                                      'hotCount': '0',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-locks:pl_local_t',
-                                      'padddedSizeOf': '140',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '0',
-                                      'coldCount': '128',
-                                      'hotCount': '0',
-                                      'maxAlloc': '0',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-marker:marker_local_t',
-                                      'padddedSizeOf': '316',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '10',
-                                      'coldCount': '512',
-                                      'hotCount': '0',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-server:rpcsvc_request_t',
-                                      'padddedSizeOf': '6372',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '2',
-                                      'coldCount': '8',
-                                      'hotCount': '0',
-                                      'maxAlloc': '2',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:struct saved_frame',
-                                      'padddedSizeOf': '124',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '2',
-                                      'coldCount': '8',
-                                      'hotCount': '0',
-                                      'maxAlloc': '2',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:struct rpc_req',
-                                      'padddedSizeOf': '2236',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '1',
-                                      'coldCount': '7',
-                                      'hotCount': '1',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:rpcsvc_request_t',
-                                      'padddedSizeOf': '6372',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '179',
-                                      'coldCount': '16266',
-                                      'hotCount': '117',
-                                      'maxAlloc': '121',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:data_t',
-                                      'padddedSizeOf': '52',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '218',
-                                      'coldCount': '16245',
-                                      'hotCount': '138',
-                                      'maxAlloc': '142',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:data_pair_t',
-                                      'padddedSizeOf': '68',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '24',
-                                      'coldCount': '4083',
-                                      'hotCount': '13',
-                                      'maxAlloc': '15',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:dict_t',
-                                      'padddedSizeOf': '84',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '2',
-                                      'coldCount': '1024',
-                                      'hotCount': '0',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:call_stub_t',
-                                      'padddedSizeOf': '1228',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '4',
-                                      'coldCount': '1024',
-                                      'hotCount': '0',
-                                      'maxAlloc': '2',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:call_stack_t',
-                                      'padddedSizeOf': '2084',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '14',
-                                      'coldCount': '4096',
-                                      'hotCount': '0',
-                                      'maxAlloc': '7',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:call_frame_t',
-                                      'padddedSizeOf': '172',
-                                      'poolMisses': '0'}]},
-                        {'brick': '192.168.122.2:/tmp/music-b2',
-                         'hostuuid':
-                         'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                         'mallinfo': {'arena': '606208',
-                                      'fordblks': '131984',
-                                      'fsmblks': '128',
-                                      'hblkhd': '15179776',
-                                      'hblks': '12',
-                                      'keepcost': '130224',
-                                      'ordblks': '5',
-                                      'smblks': '2',
-                                      'uordblks': '474224',
-                                      'usmblks': '0'},
-                         'mempool': [{'allocCount': '0',
-                                      'coldCount': '1024',
-                                      'hotCount': '0',
-                                      'maxAlloc': '0',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-server:fd_t',
-                                      'padddedSizeOf': '100',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '0',
-                                      'coldCount': '16384',
-                                      'hotCount': '0',
-                                      'maxAlloc': '0',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-server:dentry_t',
-                                      'padddedSizeOf': '84',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '2',
-                                      'coldCount': '16383',
-                                      'hotCount': '1',
-                                      'maxAlloc': '2',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-server:inode_t',
-                                      'padddedSizeOf': '148',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '1',
-                                      'coldCount': '32',
-                                      'hotCount': '0',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-locks:pl_local_t',
-                                      'padddedSizeOf': '140',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '0',
-                                      'coldCount': '128',
-                                      'hotCount': '0',
-                                      'maxAlloc': '0',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-marker:marker_local_t',
-                                      'padddedSizeOf': '316',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '12',
-                                      'coldCount': '512',
-                                      'hotCount': '0',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'music-server:rpcsvc_request_t',
-                                      'padddedSizeOf': '6372',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '2',
-                                      'coldCount': '8',
-                                      'hotCount': '0',
-                                      'maxAlloc': '2',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:struct saved_frame',
-                                      'padddedSizeOf': '124',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '2',
-                                      'coldCount': '8',
-                                      'hotCount': '0',
-                                      'maxAlloc': '2',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:struct rpc_req',
-                                      'padddedSizeOf': '2236',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '1',
-                                      'coldCount': '7',
-                                      'hotCount': '1',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:rpcsvc_request_t',
-                                      'padddedSizeOf': '6372',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '180',
-                                      'coldCount': '16266',
-                                      'hotCount': '117',
-                                      'maxAlloc': '121',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:data_t',
-                                      'padddedSizeOf': '52',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '220',
-                                      'coldCount': '16245',
-                                      'hotCount': '138',
-                                      'maxAlloc': '142',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:data_pair_t',
-                                      'padddedSizeOf': '68',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '25',
-                                      'coldCount': '4083',
-                                      'hotCount': '13',
-                                      'maxAlloc': '15',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:dict_t',
-                                      'padddedSizeOf': '84',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '4',
-                                      'coldCount': '1024',
-                                      'hotCount': '0',
-                                      'maxAlloc': '1',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:call_stub_t',
-                                      'padddedSizeOf': '1228',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '6',
-                                      'coldCount': '1024',
-                                      'hotCount': '0',
-                                      'maxAlloc': '2',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:call_stack_t',
-                                      'padddedSizeOf': '2084',
-                                      'poolMisses': '0'},
-                                     {'allocCount': '20',
-                                      'coldCount': '4096',
-                                      'hotCount': '0',
-                                      'maxAlloc': '7',
-                                      'maxStdAlloc': '0',
-                                      'name': 'glusterfs:call_frame_t',
-                                      'padddedSizeOf': '172',
-                                      'poolMisses': '0'}]}],
-             'name': 'music'}
+        ostatus = {
+            'bricks': [
+                {
+                    'brick': '192.168.122.2:/tmp/music-b1',
+                    'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                    'mallinfo': {
+                        'arena': '606208',
+                        'fordblks': '132000',
+                        'fsmblks': '64',
+                        'hblkhd': '15179776',
+                        'hblks': '12',
+                        'keepcost': '130224',
+                        'ordblks': '6',
+                        'smblks': '1',
+                        'uordblks': '474208',
+                        'usmblks': '0',
+                    },
+                    'mempool': [
+                        {
+                            'allocCount': '0',
+                            'coldCount': '1024',
+                            'hotCount': '0',
+                            'maxAlloc': '0',
+                            'maxStdAlloc': '0',
+                            'name': 'music-server:fd_t',
+                            'padddedSizeOf': '100',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '0',
+                            'coldCount': '16384',
+                            'hotCount': '0',
+                            'maxAlloc': '0',
+                            'maxStdAlloc': '0',
+                            'name': 'music-server:dentry_t',
+                            'padddedSizeOf': '84',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '1',
+                            'coldCount': '16383',
+                            'hotCount': '1',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'music-server:inode_t',
+                            'padddedSizeOf': '148',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '1',
+                            'coldCount': '32',
+                            'hotCount': '0',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'music-locks:pl_local_t',
+                            'padddedSizeOf': '140',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '0',
+                            'coldCount': '128',
+                            'hotCount': '0',
+                            'maxAlloc': '0',
+                            'maxStdAlloc': '0',
+                            'name': 'music-marker:marker_local_t',
+                            'padddedSizeOf': '316',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '10',
+                            'coldCount': '512',
+                            'hotCount': '0',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'music-server:rpcsvc_request_t',
+                            'padddedSizeOf': '6372',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '2',
+                            'coldCount': '8',
+                            'hotCount': '0',
+                            'maxAlloc': '2',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:struct saved_frame',
+                            'padddedSizeOf': '124',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '2',
+                            'coldCount': '8',
+                            'hotCount': '0',
+                            'maxAlloc': '2',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:struct rpc_req',
+                            'padddedSizeOf': '2236',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '1',
+                            'coldCount': '7',
+                            'hotCount': '1',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:rpcsvc_request_t',
+                            'padddedSizeOf': '6372',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '179',
+                            'coldCount': '16266',
+                            'hotCount': '117',
+                            'maxAlloc': '121',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:data_t',
+                            'padddedSizeOf': '52',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '218',
+                            'coldCount': '16245',
+                            'hotCount': '138',
+                            'maxAlloc': '142',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:data_pair_t',
+                            'padddedSizeOf': '68',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '24',
+                            'coldCount': '4083',
+                            'hotCount': '13',
+                            'maxAlloc': '15',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:dict_t',
+                            'padddedSizeOf': '84',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '2',
+                            'coldCount': '1024',
+                            'hotCount': '0',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:call_stub_t',
+                            'padddedSizeOf': '1228',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '4',
+                            'coldCount': '1024',
+                            'hotCount': '0',
+                            'maxAlloc': '2',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:call_stack_t',
+                            'padddedSizeOf': '2084',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '14',
+                            'coldCount': '4096',
+                            'hotCount': '0',
+                            'maxAlloc': '7',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:call_frame_t',
+                            'padddedSizeOf': '172',
+                            'poolMisses': '0',
+                        },
+                    ],
+                },
+                {
+                    'brick': '192.168.122.2:/tmp/music-b2',
+                    'hostuuid': 'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                    'mallinfo': {
+                        'arena': '606208',
+                        'fordblks': '131984',
+                        'fsmblks': '128',
+                        'hblkhd': '15179776',
+                        'hblks': '12',
+                        'keepcost': '130224',
+                        'ordblks': '5',
+                        'smblks': '2',
+                        'uordblks': '474224',
+                        'usmblks': '0',
+                    },
+                    'mempool': [
+                        {
+                            'allocCount': '0',
+                            'coldCount': '1024',
+                            'hotCount': '0',
+                            'maxAlloc': '0',
+                            'maxStdAlloc': '0',
+                            'name': 'music-server:fd_t',
+                            'padddedSizeOf': '100',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '0',
+                            'coldCount': '16384',
+                            'hotCount': '0',
+                            'maxAlloc': '0',
+                            'maxStdAlloc': '0',
+                            'name': 'music-server:dentry_t',
+                            'padddedSizeOf': '84',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '2',
+                            'coldCount': '16383',
+                            'hotCount': '1',
+                            'maxAlloc': '2',
+                            'maxStdAlloc': '0',
+                            'name': 'music-server:inode_t',
+                            'padddedSizeOf': '148',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '1',
+                            'coldCount': '32',
+                            'hotCount': '0',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'music-locks:pl_local_t',
+                            'padddedSizeOf': '140',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '0',
+                            'coldCount': '128',
+                            'hotCount': '0',
+                            'maxAlloc': '0',
+                            'maxStdAlloc': '0',
+                            'name': 'music-marker:marker_local_t',
+                            'padddedSizeOf': '316',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '12',
+                            'coldCount': '512',
+                            'hotCount': '0',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'music-server:rpcsvc_request_t',
+                            'padddedSizeOf': '6372',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '2',
+                            'coldCount': '8',
+                            'hotCount': '0',
+                            'maxAlloc': '2',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:struct saved_frame',
+                            'padddedSizeOf': '124',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '2',
+                            'coldCount': '8',
+                            'hotCount': '0',
+                            'maxAlloc': '2',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:struct rpc_req',
+                            'padddedSizeOf': '2236',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '1',
+                            'coldCount': '7',
+                            'hotCount': '1',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:rpcsvc_request_t',
+                            'padddedSizeOf': '6372',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '180',
+                            'coldCount': '16266',
+                            'hotCount': '117',
+                            'maxAlloc': '121',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:data_t',
+                            'padddedSizeOf': '52',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '220',
+                            'coldCount': '16245',
+                            'hotCount': '138',
+                            'maxAlloc': '142',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:data_pair_t',
+                            'padddedSizeOf': '68',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '25',
+                            'coldCount': '4083',
+                            'hotCount': '13',
+                            'maxAlloc': '15',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:dict_t',
+                            'padddedSizeOf': '84',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '4',
+                            'coldCount': '1024',
+                            'hotCount': '0',
+                            'maxAlloc': '1',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:call_stub_t',
+                            'padddedSizeOf': '1228',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '6',
+                            'coldCount': '1024',
+                            'hotCount': '0',
+                            'maxAlloc': '2',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:call_stack_t',
+                            'padddedSizeOf': '2084',
+                            'poolMisses': '0',
+                        },
+                        {
+                            'allocCount': '20',
+                            'coldCount': '4096',
+                            'hotCount': '0',
+                            'maxAlloc': '7',
+                            'maxStdAlloc': '0',
+                            'name': 'glusterfs:call_frame_t',
+                            'padddedSizeOf': '172',
+                            'poolMisses': '0',
+                        },
+                    ],
+                },
+            ],
+            'name': 'music',
+        }
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatusMem(tree)
         self.assertEqual(status, ostatus)
@@ -1248,17 +1402,16 @@ class GlusterCliTests(TestCaseBase):
             out = f.read()
         tree = etree.fromstring(out)
         status = gcli._parseVolumeRebalanceRemoveBrickStatus(tree, 'rebalance')
-        self.assertEqual(status,
-                         glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
+        self.assertEqual(status, glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
 
     def test_parseVolumeRemoveBricksStatus(self):
         with open("glusterVolumeRemoveBricksStatus.xml") as f:
             out = f.read()
         tree = etree.fromstring(out)
-        status = gcli._parseVolumeRebalanceRemoveBrickStatus(tree,
-                                                             'remove-brick')
-        self.assertEqual(status,
-                         glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
+        status = gcli._parseVolumeRebalanceRemoveBrickStatus(
+            tree, 'remove-brick'
+        )
+        self.assertEqual(status, glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
 
     def test_parseVolumeTasks(self):
         with open("glusterVolumeTasks.xml") as f:
@@ -1310,8 +1463,9 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         gcli._TIME_ZONE = 'IST'
         status = gcli._parseAllVolumeSnapshotList(tree)
-        self.assertEqual(status,
-                         glusterTestData.GLUSTER_ALL_VOLUME_SNAPSHOT_LIST)
+        self.assertEqual(
+            status, glusterTestData.GLUSTER_ALL_VOLUME_SNAPSHOT_LIST
+        )
 
     def test_parseVolumeSnapshotList(self):
         with open("glusterVolumeSnapshotList.xml") as f:
@@ -1353,19 +1507,22 @@ class GlusterCliTests(TestCaseBase):
 
     def test_execGlusterXmlWithTimeout(self):
         tree = gcli._execGlusterXmlWithTimeout(
-            [sys.executable, "./slow-gluster-cli"], timeout=20)
+            [sys.executable, "./slow-gluster-cli"], timeout=20
+        )
         el = tree.find('volStatus/volumes/volume/volName').text
         self.assertEqual(el, 'vol-2')
 
     def test_execGlusterXmlWithTimeoutFail(self):
         with self.assertRaises(exception.GlusterCommandTimeoutException):
             gcli._execGlusterXmlWithTimeout(
-                [sys.executable, "./slow-gluster-cli"], timeout=5)
+                [sys.executable, "./slow-gluster-cli"], timeout=5
+            )
 
     def test_parseGlobalVolumeOptions(self):
         with open("glusterGlobalVolumeOptions.xml") as f:
             out = f.read()
         tree = etree.fromstring(out)
         globalVolumeOptions = gcli._parseGlobalVolumeOptions(tree)
-        self.assertEqual(globalVolumeOptions,
-                         glusterTestData.GLUSTER_GLOBAL_VOLUME_OPTIONS)
+        self.assertEqual(
+            globalVolumeOptions, glusterTestData.GLUSTER_GLOBAL_VOLUME_OPTIONS
+        )

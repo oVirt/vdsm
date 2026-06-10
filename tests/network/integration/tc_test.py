@@ -93,7 +93,6 @@ class TestQdisc(object):
     not os.path.exists('/dev/net/tun'), reason='No tun device available'
 )
 class TestPortMirror(object):
-
     """
     Tests port mirroring of IP traffic between two bridges.
 

@@ -11,7 +11,8 @@ from vdsm.common.units import MiB
 
 @pytest.mark.skipif(
     "OVIRT_CI" in os.environ,
-    reason="prlimit --cpu does not work in oVirt CI envrinoment")
+    reason="prlimit --cpu does not work in oVirt CI envrinoment",
+)
 def test_limit_cpu():
     # This takes 6 seconds on i7-5600U CPU @ 2.60GHz. We assume that it will
     # never take less then 1 second. Increase n if this starts to fail

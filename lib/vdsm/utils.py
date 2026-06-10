@@ -127,6 +127,7 @@ def cancelpoint(meth):
     Decorated object must implement __canceled__ method, returning truthy value
     if the object is canceled.
     """
+
     @functools.wraps(meth)
     def wrapper(self, *a, **kw):
         if self.__canceled__():
@@ -135,6 +136,7 @@ def cancelpoint(meth):
         if self.__canceled__():
             raise Canceled()
         return value
+
     return wrapper
 
 
@@ -152,6 +154,7 @@ class closing(object):
 
     Adaptation from https://docs.python.org/2.7/library/contextlib.html
     """
+
     def __init__(self, obj, log="utils.closing"):
         self.obj = obj
         self.log = log
@@ -175,8 +178,12 @@ class Callback(namedtuple('Callback_', ('func', 'args', 'kwargs'))):
     def __call__(self):
         result = None
         try:
-            self.log.debug('Calling %s with args=%s and kwargs=%s',
-                           self.func.__name__, self.args, self.kwargs)
+            self.log.debug(
+                'Calling %s with args=%s and kwargs=%s',
+                self.func.__name__,
+                self.args,
+                self.kwargs,
+            )
             result = self.func(*self.args, **self.kwargs)
         except Exception:
             self.log.error("%s failed", self.func.__name__, exc_info=True)
@@ -191,6 +198,7 @@ class CallbackChain(threading.Thread):
     The chain ends when the action succeeds (indicated by a callback
     returning True) or when it runs out of alternatives.
     """
+
     log = logging.getLogger("utils.CallbackChain")
 
     def __init__(self, callbacks=()):
@@ -211,8 +219,9 @@ class CallbackChain(threading.Thread):
             while self.callbacks:
                 callback = self.callbacks.popleft()
                 if callback():
-                    self.log.debug("Succeeded after invoking " +
-                                   callback.func.__name__)
+                    self.log.debug(
+                        "Succeeded after invoking " + callback.func.__name__
+                    )
                     return
             self.log.debug("Ran out of callbacks")
         except Exception:
@@ -246,6 +255,7 @@ class RollbackContext(object):
 
     More examples see tests/utilsTests.py
     '''
+
     def __init__(self, on_exception_only=False):
         self._finally = []
         self._on_exception_only = on_exception_only
@@ -352,8 +362,9 @@ def round(n, size):
 
 
 def create_connected_socket(host, port, sslctx=None, timeout=None):
-    addrinfo = socket.getaddrinfo(host, port,
-                                  socket.AF_UNSPEC, socket.SOCK_STREAM)
+    addrinfo = socket.getaddrinfo(
+        host, port, socket.AF_UNSPEC, socket.SOCK_STREAM
+    )
     family, socktype, proto, _, _ = addrinfo[0]
     sock = socket.socket(family, socktype, proto)
 
@@ -366,8 +377,9 @@ def create_connected_socket(host, port, sslctx=None, timeout=None):
 
 
 @contextmanager
-def stopwatch(message, level=logging.DEBUG,
-              log=logging.getLogger('vds.stopwatch')):
+def stopwatch(
+    message, level=logging.DEBUG, log=logging.getLogger('vds.stopwatch')
+):
     if log.isEnabledFor(level):
         start = vdsm_time.monotonic_time()
         yield

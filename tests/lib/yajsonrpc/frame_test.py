@@ -15,69 +15,57 @@ def test_heartbeat_frame():
 
 
 # https://stomp.github.io/stomp-specification-1.2.html#Augmented_BNF
-@pytest.mark.parametrize("command, expected", [
-    (Command.CONNECT, b"CONNECT\n\n\x00"),
-    (Command.SEND, b"SEND\n\n\x00"),
-    (Command.SUBSCRIBE, b"SUBSCRIBE\n\n\x00"),
-])
+@pytest.mark.parametrize(
+    "command, expected",
+    [
+        (Command.CONNECT, b"CONNECT\n\n\x00"),
+        (Command.SEND, b"SEND\n\n\x00"),
+        (Command.SUBSCRIBE, b"SUBSCRIBE\n\n\x00"),
+    ],
+)
 def test_encoding_frame_with_command_only(command, expected):
     assert Frame(command).encode() == expected
 
 
-@pytest.mark.parametrize("headers, expected", [
-    (
-        {},
-        b"CONNECT\n\n\x00"
-    ),
-    (
-        {"abc": "def"},
-        b"CONNECT\nabc:def\n\n\x00"
-    ),
-    (
-        {"abc": "with\nnewline"},
-        b"CONNECT\nabc:with\\nnewline\n\n\x00"
-    ),
-    (
-        OrderedDict([("abc", "def"), ("xyz", "meh")]),
-        b"CONNECT\nabc:def\nxyz:meh\n\n\x00"
-    ),
-])
+@pytest.mark.parametrize(
+    "headers, expected",
+    [
+        ({}, b"CONNECT\n\n\x00"),
+        ({"abc": "def"}, b"CONNECT\nabc:def\n\n\x00"),
+        ({"abc": "with\nnewline"}, b"CONNECT\nabc:with\\nnewline\n\n\x00"),
+        (
+            OrderedDict([("abc", "def"), ("xyz", "meh")]),
+            b"CONNECT\nabc:def\nxyz:meh\n\n\x00",
+        ),
+    ],
+)
 def test_encoding_frame_with_headers(headers, expected):
     assert Frame(Command.CONNECT, headers).encode() == expected
 
 
-@pytest.mark.parametrize("headers, payload, expected", [
-    (
-        {},
-        "",
-        b"SEND\ncontent-length:0\n\n\x00"
-    ),
-    (
-        {},
-        "zorro",
-        b"SEND\ncontent-length:5\n\nzorro\x00"
-    ),
-    (
-        {},
-        b"zorro",
-        b"SEND\ncontent-length:5\n\nzorro\x00"
-    ),
-    (
-        {},
-        u"\u0105b\u0107",
-        b"SEND\ncontent-length:5\n\n\xc4\x85b\xc4\x87\x00"
-    ),
-    (
-        OrderedDict([("abc", "def")]),
-        "zorro",
-        b"SEND\nabc:def\ncontent-length:5\n\nzorro\x00"
-    ),
-    (
-        OrderedDict([("abc", "def")]),
-        "with\x00null",
-        b"SEND\nabc:def\ncontent-length:9\n\nwith\x00null\x00"
-    ),
-])
+@pytest.mark.parametrize(
+    "headers, payload, expected",
+    [
+        ({}, "", b"SEND\ncontent-length:0\n\n\x00"),
+        ({}, "zorro", b"SEND\ncontent-length:5\n\nzorro\x00"),
+        ({}, b"zorro", b"SEND\ncontent-length:5\n\nzorro\x00"),
+        (
+            {},
+            u"\u0105b\u0107",
+            b"SEND\ncontent-length:5\n\n\xc4\x85b\xc4\x87\x00",
+        ),
+        (
+            OrderedDict([("abc", "def")]),
+            "zorro",
+            b"SEND\nabc:def\ncontent-length:5\n\nzorro\x00",
+        ),
+        (
+            OrderedDict([("abc", "def")]),
+            "with\x00null",
+            b"SEND\nabc:def\ncontent-length:9\n\nwith\x00null\x00",
+        ),
+    ],
+)
 def test_encoding_frame_with_headers_and_payload(headers, payload, expected):
     assert Frame(Command.SEND, headers, payload).encode() == expected
 

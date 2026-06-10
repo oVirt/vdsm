@@ -48,16 +48,13 @@ class JobNotReadyError(JobPivotError):
 log = logging.getLogger("virt.livemerge")
 
 
-@virdomain.expose(
-    "blockCommit",
-    "blockJobInfo",
-    "XMLDesc"
-)
+@virdomain.expose("blockCommit", "blockJobInfo", "XMLDesc")
 class DomainAdapter:
     """
     VM wrapper class that exposes only
     libvirt merge related operations.
     """
+
     def __init__(self, vm):
         self._vm = vm
 
@@ -88,8 +85,18 @@ class Job:
     # cleanup is finished, the job is untracked.
     CLEANUP = "CLEANUP"
 
-    def __init__(self, id, drive, disk, top, base, bandwidth, state=INIT,
-                 extend=None, pivot=None):
+    def __init__(
+        self,
+        id,
+        drive,
+        disk,
+        top,
+        base,
+        bandwidth,
+        state=INIT,
+        extend=None,
+        pivot=None,
+    ):
         # Read only attributes.
         self._id = id
         self._drive = drive
@@ -100,7 +107,7 @@ class Job:
 
         # This job was started with VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
         # flag.
-        self._active_commit = (top == disk["volumeID"])
+        self._active_commit = top == disk["volumeID"]
 
         # Changes when libvirt block job has gone, or libvirt reports the block
         # job is ready for pivot.
@@ -151,8 +158,12 @@ class Job:
     @state.setter
     def state(self, new_state):
         if new_state != self._state:
-            log.info("Job %s switching state from %s to %s",
-                     self.id, self._state, new_state)
+            log.info(
+                "Job %s switching state from %s to %s",
+                self.id,
+                self._state,
+                new_state,
+            )
         self._state = new_state
 
     def is_ready(self):
@@ -167,8 +178,9 @@ class Job:
         if self.state == self.CLEANUP:
             return True
 
-        return (self.live_info and
-                self.live_info["cur"] == self.live_info["end"])
+        return (
+            self.live_info and self.live_info["cur"] == self.live_info["end"]
+        )
 
     @property
     def live_info(self):
@@ -259,22 +271,27 @@ class DriveMerger:
             drive = self._vm.findDriveByUUIDs(driveSpec)
         except LookupError:
             raise exception.ImageFileNotFound(
-                "Cannot find drive", driveSpec=driveSpec, job=job_id)
+                "Cannot find drive", driveSpec=driveSpec, job=job_id
+            )
 
         job = self._create_job(job_id, drive, base, top, bandwidth)
 
         try:
             base_info = self._vm.getVolumeInfo(
-                drive.domainID, drive.poolID, drive.imageID, job.base)
+                drive.domainID, drive.poolID, drive.imageID, job.base
+            )
             top_info = self._vm.getVolumeInfo(
-                drive.domainID, drive.poolID, drive.imageID, job.top)
+                drive.domainID, drive.poolID, drive.imageID, job.top
+            )
         except errors.StorageUnavailableError as e:
             raise exception.MergeFailed(
-                str(e), top=top, base=job.base, job=job_id)
+                str(e), top=top, base=job.base, job=job_id
+            )
 
         if base_info['voltype'] == 'SHARED':
             raise exception.MergeFailed(
-                "Base volume is shared", base_info=base_info, job=job_id)
+                "Base volume is shared", base_info=base_info, job=job_id
+            )
 
         self._validate_base_size(drive, base_info, top_info)
 
@@ -292,13 +309,12 @@ class DriveMerger:
             # version may not.
             if self._base_needs_prune_bitmaps(job, base_info):
                 self._dom._vm.prune_bitmaps(
-                    drive.domainID,
-                    drive.imageID,
-                    job.top,
-                    job.base)
+                    drive.domainID, drive.imageID, job.top, job.base
+                )
 
             needs_extend, new_size = self._base_needs_extend(
-                drive, job, base_info)
+                drive, job, base_info
+            )
 
             if needs_extend:
                 job.extend = {"attempt": 1}
@@ -323,7 +339,8 @@ class DriveMerger:
             raise exception.DestinationVolumeTooSmall(
                 "The base volume is undersized and cannot be extended",
                 base_capacity=base_info["capacity"],
-                top_capacity=top_info["capacity"])
+                top_capacity=top_info["capacity"],
+            )
 
     def _base_needs_refresh(self, drive, base_info):
         # If the base volume format is RAW and its size is smaller than its
@@ -333,23 +350,29 @@ class DriveMerger:
         # size on storage. Not refreshing the volume may fail live merge.
         # This could happen if disk extended after taking a snapshot but before
         # performing the live merge.  See https://bugzilla.redhat.com/1367281
-        return (drive.chunked and
-                base_info['format'] == 'RAW' and
-                int(base_info['apparentsize']) < int(base_info['capacity']))
+        return (
+            drive.chunked
+            and base_info['format'] == 'RAW'
+            and int(base_info['apparentsize']) < int(base_info['capacity'])
+        )
 
     def _refresh_base(self, drive, base_info):
         log.info(
             "Refreshing base volume %r (apparentsize=%s, capacity=%s)",
-            base_info['uuid'], base_info['apparentsize'],
-            base_info['capacity'])
+            base_info['uuid'],
+            base_info['apparentsize'],
+            base_info['capacity'],
+        )
 
-        self._vm.refresh_volume({
-            'domainID': drive.domainID,
-            'imageID': drive.imageID,
-            'name': drive.name,
-            'poolID': drive.poolID,
-            'volumeID': base_info['uuid'],
-        })
+        self._vm.refresh_volume(
+            {
+                'domainID': drive.domainID,
+                'imageID': drive.imageID,
+                'name': drive.name,
+                'poolID': drive.poolID,
+                'volumeID': base_info['uuid'],
+            }
+        )
 
     def _start_commit(self, drive, job):
         """
@@ -369,7 +392,10 @@ class DriveMerger:
             self._untrack_job(job.id)
             raise exception.MergeFailed(
                 "Cannot get drive actual volume chain",
-                drive=drive.name, alias=drive.alias, job=job.id)
+                drive=drive.name,
+                alias=drive.alias,
+                job=job.id,
+            )
 
         try:
             base_target = drive.volume_target(job.base, actual_chain)
@@ -377,8 +403,12 @@ class DriveMerger:
         except VolumeNotFound as e:
             self._untrack_job(job.id)
             raise exception.MergeFailed(
-                str(e), top=job.top, base=job.base, chain=actual_chain,
-                job=job.id)
+                str(e),
+                top=job.top,
+                base=job.base,
+                chain=actual_chain,
+                job=job.id,
+            )
 
         # Indicate that we expect libvirt to maintain the relative paths of
         # backing files. This is necessary to ensure that a volume chain is
@@ -395,32 +425,42 @@ class DriveMerger:
 
         orig_chain = [entry.uuid for entry in actual_chain]
         chain_str = logutils.volume_chain_to_str(orig_chain)
-        log.info("Starting merge with job_id=%r, original chain=%s, "
-                 "disk=%r, base=%r, top=%r, bandwidth=%d, flags=%d",
-                 job.id, chain_str, drive.name, base_target,
-                 top_target, job.bandwidth, flags)
+        log.info(
+            "Starting merge with job_id=%r, original chain=%s, "
+            "disk=%r, base=%r, top=%r, bandwidth=%d, flags=%d",
+            job.id,
+            chain_str,
+            drive.name,
+            base_target,
+            top_target,
+            job.bandwidth,
+            flags,
+        )
 
         try:
             # pylint: disable=no-member
             self._dom.blockCommit(
-                drive.name,
-                base_target,
-                top_target,
-                job.bandwidth,
-                flags=flags)
+                drive.name, base_target, top_target, job.bandwidth, flags=flags
+            )
         except libvirt.libvirtError as e:
             self._untrack_job(job.id)
             raise exception.MergeFailed(str(e), job=job.id)
 
     def _base_needs_prune_bitmaps(self, job, base_info):
         if base_info['format'] != 'COW':
-            log.debug("Base volume does not support bitmaps, "
-                      "job=%r base=%r", job.id, job.base)
+            log.debug(
+                "Base volume does not support bitmaps, " "job=%r base=%r",
+                job.id,
+                job.base,
+            )
             return False
 
         if job.active_commit:
-            log.debug("Top volume is the active volume, "
-                      "job=%r top=%r", job.id, job.top)
+            log.debug(
+                "Top volume is the active volume, " "job=%r top=%r",
+                job.id,
+                job.top,
+            )
             return False
 
         return True
@@ -435,9 +475,13 @@ class DriveMerger:
         fail with ENOSPC and the user will have to retry the merge.
         """
         if not drive.chunked or base_info['format'] != 'COW':
-            log.debug("Base volume does not support extending "
-                      "job=%s drive=%s volume=%s",
-                      job.id, job.drive, job.base)
+            log.debug(
+                "Base volume does not support extending "
+                "job=%s drive=%s volume=%s",
+                job.id,
+                job.drive,
+                job.base,
+            )
             return False, None
 
         current_size = int(base_info["apparentsize"])
@@ -446,9 +490,14 @@ class DriveMerger:
         # Size can be bigger than maximum value due to rounding to LVM extent
         # size (128 MiB).
         if current_size >= max_size:
-            log.debug("Base volume is already extended to maximum size "
-                      "job=%s drive=%s volume=%s size=%s",
-                      job.id, job.drive, job.base, base_info["apparentsize"])
+            log.debug(
+                "Base volume is already extended to maximum size "
+                "job=%s drive=%s volume=%s size=%s",
+                job.id,
+                job.drive,
+                job.base,
+                base_info["apparentsize"],
+            )
             return False, None
 
         # Measure the required base size for this merge, based on the current
@@ -459,7 +508,8 @@ class DriveMerger:
             drive.imageID,
             job.top,
             base_info["format"],
-            baseID=job.base)
+            baseID=job.base,
+        )
 
         # Consider the required size and possible bitmaps. Since some of the
         # bitmaps already exist in base, this allocates more space than needed,
@@ -471,8 +521,9 @@ class DriveMerger:
             # pausing during extend, or right after extend completes. This is
             # a heuristic, we cannot prevent pausing during merge without
             # monitoring the volume.
-            chunk_size = config.getint(
-                "irs", "volume_utilization_chunk_mb") * MiB
+            chunk_size = (
+                config.getint("irs", "volume_utilization_chunk_mb") * MiB
+            )
             if required_size + chunk_size > current_size:
                 return True, required_size + chunk_size
         else:
@@ -494,14 +545,20 @@ class DriveMerger:
         job.extend["started"] = time.monotonic()
         self._persist_jobs()
 
-        log.info("Starting extend %s/%s for job=%s drive=%s volume=%s",
-                 job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id,
-                 drive.name, job.base)
+        log.info(
+            "Starting extend %s/%s for job=%s drive=%s volume=%s",
+            job.extend["attempt"],
+            self.EXTEND_ATTEMPTS,
+            job.id,
+            drive.name,
+            job.base,
+        )
 
         callback = partial(
             self._extend_completed,
             job_id=job.id,
-            attempt=job.extend["attempt"])
+            attempt=job.extend["attempt"],
+        )
 
         self._vm.extend_volume(drive, job.base, new_size, callback=callback)
 
@@ -513,38 +570,59 @@ class DriveMerger:
             try:
                 job = self._jobs[job_id]
             except KeyError:
-                log.debug("Extend %s/%s completed after job %s was untracked",
-                          attempt, self.EXTEND_ATTEMPTS, job_id)
+                log.debug(
+                    "Extend %s/%s completed after job %s was untracked",
+                    attempt,
+                    self.EXTEND_ATTEMPTS,
+                    job_id,
+                )
                 return
 
             if job.state != Job.EXTEND:
                 log.debug(
                     "Extend %s/%s completed after job %s switched to state %s",
-                    attempt, self.EXTEND_ATTEMPTS, job.id, job.state)
+                    attempt,
+                    self.EXTEND_ATTEMPTS,
+                    job.id,
+                    job.state,
+                )
                 return
 
             if error:
                 if attempt < self.EXTEND_ATTEMPTS:
                     log.warning(
                         "Extend %s/%s for job %s failed: %s",
-                        attempt, self.EXTEND_ATTEMPTS, job.id, error)
+                        attempt,
+                        self.EXTEND_ATTEMPTS,
+                        job.id,
+                        error,
+                    )
                 else:
                     log.error(
                         "Extend %s/%s for job %s failed, aborting: %s",
-                        attempt, self.EXTEND_ATTEMPTS, job.id, error)
+                        attempt,
+                        self.EXTEND_ATTEMPTS,
+                        job.id,
+                        error,
+                    )
                     self._untrack_job(job.id)
                 return
 
             try:
                 drive = self._vm.findDriveByUUIDs(job.disk)
             except LookupError:
-                log.error("Cannot find drive %s, untracking job %s",
-                          job.disk, job.id)
+                log.error(
+                    "Cannot find drive %s, untracking job %s", job.disk, job.id
+                )
                 self._untrack_job(job.id)
                 return
 
-            log.info("Extend %s/%s completed for job %s, starting commit",
-                     attempt, self.EXTEND_ATTEMPTS, job.id)
+            log.info(
+                "Extend %s/%s completed for job %s, starting commit",
+                attempt,
+                self.EXTEND_ATTEMPTS,
+                job.id,
+            )
             job.extend = None
             self._start_commit(drive, job)
 
@@ -571,8 +649,12 @@ class DriveMerger:
         Must run under self._lock.
         """
         for job in self._jobs.values():
-            if all([bool(drive[x] == job.disk[x])
-                    for x in ('imageID', 'domainID', 'volumeID')]):
+            if all(
+                [
+                    bool(drive[x] == job.disk[x])
+                    for x in ('imageID', 'domainID', 'volumeID')
+                ]
+            ):
                 return job
         raise LookupError("No job found for drive %r" % drive.name)
 
@@ -619,8 +701,10 @@ class DriveMerger:
 
     def load_jobs(self, jobs):
         with self._lock:
-            self._jobs = {job_id: Job.from_dict(job_info)
-                          for job_id, job_info in jobs.items()}
+            self._jobs = {
+                job_id: Job.from_dict(job_info)
+                for job_id, job_info in jobs.items()
+            }
 
     def dump_jobs(self):
         with self._lock:
@@ -659,13 +743,20 @@ class DriveMerger:
         if duration < self.EXTEND_TIMEOUT:
             log.debug(
                 "Extend %s/%s for job %s running for %d seconds",
-                job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id, duration)
+                job.extend["attempt"],
+                self.EXTEND_ATTEMPTS,
+                job.id,
+                duration,
+            )
             return
 
         if job.extend["attempt"] >= self.EXTEND_ATTEMPTS:
             log.error(
                 "Extend %s/%s timeout for job %s, untracking job",
-                job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id)
+                job.extend["attempt"],
+                self.EXTEND_ATTEMPTS,
+                job.id,
+            )
             self._untrack_job(job.id)
             return
 
@@ -673,18 +764,22 @@ class DriveMerger:
             drive = self._vm.findDriveByUUIDs(job.disk)
         except LookupError:
             log.error(
-                "Cannot find drive %s, untracking job %s",
-                job.disk, job.id)
+                "Cannot find drive %s, untracking job %s", job.disk, job.id
+            )
             self._untrack_job(job.id)
             return
 
         try:
             base_info = self._vm.getVolumeInfo(
-                drive.domainID, drive.poolID, drive.imageID, job.base)
+                drive.domainID, drive.poolID, drive.imageID, job.base
+            )
         except errors.StorageUnavailableError as e:
             log.exception(
                 "Cannot get base %s info, untracking job %s: %s",
-                job.top, job.id, e)
+                job.top,
+                job.id,
+                e,
+            )
             self._untrack_job(job.id)
             return
 
@@ -694,18 +789,24 @@ class DriveMerger:
         # - The previous attempt failed or timed out - most likely. Since the
         #   guest is writing to top, we need to measure again and start a new
         #   extend with the current required size.
-        needs_extend, new_size = self._base_needs_extend(
-            drive, job, base_info)
+        needs_extend, new_size = self._base_needs_extend(drive, job, base_info)
 
         if needs_extend:
             log.warning(
                 "Extend %s/%s timeout for job %s, retrying",
-                job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id)
+                job.extend["attempt"],
+                self.EXTEND_ATTEMPTS,
+                job.id,
+            )
             job.extend["attempt"] += 1
             self._start_extend(drive, job, new_size)
         else:
-            log.info("Extend %s/%s completed for job %s, starting commit",
-                     job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id)
+            log.info(
+                "Extend %s/%s completed for job %s, starting commit",
+                job.extend["attempt"],
+                self.EXTEND_ATTEMPTS,
+                job.id,
+            )
             job.extend = None
             self._start_commit(drive, job)
 
@@ -781,8 +882,11 @@ class DriveMerger:
         except LookupError:
             # Should never happen, and we don't have any good way to handle
             # this.  TODO: Think how to handle this case better.
-            log.error("Cannot find drive %s for job %s, retrying later",
-                      job.disk, job.id)
+            log.error(
+                "Cannot find drive %s for job %s, retrying later",
+                job.disk,
+                job.id,
+            )
             return
 
         log.info("Starting cleanup for job %s", job.id)
@@ -853,8 +957,7 @@ class CleanupThread(object):
         self.drive = drive
         self.doPivot = job.pivot
         self._state = self.TRYING
-        self._thread = concurrent.thread(
-            self.run, name="merge/" + job.id[:8])
+        self._thread = concurrent.thread(self.run, name="merge/" + job.id[:8])
 
     @property
     def state(self):
@@ -881,13 +984,18 @@ class CleanupThread(object):
         ILLEGAL flag indicates that the VM should be restarted using the
         parent.
         """
-        newVols = [vol['volumeID'] for vol in self.drive.volumeChain
-                   if vol['volumeID'] != self.drive.volumeID]
+        newVols = [
+            vol['volumeID']
+            for vol in self.drive.volumeChain
+            if vol['volumeID'] != self.drive.volumeID
+        ]
 
-        self.vm.imageSyncVolumeChain(self.drive.domainID,
-                                     self.drive.imageID,
-                                     self.drive['volumeID'],
-                                     newVols)
+        self.vm.imageSyncVolumeChain(
+            self.drive.domainID,
+            self.drive.imageID,
+            self.drive['volumeID'],
+            newVols,
+        )
 
     def _mark_leaf_legal(self):
         """
@@ -901,14 +1009,18 @@ class CleanupThread(object):
         newVols = [vol['volumeID'] for vol in self.drive.volumeChain]
 
         try:
-            self.vm.imageSyncVolumeChain(self.drive.domainID,
-                                         self.drive.imageID,
-                                         self.drive['volumeID'],
-                                         newVols)
+            self.vm.imageSyncVolumeChain(
+                self.drive.domainID,
+                self.drive.imageID,
+                self.drive['volumeID'],
+                newVols,
+            )
         except errors.StorageUnavailableError as e:
             self.vm.log.error(
                 "Cannot mark leaf volume as LEGAL: %s (job: %s)",
-                e, self.job.id)
+                e,
+                self.job.id,
+            )
 
     def tryPivot(self):
         self._mark_leaf_illegal()
@@ -919,8 +1031,10 @@ class CleanupThread(object):
         # TODO: Stop monitoring only for the live merge disk
         self.vm.volume_monitor.disable()
 
-        self.vm.log.info("Requesting pivot to complete active layer commit "
-                         "(job %s)", self.job.id)
+        self.vm.log.info(
+            "Requesting pivot to complete active layer commit " "(job %s)",
+            self.job.id,
+        )
         try:
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
             self.vm._dom.blockJobAbort(self.drive.name, flags=flags)
@@ -947,23 +1061,24 @@ class CleanupThread(object):
             self.drive.domainID,
             self.drive.poolID,
             self.drive.imageID,
-            self.job.top)
+            self.job.top,
+        )
         self.vm._setVolumeSize(
             self.drive.domainID,
             self.drive.poolID,
             self.drive.imageID,
             self.job.base,
-            topVolInfo['capacity'])
+            topVolInfo['capacity'],
+        )
 
     def teardown_top_volume(self):
         ret = self.vm.cif.irs.teardownVolume(
-            self.drive.domainID,
-            self.drive.imageID,
-            self.job.top)
+            self.drive.domainID, self.drive.imageID, self.job.top
+        )
         if ret['status']['code'] != 0:
             raise errors.StorageUnavailableError(
-                "Failed to teardown top volume %s" %
-                self.job.top)
+                "Failed to teardown top volume %s" % self.job.top
+            )
 
     @logutils.traceback()
     def run(self):
@@ -971,24 +1086,27 @@ class CleanupThread(object):
             self.update_base_size()
             if self.doPivot:
                 self.tryPivot()
-            self.vm.log.info("Synchronizing volume chain after live merge "
-                             "(job %s)", self.job.id)
+            self.vm.log.info(
+                "Synchronizing volume chain after live merge " "(job %s)",
+                self.job.id,
+            )
             self.vm.sync_volume_chain(self.drive)
             if self.doPivot:
                 self.vm.volume_monitor.enable()
-            chain_after_merge = [vol['volumeID']
-                                 for vol in self.drive.volumeChain]
+            chain_after_merge = [
+                vol['volumeID'] for vol in self.drive.volumeChain
+            ]
             if self.job.top not in chain_after_merge:
                 self.teardown_top_volume()
-            self.vm.log.info("Synchronization completed (job %s)",
-                             self.job.id)
+            self.vm.log.info("Synchronization completed (job %s)", self.job.id)
             self._setState(self.DONE)
         except JobPivotError as e:
             self.vm.log.warning("%s", e)
             self._setState(self.FAILED)
         except Exception as e:
             self.vm.log.exception(
-                "Cleanup error for job %s: %s", self.job.id, e)
+                "Cleanup error for job %s: %s", self.job.id, e
+            )
             self._setState(self.FAILED)
 
     def _waitForXMLUpdate(self):
@@ -1010,7 +1128,9 @@ class CleanupThread(object):
         self.vm.log.info(
             "Waiting for libvirt to update the XML after pivot of drive %s "
             "alias %s completed",
-            self.drive.name, self.drive.alias)
+            self.drive.name,
+            self.drive.alias,
+        )
 
         while True:
             # This operation should complete in either one or two iterations of
@@ -1022,8 +1142,10 @@ class CleanupThread(object):
             actual_chain = self.vm.query_drive_volume_chain(self.drive)
             if actual_chain is None:
                 raise RuntimeError(
-                    "Cannot get actual volume chain for drive {} alias {}"
-                    .format(self.drive.name, self.drive.alias))
+                    "Cannot get actual volume chain for drive {} alias {}".format(
+                        self.drive.name, self.drive.alias
+                    )
+                )
 
             curVols = sorted([entry.uuid for entry in actual_chain])
 
@@ -1035,11 +1157,20 @@ class CleanupThread(object):
             else:
                 raise RuntimeError(
                     "Bad volume chain found for drive {} alias {} previous "
-                    "chain {} expected chain {} actual chain {}"
-                    .format(self.drive.name, self.drive.alias, origVols,
-                            expectedVols, curVols))
+                    "chain {} expected chain {} actual chain {}".format(
+                        self.drive.name,
+                        self.drive.alias,
+                        origVols,
+                        expectedVols,
+                        curVols,
+                    )
+                )
 
     def _setState(self, state):
-        self.vm.log.debug("Switching state from %r to %r (job: %s)",
-                          self._state, state, self.job.id)
+        self.vm.log.debug(
+            "Switching state from %r to %r (job: %s)",
+            self._state,
+            state,
+            self.job.id,
+        )
         self._state = state

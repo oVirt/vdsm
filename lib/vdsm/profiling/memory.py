@@ -23,13 +23,13 @@ _thread = None
 
 
 def start():
-    """ Starts application memory profiling """
+    """Starts application memory profiling"""
     if is_enabled():
         _start_profiling()
 
 
 def stop():
-    """ Stops application memory profiling """
+    """Stops application memory profiling"""
     if is_enabled():
         _stop_profiling()
 
@@ -46,9 +46,14 @@ def is_running():
 def _memory_viewer():
     cherrypy.tree.mount(dowser.Root())
 
-    cherrypy.config.update({
-        'server.socket_host': '0.0.0.0',
-        'server.socket_port': config.getint('devel', 'memory_profile_port')})
+    cherrypy.config.update(
+        {
+            'server.socket_host': '0.0.0.0',
+            'server.socket_port': config.getint(
+                'devel', 'memory_profile_port'
+            ),
+        }
+    )
 
     cherrypy.engine.start()
 
@@ -62,6 +67,7 @@ def _start_profiling():
 
     import cherrypy  # pylint: disable=import-error
     import dowser  # pylint: disable=import-error
+
     # this nonsense makes pyflakes happy
     cherrypy
     dowser

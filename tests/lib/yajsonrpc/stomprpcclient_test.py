@@ -11,23 +11,19 @@ from unittest import mock
 from integration.jsonRpcHelper import constructClient
 from integration.sslhelper import generate_key_cert_pair, create_ssl_context
 
-from testlib import \
-    VdsmTestCase, \
-    dummyTextGenerator
+from testlib import VdsmTestCase, dummyTextGenerator
 
 from testValidation import broken_on_ci
 from testValidation import slowtest
 
-from vdsm.client import \
-    _Client, \
-    ServerError, \
-    TimeoutError
+from vdsm.client import _Client, ServerError, TimeoutError
 
 from yajsonrpc import stompclient
 
-from yajsonrpc.exception import \
-    JsonRpcMethodNotFoundError, \
-    JsonRpcInternalError
+from yajsonrpc.exception import (
+    JsonRpcMethodNotFoundError,
+    JsonRpcInternalError,
+)
 from vdsm.common import exception
 
 CALL_TIMEOUT = 3
@@ -74,11 +70,7 @@ class _Bridge(object):
 
 
 class _FakeSchema(object):
-    get_methods = [
-        "Test.echo",
-        "Test.slowCall",
-        "Test.sendEvent"
-    ]
+    get_methods = ["Test.echo", "Test.slowCall", "Test.sendEvent"]
 
 
 class _FakeEventSchema(object):
@@ -129,8 +121,7 @@ class VdsmClientTests(VdsmTestCase):
                 client.Test.failingCall()
 
             self.assertEqual(
-                ex.exception.code,
-                exception.GeneralException().code
+                ex.exception.code, exception.GeneralException().code
             )
             self.assertIn("Test failure", str(ex.exception))
 
@@ -141,7 +132,8 @@ class VdsmClientTests(VdsmTestCase):
                 client.Test.missingMethod()
 
             self.assertEqual(
-                ex.exception.code, JsonRpcMethodNotFoundError("").code)
+                ex.exception.code, JsonRpcMethodNotFoundError("").code
+            )
             self.assertIn("missingMethod", ex.exception.resp_msg)
 
     def test_missing_namespace(self):
@@ -203,10 +195,7 @@ class VdsmClientTests(VdsmTestCase):
             self.assertEqual(ev_params['content'], True)
 
             client.unsubscribe(sub_id)
-            self.assertEqual(
-                self._get_with_timeout(event_queue),
-                None
-            )
+            self.assertEqual(self._get_with_timeout(event_queue), None)
 
     @broken_on_ci(reason="Fails randomly in CI", name="TRAVIS_CI")
     def test_multiple_queues(self):
@@ -229,14 +218,8 @@ class VdsmClientTests(VdsmTestCase):
 
             client.unsubscribe(sub_id_1)
             client.unsubscribe(sub_id_2)
-            self.assertEqual(
-                self._get_with_timeout(event_queue1),
-                None
-            )
-            self.assertEqual(
-                self._get_with_timeout(event_queue2),
-                None
-            )
+            self.assertEqual(self._get_with_timeout(event_queue1), None)
+            self.assertEqual(self._get_with_timeout(event_queue2), None)
 
     @slowtest
     def test_unsubscribe(self):
@@ -247,10 +230,7 @@ class VdsmClientTests(VdsmTestCase):
             client.unsubscribe(sub_id)
 
             client.Test.sendEvent()
-            self.assertEqual(
-                self._get_with_timeout(event_queue),
-                None
-            )
+            self.assertEqual(self._get_with_timeout(event_queue), None)
 
     @broken_on_ci(reason="Fails randomly in CI", name="TRAVIS_CI")
     def test_notify(self):
@@ -266,7 +246,4 @@ class VdsmClientTests(VdsmTestCase):
             self.assertEqual(ev_params['content'], True)
 
             client.unsubscribe(sub_id)
-            self.assertEqual(
-                self._get_with_timeout(event_queue),
-                None
-            )
+            self.assertEqual(self._get_with_timeout(event_queue), None)

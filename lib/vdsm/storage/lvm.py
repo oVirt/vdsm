@@ -6,6 +6,7 @@ Generic LVM interface wrapper
 
 Incapsulates the actual LVM mechanics.
 """
+
 import os
 import re
 import pwd
@@ -38,23 +39,41 @@ from vdsm.config import config
 
 log = logging.getLogger("storage.lvm")
 
-PV_FIELDS = ("uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,"
-             "pe_alloc_count,mda_count,dev_size,mda_used_count")
+PV_FIELDS = (
+    "uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,"
+    "pe_alloc_count,mda_count,dev_size,mda_used_count"
+)
 PV_FIELDS_LEN = len(PV_FIELDS.split(","))
 
-VG_FIELDS = ("uuid,name,attr,size,free,extent_size,extent_count,free_count,"
-             "tags,vg_mda_size,vg_mda_free,lv_count,pv_count,pv_name")
+VG_FIELDS = (
+    "uuid,name,attr,size,free,extent_size,extent_count,free_count,"
+    "tags,vg_mda_size,vg_mda_free,lv_count,pv_count,pv_name"
+)
 VG_FIELDS_LEN = len(VG_FIELDS.split(","))
 
 LV_FIELDS = "uuid,name,vg_name,attr,size,seg_start_pe,devices,tags"
 LV_FIELDS_LEN = len(LV_FIELDS.split(","))
 
-VG_ATTR_BITS = ("permission", "resizeable", "exported",
-                "partial", "allocation", "clustered")
+VG_ATTR_BITS = (
+    "permission",
+    "resizeable",
+    "exported",
+    "partial",
+    "allocation",
+    "clustered",
+)
 VG_ATTR = namedtuple("VG_ATTR", VG_ATTR_BITS)
 
-LV_ATTR_BITS = ("voltype", "permission", "allocations", "fixedminor", "state",
-                "devopen", "target", "zero")
+LV_ATTR_BITS = (
+    "voltype",
+    "permission",
+    "allocations",
+    "fixedminor",
+    "state",
+    "devopen",
+    "target",
+    "zero",
+)
 LV_ATTR = namedtuple("LV_ATTR", LV_ATTR_BITS)
 
 # Returned by vgs and pvs for missing pv or unknown vg name.
@@ -109,12 +128,13 @@ class VG(namedtuple("_VG", VG_FIELDS + ",writeable,partial")):
         # Convert attr string into named tuple fields.
         # tuple("wz--n-") = ('w', 'z', '-', '-', 'n', '-')
         sAttr = args[VG._fields.index("attr")]
-        attr_values = tuple(sAttr[:len(VG_ATTR._fields)])
+        attr_values = tuple(sAttr[: len(VG_ATTR._fields)])
         attrs = VG_ATTR(*attr_values)
         args[VG._fields.index("attr")] = attrs
         # Convert pv_names list to tuple.
-        args[VG._fields.index("pv_name")] = \
-            tuple(args[VG._fields.index("pv_name")])
+        args[VG._fields.index("pv_name")] = tuple(
+            args[VG._fields.index("pv_name")]
+        )
         # Add properties. Should be ordered as VG_PROPERTIES.
         args.append(attrs.permission == "w")  # Writable
         args.append(VG_OK if attrs.partial == "-" else VG_PARTIAL)  # Partial
@@ -138,13 +158,13 @@ class LV(namedtuple("_LV", LV_FIELDS + ",writeable,opened,active")):
         args[LV._fields.index("tags")] = tags
         # Convert attr string into named tuple fields.
         sAttr = args[cls._fields.index("attr")]
-        attr_values = tuple(sAttr[:len(LV_ATTR._fields)])
+        attr_values = tuple(sAttr[: len(LV_ATTR._fields)])
         attrs = LV_ATTR(*attr_values)
         args[cls._fields.index("attr")] = attrs
         # Add properties. Should be ordered as VG_PROPERTIES.
         args.append(attrs.permission == "w")  # writable
-        args.append(attrs.devopen == "o")     # opened
-        args.append(attrs.state == "a")       # active
+        args.append(attrs.devopen == "o")  # opened
+        args.append(attrs.state == "a")  # active
         return cls(*args)
 
     def is_stale(self):
@@ -165,8 +185,10 @@ class Unreadable(namedtuple("_Unreadable", "name")):
         return True
 
     def __getattr__(self, attrName):
-        log.warning("%s can't be reloaded, please check your storage "
-                    "connections.", self.name)
+        log.warning(
+            "%s can't be reloaded, please check your storage " "connections.",
+            self.name,
+        )
         raise AttributeError("Failed reload: %s" % self.name)
 
 
@@ -176,8 +198,15 @@ VG_PARTIAL = "PARTIAL"
 
 SEPARATOR = "|"
 LVM_NOBACKUP = ("--autobackup", "n")
-LVM_FLAGS = ("--noheadings", "--units", "b", "--nosuffix", "--separator",
-             SEPARATOR, "--ignoreskippedcluster")
+LVM_FLAGS = (
+    "--noheadings",
+    "--units",
+    "b",
+    "--nosuffix",
+    "--separator",
+    SEPARATOR,
+    "--ignoreskippedcluster",
+)
 
 PV_PREFIX = "/dev/mapper"
 # Assuming there are no spaces in the PV name
@@ -233,18 +262,18 @@ backup {
 }
 """
 
-USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
-                 if d is not None]
+USER_DEV_LIST = [
+    d
+    for d in config.get("irs", "lvm_dev_whitelist").split(",")
+    if d is not None
+]
 
 USE_DEVICES = config.get("lvm", "config_method").lower() == "devices"
 
 
 def _get_lvm_version():
     packages = osinfo.package_versions()
-    lvm_version = tuple(
-        int(v)
-        for v in packages['lvm2']['version'].split('.')
-    )
+    lvm_version = tuple(int(v) for v in packages['lvm2']['version'].split('.'))
     return lvm_version
 
 
@@ -312,15 +341,22 @@ class LVMRunner(object):
 
     # Warnings written to LVM stderr that should not be logged as warnings.
     SUPPRESS_WARNINGS = re.compile(
-        "|".join([
-            "WARNING: This metadata update is NOT backed up",
-            (r"WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "
-             r"seqno \d+ on /dev/mapper/\w+ for VG \w+"),
-            r"WARNING: Inconsistent metadata found for VG \w+",
-            ("WARNING: Activation disabled. No device-mapper interaction "
-             "will be attempted"),
-        ]),
-        re.IGNORECASE)
+        "|".join(
+            [
+                "WARNING: This metadata update is NOT backed up",
+                (
+                    r"WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "
+                    r"seqno \d+ on /dev/mapper/\w+ for VG \w+"
+                ),
+                r"WARNING: Inconsistent metadata found for VG \w+",
+                (
+                    "WARNING: Activation disabled. No device-mapper interaction "
+                    "will be attempted"
+                ),
+            ]
+        ),
+        re.IGNORECASE,
+    )
 
     def run(self, cmd):
         """
@@ -354,10 +390,7 @@ class LVMRunner(object):
 
     def _run_command(self, cmd):
         p = commands.start(
-            cmd,
-            sudo=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            cmd, sudo=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         out, err = commands.communicate(p)
         return p.returncode, out, err
@@ -403,7 +436,8 @@ class LVMCache(object):
         with self._devices_lock:
             if self._devices_stale:
                 self._devices = _prepare_device_set(
-                    multipath.getMPDevNamesIter())
+                    multipath.getMPDevNamesIter()
+                )
                 self._devices_stale = False
             return self._devices
 
@@ -423,8 +457,8 @@ class LVMCache(object):
             dev_filter = _buildFilter(device_set)
 
         conf = _buildConfig(
-            dev_filter=dev_filter,
-            use_lvmpolld="1" if use_lvmpolld else "0")
+            dev_filter=dev_filter, use_lvmpolld="1" if use_lvmpolld else "0"
+        )
         newcmd += ["--config", conf]
 
         if len(cmd) > 1:
@@ -445,7 +479,8 @@ class LVMCache(object):
             # specified devices. If the command succeeded and wanted output was
             # returned we are done.
             full_cmd = self._addExtraCfg(
-                cmd, devices, use_lvmpolld=use_lvmpolld)
+                cmd, devices, use_lvmpolld=use_lvmpolld
+            )
             try:
                 return self._runner.run(full_cmd)
             except se.LVMCommandError as e:
@@ -458,7 +493,9 @@ class LVMCache(object):
             if wider_cmd != full_cmd:
                 log.warning(
                     "Command with specific filter failed or returned no data, "
-                    "retrying with refreshed device list: %s", error)
+                    "retrying with refreshed device list: %s",
+                    error,
+                )
                 full_cmd = wider_cmd
                 try:
                     return self._runner.run(full_cmd)
@@ -474,16 +511,18 @@ class LVMCache(object):
         """
         try:
             out = self.run_command(
-                cmd, devices=devices, use_lvmpolld=use_lvmpolld)
+                cmd, devices=devices, use_lvmpolld=use_lvmpolld
+            )
             return out, None
         except se.LVMCommandError as e:
             return e.out, e
 
     def __str__(self):
-        return ("PVS:\n%s\n\nVGS:\n%s\n\nLVS:\n%s" %
-                (pp.pformat(self._pvs),
-                 pp.pformat(self._vgs),
-                 pp.pformat(self._lvs)))
+        return "PVS:\n%s\n\nVGS:\n%s\n\nLVS:\n%s" % (
+            pp.pformat(self._pvs),
+            pp.pformat(self._vgs),
+            pp.pformat(self._lvs),
+        )
 
     def bootstrap(self):
         self._reloadpvs()
@@ -517,8 +556,9 @@ class LVMCache(object):
             updated_pvs[pv.name] = pv
 
         # Remove stale PVs
-        stale_pvs = [name for name in (pv_names or self._pvs)
-                     if name not in updated_pvs]
+        stale_pvs = [
+            name for name in (pv_names or self._pvs) if name not in updated_pvs
+        ]
         for name in stale_pvs:
             if name in self._pvs:
                 log.warning("Removing stale PV %s", name)
@@ -533,7 +573,7 @@ class LVMCache(object):
         Must be called while holding the lock.
         """
         updated_pvs = {}
-        for p in (pv_names or self._pvs):
+        for p in pv_names or self._pvs:
             pv = self._pvs.get(p)
             if pv and pv.is_stale():
                 pv = Unreadable(pv.name)
@@ -546,7 +586,8 @@ class LVMCache(object):
             # so we cannot make this an error.
             log.warning(
                 "Marked pvs=%r as Unreadable due to reload failure",
-                logutils.Head(updated_pvs, max_items=20))
+                logutils.Head(updated_pvs, max_items=20),
+            )
 
         return updated_pvs
 
@@ -648,14 +689,19 @@ class LVMCache(object):
         for fields in vgsFields.values():
             vg = VG.fromlvm(*fields)
             if int(vg.pv_count) != len(vg.pv_name):
-                log.error("vg %s has pv_count %s but pv_names %s",
-                          vg.name, vg.pv_count, vg.pv_name)
+                log.error(
+                    "vg %s has pv_count %s but pv_names %s",
+                    vg.name,
+                    vg.pv_count,
+                    vg.pv_name,
+                )
             self._vgs[vg.name] = vg
             updatedVGs[vg.name] = vg
 
         # Remove stale VGs
-        staleVGs = [name for name in (vg_names or self._vgs)
-                    if name not in updatedVGs]
+        staleVGs = [
+            name for name in (vg_names or self._vgs) if name not in updatedVGs
+        ]
         for name in staleVGs:
             if name in self._vgs:
                 log.warning("Removing stale VG %s", name)
@@ -672,7 +718,7 @@ class LVMCache(object):
         Must be called while holding the lock.
         """
         unreadable_vgs = []
-        for v in (vg_names or self._vgs):
+        for v in vg_names or self._vgs:
             vg = self._vgs.get(v)
             if vg and vg.is_stale():
                 self._vgs[v] = Unreadable(vg.name)
@@ -684,7 +730,8 @@ class LVMCache(object):
             # so we cannot make this an error.
             log.warning(
                 "Marked vgs=%r as Unreadable due to reload failure",
-                logutils.Head(unreadable_vgs, max_items=20))
+                logutils.Head(unreadable_vgs, max_items=20),
+            )
 
     def _reload_single_vg(self, vg_name):
         """
@@ -696,7 +743,8 @@ class LVMCache(object):
         cmd = list(VGS_CMD)
         cmd.append(vg_name)
         out, error = self.run_command_error(
-            cmd, devices=self._getVGDevs([vg_name]))
+            cmd, devices=self._getVGDevs([vg_name])
+        )
 
         with self._lock:
             if error:
@@ -724,7 +772,8 @@ class LVMCache(object):
         cmd.extend(vgNames)
 
         out, error = self.run_command_error(
-            cmd, devices=self._getVGDevs(vgNames))
+            cmd, devices=self._getVGDevs(vgNames)
+        )
 
         with self._lock:
             if error:
@@ -766,8 +815,11 @@ class LVMCache(object):
 
         # Determine if there are stale LVs
         items = self._lvs if lv_name is None else [(vg_name, lv_name)]
-        stale_lvs = [lvn for vgn, lvn in items
-                     if vgn == vg_name and (vgn, lvn) not in updated_lvs]
+        stale_lvs = [
+            lvn
+            for vgn, lvn in items
+            if vgn == vg_name and (vgn, lvn) not in updated_lvs
+        ]
 
         for lvName in stale_lvs:
             if (vg_name, lvName) in self._lvs:
@@ -798,7 +850,8 @@ class LVMCache(object):
             # so we cannot make this an error.
             log.warning(
                 "Marked lvs=%r as Unreadable due to reload failure",
-                logutils.Head(updated_lvs, max_items=20))
+                logutils.Head(updated_lvs, max_items=20),
+            )
 
         return updated_lvs
 
@@ -812,7 +865,8 @@ class LVMCache(object):
         cmd.append(f"{vg_name}/{lv_name}")
 
         out, error = self.run_command_error(
-            cmd, devices=self._getVGDevs((vg_name,)))
+            cmd, devices=self._getVGDevs((vg_name,))
+        )
 
         with self._lock:
             if error:
@@ -821,7 +875,8 @@ class LVMCache(object):
                 # Reload a specific LV name and failing
                 # might be indicative of a real error.
                 raise se.LogicalVolumeDoesNotExistError.from_error(
-                    vg_name, lv_name, error=error)
+                    vg_name, lv_name, error=error
+                )
 
             updated_lvs = self._updatelvs_locked(out, vg_name, lv_name)
 
@@ -836,7 +891,8 @@ class LVMCache(object):
         cmd.append(vg_name)
 
         out, error = self.run_command_error(
-            cmd, devices=self._getVGDevs((vg_name,)))
+            cmd, devices=self._getVGDevs((vg_name,))
+        )
 
         with self._lock:
             if error:
@@ -1021,8 +1077,11 @@ class LVMCache(object):
         Only returns found VGs.
         """
         self.stats.miss()
-        return [vg for vgName, vg in self._reloadvgs(vgNames).items()
-                if vgName in vgNames]
+        return [
+            vg
+            for vgName, vg in self._reloadvgs(vgNames).items()
+            if vgName in vgNames
+        ]
 
     def getAllVgs(self):
         # Get everything we have
@@ -1088,8 +1147,11 @@ class LVMCache(object):
             self.stats.hit()
             lvs = self._lvs.copy()
 
-        lvs = [lv for lv in lvs.values()
-               if not lv.is_stale() and (lv.vg_name == vg_name)]
+        lvs = [
+            lv
+            for lv in lvs.values()
+            if not lv.is_stale() and (lv.vg_name == vg_name)
+        ]
         return lvs
 
     def _lvs_needs_reload(self, vg_name):
@@ -1100,9 +1162,11 @@ class LVMCache(object):
         if vg_name not in self._freshlv:
             return True
 
-        return any(lv.is_stale()
-                   for (vgn, _), lv in self._lvs.items()
-                   if vgn == vg_name)
+        return any(
+            lv.is_stale()
+            for (vgn, _), lv in self._lvs.items()
+            if vgn == vg_name
+        )
 
 
 class CacheStats(object):
@@ -1119,7 +1183,7 @@ class CacheStats(object):
             return {
                 "hits": self._hits,
                 "misses": self._misses,
-                "hit_ratio": hit_ratio
+                "hit_ratio": hit_ratio,
             }
 
     def clear(self):
@@ -1168,14 +1232,13 @@ def deactivateUnusedLVs(vgname, skiplvs=()):
     for lv in _lvminfo.getAllLvs(vgname):
         if lv.active:
             if lv.name in skiplvs:
-                log.debug("Skipping active lv: vg=%s lv=%s",
-                          vgname, lv.name)
+                log.debug("Skipping active lv: vg=%s lv=%s", vgname, lv.name)
             elif lv.name in prepared:
-                log.debug("Skipping prepared volume lv: vg=%s lv=%s",
-                          vgname, lv.name)
+                log.debug(
+                    "Skipping prepared volume lv: vg=%s lv=%s", vgname, lv.name
+                )
             elif lv.opened:
-                log.debug("Skipping open lv: vg=%s lv=%s", vgname,
-                          lv.name)
+                log.debug("Skipping open lv: vg=%s lv=%s", vgname, lv.name)
             else:
                 deactivate.append(lv.name)
 
@@ -1184,8 +1247,9 @@ def deactivateUnusedLVs(vgname, skiplvs=()):
         try:
             _setLVAvailability(vgname, deactivate, "n")
         except se.CannotDeactivateLogicalVolume:
-            log.error("Error deactivating lvs: vg=%s lvs=%s", vgname,
-                      deactivate)
+            log.error(
+                "Error deactivating lvs: vg=%s lvs=%s", vgname, deactivate
+            )
         # Some lvs are inactive now
         _lvminfo._invalidatelvs(vgname, deactivate)
 
@@ -1213,9 +1277,16 @@ def _createpv(devices, metadataSize, options=tuple()):
     if options:
         cmd.extend(options)
     if metadataSize != 0:
-        cmd.extend(("--metadatasize", "%sm" % metadataSize,
-                    "--metadatacopies", "2",
-                    "--metadataignore", "y"))
+        cmd.extend(
+            (
+                "--metadatasize",
+                "%sm" % metadataSize,
+                "--metadatacopies",
+                "2",
+                "--metadataignore",
+                "y",
+            )
+        )
     cmd.extend(devices)
     _lvminfo.run_command(cmd, devices=devices)
 
@@ -1285,7 +1356,7 @@ def changelv(vg, lvs, attrs):
             cmd.extend(attr)
     cmd.extend(lvnames)
     try:
-        _lvminfo.run_command(tuple(cmd), devices=_lvminfo._getVGDevs((vg, )))
+        _lvminfo.run_command(tuple(cmd), devices=_lvminfo._getVGDevs((vg,)))
     finally:
         _lvminfo._invalidatelvs(vg, lvs)
 
@@ -1303,7 +1374,11 @@ def _setLVAvailability(vg, lvs, available):
                 users = _lvs_proc_info(vg, lvs)
                 log.warning(
                     "Cannot deactivate LV vg=%s lv=%s users=%s: %s",
-                    vg, lvs, users, e)
+                    vg,
+                    lvs,
+                    users,
+                    e,
+                )
             else:
                 raise se.CannotDeactivateLogicalVolume.from_lvmerror(e)
 
@@ -1315,6 +1390,7 @@ def _lvs_proc_info(vg, lvs):
     """
     paths = [lvPath(vg, lv) for lv in lvs]
     return {p: list(lsof.proc_info(p)) for p in paths}
+
 
 #
 # Public Object Accessors
@@ -1351,8 +1427,14 @@ def testPVCreate(devices, metadataSize):
     except se.LVMCommandError as e:
         unusedDevs = set(re_pvName.findall("\n".join(e.out)))
         usedDevs = set(devs) - set(unusedDevs)
-        log.debug("rc: %s, out: %s, err: %s, unusedDevs: %s, usedDevs: %s",
-                  e.rc, e.out, e.err, unusedDevs, usedDevs)
+        log.debug(
+            "rc: %s, out: %s, err: %s, unusedDevs: %s, usedDevs: %s",
+            e.rc,
+            e.out,
+            e.err,
+            unusedDevs,
+            usedDevs,
+        )
     else:
         unusedDevs = set(devices)
         usedDevs = set()
@@ -1371,7 +1453,7 @@ def resizePV(vgName, guid):
     pvName = _fqpvname(guid)
     cmd = ["pvresize", pvName]
     try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError as e:
         raise se.CouldNotResizePhysicalVolume.from_lvmerror(e)
     else:
@@ -1394,8 +1476,11 @@ def movePV(vgName, src_device, dst_devices):
 
     pv = getPV(pvName)
     if pv.pe_alloc_count == "0":
-        log.info("No data to move on pv %s (vg %s), considering as successful",
-                 pvName, vgName)
+        log.info(
+            "No data to move on pv %s (vg %s), considering as successful",
+            pvName,
+            vgName,
+        )
         return
 
     cmd = ["pvmove", pvName]
@@ -1407,7 +1492,8 @@ def movePV(vgName, src_device, dst_devices):
     try:
         # lvmpolld has to be disabled: https://bugzilla.redhat.com/1949059
         _lvminfo.run_command(
-            cmd, devices=_lvminfo._getVGDevs((vgName, )), use_lvmpolld=False)
+            cmd, devices=_lvminfo._getVGDevs((vgName,)), use_lvmpolld=False
+        )
     except se.LVMCommandError as e:
         raise se.CouldNotMovePVData.from_lvmerror(e)
     finally:
@@ -1466,6 +1552,7 @@ def getAllLVs(vg_name):
 # Public Volume Group interface
 #
 
+
 def createVG(vgName, devices, initialTag, metadataSize, force=False):
     pvs = [_fqpvname(pdev) for pdev in normalize_args(devices)]
     _checkpvsblksize(pvs)
@@ -1473,8 +1560,12 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     _initpvs(pvs, metadataSize, force)
     _enable_metadata_area(pvs)
 
-    options = ["--setautoactivation", "n",
-               "--physicalextentsize", "%dm" % (sc.VG_EXTENT_SIZE // MiB)]
+    options = [
+        "--setautoactivation",
+        "n",
+        "--physicalextentsize",
+        "%dm" % (sc.VG_EXTENT_SIZE // MiB),
+    ]
     if initialTag:
         options.extend(("--addtag", initialTag))
     cmd = ["vgcreate"] + options + [vgName] + pvs
@@ -1500,7 +1591,7 @@ def removeVG(vgName):
     # if vg is removed they are staled, if vg remove failed, something must be
     # wrong with devices and we want cache updated as well
     try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError as e:
         _lvminfo._invalidatevgpvs(vgName)
         # If vgremove failed reintroduce the VG into the cache
@@ -1527,7 +1618,7 @@ def extendVG(vgName, devices, force):
     _initpvs(pvs, int(vg.vg_mda_size) // MiB, force)
 
     cmd = ["vgextend", vgName] + pvs
-    devs = tuple(_lvminfo._getVGDevs((vgName, )) + tuple(pvs))
+    devs = tuple(_lvminfo._getVGDevs((vgName,)) + tuple(pvs))
 
     try:
         _lvminfo.run_command(cmd, devices=devs)
@@ -1565,7 +1656,7 @@ def reduceVG(vgName, device):
     log.info("Removing pv %s from vg %s", pvName, vgName)
     cmd = ["vgreduce", vgName, pvName]
     try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError as e:
         raise se.VolumeGroupReduceError.from_lvmerror(e)
     else:
@@ -1576,7 +1667,7 @@ def reduceVG(vgName, device):
 def chkVG(vgName):
     cmd = ["vgck", vgName]
     try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError:
         _lvminfo._invalidatevgs(vgName)
         _lvminfo._invalidatelvs(vgName)
@@ -1592,8 +1683,14 @@ def deactivateVG(vgName):
         _lvminfo._invalidatelvs(vgName)
         # During deactivation we ignore error here because we don't care about
         # this vg anymore.
-        log.info("Error deactivating VG %s: cmd=%s rc=%s out=%s err=%s",
-                 vgName, e.cmd, e.rc, e.out, e.err)
+        log.info(
+            "Error deactivating VG %s: cmd=%s rc=%s out=%s err=%s",
+            vgName,
+            e.cmd,
+            e.rc,
+            e.out,
+            e.err,
+        )
         # When the storage is not available, DM mappings for LVs are not
         # removed by LVM, so we have to clean it up manually. For more details
         # see https://bugzilla.redhat.com/1881468
@@ -1645,13 +1742,21 @@ def getVGBlockSizes(vg_name):
     # devices with different block size to be on the same VG.
     return _getpvblksize(listPVNames(vg_name)[0])
 
+
 #
 # Public Logical volume interface
 #
 
 
-def createLV(vgName, lvName, size, activate=True, contiguous=False,
-             initialTags=(), device=None):
+def createLV(
+    vgName,
+    lvName,
+    size,
+    activate=True,
+    contiguous=False,
+    initialTags=(),
+    device=None,
+):
     """
     Size units: MiB.
     """
@@ -1661,9 +1766,17 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     # (p)etabytes, (e)xabytes.
     # Capitalise to use multiples of 1000 (S.I.) instead of 1024.
 
-    log.info("Creating LV (vg=%s, lv=%s, size=%sm, activate=%s, "
-             "contiguous=%s, initialTags=%s, device=%s)",
-             vgName, lvName, size, activate, contiguous, initialTags, device)
+    log.info(
+        "Creating LV (vg=%s, lv=%s, size=%sm, activate=%s, "
+        "contiguous=%s, initialTags=%s, device=%s)",
+        vgName,
+        lvName,
+        size,
+        activate,
+        contiguous,
+        initialTags,
+        device,
+    )
     cont = {True: "y", False: "n"}[contiguous]
     cmd = ["lvcreate"]
     cmd.extend(LVM_NOBACKUP)
@@ -1680,7 +1793,7 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
         cmd.append(_fqpvname(device))
 
     try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError as e:
         raise se.CannotCreateLogicalVolume.from_lvmerror(e)
     else:
@@ -1698,8 +1811,12 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
         if ":".join((uName, gName)) != USER_GROUP:
             cmd = [constants.EXT_CHOWN, USER_GROUP, lv_path]
             if misc.execCmd(cmd, sudo=True)[0] != 0:
-                log.warning("Could not change ownership of one or more "
-                            "volumes in vg (%s) - %s", vgName, lvName)
+                log.warning(
+                    "Could not change ownership of one or more "
+                    "volumes in vg (%s) - %s",
+                    vgName,
+                    lvName,
+                )
     else:
         _setLVAvailability(vgName, lvName, "n")
 
@@ -1725,7 +1842,7 @@ def removeLVs(vgName, lvNames):
         cmd.append("%s/%s" % (vgName, lvName))
 
     try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError as e:
         # LV info needs to be refreshed
         _lvminfo._invalidatelvs(vgName, lvNames)
@@ -1752,8 +1869,13 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
     # filter invalidation and pointless retries if the lv is already large
     # enough.
     if lv_extents >= requested_extents:
-        log.debug("LV %s/%s already extended (extents=%d, requested=%d)",
-                  vgName, lvName, lv_extents, requested_extents)
+        log.debug(
+            "LV %s/%s already extended (extents=%d, requested=%d)",
+            vgName,
+            lvName,
+            lv_extents,
+            requested_extents,
+        )
         return
 
     log.info("Extending LV %s/%s to %s megabytes", vgName, lvName, size_mb)
@@ -1773,8 +1895,13 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
         lv_extents = int(lv.size) // extent_size
 
         if lv_extents >= requested_extents:
-            log.debug("LV %s/%s already extended (extents=%d, requested=%d)",
-                      vgName, lvName, lv_extents, requested_extents)
+            log.debug(
+                "LV %s/%s already extended (extents=%d, requested=%d)",
+                vgName,
+                lvName,
+                lv_extents,
+                requested_extents,
+            )
             return
 
         # Reload vg to get updated free extents.
@@ -1784,8 +1911,8 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
         if free_extents < needed_extents:
             raise se.VolumeGroupSizeError(
                 "Not enough free extents for extending LV %s/%s (free=%d, "
-                "needed=%d)"
-                % (vgName, lvName, free_extents, needed_extents))
+                "needed=%d)" % (vgName, lvName, free_extents, needed_extents)
+            )
         raise se.LogicalVolumeExtendError.from_lvmerror(e)
     else:
         _lvminfo._invalidatevgs(vgName)
@@ -1794,8 +1921,13 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
 
 def reduceLV(vgName, lvName, size_mb, force=False):
     lvm_version = _get_lvm_version()
-    log.info("Reducing LV %s/%s to %s megabytes (force=%s)",
-             vgName, lvName, size_mb, force)
+    log.info(
+        "Reducing LV %s/%s to %s megabytes (force=%s)",
+        vgName,
+        lvName,
+        size_mb,
+        force,
+    )
     cmd = ("lvreduce",) + LVM_NOBACKUP
     if force:
         cmd += ("--force",)
@@ -1814,12 +1946,18 @@ def reduceLV(vgName, lvName, size_mb, force=False):
         # Convert sizes to extents
         extent_size = int(vg.extent_size)
         lv_extents = int(lv.size) // extent_size
-        requested_extents = utils.round(
-            size_mb * MiB, extent_size) // extent_size
+        requested_extents = (
+            utils.round(size_mb * MiB, extent_size) // extent_size
+        )
 
         if lv_extents <= requested_extents:
-            log.debug("LV %s/%s already reduced (extents=%d, requested=%d)",
-                      vgName, lvName, lv_extents, requested_extents)
+            log.debug(
+                "LV %s/%s already reduced (extents=%d, requested=%d)",
+                vgName,
+                lvName,
+                lv_extents,
+                requested_extents,
+            )
             return
 
         # TODO: add and raise LogicalVolumeReduceError
@@ -1859,8 +1997,9 @@ def deactivateLVs(vgName, lvNames):
     """
     Try to deactivate given lvs, deactivation is skipped if lvs are in use.
     """
-    toDeactivate = [lvName for lvName in lvNames
-                    if _isLVActive(vgName, lvName)]
+    toDeactivate = [
+        lvName for lvName in lvNames if _isLVActive(vgName, lvName)
+    ]
     if toDeactivate:
         log.info("Deactivating lvs: vg=%s lvs=%s", vgName, toDeactivate)
         _setLVAvailability(vgName, toDeactivate, "n")
@@ -1876,7 +2015,7 @@ def _refreshLVs(vgName, lvNames):
     cmd = ['lvchange', '--refresh']
     cmd.extend("%s/%s" % (vgName, lv) for lv in lvNames)
     try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError as e:
         _lvminfo._invalidatelvs(vgName, lvNames)
         raise se.LogicalVolumeRefreshError.from_lvmerror(e)
@@ -1885,15 +2024,21 @@ def _refreshLVs(vgName, lvNames):
 
 
 def changeLVsTags(vg, lvs, delTags=(), addTags=()):
-    log.info("Change LVs tags (vg=%s, lvs=%s, delTags=%s, addTags=%s)",
-             vg, lvs, delTags, addTags)
+    log.info(
+        "Change LVs tags (vg=%s, lvs=%s, delTags=%s, addTags=%s)",
+        vg,
+        lvs,
+        delTags,
+        addTags,
+    )
 
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
         raise ValueError(
-            "Cannot add and delete the same tag lvs: `%s` tags: `%s`" %
-            (lvs, ", ".join(delTags.intersection(addTags))))
+            "Cannot add and delete the same tag lvs: `%s` tags: `%s`"
+            % (lvs, ", ".join(delTags.intersection(addTags)))
+        )
 
     attrs = []
     for tag in delTags:
@@ -1934,14 +2079,19 @@ def _isLVActive(vgName, lvName):
 
 
 def changeVGTags(vgName, delTags=(), addTags=()):
-    log.info("Changing VG tags (vg=%s, delTags=%s, addTags=%s)",
-             vgName, delTags, addTags)
+    log.info(
+        "Changing VG tags (vg=%s, delTags=%s, addTags=%s)",
+        vgName,
+        delTags,
+        addTags,
+    )
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
         raise ValueError(
-            "Cannot add and delete the same tag vg: `%s` tags: `%s`" %
-            (vgName, ", ".join(delTags.intersection(addTags))))
+            "Cannot add and delete the same tag vg: `%s` tags: `%s`"
+            % (vgName, ", ".join(delTags.intersection(addTags)))
+        )
 
     cmd = ["vgchange"]
 
@@ -1952,7 +2102,7 @@ def changeVGTags(vgName, delTags=(), addTags=()):
 
     cmd.append(vgName)
     try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError as e:
         raise se.VolumeGroupReplaceTagError.from_lvmerror(e)
     finally:
@@ -1969,12 +2119,11 @@ def getFirstExt(vg, lv):
 
 def getVgMetadataPv(vgName):
     pvs = _lvminfo.getPvs(vgName)
-    mdpvs = [pv for pv in pvs
-             if not pv.is_stale() and pv.is_metadata_pv()]
+    mdpvs = [pv for pv in pvs if not pv.is_stale() and pv.is_metadata_pv()]
     if len(mdpvs) != 1:
-        raise se.UnexpectedVolumeGroupMetadata("Expected one metadata pv in "
-                                               "vg: %s, vg pvs: %s" %
-                                               (vgName, pvs))
+        raise se.UnexpectedVolumeGroupMetadata(
+            "Expected one metadata pv in " "vg: %s, vg pvs: %s" % (vgName, pvs)
+        )
     return mdpvs[0].name
 
 
@@ -1984,7 +2133,8 @@ def listPVNames(vgName):
 
 def setrwLV(vg_name, lv_name, rw=True):
     log.info(
-        "Changing LV permissions (vg=%s, lv=%s, rw=%s)", vg_name, lv_name, rw)
+        "Changing LV permissions (vg=%s, lv=%s, rw=%s)", vg_name, lv_name, rw
+    )
     permission = {False: 'r', True: 'rw'}[rw]
     try:
         changelv(vg_name, lv_name, ("--permission", permission))

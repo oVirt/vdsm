@@ -19,9 +19,13 @@ import logging
 from vdsm.common import cmdutils
 from vdsm.common import udevadm
 
-from vdsm.constants import EXT_CHOWN, \
-    DISKIMAGE_USER, DISKIMAGE_GROUP, \
-    QEMU_PROCESS_USER, QEMU_PROCESS_GROUP
+from vdsm.constants import (
+    EXT_CHOWN,
+    DISKIMAGE_USER,
+    DISKIMAGE_GROUP,
+    QEMU_PROCESS_USER,
+    QEMU_PROCESS_GROUP,
+)
 
 from . import expose
 
@@ -31,22 +35,30 @@ _UDEV_RULE_FILE_EXT = ".rules"
 
 # TODO: remove this when managed devices no longer use appropriateDevice
 _UDEV_RULE_FILE_NAME = os.path.join(
-    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + '%s-%s' +
-    _UDEV_RULE_FILE_EXT)
+    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + '%s-%s' + _UDEV_RULE_FILE_EXT
+)
 
 _UDEV_RULE_FILE_NAME_MANAGED = os.path.join(
     _UDEV_RULE_FILE_DIR,
-    _UDEV_RULE_FILE_PREFIX + 'managed_' + '%s' + '_' + '%s' +
-    _UDEV_RULE_FILE_EXT)
+    _UDEV_RULE_FILE_PREFIX
+    + 'managed_'
+    + '%s'
+    + '_'
+    + '%s'
+    + _UDEV_RULE_FILE_EXT,
+)
 _UDEV_RULE_FILE_NAME_VFIO = os.path.join(
-    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "iommu_group_%s" +
-    _UDEV_RULE_FILE_EXT)
+    _UDEV_RULE_FILE_DIR,
+    _UDEV_RULE_FILE_PREFIX + "iommu_group_%s" + _UDEV_RULE_FILE_EXT,
+)
 _UDEV_RULE_FILE_NAME_HWRNG = os.path.join(
-    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "hwrng_%s" +
-    _UDEV_RULE_FILE_EXT)
+    _UDEV_RULE_FILE_DIR,
+    _UDEV_RULE_FILE_PREFIX + "hwrng_%s" + _UDEV_RULE_FILE_EXT,
+)
 _UDEV_RULE_FILE_NAME_USB = os.path.join(
-    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "usb_%s_%s" +
-    _UDEV_RULE_FILE_EXT)
+    _UDEV_RULE_FILE_DIR,
+    _UDEV_RULE_FILE_PREFIX + "usb_%s_%s" + _UDEV_RULE_FILE_EXT,
+)
 _USB_DEVICE_PATH = '/dev/bus/usb/%03d/%03d'
 _HWRNG_PATH = '/dev/hwrng'
 
@@ -79,7 +91,11 @@ def appropriateDevice(device, thiefId, deviceType):
     # will change the selinux label to the default, causing vms to pause.
     # See https://bugzilla.redhat.com/1147910
     rule = 'SYMLINK=="%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
-        symlink, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
+        symlink,
+        EXT_CHOWN,
+        DISKIMAGE_USER,
+        DISKIMAGE_GROUP,
+    )
     with open(ruleFile, "w") as rf:
         _log.debug("Creating rule %s: %r", ruleFile, rule)
         rf.write(rule)
@@ -87,11 +103,19 @@ def appropriateDevice(device, thiefId, deviceType):
 
 @expose
 def rmAppropriateMultipathRules(thiefId):
-    re_apprDevRule = "^" + _UDEV_RULE_FILE_PREFIX + ".*?-" + thiefId + \
-        _UDEV_RULE_FILE_EXT + "$"
-    rules = [os.path.join(_UDEV_RULE_FILE_DIR, r) for r in
-             os.listdir(_UDEV_RULE_FILE_DIR)
-             if re.match(re_apprDevRule, r)]
+    re_apprDevRule = (
+        "^"
+        + _UDEV_RULE_FILE_PREFIX
+        + ".*?-"
+        + thiefId
+        + _UDEV_RULE_FILE_EXT
+        + "$"
+    )
+    rules = [
+        os.path.join(_UDEV_RULE_FILE_DIR, r)
+        for r in os.listdir(_UDEV_RULE_FILE_DIR)
+        if re.match(re_apprDevRule, r)
+    ]
     fails = []
     for r in rules:
         try:
@@ -108,10 +132,18 @@ def add_managed_udev_rule(sd_id, vol_id, path):
     device = os.path.relpath(path, '/dev/')
     if os.path.islink(path):
         rule = 'SYMLINK=="%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
-            device, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
+            device,
+            EXT_CHOWN,
+            DISKIMAGE_USER,
+            DISKIMAGE_GROUP,
+        )
     else:
         rule = 'KERNEL=="%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
-            device, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
+            device,
+            EXT_CHOWN,
+            DISKIMAGE_USER,
+            DISKIMAGE_GROUP,
+        )
     with open(rule_file, "w") as rf:
         _log.debug("Creating rule %s: %r", rule_file, rule)
         rf.write(rule)
@@ -135,15 +167,21 @@ def _udevTrigger(*args, **kwargs):
     try:
         udevadm.trigger(*args, **kwargs)
     except cmdutils.Error as e:
-        raise OSError(errno.EINVAL, 'Could not trigger change '
-                      'out %s\nerr %s' % (e.out, e.err))
+        raise OSError(
+            errno.EINVAL,
+            'Could not trigger change ' 'out %s\nerr %s' % (e.out, e.err),
+        )
 
 
 @expose
 def appropriateHwrngDevice(vmId):
     ruleFile = _UDEV_RULE_FILE_NAME_HWRNG % (vmId,)
-    rule = ('KERNEL=="hw_random" SUBSYSTEM=="misc" RUN+="%s %s:%s %s"\n' %
-            (EXT_CHOWN, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, _HWRNG_PATH))
+    rule = 'KERNEL=="hw_random" SUBSYSTEM=="misc" RUN+="%s %s:%s %s"\n' % (
+        EXT_CHOWN,
+        QEMU_PROCESS_USER,
+        QEMU_PROCESS_GROUP,
+        _HWRNG_PATH,
+    )
     with open(ruleFile, "w") as rf:
         _log.debug("Creating rule %s: %r", ruleFile, rule)
         rf.write(rule)
@@ -163,6 +201,7 @@ def rmAppropriateHwrngDevice(vmId):
 
     # Check that there are no other hwrng rules in place
     if not glob.glob(_UDEV_RULE_FILE_NAME_HWRNG % ('*',)):
-        _log.debug('Changing ownership (to root:root) of device '
-                   '%s', _HWRNG_PATH)
+        _log.debug(
+            'Changing ownership (to root:root) of device ' '%s', _HWRNG_PATH
+        )
         os.chown(_HWRNG_PATH, 0, 0)

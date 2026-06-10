@@ -64,8 +64,10 @@ def filter_types(item):
 
 
 def write_no_params(f):
-    f.write('<tr><td class="attrlist">None</td>'
-            '<td class="attrlist"></td></tr>\n')
+    f.write(
+        '<tr><td class="attrlist">None</td>'
+        '<td class="attrlist"></td></tr>\n'
+    )
 
 
 def attr_table(name, dataType, desc, f):
@@ -136,8 +138,7 @@ def write_symbol(f, s):
                 values = s.get('values')
                 for value in values:
                     value = filter_types(value)
-                    if (value in vdsmapi.TYPE_KEYS or
-                            isinstance(value, str)):
+                    if value in vdsmapi.TYPE_KEYS or isinstance(value, str):
                         name = value
                     else:
                         name = value.get('name')
@@ -202,7 +203,8 @@ def create_doc(api_schema, filename):
         for method_name in api_schema.get_methods:
             className, methodName = method_name.split('.', 1)
             method = api_schema.get_method(
-                vdsmapi.MethodRep(className, methodName))
+                vdsmapi.MethodRep(className, methodName)
+            )
             method['name'] = method_name
             write_symbol(f, method)
 
@@ -215,9 +217,11 @@ def create_doc(api_schema, filename):
 
 def main():
     parser = argparse.ArgumentParser(
-        "A schema definition to HTML documentation converter")
-    parser.add_argument("schema_type",
-                        choices=[st.value for st in vdsmapi.SchemaType])
+        "A schema definition to HTML documentation converter"
+    )
+    parser.add_argument(
+        "schema_type", choices=[st.value for st in vdsmapi.SchemaType]
+    )
     parser.add_argument("html_path")
     args = parser.parse_args(sys.argv[1:])
 

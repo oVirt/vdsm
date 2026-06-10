@@ -8,6 +8,7 @@ This module provides multipath configuration functionality over the host:
 - Vdsm-supported multipathd configuration.
 - Configuration metadata parser.
 """
+
 import io
 import logging
 import os
@@ -77,7 +78,8 @@ REVISION_MISSING = "MISSING"
 # is restored the delay is reset for the next time all paths fail.
 _NO_PATH_RETRY = 16
 
-_CONF_DATA = Template("""\
+_CONF_DATA = Template(
+    """\
 $current_tag
 
 # This file is managed by vdsm.
@@ -275,8 +277,8 @@ overrides {
     no_path_retry   $no_path_retry
 }
 
-""").substitute({"current_tag": CURRENT_TAG,
-                 "no_path_retry": _NO_PATH_RETRY})
+"""
+).substitute({"current_tag": CURRENT_TAG, "no_path_retry": _NO_PATH_RETRY})
 
 _SKIPPED_SECTIONS = ("blacklist", "blacklist_exceptions")
 
@@ -298,8 +300,11 @@ def configure_blacklist(wwids):
     Arguments:
         wwids (iterable): WWIDs to be blacklisted.
     """
-    log.debug("Configure %s with blacklist WWIDs %s",
-              _VDSM_MULTIPATH_BLACKLIST, wwids)
+    log.debug(
+        "Configure %s with blacklist WWIDs %s",
+        _VDSM_MULTIPATH_BLACKLIST,
+        wwids,
+    )
 
     try:
         os.makedirs(os.path.dirname(_VDSM_MULTIPATH_BLACKLIST))
@@ -335,7 +340,9 @@ def format_blacklist(wwids):
     return """blacklist {{
 {}
 }}
-""".format(lines)
+""".format(
+        lines
+    )
 
 
 def read_blacklist():
@@ -348,8 +355,9 @@ def read_blacklist():
     """
     wwids = set()
     if not os.path.exists(_VDSM_MULTIPATH_BLACKLIST):
-        log.debug("Configuration file %s does not exist",
-                  _VDSM_MULTIPATH_BLACKLIST)
+        log.debug(
+            "Configuration file %s does not exist", _VDSM_MULTIPATH_BLACKLIST
+        )
         return wwids
 
     with open(_VDSM_MULTIPATH_BLACKLIST, "r") as f:
@@ -357,8 +365,9 @@ def read_blacklist():
 
     m = re.search(r"blacklist\s*\{(.*)\}", blacklist, re.DOTALL)
     if not m:
-        log.warning("No blacklist section found in %s",
-                    _VDSM_MULTIPATH_BLACKLIST)
+        log.warning(
+            "No blacklist section found in %s", _VDSM_MULTIPATH_BLACKLIST
+        )
         return wwids
 
     for line in m.group(1).splitlines():
@@ -438,8 +447,10 @@ def check_local_config():
         issues = []
     else:
         if issues:
-            error = ("Invalid configuration: 'user_friendly_names' is "
-                     "enabled in multipath configuration")
+            error = (
+                "Invalid configuration: 'user_friendly_names' is "
+                "enabled in multipath configuration"
+            )
     return Result(error, issues)
 
 

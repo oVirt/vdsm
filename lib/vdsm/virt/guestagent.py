@@ -21,9 +21,7 @@ _MAX_SUPPORTED_API_VERSION = 3
 _IMPLICIT_API_VERSION_ZERO = 0
 _REPLY_CAP_MIN_VERSION = 3
 
-_MESSAGE_API_VERSION_LOOKUP = {
-    'set-number-of-cpus': 1,
-    'lifecycle-event': 3}
+_MESSAGE_API_VERSION_LOOKUP = {'set-number-of-cpus': 1, 'lifecycle-event': 3}
 
 _REPLACEMENT_CHAR = u'\ufffd'
 
@@ -59,10 +57,8 @@ _FILTERED_CHARS = (
 
 _filter_chars_re = re.compile(u'[%s]' % _FILTERED_CHARS)
 _apps_duplicates_re = re.compile(
-    r'(\bqemu[ -](guest[ -]agent|ga)\b)' +
-    r'|' +
-    r'(\bkernel-)',
-    re.IGNORECASE)
+    r'(\bqemu[ -](guest[ -]agent|ga)\b)' + r'|' + r'(\bkernel-)', re.IGNORECASE
+)
 
 
 def _filterXmlChars(u):
@@ -75,6 +71,7 @@ def _filterObject(obj):
     """
     Apply _filterXmlChars on every string in the json response object
     """
+
     def filt(o):
         if isinstance(o, dict):
             return {filt(k): filt(v) for k, v in o.items()}
@@ -83,6 +80,7 @@ def _filterObject(obj):
         elif isinstance(o, str):
             return _filterXmlChars(o)
         return o
+
     return filt(obj)
 
 
@@ -100,8 +98,10 @@ class MessageState:
 
 class GuestAgentUnsupportedMessage(Exception):
     def __init__(self, cmd, requiredVersion, currentVersion):
-        message = "Guest Agent command '%s' requires version '%d'. Current " \
-                  "version is '%d'" % (cmd, requiredVersion, currentVersion)
+        message = (
+            "Guest Agent command '%s' requires version '%d'. Current "
+            "version is '%d'" % (cmd, requiredVersion, currentVersion)
+        )
         Exception.__init__(self, message)
 
 
@@ -138,12 +138,23 @@ class GuestAgentEvents(object):
 class GuestAgent(object):
     MAX_MESSAGE_SIZE = 1 * MiB  # for now
 
-    def __init__(self, socketName, channelListener, log, onStatusChange,
-                 qgaGuestInfo, api_version=None, username='Unknown',
-                 ips='', guestFQDN='', netIfaces=[]):
+    def __init__(
+        self,
+        socketName,
+        channelListener,
+        log,
+        onStatusChange,
+        qgaGuestInfo,
+        api_version=None,
+        username='Unknown',
+        ips='',
+        guestFQDN='',
+        netIfaces=[],
+    ):
         self.effectiveApiVersion = min(
             api_version or _IMPLICIT_API_VERSION_ZERO,
-            _MAX_SUPPORTED_API_VERSION)
+            _MAX_SUPPORTED_API_VERSION,
+        )
         self._onStatusChange = onStatusChange
         self.log = log
         self._socketName = socketName
@@ -162,7 +173,8 @@ class GuestAgent(object):
             'appsList': (),
             'disksUsage': [],
             'netIfaces': netIfaces,
-            'memoryStats': {}}
+            'memoryStats': {},
+        }
         self._agentTimestamp = 0
         self._channelListener = channelListener
         self._messageState = MessageState.NORMAL
@@ -233,10 +245,11 @@ class GuestAgent(object):
             self._create,
             self._connect,
             self._onChannelRead,
-            self._onChannelTimeout)
+            self._onChannelTimeout,
+        )
 
     def _handleAPIVersion(self, version):
-        """ Handles the API version value from the heartbeat
+        """Handles the API version value from the heartbeat
 
             If the value `version` is an valid int the highest possible
             API version in common will be determined and set to the
@@ -262,8 +275,11 @@ class GuestAgent(object):
 
         if commonVersion != self.effectiveApiVersion:
             # Only update if the value changed
-            self.log.info("Guest API version changed from %d to %d",
-                          self.effectiveApiVersion, commonVersion)
+            self.log.info(
+                "Guest API version changed from %d to %d",
+                self.effectiveApiVersion,
+                commonVersion,
+            )
             self.effectiveApiVersion = commonVersion
             if commonVersion != _IMPLICIT_API_VERSION_ZERO:
                 # Only notify the guest agent if the API was not disabled
@@ -290,13 +306,15 @@ class GuestAgent(object):
                 self._clearReadBuffer()
                 # Report the _MAX_SUPPORTED_API_VERSION on refresh to enable
                 # the other side to see that we support API versioning
-                self._forward('refresh',
-                              {'apiVersion': _MAX_SUPPORTED_API_VERSION})
+                self._forward(
+                    'refresh', {'apiVersion': _MAX_SUPPORTED_API_VERSION}
+                )
                 self._stopped = False
                 ret = True
             else:
-                self.log.debug("Failed to connect to %s with %d",
-                               self._socketName, result)
+                self.log.debug(
+                    "Failed to connect to %s with %d", self._socketName, result
+                )
         except socket.error as err:
             self.log.debug("Connection attempt failed: %s", err)
         return ret
@@ -304,8 +322,9 @@ class GuestAgent(object):
     def _forward(self, cmd, args={}):
         ver = _MESSAGE_API_VERSION_LOOKUP.get(cmd, _IMPLICIT_API_VERSION_ZERO)
         if ver > self.effectiveApiVersion:
-            raise GuestAgentUnsupportedMessage(cmd, ver,
-                                               self.effectiveApiVersion)
+            raise GuestAgentUnsupportedMessage(
+                cmd, ver, self.effectiveApiVersion
+            )
         self._first_connect.wait(self._channelListener.timeout())
         args['__name__'] = cmd
         # TODO: encoding is required only on Python 3. Replace with wrapper
@@ -320,18 +339,27 @@ class GuestAgent(object):
         if message == 'heartbeat':
             self.guestInfo['memUsage'] = int(args['free-ram'])
             if 'memory-stat' in args:
-                for k in ('mem_total', 'mem_unused', 'mem_buffers',
-                          'mem_cached', 'swap_in', 'swap_out', 'pageflt',
-                          'majflt'):
+                for k in (
+                    'mem_total',
+                    'mem_unused',
+                    'mem_buffers',
+                    'mem_cached',
+                    'swap_in',
+                    'swap_out',
+                    'pageflt',
+                    'majflt',
+                ):
                     if k not in args['memory-stat']:
                         continue
                     # Convert the value to string since 64-bit integer is not
                     # supported in XMLRPC
                     self.guestInfo['memoryStats'][k] = str(
-                        args['memory-stat'][k])
+                        args['memory-stat'][k]
+                    )
                     if k == 'mem_unused':
                         self.guestInfo['memoryStats']['mem_free'] = str(
-                            args['memory-stat']['mem_unused'])
+                            args['memory-stat']['mem_unused']
+                        )
 
             if 'apiVersion' in args:
                 # The guest agent supports API Versioning
@@ -370,9 +398,10 @@ class GuestAgent(object):
             self.guestInfo['appsList'] = tuple(args['applications'])
         elif message == 'active-user':
             currentUser = args['name']
-            if ((currentUser != self.guestInfo['username']) and
-                not (currentUser == 'Unknown' and
-                     self.guestInfo['username'] == 'None')):
+            if (currentUser != self.guestInfo['username']) and not (
+                currentUser == 'Unknown'
+                and self.guestInfo['username'] == 'None'
+            ):
                 self.guestInfo['username'] = currentUser
                 self.guestInfo['lastLogin'] = time.time()
             self.log.debug("username: %s", repr(self.guestInfo['username']))
@@ -444,7 +473,8 @@ class GuestAgent(object):
             'guestCPUCount': -1,
             'appsList': (),
             'guestIPs': '',
-            'guestFQDN': ''}
+            'guestFQDN': '',
+        }
         diskMapping = {}
         if self.isResponsive():
             info.update(self.guestInfo)
@@ -473,8 +503,11 @@ class GuestAgent(object):
                 # look better we remove the duplicate entries from oVirt Guest
                 # Agent apps list (we prefer the fakes with version
                 # information).
-                oga_apps_list = [app for app in info['appsList']
-                                 if _apps_duplicates_re.match(app) is None]
+                oga_apps_list = [
+                    app
+                    for app in info['appsList']
+                    if _apps_duplicates_re.match(app) is None
+                ]
                 info['appsList'] = qga['appsList'] + tuple(oga_apps_list)
                 del qga['appsList']
             info.update(qga)
@@ -504,8 +537,9 @@ class GuestAgent(object):
                 username = user + '@' + domain
             else:
                 username = user
-            self._forward('login', {'username': username,
-                                    "password": password.value})
+            self._forward(
+                'login', {'username': username, "password": password.value}
+            )
         except:
             self.log.exception("desktopLogin failed")
 
@@ -519,8 +553,10 @@ class GuestAgent(object):
     def desktopShutdown(self, timeout, msg, reboot):
         try:
             self.log.debug("desktopShutdown called")
-            self._forward('shutdown', {'timeout': timeout, 'message': msg,
-                                       'reboot': str(reboot)})
+            self._forward(
+                'shutdown',
+                {'timeout': timeout, 'message': msg, 'reboot': str(reboot)},
+            )
         except:
             self.log.exception("desktopShutdown failed")
 
@@ -550,8 +586,10 @@ class GuestAgent(object):
 
     def _onChannelTimeout(self):
         self.guestInfo['memUsage'] = 0
-        if self.guestStatus not in (vmstatus.POWERING_DOWN,
-                                    vmstatus.REBOOT_IN_PROGRESS):
+        if self.guestStatus not in (
+            vmstatus.POWERING_DOWN,
+            vmstatus.REBOOT_IN_PROGRESS,
+        ):
             self.log.debug("Guest connection timed out")
 
     def _clearReadBuffer(self):
@@ -560,7 +598,7 @@ class GuestAgent(object):
 
     def _processMessage(self, line):
         try:
-            (message, args) = self._parseLine(line)
+            message, args = self._parseLine(line)
             self._agentTimestamp = time.time()
             self._handleMessage(message, args)
         except ValueError as err:
@@ -573,8 +611,9 @@ class GuestAgent(object):
             self._clearReadBuffer()
             if self._messageState is MessageState.TOO_BIG:
                 self._messageState = MessageState.NORMAL
-                self.log.warning("Not processing current message because it "
-                                 "was too big")
+                self.log.warning(
+                    "Not processing current message because it " "was too big"
+                )
             else:
                 self._processMessage(line)
 
@@ -582,10 +621,13 @@ class GuestAgent(object):
         self._bufferSize += len(data)
 
         if self._bufferSize >= self.MAX_MESSAGE_SIZE:
-            self.log.warning("Discarding buffer with size: %d because the "
-                             "message reached maximum size of %d bytes before "
-                             "message end was reached.", self._bufferSize,
-                             self.MAX_MESSAGE_SIZE)
+            self.log.warning(
+                "Discarding buffer with size: %d because the "
+                "message reached maximum size of %d bytes before "
+                "message end was reached.",
+                self._bufferSize,
+                self.MAX_MESSAGE_SIZE,
+            )
             self._messageState = MessageState.TOO_BIG
             self._clearReadBuffer()
 
@@ -593,7 +635,7 @@ class GuestAgent(object):
         result = True
         try:
             while not self._stopped:
-                data = self._sock.recv(2 ** 16)
+                data = self._sock.recv(2**16)
                 # The connection is broken when recv returns no data
                 # therefore we're going to set ourself to stopped state
                 if not data:

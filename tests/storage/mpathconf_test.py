@@ -8,7 +8,7 @@ import pytest
 from vdsm.storage import mpathconf
 from vdsm.storage.mpathconf import Section, Pair
 
-from . marks import requires_selinux
+from .marks import requires_selinux
 
 CONF = """\
 blacklist {
@@ -39,8 +39,7 @@ blacklist {
 @pytest.fixture
 def fake_conf(tmpdir, monkeypatch):
     fake_conf = tmpdir.join("multipath/conf.d/vdsm_blacklist.conf")
-    monkeypatch.setattr(
-        mpathconf, "_VDSM_MULTIPATH_BLACKLIST", str(fake_conf))
+    monkeypatch.setattr(mpathconf, "_VDSM_MULTIPATH_BLACKLIST", str(fake_conf))
     return fake_conf
 
 
@@ -196,146 +195,194 @@ section5 {
     }
 }"""
     assert mpathconf._parse_conf(io.StringIO(mpath_out)) == [
-        Section('section1', [
-            Pair('key1', 'value 1'),
-            Pair('key2', 'value2'),
-            Pair('key3', '3')
-        ]),
-        Section('section2', [
-            Pair('key1', 'value1')
-        ]),
-        Section('section3', [
-        ]),
-        Section('section4', [
-            Section('entry', [
+        Section(
+            'section1',
+            [
                 Pair('key1', 'value 1'),
-                Pair('key2', 'value 2'),
-                Pair('key3', 'value 3')
-            ]),
-            Section('entry', [
-                Pair('key1', 'value1')
-            ]),
-            Section('entry', [])
-        ]),
-        Section('section5', [
-            Pair('key1', 'value1'),
-            Pair('key2', 'value2'),
-            Section('entry', [
+                Pair('key2', 'value2'),
+                Pair('key3', '3'),
+            ],
+        ),
+        Section('section2', [Pair('key1', 'value1')]),
+        Section('section3', []),
+        Section(
+            'section4',
+            [
+                Section(
+                    'entry',
+                    [
+                        Pair('key1', 'value 1'),
+                        Pair('key2', 'value 2'),
+                        Pair('key3', 'value 3'),
+                    ],
+                ),
+                Section('entry', [Pair('key1', 'value1')]),
+                Section('entry', []),
+            ],
+        ),
+        Section(
+            'section5',
+            [
                 Pair('key1', 'value1'),
-                Pair('key2', 'value2')
-            ]),
-            Section('entry', [
-                Pair('key1', 'value1')
-            ])
-        ]),
+                Pair('key2', 'value2'),
+                Section(
+                    'entry', [Pair('key1', 'value1'), Pair('key2', 'value2')]
+                ),
+                Section('entry', [Pair('key1', 'value1')]),
+            ],
+        ),
     ]
 
 
 def test_mpathd_ufn_enabled_single():
     fake_conf = [
-        Section('defaults', [
-            Pair('key', 'value'),
-            Pair('user_friendly_names', 'yes'),
-        ]),
-        Section('devices', [
-            Section('device', [
-                Pair('user_friendly_names', 'no'),
+        Section(
+            'defaults',
+            [
                 Pair('key', 'value'),
-            ]),
-            Section('device', [
-                Pair('key', 'value')
-            ])
-        ]),
+                Pair('user_friendly_names', 'yes'),
+            ],
+        ),
+        Section(
+            'devices',
+            [
+                Section(
+                    'device',
+                    [
+                        Pair('user_friendly_names', 'no'),
+                        Pair('key', 'value'),
+                    ],
+                ),
+                Section('device', [Pair('key', 'value')]),
+            ],
+        ),
     ]
     issues = mpathconf._check_conf(fake_conf)
     assert issues == [
-        Section('defaults', [
-            Pair('key', 'value'),
-            Pair('user_friendly_names', 'yes'),
-        ])
+        Section(
+            'defaults',
+            [
+                Pair('key', 'value'),
+                Pair('user_friendly_names', 'yes'),
+            ],
+        )
     ]
 
 
 def test_mpathd_ufn_enabled_multiple():
     fake_conf = [
-        Section('defaults', [
-            Pair('key', 'value'),
-            Pair('user_friendly_names', 'yes'),
-        ]),
-        Section('overrides', [
-            Pair('user_friendly_names', 'yes'),
-        ]),
-        Section('devices', [
-            Section('device', [
-                Pair('user_friendly_names', 'yes'),
+        Section(
+            'defaults',
+            [
                 Pair('key', 'value'),
-            ]),
-            Section('device', [
-                Pair('key1', 'value1'),
                 Pair('user_friendly_names', 'yes'),
-                Pair('key2', 'value2'),
-            ]),
-            Section('device', [
-                Pair('key', 'value')
-            ])
-        ]),
+            ],
+        ),
+        Section(
+            'overrides',
+            [
+                Pair('user_friendly_names', 'yes'),
+            ],
+        ),
+        Section(
+            'devices',
+            [
+                Section(
+                    'device',
+                    [
+                        Pair('user_friendly_names', 'yes'),
+                        Pair('key', 'value'),
+                    ],
+                ),
+                Section(
+                    'device',
+                    [
+                        Pair('key1', 'value1'),
+                        Pair('user_friendly_names', 'yes'),
+                        Pair('key2', 'value2'),
+                    ],
+                ),
+                Section('device', [Pair('key', 'value')]),
+            ],
+        ),
     ]
     issues = mpathconf._check_conf(fake_conf)
     assert issues == [
-        Section('defaults', [
-            Pair('key', 'value'),
-            Pair('user_friendly_names', 'yes'),
-        ]),
-        Section('overrides', [
-            Pair('user_friendly_names', 'yes'),
-        ]),
-        Section('device', [
-            Pair('user_friendly_names', 'yes'),
-            Pair('key', 'value'),
-        ]),
-        Section('device', [
-            Pair('key1', 'value1'),
-            Pair('user_friendly_names', 'yes'),
-            Pair('key2', 'value2'),
-        ]),
+        Section(
+            'defaults',
+            [
+                Pair('key', 'value'),
+                Pair('user_friendly_names', 'yes'),
+            ],
+        ),
+        Section(
+            'overrides',
+            [
+                Pair('user_friendly_names', 'yes'),
+            ],
+        ),
+        Section(
+            'device',
+            [
+                Pair('user_friendly_names', 'yes'),
+                Pair('key', 'value'),
+            ],
+        ),
+        Section(
+            'device',
+            [
+                Pair('key1', 'value1'),
+                Pair('user_friendly_names', 'yes'),
+                Pair('key2', 'value2'),
+            ],
+        ),
     ]
 
 
 def test_mpathd_ufn_blacklist():
     fake_conf = [
-        Section('defaults', [
-            Pair('key', 'value'),
-            Pair('user_friendly_names', 'no'),
-        ]),
-        Section('blacklist', [
-            Pair('key', 'value'),
-            Section('name1', [
-                Pair('key1', 'value1'),
-                Pair('key2', 'value2'),
-            ]),
-            Section('name2', [
-                Pair('key', 'value')
-            ])
-        ]),
-        Section('blacklist_exceptions', [
-            Pair('key', 'value'),
-            Section('name3', [
-                Pair('key1', 'value1'),
-                Pair('key2', 'value2'),
-            ]),
-            Section('name4', [
-                Pair('key', 'value')
-            ])
-        ]),
+        Section(
+            'defaults',
+            [
+                Pair('key', 'value'),
+                Pair('user_friendly_names', 'no'),
+            ],
+        ),
+        Section(
+            'blacklist',
+            [
+                Pair('key', 'value'),
+                Section(
+                    'name1',
+                    [
+                        Pair('key1', 'value1'),
+                        Pair('key2', 'value2'),
+                    ],
+                ),
+                Section('name2', [Pair('key', 'value')]),
+            ],
+        ),
+        Section(
+            'blacklist_exceptions',
+            [
+                Pair('key', 'value'),
+                Section(
+                    'name3',
+                    [
+                        Pair('key1', 'value1'),
+                        Pair('key2', 'value2'),
+                    ],
+                ),
+                Section('name4', [Pair('key', 'value')]),
+            ],
+        ),
     ]
     issues = mpathconf._check_conf(fake_conf)
     assert not issues
 
 
 def test_mpathd_ufn_no_pairs():
-    fake_conf = [
-        Section('section1', [])
-    ]
+    fake_conf = [Section('section1', [])]
     issues = mpathconf._check_conf(fake_conf)
     assert not issues
 
@@ -348,24 +395,34 @@ def test_mpathd_ufn_empty():
 
 def test_mpathd_ufn_all_disabled():
     fake_conf = [
-        Section('defaults', [
-            Pair('key', 'value'),
-            Pair('user_friendly_names', 'no'),
-        ]),
-        Section('overrides', [
-            Pair('key1', 'value1'),
-            Pair('user_friendly_names', 'no'),
-            Pair('key2', 'value2'),
-        ]),
-        Section('devices', [
-            Section('device', [
-                Pair('user_friendly_names', 'no'),
+        Section(
+            'defaults',
+            [
                 Pair('key', 'value'),
-            ]),
-            Section('device', [
-                Pair('key', 'value')
-            ])
-        ]),
+                Pair('user_friendly_names', 'no'),
+            ],
+        ),
+        Section(
+            'overrides',
+            [
+                Pair('key1', 'value1'),
+                Pair('user_friendly_names', 'no'),
+                Pair('key2', 'value2'),
+            ],
+        ),
+        Section(
+            'devices',
+            [
+                Section(
+                    'device',
+                    [
+                        Pair('user_friendly_names', 'no'),
+                        Pair('key', 'value'),
+                    ],
+                ),
+                Section('device', [Pair('key', 'value')]),
+            ],
+        ),
     ]
     issues = mpathconf._check_conf(fake_conf)
     assert not issues

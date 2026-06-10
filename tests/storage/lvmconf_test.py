@@ -58,10 +58,13 @@ def test_read_options(tmpdir):
         assert conf.getlist("activation", "missing_stripe_filler") is None
 
 
-@pytest.mark.parametrize("data", [
-    pytest.param(CONF, id="example"),
-    pytest.param("", id="empty"),
-])
+@pytest.mark.parametrize(
+    "data",
+    [
+        pytest.param(CONF, id="example"),
+        pytest.param("", id="empty"),
+    ],
+)
 def test_modify(tmpdir, data):
     path = create_lvm_conf(tmpdir, data)
     new_list = ["a|^/dev/sda2$|", "a|^/dev/sdb3$|", "r|.*|"]
@@ -87,10 +90,13 @@ def test_modify(tmpdir, data):
         assert conf.getstr("activation", "missing_stripe_filler") == old_str
 
 
-@pytest.mark.parametrize("data", [
-    pytest.param(CONF, id="typcial"),
-    pytest.param("", id="empty"),
-])
+@pytest.mark.parametrize(
+    "data",
+    [
+        pytest.param(CONF, id="typcial"),
+        pytest.param("", id="empty"),
+    ],
+)
 def test_save(tmpdir, data):
     path = create_lvm_conf(tmpdir, data)
     new_list = ["a|^/dev/sda2$|", "a|^/dev/sdb3$|", "r|.*|"]
@@ -194,8 +200,9 @@ def test_context_propagate_user_error(tmpdir):
             raise UserError
 
 
-@pytest.mark.skipif(not os.path.exists("/etc/lvm/lvm.conf"),
-                    reason="lvm.conf not found")
+@pytest.mark.skipif(
+    not os.path.exists("/etc/lvm/lvm.conf"), reason="lvm.conf not found"
+)
 def test_real_lvm_conf():
     with lvmconf.LVMConfig() as conf:
         assert conf.getint("global", "use_lvmetad") in (1, 0, None)

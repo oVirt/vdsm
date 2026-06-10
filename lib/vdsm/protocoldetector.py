@@ -44,8 +44,9 @@ class _AcceptorImpl(object):
             client.setblocking(0)
             self._dispatcher_factory(client)
         except socket.error:
-            self.log.exception("Error creating dispatcher for %s:%d",
-                               addr[0], addr[1])
+            self.log.exception(
+                "Error creating dispatcher for %s:%d", addr[0], addr[1]
+            )
             client.close()
 
     def handle_error(self, dispatcher):
@@ -103,7 +104,7 @@ class _ProtocolDetector(object):
                     "Detected protocol %s from %s:%d",
                     detector.NAME,
                     host,
-                    port
+                    port,
                 )
                 dispatcher.del_channel()
                 sock.setblocking(1)
@@ -146,6 +147,7 @@ class MultiProtocolAcceptor:
             Called after detect() succeeded. The detector owns the socket and
             is responsible for closing it.
     """
+
     log = logging.getLogger("vds.MultiProtocolAcceptor")
 
     def __init__(
@@ -163,7 +165,8 @@ class MultiProtocolAcceptor:
         self._host, self._port = sock.getsockname()[0:2]
         self.log.info("Listening at %s:%d", self._host, self._port)
         self._acceptor = self._reactor.create_dispatcher(
-            sock, _AcceptorImpl(self.handle_accept))
+            sock, _AcceptorImpl(self.handle_accept)
+        )
         self._acceptor.listen(5)
         self._handlers = []
         self.TIMEOUT = ssl_hanshake_timeout
@@ -174,7 +177,8 @@ class MultiProtocolAcceptor:
             self._register_protocol_detector(dispatcher)
         else:
             dispatcher = SSLHandshakeDispatcher(
-                self._sslctx, self._register_protocol_detector, self.TIMEOUT)
+                self._sslctx, self._register_protocol_detector, self.TIMEOUT
+            )
             self._reactor.create_dispatcher(client, dispatcher)
 
     def _register_protocol_detector(self, dispatcher):
@@ -196,13 +200,20 @@ class MultiProtocolAcceptor:
         self._acceptor.close()
 
     def _create_socket(self, host, port):
-        addrinfo = socket.getaddrinfo(host, port,
-                                      socket.AF_UNSPEC, socket.SOCK_STREAM)
+        addrinfo = socket.getaddrinfo(
+            host, port, socket.AF_UNSPEC, socket.SOCK_STREAM
+        )
 
         family, socktype, proto, _, sockaddr = addrinfo[0]
-        self.log.debug("Creating socket (host=%r, port=%d, family=%d, "
-                       "socketype=%d, proto=%d)",
-                       host, port, family, socktype, proto)
+        self.log.debug(
+            "Creating socket (host=%r, port=%d, family=%d, "
+            "socketype=%d, proto=%d)",
+            host,
+            port,
+            family,
+            socktype,
+            proto,
+        )
         server_socket = socket.socket(family, socktype, proto)
         filecontrol.set_close_on_exec(server_socket.fileno())
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

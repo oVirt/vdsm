@@ -56,7 +56,7 @@ def stop():
 def cleanIdleIOProcesses(clientName):
     now = elapsed_time()
     for name, (eol, proc) in list(_procPool.items()):
-        if (eol < now and name != clientName):
+        if eol < now and name != clientName:
             log.debug("Removing idle ioprocess %s", name)
             del _procPool[name]
 
@@ -68,10 +68,12 @@ def getProcessPool(clientName):
         proc = _refProcPool.get(clientName, lambda: None)()
         if proc is None:
             log.debug("Creating ioprocess %s", clientName)
-            proc = ioprocess.IOProcess(max_threads=HELPERS_PER_DOMAIN,
-                                       timeout=DEFAULT_TIMEOUT,
-                                       max_queued_requests=MAX_QUEUED,
-                                       name=clientName)
+            proc = ioprocess.IOProcess(
+                max_threads=HELPERS_PER_DOMAIN,
+                timeout=DEFAULT_TIMEOUT,
+                max_queued_requests=MAX_QUEUED,
+                name=clientName,
+            )
             proc = _IOProcWrapper("oop", proc)
             _refProcPool[clientName] = weakref.ref(proc)
 
@@ -151,8 +153,9 @@ class _IOProcessFileUtils(object):
                     raise
                 statinfo = self._iop.stat(tmpPath)
                 if not stat.S_ISDIR(statinfo.st_mode):
-                    raise OSError(errno.ENOTDIR,
-                                  "Not a directory %s" % tmpPath)
+                    raise OSError(
+                        errno.ENOTDIR, "Not a directory %s" % tmpPath
+                    )
                 if tmpPath == path and mode is not None:
                     actual_mode = stat.S_IMODE(statinfo.st_mode)
                     expected_mode = mode & ~get_umask()
@@ -160,7 +163,8 @@ class _IOProcessFileUtils(object):
                         raise OSError(
                             errno.EPERM,
                             "Existing {} permissions {:o} are not as requested"
-                            " {:o}".format(path, actual_mode, expected_mode))
+                            " {:o}".format(path, actual_mode, expected_mode),
+                        )
 
     def padToBlockSize(self, path):
         size = _IOProcessOs(self._iop).stat(path).st_size
@@ -170,8 +174,11 @@ class _IOProcessFileUtils(object):
 
     def validateAccess(self, targetPath, perms=(os.R_OK | os.W_OK | os.X_OK)):
         if not self._iop.access(targetPath, perms):
-            log.warning("Permission denied for directory: %s with permissions:"
-                        "%s", targetPath, perms)
+            log.warning(
+                "Permission denied for directory: %s with permissions:" "%s",
+                targetPath,
+                perms,
+            )
             raise OSError(errno.EACCES, os.strerror(errno.EACCES))
 
     def pathExists(self, filename, writable=False):
@@ -181,11 +188,16 @@ class _IOProcessFileUtils(object):
         """
         Validate that qemu process can read file
         """
-        gids = (grp.getgrnam(constants.DISKIMAGE_GROUP).gr_gid,
-                grp.getgrnam(constants.METADATA_GROUP).gr_gid)
+        gids = (
+            grp.getgrnam(constants.DISKIMAGE_GROUP).gr_gid,
+            grp.getgrnam(constants.METADATA_GROUP).gr_gid,
+        )
         st = _IOProcessOs(self._iop).stat(targetPath)
-        if not (st.st_gid in gids and st.st_mode & stat.S_IRGRP or
-                st.st_mode & stat.S_IROTH):
+        if not (
+            st.st_gid in gids
+            and st.st_mode & stat.S_IRGRP
+            or st.st_mode & stat.S_IROTH
+        ):
             raise OSError(errno.EACCES, os.strerror(errno.EACCES))
 
 
@@ -267,7 +279,7 @@ class _IOProcessUtils(object):
         self._iop = iop
 
     def forceLink(self, src, dst):
-        """ Makes or replaces a hard link.
+        """Makes or replaces a hard link.
 
         Like os.link() but replaces the link if it exists.
         """
@@ -278,8 +290,9 @@ class _IOProcessUtils(object):
                 self.rmFile(dst)
                 _IOProcessOs(self._iop).link(src, dst)
             else:
-                log.error("Linking file: %s to %s failed", src, dst,
-                          exc_info=True)
+                log.error(
+                    "Linking file: %s to %s failed", src, dst, exc_info=True
+                )
                 raise
 
     def rmFile(self, path):

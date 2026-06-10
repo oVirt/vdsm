@@ -29,16 +29,17 @@ def invalid_vm_conf_disk(vol):
     Since VM metadata volumes with this problem may still exist in storage we
     must keep using this workaround to avoid problems with copying VM disks.
     """
-    if (vol.getFormat() == sc.COW_FORMAT and
-            vol.getCapacity() == VM_CONF_SIZE):
+    if vol.getFormat() == sc.COW_FORMAT and vol.getCapacity() == VM_CONF_SIZE:
         info = qemuimg.info(vol.getVolumePath())
         actual_format = info['format']
 
         if actual_format == qemuimg.FORMAT.RAW:
-            log.warning("Incorrect volume format %r has been detected"
-                        " for volume %r, using the actual format %r.",
-                        qemuimg.FORMAT.QCOW2,
-                        vol.volUUID,
-                        qemuimg.FORMAT.RAW)
+            log.warning(
+                "Incorrect volume format %r has been detected"
+                " for volume %r, using the actual format %r.",
+                qemuimg.FORMAT.QCOW2,
+                vol.volUUID,
+                qemuimg.FORMAT.RAW,
+            )
             return True
     return False

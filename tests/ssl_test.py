@@ -29,66 +29,79 @@ def fake_gethostbyaddr(monkeypatch, request):
         monkeypatch.setattr('vdsm.sslutils.socket.gethostbyaddr', impl)
 
 
-@pytest.mark.parametrize('fake_gethostbyaddr', [('example.com', ['10.0.0.1'])],
-                         indirect=True)
+@pytest.mark.parametrize(
+    'fake_gethostbyaddr', [('example.com', ['10.0.0.1'])], indirect=True
+)
 def test_same_string(fake_gethostbyaddr):
     assert SSLHandshakeDispatcher.compare_names('10.0.0.1', 'example.com')
 
 
-@pytest.mark.parametrize('lhs,rhs', [('::ffff:127.0.0.1', '127.0.0.1'),
-                                     ('127.0.0.1', '::ffff:127.0.0.1')])
+@pytest.mark.parametrize(
+    'lhs,rhs',
+    [('::ffff:127.0.0.1', '127.0.0.1'), ('127.0.0.1', '::ffff:127.0.0.1')],
+)
 def test_mapped_address(lhs, rhs):
     assert SSLHandshakeDispatcher.compare_names(lhs, rhs)
 
 
-@pytest.mark.parametrize('fake_gethostbyaddr', [('example.com', ['10.0.0.1'])],
-                         indirect=True)
+@pytest.mark.parametrize(
+    'fake_gethostbyaddr', [('example.com', ['10.0.0.1'])], indirect=True
+)
 def test_failed_mapped_address(fake_gethostbyaddr):
-    assert not SSLHandshakeDispatcher.compare_names('10.0.0.1',
-                                                    '::ffff:127.0.0.1')
+    assert not SSLHandshakeDispatcher.compare_names(
+        '10.0.0.1', '::ffff:127.0.0.1'
+    )
 
 
-@pytest.mark.parametrize('fake_gethostbyaddr',
-                         [('example.com', ['10.0.0.1', '10.0.0.2'])],
-                         indirect=True)
+@pytest.mark.parametrize(
+    'fake_gethostbyaddr',
+    [('example.com', ['10.0.0.1', '10.0.0.2'])],
+    indirect=True,
+)
 def test_multiple(fake_gethostbyaddr):
     assert SSLHandshakeDispatcher.compare_names('10.0.0.2', 'example.com')
 
 
-@pytest.mark.parametrize('fake_gethostbyaddr',
-                         [('evil.imposter.com', ['10.0.0.1'])],
-                         indirect=True)
+@pytest.mark.parametrize(
+    'fake_gethostbyaddr', [('evil.imposter.com', ['10.0.0.1'])], indirect=True
+)
 def test_imposter(fake_gethostbyaddr):
     assert not SSLHandshakeDispatcher.compare_names('10.0.0.1', 'example.com')
 
 
-@pytest.mark.parametrize('lhs,rhs', [('127.0.0.1', 'example.com'),
-                                     ('::1', 'example.com'),
-                                     ('::ffff:127.0.0.1', 'example.com')])
+@pytest.mark.parametrize(
+    'lhs,rhs',
+    [
+        ('127.0.0.1', 'example.com'),
+        ('::1', 'example.com'),
+        ('::ffff:127.0.0.1', 'example.com'),
+    ],
+)
 def test_local_addresses(lhs, rhs):
     assert SSLHandshakeDispatcher.compare_names(lhs, rhs)
 
 
 @pytest.fixture
 def dummy_register_protocol_detector(monkeypatch):
-    monkeypatch.setattr(MultiProtocolAcceptor, '_register_protocol_detector',
-                        lambda d: d.close())
+    monkeypatch.setattr(
+        MultiProtocolAcceptor,
+        '_register_protocol_detector',
+        lambda d: d.close(),
+    )
 
 
 @pytest.fixture  # noqa: F811 # TODO: remove after upgrading flake to 3.9.2
-def listener(dummy_register_protocol_detector, key_cert_pair, request):  # noqa: F811, E501
+def listener(
+    dummy_register_protocol_detector, key_cert_pair, request
+):  # noqa: F811, E501
     key_file, cert_file = key_cert_pair
     reactor = Reactor()
 
-    sslctx = SSLContext(cert_file=cert_file, key_file=key_file,
-                        ca_certs=cert_file)
-
-    acceptor = MultiProtocolAcceptor(
-        reactor,
-        '127.0.0.1',
-        0,
-        sslctx=sslctx
+    sslctx = SSLContext(
+        cert_file=cert_file, key_file=key_file, ca_certs=cert_file
     )
+
+    acceptor = MultiProtocolAcceptor(reactor, '127.0.0.1', 0, sslctx=sslctx)
 
     try:
         t = concurrent.thread(reactor.process_requests)
@@ -107,42 +120,43 @@ def client_cmd(listener, key_cert_pair):  # noqa: F811
 
     def wrapper(protocol):
         (host, port) = listener
-        cmd = ['openssl', 's_client', '-connect', '%s:%s' % (host, port),
-               '-CAfile', cert_file, '-cert', cert_file, '-key', key_file,
-               protocol]
+        cmd = [
+            'openssl',
+            's_client',
+            '-connect',
+            '%s:%s' % (host, port),
+            '-CAfile',
+            cert_file,
+            '-cert',
+            cert_file,
+            '-key',
+            key_file,
+            protocol,
+        ]
         return commands.run(cmd)
 
     return wrapper
 
 
-@pytest.mark.parametrize('protocol', [
-    pytest.param(
-        '-ssl2',
-        id='ssl2'
-    ),
-    pytest.param(
-        '-ssl3',
-        id='ssl3'
-    ),
-    pytest.param(
-        '-tls1',
-        id='tls1'
-    ),
-    pytest.param(
-        '-tls1_1',
-        id='tls1.1'
-    )
-])
+@pytest.mark.parametrize(
+    'protocol',
+    [
+        pytest.param('-ssl2', id='ssl2'),
+        pytest.param('-ssl3', id='ssl3'),
+        pytest.param('-tls1', id='tls1'),
+        pytest.param('-tls1_1', id='tls1.1'),
+    ],
+)
 def test_tls_unsupported_protocols(client_cmd, protocol):
     with pytest.raises(cmdutils.Error):
         client_cmd(protocol)
 
 
-@pytest.mark.parametrize('protocol', [
-    pytest.param(
-        '-tls1_2',
-        id='tls1.2'
-    ),
-])
+@pytest.mark.parametrize(
+    'protocol',
+    [
+        pytest.param('-tls1_2', id='tls1.2'),
+    ],
+)
 def test_tls_protocols(client_cmd, protocol):
     assert b"Verify return code: 0 (ok)" in client_cmd(protocol)

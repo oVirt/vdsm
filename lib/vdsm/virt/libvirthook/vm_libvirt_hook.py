@@ -13,12 +13,10 @@ from vdsm.virt.vmdevices import storage
 # not needed once we only support https://bugzilla.redhat.com/1666795
 def _dynamic_ownership(tree):
     for xpath in (
-            "./devices//disk[@type='%s']//source" %
-            (storage.DISK_TYPE.BLOCK,),
-            "./devices//disk[@type='%s']//source" %
-            (storage.DISK_TYPE.FILE,),
-            "./devices//disk[@type='%s']//source[@protocol='gluster']" %
-            (storage.DISK_TYPE.NETWORK,)
+        "./devices//disk[@type='%s']//source" % (storage.DISK_TYPE.BLOCK,),
+        "./devices//disk[@type='%s']//source" % (storage.DISK_TYPE.FILE,),
+        "./devices//disk[@type='%s']//source[@protocol='gluster']"
+        % (storage.DISK_TYPE.NETWORK,),
     ):
         for element in tree.findall(xpath):
             storage.disable_dynamic_ownership(element)

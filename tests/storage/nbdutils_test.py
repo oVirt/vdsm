@@ -11,15 +11,25 @@ from vdsm.common import nbdutils
 # common/test/nbd_test.py#L29
 
 
-@pytest.mark.parametrize("addr,export,url", [
-    (nbdutils.UnixAddress("/sock"), None, "nbd:unix:/sock"),
-    (nbdutils.UnixAddress("/sock"), "", "nbd:unix:/sock"),
-    (nbdutils.UnixAddress("/sock"), "sda", "nbd:unix:/sock:exportname=sda"),
-    (nbdutils.TCPAddress("host", 0), None, "nbd:host:0"),
-    (nbdutils.TCPAddress("host", 10900), "", "nbd:host:10900"),
-    (nbdutils.TCPAddress(
-        "host", 65535), "sdb", "nbd:host:65535:exportname=sdb"),
-])
+@pytest.mark.parametrize(
+    "addr,export,url",
+    [
+        (nbdutils.UnixAddress("/sock"), None, "nbd:unix:/sock"),
+        (nbdutils.UnixAddress("/sock"), "", "nbd:unix:/sock"),
+        (
+            nbdutils.UnixAddress("/sock"),
+            "sda",
+            "nbd:unix:/sock:exportname=sda",
+        ),
+        (nbdutils.TCPAddress("host", 0), None, "nbd:host:0"),
+        (nbdutils.TCPAddress("host", 10900), "", "nbd:host:10900"),
+        (
+            nbdutils.TCPAddress("host", 65535),
+            "sdb",
+            "nbd:host:65535:exportname=sdb",
+        ),
+    ],
+)
 def test_url(addr, export, url):
     assert addr.url(export) == url
 

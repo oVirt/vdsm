@@ -14,8 +14,9 @@ from vdsm.virt.domain_descriptor import DomainDescriptor
 
 
 def _is_external_vm(dom_xml):
-    return (not vmxml.has_channel(dom_xml, vmchannels.LEGACY_DEVICE_NAME) and
-            not vmxml.has_vdsm_metadata(dom_xml))
+    return not vmxml.has_channel(
+        dom_xml, vmchannels.LEGACY_DEVICE_NAME
+    ) and not vmxml.has_vdsm_metadata(dom_xml)
 
 
 def _is_ignored_vm(dom_uuid, dom_obj, dom_xml):
@@ -33,8 +34,9 @@ def _is_ignored_vm(dom_uuid, dom_obj, dom_xml):
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return True
             else:
-                logging.warning("Can't get status of external VM %s: %s",
-                                dom_uuid, e)
+                logging.warning(
+                    "Can't get status of external VM %s: %s", dom_uuid, e
+                )
         if state in vmstatus.LIBVIRT_DOWN_STATES:
             return True
     return False
@@ -57,7 +59,13 @@ def _list_domains():
         else:
             if _is_ignored_vm(dom_uuid, dom_obj, dom_xml):
                 continue
-            domains.append((dom_obj, dom_xml, _is_external_vm(dom_xml),))
+            domains.append(
+                (
+                    dom_obj,
+                    dom_xml,
+                    _is_external_vm(dom_xml),
+                )
+            )
     return domains
 
 
@@ -65,14 +73,16 @@ def _recover_domain(cif, vm_id, dom_xml, external):
     external_str = " (external)" if external else ""
     cif.log.debug("recovery: trying with VM%s %s", external_str, vm_id)
     try:
-        res = cif.createVm(_recovery_params(vm_id, dom_xml, external),
-                           vmRecover=True)
+        res = cif.createVm(
+            _recovery_params(vm_id, dom_xml, external), vmRecover=True
+        )
     except Exception:
         cif.log.exception("Error recovering VM%s: %s", external_str, vm_id)
         return False
     if response.is_error(res):
-        cif.log.info("Failed to recover VM%s: %s (%s)",
-                     external_str, vm_id, res)
+        cif.log.info(
+            "Failed to recover VM%s: %s (%s)", external_str, vm_id, res
+        )
         return False
     cif.log.info("VM recovered: %s", vm_id)
     return True
@@ -98,19 +108,28 @@ def all_domains(cif):
         if _recover_domain(cif, vm_id, dom_xml, external):
             cif.log.info(
                 'recovery [1:%d/%d]: recovered domain %s',
-                idx + 1, num_doms, vm_id)
+                idx + 1,
+                num_doms,
+                vm_id,
+            )
         elif external:
             cif.log.info("Failed to recover external domain: %s" % (vm_id,))
         else:
             cif.log.info(
                 'recovery [1:%d/%d]: loose domain %s found, killing it.',
-                idx + 1, num_doms, vm_id)
+                idx + 1,
+                num_doms,
+                vm_id,
+            )
             try:
                 dom_obj.destroy()
             except libvirt.libvirtError:
                 cif.log.exception(
                     'recovery [1:%d/%d]: failed to kill loose domain %s',
-                    idx + 1, num_doms, vm_id)
+                    idx + 1,
+                    num_doms,
+                    vm_id,
+                )
 
 
 def lookup_external_vms(cif):

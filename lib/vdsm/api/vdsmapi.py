@@ -13,23 +13,19 @@ from vdsm import utils
 from vdsm.common.logutils import Suppressed
 from yajsonrpc.exception import JsonRpcInvalidParamsError
 
-
-PRIMITIVE_TYPES = {'boolean': lambda value: isinstance(value, bool),
-                   'float': lambda value: isinstance(value, float),
-                   'int': lambda value: isinstance(value, int),
-                   'long': lambda value: isinstance(value, (int,
-                                                            float)),
-                   'ulong': lambda value: isinstance(value,
-                                                     (int,
-                                                      float)) and value >= 0,
-                   'string': lambda value: isinstance(value, str),
-                   'uint': lambda value: isinstance(value, int) and value >= 0}
+PRIMITIVE_TYPES = {
+    'boolean': lambda value: isinstance(value, bool),
+    'float': lambda value: isinstance(value, float),
+    'int': lambda value: isinstance(value, int),
+    'long': lambda value: isinstance(value, (int, float)),
+    'ulong': lambda value: isinstance(value, (int, float)) and value >= 0,
+    'string': lambda value: isinstance(value, str),
+    'uint': lambda value: isinstance(value, int) and value >= 0,
+}
 TYPE_KEYS = list(PRIMITIVE_TYPES.keys())
 
 
-DEFAULT_VALUES = {'{}': {},
-                  '()': (),
-                  '[]': []}
+DEFAULT_VALUES = {'{}': {}, '()': (), '[]': []}
 
 
 _log_inconsistency = logging.getLogger("schema.inconsistency").debug
@@ -65,15 +61,19 @@ class SchemaType(Enum):
 
     def path(self):
         filename = self.value + ".pickle"
-        potential_paths = [os.path.join(dir_path, filename)
-                           for dir_path in SchemaType.schema_dirs()]
+        potential_paths = [
+            os.path.join(dir_path, filename)
+            for dir_path in SchemaType.schema_dirs()
+        ]
 
         for path in potential_paths:
             if os.path.exists(path):
                 return path
 
-        raise SchemaNotFound("Unable to find API schema file, tried: %s" %
-                             ", ".join(potential_paths))
+        raise SchemaNotFound(
+            "Unable to find API schema file, tried: %s"
+            % ", ".join(potential_paths)
+        )
 
 
 class MethodRep(object):
@@ -97,7 +97,7 @@ class EventRep(object):
 
     def _trim_subscription_id(self, sub_id):
         idx = len(sub_id) - sub_id.rfind('|')
-        return sub_id[:1 - idx]
+        return sub_id[: 1 - idx]
 
     @property
     def id(self):
@@ -148,14 +148,22 @@ class Schema(object):
         return [arg.get('name') for arg in self.get_args(rep)]
 
     def get_default_arg_names(self, rep):
-        return frozenset([arg.get('name') for arg in self.get_args(rep)
-                          if 'defaultvalue' in arg])
+        return frozenset(
+            [
+                arg.get('name')
+                for arg in self.get_args(rep)
+                if 'defaultvalue' in arg
+            ]
+        )
 
     def get_default_arg_values(self, rep):
-        return [DEFAULT_VALUES.get(arg.get('defaultvalue'),
-                                   arg.get('defaultvalue'))
-                for arg in self.get_args(rep)
-                if 'defaultvalue' in arg]
+        return [
+            DEFAULT_VALUES.get(
+                arg.get('defaultvalue'), arg.get('defaultvalue')
+            )
+            for arg in self.get_args(rep)
+            if 'defaultvalue' in arg
+        ]
 
     def get_ret_param(self, rep):
         retval = self.get_method(rep)
@@ -188,8 +196,9 @@ class Schema(object):
     def _check_primitive_type(self, t, value, name):
         condition = PRIMITIVE_TYPES.get(t)
         if not condition(value):
-            self._report_inconsistency('Parameter %s is not %s type'
-                                       % (name, t))
+            self._report_inconsistency(
+                'Parameter %s is not %s type' % (name, t)
+            )
 
     def _report_inconsistency(self, message):
         if self._strict_mode:
@@ -200,11 +209,14 @@ class Schema(object):
     def verify_args(self, rep, args):
         try:
             # check whether there are extra parameters
-            unknown_args = [key for key in args if key not in
-                            self.get_arg_names(rep)]
+            unknown_args = [
+                key for key in args if key not in self.get_arg_names(rep)
+            ]
             if unknown_args:
-                self._report_inconsistency('Following parameters %s were not'
-                                           ' recognized' % (unknown_args))
+                self._report_inconsistency(
+                    'Following parameters %s were not'
+                    ' recognized' % (unknown_args)
+                )
 
             # verify types of provided parameters
             for param in self.get_args(rep):
@@ -215,21 +227,25 @@ class Schema(object):
                     if 'defaultvalue' not in param:
                         self._report_inconsistency(
                             'Required parameter %s is not '
-                            'provided when calling %s' % (name, rep.id))
+                            'provided when calling %s' % (name, rep.id)
+                        )
                     continue
                 self._verify_type(param, arg, rep.id)
         except JsonRpcInvalidParamsError:
             raise
         except Exception:
-            self._report_inconsistency('Unexpected issue with request type'
-                                       ' verification for %s' % rep.id)
+            self._report_inconsistency(
+                'Unexpected issue with request type'
+                ' verification for %s' % rep.id
+            )
 
     def _verify_type(self, param, value, identifier):
         # check whether a parameter is in a list
         if isinstance(param, list):
             if not isinstance(value, list):
-                self._report_inconsistency('Parameter %s is not a list'
-                                           % (value))
+                self._report_inconsistency(
+                    'Parameter %s is not a list' % (value)
+                )
             for a in value:
                 self._verify_type(param[0], a, identifier)
             return
@@ -244,7 +260,8 @@ class Schema(object):
         if t == 'dict':
             # it seems that there is no other way to have it fixed
             self._report_inconsistency(
-                'Unsupported type %s in %s please fix' % (t, identifier))
+                'Unsupported type %s in %s please fix' % (t, identifier)
+            )
 
         # check whether it is a primitive type
         elif t in TYPE_KEYS:
@@ -259,14 +276,16 @@ class Schema(object):
             # type verification method
             elif isinstance(t, list):
                 if not isinstance(value, (list, tuple)):
-                    self._report_inconsistency('Parameter %s is not a sequence'
-                                               % (value))
+                    self._report_inconsistency(
+                        'Parameter %s is not a sequence' % (value)
+                    )
                 for a in value:
                     self._verify_type(t[0], a, identifier)
             else:
                 # call complex type verification
-                self._verify_complex_type(t.get('type'), t, value, name,
-                                          identifier)
+                self._verify_complex_type(
+                    t.get('type'), t, value, name, identifier
+                )
 
     def _verify_complex_type(self, t_type, t, arg, name, identifier):
         """
@@ -288,20 +307,22 @@ class Schema(object):
                 props = value.get('properties')
                 prop_names = [prop.get('name') for prop in props]
                 if not [key for key in arg if key not in prop_names]:
-                    self._verify_complex_type(value.get('type'), value, arg,
-                                              name, identifier)
+                    self._verify_complex_type(
+                        value.get('type'), value, arg, name, identifier
+                    )
                     return
-            self._report_inconsistency('Provided parameters %s do not match'
-                                       ' any of union %s values'
-                                       % (arg, t.get('name')))
+            self._report_inconsistency(
+                'Provided parameters %s do not match'
+                ' any of union %s values' % (arg, t.get('name'))
+            )
         elif t_type == 'enum':
             # if enum we need to check whether provided parameter is in values
             if arg not in t.get('values'):
-                self._report_inconsistency('Provided value "%s" not'
-                                           ' defined in %s enum for'
-                                           ' %s' % (arg,
-                                                    t.get('name'),
-                                                    identifier))
+                self._report_inconsistency(
+                    'Provided value "%s" not'
+                    ' defined in %s enum for'
+                    ' %s' % (arg, t.get('name'), identifier)
+                )
         else:
             # if custom time (object) we need to check whether all the
             # properties match values provided
@@ -311,13 +332,14 @@ class Schema(object):
         props = t.get('properties')
         prop_names = [prop.get('name') for prop in props]
         # check if there are any extra prarameters
-        unknown_props = [key for key in arg
-                         if key not in prop_names]
+        unknown_props = [key for key in arg if key not in prop_names]
         if unknown_props:
             if 'any_string' in prop_names:
                 return
-            self._report_inconsistency('Following parameters %s were not'
-                                       ' recognized' % (unknown_props))
+            self._report_inconsistency(
+                'Following parameters %s were not'
+                ' recognized' % (unknown_props)
+            )
         # iterate over properties
         for prop in props:
             p_name = prop.get('name')
@@ -330,7 +352,8 @@ class Schema(object):
                 if value == 'needs updating':
                     self._report_inconsistency(
                         'No default value specified for %s parameter in'
-                        ' %s' % (p_name, identifier))
+                        ' %s' % (p_name, identifier)
+                    )
                 if value == 'no-default':
                     continue
                 if a is None or a == value:
@@ -339,7 +362,8 @@ class Schema(object):
                 if a is None:
                     self._report_inconsistency(
                         'Required property %s is not provided when calling'
-                        ' %s' % (p_name, identifier))
+                        ' %s' % (p_name, identifier)
+                    )
                     continue
             # call type verification
             self._verify_type(prop, a, identifier)
@@ -355,8 +379,10 @@ class Schema(object):
         except JsonRpcInvalidParamsError:
             raise
         except Exception:
-            self._report_inconsistency('Unexpected issue with response type'
-                                       ' verification for %s' % rep.id)
+            self._report_inconsistency(
+                'Unexpected issue with response type'
+                ' verification for %s' % rep.id
+            )
 
     def verify_event_params(self, sub_id, args):
         rep = EventRep(sub_id)
@@ -376,14 +402,17 @@ class Schema(object):
                     if 'defaultvalue' not in param:
                         self._report_inconsistency(
                             'Required parameter %s is not '
-                            'provided when sending %s' % (name, rep.id))
+                            'provided when sending %s' % (name, rep.id)
+                        )
                     continue
                 self._verify_type(param, arg, rep.id)
         except JsonRpcInvalidParamsError:
             raise
         except Exception:
-            self._report_inconsistency('Unexpected issue with event type'
-                                       ' verification for %s' % rep.id)
+            self._report_inconsistency(
+                'Unexpected issue with event type'
+                ' verification for %s' % rep.id
+            )
 
     def _get_arg_dict(self, arg_type, name, params_dict):
         '''
@@ -402,31 +431,32 @@ class Schema(object):
             for member in arg_type.get('type'):
                 member_dict = {}
                 if hasattr(member, 'get'):
-                    self._get_arg_dict(
-                        member, member.get('name'), member_dict)
+                    self._get_arg_dict(member, member.get('name'), member_dict)
                 params_dict[name].append(member_dict)
 
         elif arg_type.get('type') == 'object':
             for prop in arg_type.get('properties'):
                 if isinstance(prop.get('type'), dict):
                     self._get_arg_dict(
-                        prop.get('type'), prop.get('name'), params_dict)
+                        prop.get('type'), prop.get('name'), params_dict
+                    )
                 else:
-                    self._get_arg_dict(
-                        prop, prop.get('name'), params_dict)
+                    self._get_arg_dict(prop, prop.get('name'), params_dict)
 
         elif arg_type.get('type') == 'union':
             params_dict[name] = []
             for value in arg_type.get('values'):
                 if hasattr(value, 'get'):
                     params_dict[name].append(
-                        (value.get('name'), value.get('type')))
+                        (value.get('name'), value.get('type'))
+                    )
                 else:
                     params_dict[name].append(value)
 
         elif arg_type.get('type') == 'enum':
             params_dict[name] = 'enum {}'.format(
-                [value for value in arg_type.get('values')])
+                [value for value in arg_type.get('values')]
+            )
 
         elif arg_type.get('type') == 'alias':
             params_dict[name] = arg_type.get('name')
@@ -467,13 +497,17 @@ class Schema(object):
                         params_dict[arg.get('name')].append(param)
                     elif isinstance(param.get('type'), dict):
                         param_type = self.get_type(
-                            param.get('type').get('name'))
+                            param.get('type').get('name')
+                        )
                         self._get_arg_dict(
-                            param_type, param.get('type').get('name'),
-                            param_dict)
+                            param_type,
+                            param.get('type').get('name'),
+                            param_dict,
+                        )
                     else:
                         self._get_arg_dict(
-                            param, param.get('name'), param_dict)
+                            param, param.get('name'), param_dict
+                        )
                     params_dict[arg.get('name')].append(param_dict)
             else:
                 params_dict[arg.get('name')] = arg.get('type')

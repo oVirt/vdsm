@@ -31,8 +31,9 @@ class _EventLoop:
 
     def start(self):
         assert not self.run
-        self.__thread = concurrent.thread(self.__run, name="libvirt/events",
-                                          log=log)
+        self.__thread = concurrent.thread(
+            self.__run, name="libvirt/events", log=log
+        )
         self.run = True
         self.__thread.start()
 
@@ -69,9 +70,10 @@ __connectionLock = threading.Lock()
 
 
 def open_connection(uri=None, username=None, passwd=None):
-    """ by calling this method you are getting a new and unwrapped connection
-        if you want to use wrapped and cached connection use the get() method
+    """by calling this method you are getting a new and unwrapped connection
+    if you want to use wrapped and cached connection use the get() method
     """
+
     def req(credentials, user_data):
         for cred in credentials:
             if cred[0] == libvirt.VIR_CRED_AUTHNAME:
@@ -80,11 +82,13 @@ def open_connection(uri=None, username=None, passwd=None):
                 cred[4] = passwd.value if passwd else None
         return 0
 
-    auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE],
-            req, None]
+    auth = [
+        [libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE],
+        req,
+        None,
+    ]
 
-    libvirtOpen = functools.partial(
-        libvirt.openAuth, uri, auth, 0)
+    libvirtOpen = functools.partial(libvirt.openAuth, uri, auth, 0)
     return function.retry(libvirtOpen, timeout=10, sleep=0.2)
 
 
@@ -105,6 +109,7 @@ def get(target=None, killOnFailure=True):
     Wrap methods of connection object so that they catch disconnection, and
     take the current process down.
     """
+
     def wrapMethod(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -114,18 +119,22 @@ def get(target=None, killOnFailure=True):
                     for name in dir(ret):
                         method = getattr(ret, name)
                         if callable(method) and name[0] != '_':
-                            setattr(ret, name,
-                                    wrapMethod(function.weakmethod(method)))
+                            setattr(
+                                ret,
+                                name,
+                                wrapMethod(function.weakmethod(method)),
+                            )
                 return ret
             except libvirt.libvirtError as e:
                 edom = e.get_error_domain()
                 ecode = e.get_error_code()
-                EDOMAINS = (libvirt.VIR_FROM_REMOTE,
-                            libvirt.VIR_FROM_RPC)
-                ECODES = (libvirt.VIR_ERR_SYSTEM_ERROR,
-                          libvirt.VIR_ERR_INTERNAL_ERROR,
-                          libvirt.VIR_ERR_NO_CONNECT,
-                          libvirt.VIR_ERR_INVALID_CONN)
+                EDOMAINS = (libvirt.VIR_FROM_REMOTE, libvirt.VIR_FROM_RPC)
+                ECODES = (
+                    libvirt.VIR_ERR_SYSTEM_ERROR,
+                    libvirt.VIR_ERR_INTERNAL_ERROR,
+                    libvirt.VIR_ERR_NO_CONNECT,
+                    libvirt.VIR_ERR_INVALID_CONN,
+                )
                 if edom in EDOMAINS and ecode in ECODES:
                     try:
                         __connections.get(id(target)).pingLibvirt()
@@ -133,14 +142,19 @@ def get(target=None, killOnFailure=True):
                         edom = e.get_error_domain()
                         ecode = e.get_error_code()
                         if edom in EDOMAINS and ecode in ECODES:
-                            log.warning('connection to libvirt broken.'
-                                        ' ecode: %d edom: %d', ecode, edom)
+                            log.warning(
+                                'connection to libvirt broken.'
+                                ' ecode: %d edom: %d',
+                                ecode,
+                                edom,
+                            )
                             if killOnFailure:
                                 log.critical('taking calling process down.')
                                 os.kill(os.getpid(), signal.SIGTERM)
                             else:
                                 raise
                 raise
+
         return wrapper
 
     with __connectionLock:
@@ -155,29 +169,31 @@ def get(target=None, killOnFailure=True):
             for name in dir(libvirt.virConnect):
                 method = getattr(conn, name)
                 if callable(method) and name[0] != '_':
-                    setattr(conn, name,
-                            wrapMethod(function.weakmethod(method)))
+                    setattr(
+                        conn, name, wrapMethod(function.weakmethod(method))
+                    )
             if target is not None:
-                for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
-                           libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
-                           libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
-                           libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
-                           libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS,
-                           # Report stable drive name (e.g. vda) in block job
-                           # events instead of the drive path which may change
-                           # after active commit or block copy.  See
-                           # virConnectDomainEventBlockJobCallback in libvirt
-                           # docs.
-                           libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2,
-                           libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG,
-                           libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED,
-                           libvirt.VIR_DOMAIN_EVENT_ID_DEVICE_REMOVED,
-                           libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_THRESHOLD,
-                           libvirt.VIR_DOMAIN_EVENT_ID_AGENT_LIFECYCLE):
-                    conn.domainEventRegisterAny(None,
-                                                ev,
-                                                target.dispatchLibvirtEvents,
-                                                ev)
+                for ev in (
+                    libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
+                    libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
+                    libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
+                    libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
+                    libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS,
+                    # Report stable drive name (e.g. vda) in block job
+                    # events instead of the drive path which may change
+                    # after active commit or block copy.  See
+                    # virConnectDomainEventBlockJobCallback in libvirt
+                    # docs.
+                    libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2,
+                    libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG,
+                    libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED,
+                    libvirt.VIR_DOMAIN_EVENT_ID_DEVICE_REMOVED,
+                    libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_THRESHOLD,
+                    libvirt.VIR_DOMAIN_EVENT_ID_AGENT_LIFECYCLE,
+                ):
+                    conn.domainEventRegisterAny(
+                        None, ev, target.dispatchLibvirtEvents, ev
+                    )
             # In case we're running into troubles with keeping the connections
             # alive we should place here:
             # conn.setKeepAlive(interval=5, count=3)

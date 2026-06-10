@@ -9,12 +9,12 @@ import pytest
 from vdsm.common import systemctl
 from vdsm.common import systemd
 
-requires_root = pytest.mark.skipif(
-    os.geteuid() != 0, reason="requires root")
+requires_root = pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
 
 broken_on_ci = pytest.mark.skipif(
     "OVIRT_CI" in os.environ or "TRAVIS_CI" in os.environ,
-    reason="requires systemd daemon")
+    reason="requires systemd daemon",
+)
 
 
 @broken_on_ci
@@ -23,11 +23,13 @@ def test_show_unit_not_found():
     properties = ("Names", "LoadState", "ActiveState")
 
     r = systemctl.show(unit, properties=properties)
-    assert r == [{
-        "ActiveState": "inactive",
-        "LoadState": "not-found",
-        "Names": unit,
-    }]
+    assert r == [
+        {
+            "ActiveState": "inactive",
+            "LoadState": "not-found",
+            "Names": unit,
+        }
+    ]
 
     r = systemctl.show(unit)
     assert len(r) == 1
@@ -58,11 +60,13 @@ def test_single_unit():
     try:
 
         r = systemctl.show(unit, properties=properties)
-        assert r == [{
-            "ActiveState": "active",
-            "LoadState": "loaded",
-            "Names": unit,
-        }]
+        assert r == [
+            {
+                "ActiveState": "active",
+                "LoadState": "loaded",
+                "Names": unit,
+            }
+        ]
 
         r = systemctl.show(unit)
         assert len(r) == 1
@@ -74,11 +78,13 @@ def test_single_unit():
         systemctl.stop(unit)
 
     r = systemctl.show(unit, properties=properties)
-    assert r == [{
-        "ActiveState": "inactive",
-        "LoadState": "not-found",
-        "Names": unit,
-    }]
+    assert r == [
+        {
+            "ActiveState": "inactive",
+            "LoadState": "not-found",
+            "Names": unit,
+        }
+    ]
 
 
 @requires_root

@@ -39,17 +39,26 @@ DEFAULT_SIZE = MiB
 
 
 @contextmanager
-def make_env(storage_type, fmt, chain_length=1,
-             size=DEFAULT_SIZE, sd_version=5, qcow2_compat='1.1'):
+def make_env(
+    storage_type,
+    fmt,
+    chain_length=1,
+    size=DEFAULT_SIZE,
+    sd_version=5,
+    qcow2_compat='1.1',
+):
     with fake_env(storage_type, sd_version=sd_version) as env:
         rm = FakeResourceManager()
-        with MonkeyPatchScope([
-            (guarded, 'context', fake_guarded_context()),
-            (volume_info, 'sdCache', env.sdcache),
-            (blockVolume, 'rm', rm),
-        ]):
-            env.chain = make_qemu_chain(env, size, fmt, chain_length,
-                                        qcow2_compat=qcow2_compat)
+        with MonkeyPatchScope(
+            [
+                (guarded, 'context', fake_guarded_context()),
+                (volume_info, 'sdCache', env.sdcache),
+                (blockVolume, 'rm', rm),
+            ]
+        ):
+            env.chain = make_qemu_chain(
+                env, size, fmt, chain_length, qcow2_compat=qcow2_compat
+            )
             yield env
 
 
@@ -69,7 +78,7 @@ def test_clear_bitmaps(fake_scheduler, env_type):
             'sd_id': top_vol.sdUUID,
             'img_id': top_vol.imgUUID,
             'vol_id': top_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
         job = clear_bitmaps.Job(make_uuid(), 0, vol)
         job.run()
@@ -90,9 +99,7 @@ def test_clear_invalid_bitmaps(fake_scheduler, env_type):
         # Add new invalid bitmaps to top volume
         for bitmap in ['bitmap_1', 'bitmap_2']:
             op = qemuimg.bitmap_add(
-                top_vol.getVolumePath(),
-                bitmap,
-                enable=False
+                top_vol.getVolumePath(), bitmap, enable=False
             )
             op.run()
 
@@ -103,7 +110,7 @@ def test_clear_invalid_bitmaps(fake_scheduler, env_type):
             'sd_id': top_vol.sdUUID,
             'img_id': top_vol.imgUUID,
             'vol_id': top_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
         job = clear_bitmaps.Job(make_uuid(), 0, vol)
         job.run()
@@ -127,7 +134,7 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
             'sd_id': top_vol.sdUUID,
             'img_id': top_vol.imgUUID,
             'vol_id': top_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
 
         # Clear bitmap failed for RAW volume
@@ -151,7 +158,7 @@ def test_shared_vol(fake_scheduler, env_type):
             'sd_id': top_vol.sdUUID,
             'img_id': top_vol.imgUUID,
             'vol_id': top_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
 
         # Clear bitmap failed for SHARED volume
@@ -174,7 +181,7 @@ def test_clear_missing_bitmaps(fake_scheduler, env_type):
             'sd_id': top_vol.sdUUID,
             'img_id': top_vol.imgUUID,
             'vol_id': top_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
         job = clear_bitmaps.Job(make_uuid(), 0, vol)
         job.run()
@@ -210,7 +217,7 @@ def test_clear_bitmaps_from_vol_chain(fake_scheduler, env_type):
             'sd_id': leaf_vol.sdUUID,
             'img_id': leaf_vol.imgUUID,
             'vol_id': leaf_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
 
         job = clear_bitmaps.Job(make_uuid(), 0, vol)
@@ -234,7 +241,7 @@ def test_clear_bitmaps_from_vol_chain(fake_scheduler, env_type):
             'sd_id': internal_vol.sdUUID,
             'img_id': internal_vol.imgUUID,
             'vol_id': internal_vol.volUUID,
-            'generation': generation
+            'generation': generation,
         }
 
         job = clear_bitmaps.Job(make_uuid(), 0, vol)

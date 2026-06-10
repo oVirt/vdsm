@@ -16,7 +16,6 @@ from libnmstate.schema import Route
 from libnmstate.schema import RouteRule
 from libnmstate.schema import VLAN as Vlan
 
-
 __all__ = [
     'BondSchema',
     'DNS',

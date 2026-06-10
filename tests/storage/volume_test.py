@@ -6,10 +6,7 @@ import pytest
 
 from storage.storagefakelib import FakeStorageDomainCache
 
-from storage.storagetestlib import (
-    FakeSD,
-    fake_volume
-)
+from storage.storagetestlib import FakeSD, fake_volume
 
 from testlib import recorded
 
@@ -41,10 +38,13 @@ class TestVolumeLease:
         assert 'vol' == a.name
         assert rm.EXCLUSIVE == a.mode
 
-    @pytest.mark.parametrize("a, b", [
-        (('domA', 'img', 'vol'), ('domB', 'img', 'vol')),
-        (('dom', 'img', 'volA'), ('dom', 'img', 'volB'))
-    ])
+    @pytest.mark.parametrize(
+        "a, b",
+        [
+            (('domA', 'img', 'vol'), ('domB', 'img', 'vol')),
+            (('dom', 'img', 'volA'), ('dom', 'img', 'volB')),
+        ],
+    )
     def test_less_than(self, a, b):
         b = volume.VolumeLease(HOST_ID, *b)
         a = volume.VolumeLease(HOST_ID, *a)
@@ -69,8 +69,10 @@ class TestVolumeLease:
         sdcache = FakeStorageDomainCache()
         manifest = FakeSDManifest()
         sdcache.domains['dom'] = FakeSD(manifest)
-        expected = [('acquireVolumeLease', (HOST_ID, 'img', 'vol'), {}),
-                    ('releaseVolumeLease', ('img', 'vol'), {})]
+        expected = [
+            ('acquireVolumeLease', (HOST_ID, 'img', 'vol'), {}),
+            ('releaseVolumeLease', ('img', 'vol'), {}),
+        ]
         monkeypatch.setattr(volume, 'sdCache', sdcache)
         lock = volume.VolumeLease(HOST_ID, 'dom', 'img', 'vol')
         lock.acquire()
@@ -125,21 +127,22 @@ class TestVolumeManifest:
             pass
         assert generation + 1 == vol.getMetaParam(sc.GENERATION)
 
-    @pytest.mark.parametrize("actual_generation, requested_generation", [
-        (100, 99), (100, 101)
-    ])
-    def test_operation_invalid_generation_raises(self, vol, actual_generation,
-                                                 requested_generation):
+    @pytest.mark.parametrize(
+        "actual_generation, requested_generation", [(100, 99), (100, 101)]
+    )
+    def test_operation_invalid_generation_raises(
+        self, vol, actual_generation, requested_generation
+    ):
         vol.setMetaParam(sc.GENERATION, actual_generation)
         with pytest.raises(se.GenerationMismatch):
             with vol.operation(requested_generation):
                 pass
         assert actual_generation == vol.getMetaParam(sc.GENERATION)
 
-    @pytest.mark.parametrize("first_gen, next_gen", [
-        (sc.MAX_GENERATION, 0),
-        (sc.MAX_GENERATION - 1, sc.MAX_GENERATION)
-    ])
+    @pytest.mark.parametrize(
+        "first_gen, next_gen",
+        [(sc.MAX_GENERATION, 0), (sc.MAX_GENERATION - 1, sc.MAX_GENERATION)],
+    )
     def test_generation_wrapping(self, vol, first_gen, next_gen):
         vol.setMetaParam(sc.GENERATION, first_gen)
         with vol.operation(first_gen):

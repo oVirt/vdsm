@@ -75,31 +75,42 @@ class TestCopyDataDIV(VdsmTestCase):
     def tearDown(self):
         jobs._clear()
 
-    @permutations((
-        ('file', 'raw', 'raw', (0, 1)),
-        ('file', 'raw', 'raw', (1, 0)),
-        ('block', 'raw', 'raw', (0, 1)),
-        ('block', 'raw', 'raw', (1, 0)),
-    ))
+    @permutations(
+        (
+            ('file', 'raw', 'raw', (0, 1)),
+            ('file', 'raw', 'raw', (1, 0)),
+            ('block', 'raw', 'raw', (0, 1)),
+            ('block', 'raw', 'raw', (1, 0)),
+        )
+    )
     def test_volume_chain_copy(self, env_type, src_fmt, dst_fmt, copy_seq):
         src_fmt = sc.name2type(src_fmt)
         dst_fmt = sc.name2type(dst_fmt)
         nr_vols = len(copy_seq)
-        with make_env(env_type, src_fmt, dst_fmt,
-                      chain_length=nr_vols) as env:
+        with make_env(env_type, src_fmt, dst_fmt, chain_length=nr_vols) as env:
             write_qemu_chain(env.src_chain)
             for index in copy_seq:
                 job_id = make_uuid()
                 src_vol = env.src_chain[index]
                 dst_vol = env.dst_chain[index]
-                source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                              img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-                dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                            img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+                source = dict(
+                    endpoint_type='div',
+                    sd_id=src_vol.sdUUID,
+                    img_id=src_vol.imgUUID,
+                    vol_id=src_vol.volUUID,
+                )
+                dest = dict(
+                    endpoint_type='div',
+                    sd_id=dst_vol.sdUUID,
+                    img_id=dst_vol.imgUUID,
+                    vol_id=dst_vol.volUUID,
+                )
                 job = copy_data.Job(job_id, 0, source, dest)
                 job.run()
-                self.assertEqual(sorted(expected_locks(src_vol, dst_vol)),
-                                 sorted(guarded.context.locks))
+                self.assertEqual(
+                    sorted(expected_locks(src_vol, dst_vol)),
+                    sorted(guarded.context.locks),
+                )
             verify_qemu_chain(env.dst_chain)
 
     # TODO: Missing tests:
@@ -117,8 +128,9 @@ class TestCopyDataDIV(VdsmTestCase):
 
         vm_conf_data = "VM Configuration".ljust(512)
 
-        with make_env('file', sc.COW_FORMAT, sc.COW_FORMAT,
-                      size=workarounds.VM_CONF_SIZE) as env:
+        with make_env(
+            'file', sc.COW_FORMAT, sc.COW_FORMAT, size=workarounds.VM_CONF_SIZE
+        ) as env:
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
 
@@ -127,10 +139,18 @@ class TestCopyDataDIV(VdsmTestCase):
             with open(src_vol.getVolumePath(), "w") as f:
                 f.write(vm_conf_data)
 
-            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+            source = dict(
+                endpoint_type='div',
+                sd_id=src_vol.sdUUID,
+                img_id=src_vol.imgUUID,
+                vol_id=src_vol.volUUID,
+            )
+            dest = dict(
+                endpoint_type='div',
+                sd_id=dst_vol.sdUUID,
+                img_id=dst_vol.imgUUID,
+                vol_id=dst_vol.volUUID,
+            )
             job = copy_data.Job(job_id, 0, source, dest)
             job.run()
             self.assertEqual(jobs.STATUS.DONE, job.status)
@@ -140,14 +160,17 @@ class TestCopyDataDIV(VdsmTestCase):
                 # Qemu pads the file to a 1k boundary with null bytes
                 self.assertTrue(f.read().startswith(vm_conf_data))
 
-    @permutations((
-        ('file', None, sc.LEGAL_VOL, jobs.STATUS.DONE, 1),
-        ('file', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED, 0),
-        ('block', None, sc.LEGAL_VOL, jobs.STATUS.DONE, 1),
-        ('block', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED, 0),
-    ))
-    def test_volume_operation(self, env_type, error,
-                              final_legality, final_status, final_gen):
+    @permutations(
+        (
+            ('file', None, sc.LEGAL_VOL, jobs.STATUS.DONE, 1),
+            ('file', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED, 0),
+            ('block', None, sc.LEGAL_VOL, jobs.STATUS.DONE, 1),
+            ('block', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED, 0),
+        )
+    )
+    def test_volume_operation(
+        self, env_type, error, final_legality, final_status, final_gen
+    ):
         job_id = make_uuid()
         fmt = sc.RAW_FORMAT
         with make_env(env_type, fmt, fmt) as env:
@@ -155,15 +178,24 @@ class TestCopyDataDIV(VdsmTestCase):
             dst_vol = env.dst_chain[0]
 
             self.assertEqual(sc.LEGAL_VOL, dst_vol.getLegality())
-            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID,
-                          generation=0)
-            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID,
-                        generation=0)
+            source = dict(
+                endpoint_type='div',
+                sd_id=src_vol.sdUUID,
+                img_id=src_vol.imgUUID,
+                vol_id=src_vol.volUUID,
+                generation=0,
+            )
+            dest = dict(
+                endpoint_type='div',
+                sd_id=dst_vol.sdUUID,
+                img_id=dst_vol.imgUUID,
+                vol_id=dst_vol.volUUID,
+                generation=0,
+            )
 
-            fake_convert = FakeQemuConvertChecker(src_vol, dst_vol,
-                                                  error=error)
+            fake_convert = FakeQemuConvertChecker(
+                src_vol, dst_vol, error=error
+            )
             with MonkeyPatchScope([(qemuimg, 'convert', fake_convert)]):
                 job = copy_data.Job(job_id, 0, source, dest)
                 job.run()
@@ -180,14 +212,23 @@ class TestCopyDataDIV(VdsmTestCase):
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
             gen_id = dst_vol.getMetaParam(sc.GENERATION)
-            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID,
-                          generation=0)
-            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID,
-                        generation=gen_id)
-            fake_convert = FakeQemuConvertChecker(src_vol, dst_vol,
-                                                  wait_for_abort=True)
+            source = dict(
+                endpoint_type='div',
+                sd_id=src_vol.sdUUID,
+                img_id=src_vol.imgUUID,
+                vol_id=src_vol.volUUID,
+                generation=0,
+            )
+            dest = dict(
+                endpoint_type='div',
+                sd_id=dst_vol.sdUUID,
+                img_id=dst_vol.imgUUID,
+                vol_id=dst_vol.volUUID,
+                generation=gen_id,
+            )
+            fake_convert = FakeQemuConvertChecker(
+                src_vol, dst_vol, wait_for_abort=True
+            )
             with MonkeyPatchScope([(qemuimg, 'convert', fake_convert)]):
                 job_id = make_uuid()
                 job = copy_data.Job(job_id, 0, source, dest)
@@ -208,12 +249,20 @@ class TestCopyDataDIV(VdsmTestCase):
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
             generation = dst_vol.getMetaParam(sc.GENERATION)
-            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID,
-                          generation=0)
-            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID,
-                        generation=generation + 1)
+            source = dict(
+                endpoint_type='div',
+                sd_id=src_vol.sdUUID,
+                img_id=src_vol.imgUUID,
+                vol_id=src_vol.volUUID,
+                generation=0,
+            )
+            dest = dict(
+                endpoint_type='div',
+                sd_id=dst_vol.sdUUID,
+                img_id=dst_vol.imgUUID,
+                vol_id=dst_vol.volUUID,
+                generation=generation + 1,
+            )
             job_id = make_uuid()
             job = copy_data.Job(job_id, 0, source, dest)
             job.run()
@@ -229,16 +278,25 @@ class TestCopyDataDIV(VdsmTestCase):
 def test_copy_to_preallocated_file():
     job_id = make_uuid()
 
-    with make_env('file', sc.RAW_FORMAT, sc.RAW_FORMAT,
-                  prealloc=sc.PREALLOCATED_VOL) as env:
+    with make_env(
+        'file', sc.RAW_FORMAT, sc.RAW_FORMAT, prealloc=sc.PREALLOCATED_VOL
+    ) as env:
         write_qemu_chain(env.src_chain)
         src_vol = env.src_chain[0]
         dst_vol = env.dst_chain[0]
 
-        source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                      img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-        dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                    img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+        source = dict(
+            endpoint_type='div',
+            sd_id=src_vol.sdUUID,
+            img_id=src_vol.imgUUID,
+            vol_id=src_vol.volUUID,
+        )
+        dest = dict(
+            endpoint_type='div',
+            sd_id=dst_vol.sdUUID,
+            img_id=dst_vol.imgUUID,
+            vol_id=dst_vol.volUUID,
+        )
         job = copy_data.Job(job_id, 0, source, dest)
         job.run()
 
@@ -247,23 +305,29 @@ def test_copy_to_preallocated_file():
 
 
 @pytest.mark.parametrize(
-    "env_type, sd_version, copy_seq", [
+    "env_type, sd_version, copy_seq",
+    [
         ('file', 5, (0, 1)),
         ('file', 4, (1, 0)),
         ('block', 5, (0, 1)),
         ('block', 4, (1, 0)),
-    ])
+    ],
+)
 def test_volume_chain_copy_with_bitmaps(
-        user_mount, fake_scheduler, env_type, sd_version, copy_seq):
+    user_mount, fake_scheduler, env_type, sd_version, copy_seq
+):
     bitmaps = ['bitmap1', 'bitmap2']
     data_center = os.path.join(user_mount.path, "data-center")
 
     with make_env(
-            env_type, sc.COW_FORMAT, sc.COW_FORMAT,
-            chain_length=len(copy_seq),
-            sd_version=sd_version,
-            src_qcow2_compat='1.1',
-            data_center=data_center) as env:
+        env_type,
+        sc.COW_FORMAT,
+        sc.COW_FORMAT,
+        chain_length=len(copy_seq),
+        sd_version=sd_version,
+        src_qcow2_compat='1.1',
+        data_center=data_center,
+    ) as env:
 
         for index in copy_seq:
             # Add bitmaps to src volume
@@ -276,10 +340,18 @@ def test_volume_chain_copy_with_bitmaps(
             src_vol = env.src_chain[index]
             dst_vol = env.dst_chain[index]
 
-            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+            source = dict(
+                endpoint_type='div',
+                sd_id=src_vol.sdUUID,
+                img_id=src_vol.imgUUID,
+                vol_id=src_vol.volUUID,
+            )
+            dest = dict(
+                endpoint_type='div',
+                sd_id=dst_vol.sdUUID,
+                img_id=dst_vol.imgUUID,
+                vol_id=dst_vol.volUUID,
+            )
 
             job = copy_data.Job(job_id, 0, source, dest, copy_bitmaps=True)
             job.run()
@@ -288,16 +360,8 @@ def test_volume_chain_copy_with_bitmaps(
             dst_vol = env.dst_chain[index]
             info = qemuimg.info(dst_vol.getVolumePath())
             assert info["format-specific"]["data"]["bitmaps"] == [
-                {
-                    "flags": ["auto"],
-                    "name": bitmaps[0],
-                    "granularity": 65536
-                },
-                {
-                    "flags": ["auto"],
-                    "name": bitmaps[1],
-                    "granularity": 65536
-                },
+                {"flags": ["auto"], "name": bitmaps[0], "granularity": 65536},
+                {"flags": ["auto"], "name": bitmaps[1], "granularity": 65536},
             ]
 
             qemuInfo = dst_vol.getQemuImageInfo()
@@ -308,20 +372,26 @@ def test_volume_chain_copy_with_bitmaps(
 
 
 @pytest.mark.parametrize(
-    "env_type, dst_fmt", [
+    "env_type, dst_fmt",
+    [
         ('file', sc.RAW_FORMAT),
         ('block', sc.RAW_FORMAT),
-    ])
+    ],
+)
 def test_copy_bitmaps_fail_raw_format(
-        user_mount, fake_scheduler, env_type, dst_fmt):
+    user_mount, fake_scheduler, env_type, dst_fmt
+):
     job_id = make_uuid()
     data_center = os.path.join(user_mount.path, "data-center")
 
     with make_env(
-            env_type, sc.COW_FORMAT, dst_fmt,
-            sd_version=5,
-            src_qcow2_compat='1.1',
-            data_center=data_center) as env:
+        env_type,
+        sc.COW_FORMAT,
+        dst_fmt,
+        sd_version=5,
+        src_qcow2_compat='1.1',
+        data_center=data_center,
+    ) as env:
 
         src_vol = env.src_chain[0]
         dst_vol = env.dst_chain[0]
@@ -329,10 +399,18 @@ def test_copy_bitmaps_fail_raw_format(
         op = qemuimg.bitmap_add(src_vol.getVolumePath(), 'bitmap')
         op.run()
 
-        source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                      img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-        dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                    img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+        source = dict(
+            endpoint_type='div',
+            sd_id=src_vol.sdUUID,
+            img_id=src_vol.imgUUID,
+            vol_id=src_vol.volUUID,
+        )
+        dest = dict(
+            endpoint_type='div',
+            sd_id=dst_vol.sdUUID,
+            img_id=dst_vol.imgUUID,
+            vol_id=dst_vol.volUUID,
+        )
 
         job = copy_data.Job(job_id, 0, source, dest, copy_bitmaps=True)
         job.run()
@@ -342,40 +420,53 @@ def test_copy_bitmaps_fail_raw_format(
         assert 'error' in job.info()
 
 
-@pytest.mark.parametrize("qcow2_compat,sd_version", [
-    # Old storage domain, we supported only 0.10
-    pytest.param('0.10', 3, id="0.10-to-0.10-file"),
-
-    # New domain old volume
-    pytest.param(
-        '0.10', 4,
-        id="0.10-to-1.1-file",
-    ),
-
-    # New domain, new volumes
-    pytest.param(
-        '1.1', 4,
-        id="1.1-to-1.1-file",
-    ),
-])
-def test_qcow2_compat(
-        user_mount, fake_scheduler, qcow2_compat, sd_version):
+@pytest.mark.parametrize(
+    "qcow2_compat,sd_version",
+    [
+        # Old storage domain, we supported only 0.10
+        pytest.param('0.10', 3, id="0.10-to-0.10-file"),
+        # New domain old volume
+        pytest.param(
+            '0.10',
+            4,
+            id="0.10-to-1.1-file",
+        ),
+        # New domain, new volumes
+        pytest.param(
+            '1.1',
+            4,
+            id="1.1-to-1.1-file",
+        ),
+    ],
+)
+def test_qcow2_compat(user_mount, fake_scheduler, qcow2_compat, sd_version):
     src_fmt = sc.name2type("cow")
     dst_fmt = sc.name2type("cow")
     job_id = make_uuid()
     data_center = os.path.join(user_mount.path, "data-center")
 
     with make_env(
-            "file", src_fmt, dst_fmt,
-            sd_version=sd_version,
-            src_qcow2_compat=qcow2_compat,
-            data_center=data_center) as env:
+        "file",
+        src_fmt,
+        dst_fmt,
+        sd_version=sd_version,
+        src_qcow2_compat=qcow2_compat,
+        data_center=data_center,
+    ) as env:
         src_vol = env.src_chain[0]
         dst_vol = env.dst_chain[0]
-        source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                      img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-        dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                    img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+        source = dict(
+            endpoint_type='div',
+            sd_id=src_vol.sdUUID,
+            img_id=src_vol.imgUUID,
+            vol_id=src_vol.volUUID,
+        )
+        dest = dict(
+            endpoint_type='div',
+            sd_id=dst_vol.sdUUID,
+            img_id=dst_vol.imgUUID,
+            vol_id=dst_vol.volUUID,
+        )
         job = copy_data.Job(job_id, 0, source, dest)
 
         job.run()
@@ -395,16 +486,19 @@ def test_qcow2_compat(
         op.run()
 
 
-@pytest.mark.parametrize("env_type,src_fmt,dst_fmt", [
-    pytest.param('file', 'raw', 'raw'),
-    pytest.param('file', 'raw', 'cow'),
-    pytest.param('file', 'cow', 'raw'),
-    pytest.param('file', 'cow', 'cow'),
-    pytest.param('block', 'raw', 'raw'),
-    pytest.param('block', 'raw', 'cow'),
-    pytest.param('block', 'cow', 'raw'),
-    pytest.param('block', 'cow', 'cow'),
-])
+@pytest.mark.parametrize(
+    "env_type,src_fmt,dst_fmt",
+    [
+        pytest.param('file', 'raw', 'raw'),
+        pytest.param('file', 'raw', 'cow'),
+        pytest.param('file', 'cow', 'raw'),
+        pytest.param('file', 'cow', 'cow'),
+        pytest.param('block', 'raw', 'raw'),
+        pytest.param('block', 'raw', 'cow'),
+        pytest.param('block', 'cow', 'raw'),
+        pytest.param('block', 'cow', 'cow'),
+    ],
+)
 def test_intra_domain_copy(env_type, src_fmt, dst_fmt):
     src_fmt = sc.name2type(src_fmt)
     dst_fmt = sc.name2type(dst_fmt)
@@ -417,36 +511,55 @@ def test_intra_domain_copy(env_type, src_fmt, dst_fmt):
         with pytest.raises(qemuio.VerificationError):
             verify_qemu_chain(env.dst_chain)
 
-        source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                      img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-        dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                    img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+        source = dict(
+            endpoint_type='div',
+            sd_id=src_vol.sdUUID,
+            img_id=src_vol.imgUUID,
+            vol_id=src_vol.volUUID,
+        )
+        dest = dict(
+            endpoint_type='div',
+            sd_id=dst_vol.sdUUID,
+            img_id=dst_vol.imgUUID,
+            vol_id=dst_vol.volUUID,
+        )
         job = copy_data.Job(job_id, 0, source, dest)
 
         job.run()
-        assert (sorted(expected_locks(src_vol, dst_vol)) ==
-                sorted(guarded.context.locks))
+        assert sorted(expected_locks(src_vol, dst_vol)) == sorted(
+            guarded.context.locks
+        )
 
         assert jobs.STATUS.DONE == job.status
         assert 100.0 == job.progress
         assert 'error' not in job.info()
         verify_qemu_chain(env.dst_chain)
-        assert (sc.fmt2str(dst_fmt) == qemuimg.info(
-            dst_vol.volumePath)['format'])
+        assert (
+            sc.fmt2str(dst_fmt) == qemuimg.info(dst_vol.volumePath)['format']
+        )
 
 
-@pytest.mark.parametrize("dest_format,sd_version", [
-    (sc.COW_FORMAT, 5),  # compat=1.1.
-    (sc.COW_FORMAT, 3),  # compat=0.10.
-    (sc.RAW_FORMAT, 5),
-])
+@pytest.mark.parametrize(
+    "dest_format,sd_version",
+    [
+        (sc.COW_FORMAT, 5),  # compat=1.1.
+        (sc.COW_FORMAT, 3),  # compat=0.10.
+        (sc.RAW_FORMAT, 5),
+    ],
+)
 def test_copy_data_collapse(
-        tmpdir, tmp_repo, fake_access, fake_rescan,
-        tmp_db, fake_task, fake_scheduler, monkeypatch,
-        dest_format, sd_version):
-    dom = tmp_repo.create_localfs_domain(
-        name="domain",
-        version=sd_version)
+    tmpdir,
+    tmp_repo,
+    fake_access,
+    fake_rescan,
+    tmp_db,
+    fake_task,
+    fake_scheduler,
+    monkeypatch,
+    dest_format,
+    sd_version,
+):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=sd_version)
 
     chain_size = 3
     volumes = create_chain(dom, chain_size)
@@ -459,26 +572,27 @@ def test_copy_data_collapse(
             vol.getVolumePath(),
             sc.fmt2str(vol.getFormat()),
             offset=(i * 2 * MiB),
-            len=1 * MiB)
+            len=1 * MiB,
+        )
 
     # The last volume in the chain is the leaf
     source_leaf_vol = volumes[-1]
     dest_vol = create_volume(
-        dom,
-        dest_img_id,
-        dest_vol_id,
-        volFormat=dest_format)
+        dom, dest_img_id, dest_vol_id, volFormat=dest_format
+    )
 
     source = dict(
         endpoint_type='div',
         sd_id=source_leaf_vol.sdUUID,
         img_id=source_leaf_vol.imgUUID,
-        vol_id=source_leaf_vol.volUUID)
+        vol_id=source_leaf_vol.volUUID,
+    )
     dest = dict(
         endpoint_type='div',
         sd_id=source_leaf_vol.sdUUID,
         img_id=dest_img_id,
-        vol_id=dest_vol_id)
+        vol_id=dest_vol_id,
+    )
 
     # Run copy_data from the source chain to dest_vol, essentially
     # executing qemu-img convert
@@ -493,25 +607,31 @@ def test_copy_data_collapse(
         dest_vol.getVolumePath(),
         img1_format='qcow2',
         img2_format=sc.fmt2str(dest_format),
-        strict=False
+        strict=False,
     )
     op.run()
 
     # Destination actual size should be smaller than source chain actual size,
     # since we have only one qcow2 header (qcow2), or no header (raw).
-    src_actual_size = sum(qemuimg.info(vol.getVolumePath())["actual-size"]
-                          for vol in volumes)
+    src_actual_size = sum(
+        qemuimg.info(vol.getVolumePath())["actual-size"] for vol in volumes
+    )
     dst_actual_size = qemuimg.info(dest_vol.getVolumePath())["actual-size"]
     assert dst_actual_size < src_actual_size
 
 
 def test_copy_data_illegal(
-        tmpdir, tmp_repo, fake_access, fake_rescan,
-        tmp_db, fake_task, fake_scheduler, monkeypatch,
-        sd_version=5):
-    dom = tmp_repo.create_localfs_domain(
-        name="domain",
-        version=sd_version)
+    tmpdir,
+    tmp_repo,
+    fake_access,
+    fake_rescan,
+    tmp_db,
+    fake_task,
+    fake_scheduler,
+    monkeypatch,
+    sd_version=5,
+):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=sd_version)
 
     source_img_id = str(uuid.uuid4())
     source_vol_id = str(uuid.uuid4())
@@ -520,28 +640,25 @@ def test_copy_data_illegal(
     dest_vol_id = str(uuid.uuid4())
 
     source_vol = create_volume(
-        dom,
-        source_img_id,
-        source_vol_id,
-        volFormat=sc.RAW_FORMAT)
+        dom, source_img_id, source_vol_id, volFormat=sc.RAW_FORMAT
+    )
 
     dest_vol = create_volume(
-        dom,
-        dest_img_id,
-        dest_vol_id,
-        volFormat=sc.COW_FORMAT,
-        legal=False)
+        dom, dest_img_id, dest_vol_id, volFormat=sc.COW_FORMAT, legal=False
+    )
 
     source = dict(
         endpoint_type='div',
         sd_id=source_vol.sdUUID,
         img_id=source_vol.imgUUID,
-        vol_id=source_vol.volUUID)
+        vol_id=source_vol.volUUID,
+    )
     dest = dict(
         endpoint_type='div',
         sd_id=dest_vol.sdUUID,
         img_id=dest_img_id,
-        vol_id=dest_vol_id)
+        vol_id=dest_vol_id,
+    )
 
     job = copy_data.Job(str(uuid.uuid4()), 0, source, dest)
     monkeypatch.setattr(guarded, 'context', fake_guarded_context())
@@ -551,9 +668,15 @@ def test_copy_data_illegal(
 
 
 def create_volume(
-        dom, imgUUID, volUUID, srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID, volFormat=sc.COW_FORMAT,
-        capacity=GiB, legal=True):
+    dom,
+    imgUUID,
+    volUUID,
+    srcImgUUID=sc.BLANK_UUID,
+    srcVolUUID=sc.BLANK_UUID,
+    volFormat=sc.COW_FORMAT,
+    capacity=GiB,
+    legal=True,
+):
     dom.createVolume(
         imgUUID=imgUUID,
         capacity=capacity,
@@ -564,7 +687,8 @@ def create_volume(
         desc="test_volume",
         srcImgUUID=srcImgUUID,
         srcVolUUID=srcVolUUID,
-        legal=legal)
+        legal=legal,
+    )
 
     return dom.produceVolume(imgUUID, volUUID)
 
@@ -578,12 +702,8 @@ def create_chain(dom, chain_size=2):
     for vol_index in range(chain_size):
         vol_id = str(uuid.uuid4())
         vol = create_volume(
-            dom,
-            img_id,
-            vol_id,
-            img_id,
-            parent_vol_id,
-            vol_format)
+            dom, img_id, vol_id, img_id, parent_vol_id, vol_format
+        )
         volumes.append(vol)
         vol_format = sc.COW_FORMAT
         parent_vol_id = vol_id
@@ -592,30 +712,48 @@ def create_chain(dom, chain_size=2):
 
 
 @contextmanager
-def make_env(storage_type, src_fmt, dst_fmt, chain_length=1,
-             size=DEFAULT_SIZE, sd_version=3,
-             src_qcow2_compat='0.10', prealloc=sc.SPARSE_VOL,
-             data_center=None):
+def make_env(
+    storage_type,
+    src_fmt,
+    dst_fmt,
+    chain_length=1,
+    size=DEFAULT_SIZE,
+    sd_version=3,
+    src_qcow2_compat='0.10',
+    prealloc=sc.SPARSE_VOL,
+    data_center=None,
+):
     with fake_env(
-            storage_type,
-            sd_version=sd_version,
-            data_center=data_center) as env:
+        storage_type, sd_version=sd_version, data_center=data_center
+    ) as env:
         rm = FakeResourceManager()
-        with MonkeyPatchScope([
-            (guarded, 'context', fake_guarded_context()),
-            (copy_data, 'sdCache', env.sdcache),
-            (blockVolume, 'rm', rm),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (guarded, 'context', fake_guarded_context()),
+                (copy_data, 'sdCache', env.sdcache),
+                (blockVolume, 'rm', rm),
+            ]
+        ):
             # Create existing volume - may use compat 0.10 or 1.1.
-            src_vols = make_qemu_chain(env, size, src_fmt, chain_length,
-                                       qcow2_compat=src_qcow2_compat,
-                                       prealloc=prealloc)
+            src_vols = make_qemu_chain(
+                env,
+                size,
+                src_fmt,
+                chain_length,
+                qcow2_compat=src_qcow2_compat,
+                prealloc=prealloc,
+            )
             # New volumes are always created using the domain
             # prefered format.
             sd_compat = env.sd_manifest.qcow2_compat()
-            dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length,
-                                       qcow2_compat=sd_compat,
-                                       prealloc=prealloc)
+            dst_vols = make_qemu_chain(
+                env,
+                size,
+                dst_fmt,
+                chain_length,
+                qcow2_compat=sd_compat,
+                prealloc=prealloc,
+            )
             env.src_chain = src_vols
             env.dst_chain = dst_vols
             yield env
@@ -633,7 +771,8 @@ def expected_locks(src_vol, dst_vol):
         rm.Lock(dst_img_ns, dst_vol.imgUUID, rm.EXCLUSIVE),
         # Volume lease for the destination volume
         volume.VolumeLease(
-            0, dst_vol.sdUUID, dst_vol.imgUUID, dst_vol.volUUID)
+            0, dst_vol.sdUUID, dst_vol.imgUUID, dst_vol.volUUID
+        ),
     ]
     return ret
 
@@ -649,8 +788,9 @@ class FakeQemuConvertChecker(object):
     def __call__(self, *args, **kwargs):
         assert sc.LEGAL_VOL == self.src_vol.getLegality()
         assert sc.ILLEGAL_VOL == self.dst_vol.getLegality()
-        return FakeQemuImgOperation(self.ready_event, self.wait_for_abort,
-                                    self.error)
+        return FakeQemuImgOperation(
+            self.ready_event, self.wait_for_abort, self.error
+        )
 
 
 class FakeQemuImgOperation(object):

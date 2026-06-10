@@ -53,7 +53,7 @@ def _timeout_from(interval):
     """
     Estimate a sensible timeout given a periodic interval.
     """
-    return interval / 2.
+    return interval / 2.0
 
 
 def start(cif, scheduler):
@@ -67,11 +67,13 @@ def start(cif, scheduler):
     global _executor
     global _operations
 
-    _executor = executor.Executor(name="periodic",
-                                  workers_count=_WORKERS,
-                                  max_tasks=_TASKS,
-                                  scheduler=scheduler,
-                                  max_workers=_MAX_WORKERS)
+    _executor = executor.Executor(
+        name="periodic",
+        workers_count=_WORKERS,
+        max_tasks=_TASKS,
+        scheduler=scheduler,
+        max_workers=_MAX_WORKERS,
+    )
 
     _executor.start()
 
@@ -119,8 +121,16 @@ class Operation(object):
 
     _log = logging.getLogger("virt.periodic.Operation")
 
-    def __init__(self, func, period, scheduler, timeout=0, executor=None,
-                 exclusive=False, discard=True):
+    def __init__(
+        self,
+        func,
+        period,
+        scheduler,
+        timeout=0,
+        executor=None,
+        exclusive=False,
+        discard=True,
+    ):
         """
         parameters:
 
@@ -187,8 +197,9 @@ class Operation(object):
         """
         Schedule a next call of `func'.
         """
-        self._call = self._scheduler.schedule(self._period,
-                                              self._try_to_dispatch)
+        self._call = self._scheduler.schedule(
+            self._period, self._try_to_dispatch
+        )
 
     def _try_to_dispatch(self):
         """
@@ -209,8 +220,9 @@ class Operation(object):
             self._executor.dispatch(self, self._timeout, discard=self._discard)
             dispatched = True
         except exception.ResourceExhausted:
-            self._log.warning('could not run %s, executor queue full',
-                              self._func)
+            self._log.warning(
+                'could not run %s, executor queue full', self._func
+            )
             state = repr(self._executor)
         finally:
             if not self._exclusive or not dispatched:
@@ -219,9 +231,7 @@ class Operation(object):
             throttledlog.warning(self._name, 'executor state: %s', state)
 
     def __repr__(self):
-        return '<Operation action=%s at 0x%x>' % (
-            self._func, id(self)
-        )
+        return '<Operation action=%s at 0x%x>' % (self._func, id(self))
 
 
 class VmDispatcher(object):
@@ -278,14 +288,11 @@ class VmDispatcher(object):
                     skipped.append(vm_id)
 
         if skipped:
-            self._log.warning('could not run %s on %s',
-                              self._create, skipped)
+            self._log.warning('could not run %s on %s', self._create, skipped)
         return skipped  # for testing purposes
 
     def __repr__(self):
-        return '<VmDispatcher operation=%s at 0x%x>' % (
-            self._create, id(self)
-        )
+        return '<VmDispatcher operation=%s at 0x%x>' % (self._create, id(self))
 
 
 class _RunnableOnVm(object):
@@ -310,8 +317,9 @@ class _RunnableOnVm(object):
             # race on startup:  no worries, let's retry again next cycle.
             # race on shutdown: next cycle won't pick up this VM.
             # both cases: let's reduce the log spam.
-            self._vm.log.warning('could not run on %s: domain not connected',
-                                 self._vm.id)
+            self._vm.log.warning(
+                'could not run on %s: domain not connected', self._vm.id
+            )
         except libvirt.libvirtError as e:
             if self._vm.post_copy != migration.PostCopyPhase.NONE:
                 # race on entering post-copy, VM paused now
@@ -330,7 +338,9 @@ class _RunnableOnVm(object):
 
     def __repr__(self):
         return '<%s vm=%s at 0x%x>' % (
-            self.__class__.__name__, self._vm.id, id(self)
+            self.__class__.__name__,
+            self._vm.id,
+            id(self),
         )
 
 
@@ -338,9 +348,12 @@ class UpdateVolumes(_RunnableOnVm):
 
     @property
     def required(self):
-        return (super(UpdateVolumes, self).required and
-                # Avoid queries from storage during recovery process
-                self._vm.volume_monitor.enabled())
+        return (
+            super(UpdateVolumes, self).required
+            and
+            # Avoid queries from storage during recovery process
+            self._vm.volume_monitor.enabled()
+        )
 
     def _execute(self):
         for drive in self._vm.getDiskDevices():
@@ -359,7 +372,7 @@ class BlockjobMonitor(_RunnableOnVm):
         # though they will do nothing but a few checks and exit
         # early, as they do if a VM doesn't have Block Jobs to
         # monitor (most often true).
-        return (super(BlockjobMonitor, self).required and self._vm.hasVmJobs)
+        return super(BlockjobMonitor, self).required and self._vm.hasVmJobs
 
     def _execute(self):
         self._vm.updateVmJobs()
@@ -369,8 +382,10 @@ class VolumeWatermarkMonitor(_RunnableOnVm):
 
     @property
     def required(self):
-        return (super(VolumeWatermarkMonitor, self).required and
-                self._vm.volume_monitor.monitoring_needed())
+        return (
+            super(VolumeWatermarkMonitor, self).required
+            and self._vm.volume_monitor.monitoring_needed()
+        )
 
     def _execute(self):
         self._vm.volume_monitor.monitor_volumes()
@@ -400,8 +415,11 @@ class _ExternalDataMonitor(_RunnableOnVm):
                 log = self._vm.log.error
             else:
                 log = self._vm.log.info
-            log("Periodic external data retrieval failed (%s): %s",
-                self.KIND, e)
+            log(
+                "Periodic external data retrieval failed (%s): %s",
+                self.KIND,
+                e,
+            )
 
 
 class TpmDataMonitor(_ExternalDataMonitor):
@@ -416,79 +434,85 @@ def _kill_long_paused_vms(cif):
     log = logging.getLogger("virt.periodic")
     log.debug("Looking for stale paused VMs")
     for vm in cif.getVMs().values():
-        if vm.lastStatus == vmstatus.PAUSED and \
-           vm.pause_code in ('EIO', 'EOTHER',):
+        if vm.lastStatus == vmstatus.PAUSED and vm.pause_code in (
+            'EIO',
+            'EOTHER',
+        ):
             vm.maybe_kill_paused()
 
 
 def _create(cif, scheduler):
     def per_vm_operation(func, period):
-        disp = VmDispatcher(
-            cif.getVMs, _executor, func, _timeout_from(period))
+        disp = VmDispatcher(cif.getVMs, _executor, func, _timeout_from(period))
         return Operation(disp, period, scheduler)
 
     ops = [
         # Needs dispatching because updating the volume stats needs
         # access to the storage, thus can block.
         per_vm_operation(
-            UpdateVolumes,
-            config.getint('irs', 'vol_size_sample_interval')),
-
+            UpdateVolumes, config.getint('irs', 'vol_size_sample_interval')
+        ),
         # Job monitoring need QEMU monitor access.
         per_vm_operation(
-            BlockjobMonitor,
-            config.getint('vars', 'vm_sample_jobs_interval')),
-
+            BlockjobMonitor, config.getint('vars', 'vm_sample_jobs_interval')
+        ),
         # We do this only until we get high water mark notifications
         # from QEMU. It accesses storage and/or QEMU monitor, so can block,
         # thus we need dispatching.
         per_vm_operation(
             VolumeWatermarkMonitor,
-            config.getint('vars', 'vm_watermark_interval')),
-
+            config.getint('vars', 'vm_watermark_interval'),
+        ),
         per_vm_operation(
             NvramDataMonitor,
-            config.getint('sampling', 'nvram_data_update_interval')),
-
+            config.getint('sampling', 'nvram_data_update_interval'),
+        ),
         per_vm_operation(
             TpmDataMonitor,
-            config.getint('sampling', 'tpm_data_update_interval')),
-
+            config.getint('sampling', 'tpm_data_update_interval'),
+        ),
         Operation(
             lambda: recovery.lookup_external_vms(cif),
             config.getint('sampling', 'external_vm_lookup_interval'),
             scheduler,
             exclusive=True,
-            discard=False),
-
+            discard=False,
+        ),
         Operation(
             lambda: _kill_long_paused_vms(cif),
             vm_kill_paused_timeout() // 2,
             scheduler,
             exclusive=True,
-            discard=False),
+            discard=False,
+        ),
     ]
 
     if config.getboolean('sampling', 'enable'):
-        ops.extend([
-            # libvirt sampling using bulk stats can block, but unresponsive
-            # domains are handled inside VMBulkstatsMonitor for performance
-            # reasons; thus, does not need dispatching.
-            Operation(
-                sampling.VMBulkstatsMonitor(
-                    libvirtconnection.get(cif),
-                    cif.getVMs,
-                    sampling.stats_cache),
-                config.getint('vars', 'vm_sample_interval'),
-                scheduler),
-
-            Operation(
-                sampling.HostMonitor(cif=cif),
-                config.getint('vars', 'host_sample_stats_interval'),
-                scheduler,
-                timeout=config.getint('vars', 'host_sample_stats_interval'),
-                exclusive=True,
-                discard=False),
-        ])
+        ops.extend(
+            [
+                # libvirt sampling using bulk stats can block, but unresponsive
+                # domains are handled inside VMBulkstatsMonitor for performance
+                # reasons; thus, does not need dispatching.
+                Operation(
+                    sampling.VMBulkstatsMonitor(
+                        libvirtconnection.get(cif),
+                        cif.getVMs,
+                        sampling.stats_cache,
+                    ),
+                    config.getint('vars', 'vm_sample_interval'),
+                    scheduler,
+                ),
+                Operation(
+                    sampling.HostMonitor(cif=cif),
+                    config.getint('vars', 'host_sample_stats_interval'),
+                    scheduler,
+                    timeout=config.getint(
+                        'vars', 'host_sample_stats_interval'
+                    ),
+                    exclusive=True,
+                    discard=False,
+                ),
+            ]
+        )
 
     return ops

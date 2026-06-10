@@ -38,8 +38,8 @@ def verify_pattern(path, format, offset=512, len=1024, pattern=5):
     if b"Pattern verification failed" in out:
         raise VerificationError(
             "Verification of volume %s failed. Pattern 0x%x not found at "
-            "offset %s"
-            % (path, pattern, offset))
+            "offset %s" % (path, pattern, offset)
+        )
     if rc != 0 or err != b"":
         raise cmdutils.Error(cmd, rc, out, err)
 
@@ -57,8 +57,10 @@ def open(image, fmt, timeout=2.0):
     """
     cmd = [
         "qemu-io",
-        "-c", f"open -o driver={fmt} {image}",
-        "-c", "sleep 10000",
+        "-c",
+        f"open -o driver={fmt} {image}",
+        "-c",
+        "sleep 10000",
     ]
     p = subprocess.Popen(cmd)
     try:

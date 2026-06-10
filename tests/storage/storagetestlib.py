@@ -41,7 +41,7 @@ from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import volume
 
-NR_PVS = 2        # The number of fake PVs we use to make a fake VG by default
+NR_PVS = 2  # The number of fake PVs we use to make a fake VG by default
 WAIT_TIMEOUT = 5  # Used for Callable event default wait timeout
 
 log = logging.getLogger("test")
@@ -73,14 +73,34 @@ class FakeFileEnv(object):
         self.sd_manifest = sd_manifest
         self.sdcache = sdcache
 
-    def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
-                    vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
-                    prealloc=sc.SPARSE_VOL, disk_type=sc.DATA_DISKTYPE,
-                    desc='fake volume', qcow2_compat='0.10', legal=True):
-        return make_file_volume(self.sd_manifest, size, imguuid, voluuid,
-                                parent_vol_id, vol_format, vol_type,
-                                prealloc, disk_type, desc, qcow2_compat,
-                                legal)
+    def make_volume(
+        self,
+        size,
+        imguuid,
+        voluuid,
+        parent_vol_id=sc.BLANK_UUID,
+        vol_format=sc.RAW_FORMAT,
+        vol_type=sc.LEAF_VOL,
+        prealloc=sc.SPARSE_VOL,
+        disk_type=sc.DATA_DISKTYPE,
+        desc='fake volume',
+        qcow2_compat='0.10',
+        legal=True,
+    ):
+        return make_file_volume(
+            self.sd_manifest,
+            size,
+            imguuid,
+            voluuid,
+            parent_vol_id,
+            vol_format,
+            vol_type,
+            prealloc,
+            disk_type,
+            desc,
+            qcow2_compat,
+            legal,
+        )
 
 
 class FakeBlockEnv(object):
@@ -90,19 +110,39 @@ class FakeBlockEnv(object):
         self.sdcache = sdcache
         self.lvm = lvm
 
-    def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
-                    vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
-                    prealloc=sc.SPARSE_VOL, disk_type=sc.DATA_DISKTYPE,
-                    desc='fake volume', qcow2_compat='0.10'):
-        return make_block_volume(self.lvm, self.sd_manifest, size, imguuid,
-                                 voluuid, parent_vol_id, vol_format,
-                                 vol_type, prealloc, disk_type, desc,
-                                 qcow2_compat)
+    def make_volume(
+        self,
+        size,
+        imguuid,
+        voluuid,
+        parent_vol_id=sc.BLANK_UUID,
+        vol_format=sc.RAW_FORMAT,
+        vol_type=sc.LEAF_VOL,
+        prealloc=sc.SPARSE_VOL,
+        disk_type=sc.DATA_DISKTYPE,
+        desc='fake volume',
+        qcow2_compat='0.10',
+    ):
+        return make_block_volume(
+            self.lvm,
+            self.sd_manifest,
+            size,
+            imguuid,
+            voluuid,
+            parent_vol_id,
+            vol_format,
+            vol_type,
+            prealloc,
+            disk_type,
+            desc,
+            qcow2_compat,
+        )
 
 
 @contextmanager
-def fake_file_env(obj=None, sd_version=3, data_center=None,
-                  remote_path="server:/path"):
+def fake_file_env(
+    obj=None, sd_version=3, data_center=None, remote_path="server:/path"
+):
     with temp_dir(path=data_center) as tmpdir:
         mnt_dir = os.path.join(tmpdir, "mnt")
         local_path = fileUtils.transformPath(remote_path)
@@ -110,16 +150,19 @@ def fake_file_env(obj=None, sd_version=3, data_center=None,
         os.makedirs(mountpoint)
 
         fake_sdc = FakeStorageDomainCache()
-        with MonkeyPatchScope([
-            [sc, 'REPO_DATA_CENTER', tmpdir],
-            [sc, 'REPO_MOUNT_DIR', mnt_dir],
-            [volume, 'sdCache', fake_sdc],
-            [fileVolume, 'sdCache', fake_sdc],
-            [hsm, 'sdCache', fake_sdc],
-            [nbd, 'sdCache', fake_sdc],
-        ]):
+        with MonkeyPatchScope(
+            [
+                [sc, 'REPO_DATA_CENTER', tmpdir],
+                [sc, 'REPO_MOUNT_DIR', mnt_dir],
+                [volume, 'sdCache', fake_sdc],
+                [fileVolume, 'sdCache', fake_sdc],
+                [hsm, 'sdCache', fake_sdc],
+                [nbd, 'sdCache', fake_sdc],
+            ]
+        ):
             sd_manifest = make_filesd_manifest(
-                mountpoint, sd_version=sd_version)
+                mountpoint, sd_version=sd_version
+            )
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
             try:
                 yield FakeFileEnv(tmpdir, sd_manifest, fake_sdc)
@@ -132,19 +175,25 @@ def fake_block_env(obj=None, sd_version=3, data_center=None):
     with temp_dir(path=data_center) as tmpdir:
         lvm = FakeLVM(tmpdir)
         fake_sdc = FakeStorageDomainCache()
-        with MonkeyPatchScope([
-            (blockSD, 'lvm', lvm),
-            (blockVolume, 'lvm', lvm),
-            (blockVolume, 'sdCache', fake_sdc),
-            (sc, 'REPO_DATA_CENTER', tmpdir),
-            (sc, "REPO_MOUNT_DIR", os.path.join(tmpdir, sc.DOMAIN_MNT_POINT,
-                                                sd.BLOCKSD_DIR)),
-            (volume, 'sdCache', fake_sdc),
-            (hsm, 'sdCache', fake_sdc),
-            [nbd, 'sdCache', fake_sdc],
-        ]):
-            sd_manifest = make_blocksd_manifest(tmpdir, lvm,
-                                                sd_version=sd_version)
+        with MonkeyPatchScope(
+            [
+                (blockSD, 'lvm', lvm),
+                (blockVolume, 'lvm', lvm),
+                (blockVolume, 'sdCache', fake_sdc),
+                (sc, 'REPO_DATA_CENTER', tmpdir),
+                (
+                    sc,
+                    "REPO_MOUNT_DIR",
+                    os.path.join(tmpdir, sc.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR),
+                ),
+                (volume, 'sdCache', fake_sdc),
+                (hsm, 'sdCache', fake_sdc),
+                [nbd, 'sdCache', fake_sdc],
+            ]
+        ):
+            sd_manifest = make_blocksd_manifest(
+                tmpdir, lvm, sd_version=sd_version
+            )
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest, lvm)
             try:
                 yield FakeBlockEnv(tmpdir, sd_manifest, fake_sdc, lvm)
@@ -152,13 +201,15 @@ def fake_block_env(obj=None, sd_version=3, data_center=None):
                 oop.stop()
 
 
-def fake_env(storage_type, sd_version=3, data_center=None,
-             remote_path="server:/path"):
+def fake_env(
+    storage_type, sd_version=3, data_center=None, remote_path="server:/path"
+):
     if storage_type == 'file':
         return fake_file_env(
             sd_version=sd_version,
             data_center=data_center,
-            remote_path=remote_path)
+            remote_path=remote_path,
+        )
     elif storage_type == 'block':
         return fake_block_env(sd_version=sd_version, data_center=data_center)
     else:
@@ -166,8 +217,9 @@ def fake_env(storage_type, sd_version=3, data_center=None,
 
 
 @contextmanager
-def fake_volume(storage_type='file', size=MiB, format=sc.RAW_FORMAT,
-                legal=True):
+def fake_volume(
+    storage_type='file', size=MiB, format=sc.RAW_FORMAT, legal=True
+):
     img_id = make_uuid()
     vol_id = make_uuid()
     with fake_env(storage_type) as env:
@@ -234,16 +286,18 @@ def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     return md
 
 
-def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
-                          sd_version=3):
+def make_blocksd_manifest(
+    tmpdir, fake_lvm, sduuid=None, devices=None, sd_version=3
+):
     if sduuid is None:
         sduuid = make_uuid()
     if devices is None:
         devices = get_random_devices()
     spuuid = make_uuid()
 
-    fake_lvm.createVG(sduuid, devices, blockSD.STORAGE_DOMAIN_TAG,
-                      blockSD.VG_METADATASIZE)
+    fake_lvm.createVG(
+        sduuid, devices, blockSD.STORAGE_DOMAIN_TAG, blockSD.VG_METADATASIZE
+    )
     fake_lvm.createLV(sduuid, sd.METADATA, blockSD.SD_METADATA_SIZE)
 
     # Create the rest of the special LVs
@@ -258,7 +312,7 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
 
     # We'll store the domain metadata in the VG's tags
     metadata = make_sd_metadata(sduuid, version=sd_version, pools=[spuuid])
-    assert (metadata[sd.DMDK_VERSION] >= 3)  # Tag based MD is V3 and above
+    assert metadata[sd.DMDK_VERSION] >= 3  # Tag based MD is V3 and above
     tag_md = blockSD.TagBasedSDMetadata(sduuid)
     tag_md.update(metadata)
 
@@ -273,8 +327,10 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
 
 
 def get_random_devices(count=NR_PVS):
-    return ['/dev/mapper/{0}'.format(binascii.hexlify(os.urandom(16)))
-            for _ in range(count)]
+    return [
+        '/dev/mapper/{0}'.format(binascii.hexlify(os.urandom(16)))
+        for _ in range(count)
+    ]
 
 
 def get_metafile_path(domaindir):
@@ -289,22 +345,29 @@ def make_filesd_manifest(mnt_dir, sd_version=3):
     metafile = get_metafile_path(domain_path)
     make_file(metafile)
     metadata = fileSD.FileSDMetadata(metafile)
-    metadata.update(make_sd_metadata(sduuid, version=sd_version,
-                                     pools=[spuuid]))
+    metadata.update(
+        make_sd_metadata(sduuid, version=sd_version, pools=[spuuid])
+    )
 
     manifest = fileSD.FileStorageDomainManifest(domain_path, metadata)
     os.makedirs(os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES))
     return manifest
 
 
-def make_file_volume(sd_manifest, size, imguuid, voluuid,
-                     parent_vol_id=sc.BLANK_UUID,
-                     vol_format=sc.RAW_FORMAT,
-                     vol_type=sc.LEAF_VOL,
-                     prealloc=sc.SPARSE_VOL,
-                     disk_type=sc.DATA_DISKTYPE,
-                     desc='fake volume', qcow2_compat='0.10',
-                     legal=True):
+def make_file_volume(
+    sd_manifest,
+    size,
+    imguuid,
+    voluuid,
+    parent_vol_id=sc.BLANK_UUID,
+    vol_format=sc.RAW_FORMAT,
+    vol_type=sc.LEAF_VOL,
+    prealloc=sc.SPARSE_VOL,
+    disk_type=sc.DATA_DISKTYPE,
+    desc='fake volume',
+    qcow2_compat='0.10',
+    legal=True,
+):
     volpath = os.path.join(sd_manifest.domaindir, "images", imguuid, voluuid)
 
     # Create needed path components.
@@ -315,7 +378,8 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
         backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
         if backing:
             backing_path = os.path.join(
-                sd_manifest.domaindir, "images", imguuid, backing)
+                sd_manifest.domaindir, "images", imguuid, backing
+            )
             backing_format = qemuimg.info(backing_path)["format"]
         else:
             backing_format = None
@@ -326,7 +390,8 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
             format=qemuimg.FORMAT.QCOW2,
             qcow2Compat=qcow2_compat,
             backing=backing,
-            backingFormat=backing_format)
+            backingFormat=backing_format,
+        )
         op.run()
     else:
         # TODO: Use fallocate helper like the real code.
@@ -338,7 +403,8 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
             volpath,
             size=size,
             format=qemuimg.FORMAT.RAW,
-            preallocation=preallocation)
+            preallocation=preallocation,
+        )
         op.run()
 
     # Create meta files.
@@ -358,24 +424,34 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
         sc.type2name(vol_type),
         disk_type,
         desc,
-        sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL)
+        sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL,
+    )
 
 
-def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
-                      parent_vol_id=sc.BLANK_UUID,
-                      vol_format=sc.RAW_FORMAT,
-                      vol_type=sc.LEAF_VOL,
-                      prealloc=sc.PREALLOCATED_VOL,
-                      disk_type=sc.DATA_DISKTYPE,
-                      desc='fake volume', qcow2_compat='0.10', legal=True):
+def make_block_volume(
+    lvm,
+    sd_manifest,
+    size,
+    imguuid,
+    voluuid,
+    parent_vol_id=sc.BLANK_UUID,
+    vol_format=sc.RAW_FORMAT,
+    vol_type=sc.LEAF_VOL,
+    prealloc=sc.PREALLOCATED_VOL,
+    disk_type=sc.DATA_DISKTYPE,
+    desc='fake volume',
+    qcow2_compat='0.10',
+    legal=True,
+):
     sduuid = sd_manifest.sdUUID
     imagedir = sd_manifest.getImageDir(imguuid)
     if not os.path.exists(imagedir):
         os.makedirs(imagedir)
 
     lv_size = sd_manifest.getVolumeClass().calculate_volume_alloc_size(
-        prealloc, vol_format, size, None)
-    lv_size_mb = (utils.round(lv_size, MiB) // MiB)
+        prealloc, vol_format, size, None
+    )
+    lv_size_mb = utils.round(lv_size, MiB) // MiB
     lvm.createLV(sduuid, voluuid, lv_size_mb)
 
     # LVM may create the volume with a larger size due to extent granularity
@@ -401,7 +477,8 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
             format=qemuimg.FORMAT.QCOW2,
             qcow2Compat=qcow2_compat,
             backing=backing,
-            backingFormat=backing_format)
+            backingFormat=backing_format,
+        )
         op.run()
 
         # Truncate fake block device back ot the proper size.
@@ -428,7 +505,8 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         sc.type2name(vol_type),
         disk_type,
         desc,
-        sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL)
+        sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL,
+    )
 
 
 def write_qemu_chain(vol_list):
@@ -444,13 +522,10 @@ def write_qemu_chain(vol_list):
     for i, vol in enumerate(vol_list):
         vol_fmt = sc.fmt2str(vol.getFormat())
         offset = i * KiB
-        pattern = 0xf0 + i
+        pattern = 0xF0 + i
         qemuio.write_pattern(
-            vol.volumePath,
-            vol_fmt,
-            offset=offset,
-            len=KiB,
-            pattern=pattern)
+            vol.volumePath, vol_fmt, offset=offset, len=KiB, pattern=pattern
+        )
 
 
 def verify_qemu_chain(vol_list):
@@ -461,7 +536,7 @@ def verify_qemu_chain(vol_list):
     top_vol_fmt = sc.fmt2str(top_vol.getFormat())
     for i, vol in enumerate(vol_list):
         offset = i * KiB
-        pattern = 0xf0 + i
+        pattern = 0xF0 + i
 
         # Check that the correct pattern can be read through the top volume
         qemuio.verify_pattern(
@@ -469,31 +544,32 @@ def verify_qemu_chain(vol_list):
             top_vol_fmt,
             offset=offset,
             len=KiB,
-            pattern=pattern)
+            pattern=pattern,
+        )
 
         # Check the volume where the pattern was originally written
         vol_fmt = sc.fmt2str(vol.getFormat())
         qemuio.verify_pattern(
-            vol.volumePath,
-            vol_fmt,
-            offset=offset,
-            len=KiB,
-            pattern=pattern)
+            vol.volumePath, vol_fmt, offset=offset, len=KiB, pattern=pattern
+        )
 
         # Check that the next offset contains zeroes.  If we know this layer
         # has zeroes at next_offset we can be sure that data read at the same
         # offset in the next layer belongs to that layer.
         next_offset = (i + 1) * KiB
         qemuio.verify_pattern(
-            vol.volumePath,
-            vol_fmt,
-            offset=next_offset,
-            len=KiB,
-            pattern=0)
+            vol.volumePath, vol_fmt, offset=next_offset, len=KiB, pattern=0
+        )
 
 
-def make_qemu_chain(env, size, base_vol_fmt, chain_len,
-                    qcow2_compat='0.10', prealloc=sc.SPARSE_VOL):
+def make_qemu_chain(
+    env,
+    size,
+    base_vol_fmt,
+    chain_len,
+    qcow2_compat='0.10',
+    prealloc=sc.SPARSE_VOL,
+):
     vol_list = []
     img_id = make_uuid()
     parent_vol_id = sc.BLANK_UUID
@@ -503,10 +579,16 @@ def make_qemu_chain(env, size, base_vol_fmt, chain_len,
         if parent_vol_id != sc.BLANK_UUID:
             vol_fmt = sc.COW_FORMAT
         vol_type = sc.LEAF_VOL if i == chain_len - 1 else sc.INTERNAL_VOL
-        env.make_volume(size, img_id, vol_id,
-                        parent_vol_id=parent_vol_id, vol_format=vol_fmt,
-                        vol_type=vol_type, prealloc=prealloc,
-                        qcow2_compat=qcow2_compat)
+        env.make_volume(
+            size,
+            img_id,
+            vol_id,
+            parent_vol_id=parent_vol_id,
+            vol_format=vol_fmt,
+            vol_type=vol_type,
+            prealloc=prealloc,
+            qcow2_compat=qcow2_compat,
+        )
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
         vol_list.append(vol)
         parent_vol_id = vol_id

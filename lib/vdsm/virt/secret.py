@@ -27,8 +27,9 @@ def register(secrets, clear=False):
         if clear:
             uuids = frozenset(sec.uuid for sec in secrets)
             for virsecret in con.listAllSecrets():
-                if (virsecret.UUIDString() not in uuids and
-                        _is_ovirt_secret(virsecret)):
+                if virsecret.UUIDString() not in uuids and _is_ovirt_secret(
+                    virsecret
+                ):
                     virsecret.undefine()
     except libvirt.libvirtError as e:
         logging.error("Could not register secret %s: %s", secret, e)
@@ -41,8 +42,9 @@ def unregister(uuids):
     try:
         uuids = [str(uuid.UUID(s)) for s in uuids]
     except ValueError as e:
-        logging.warning("Attempt to unregister invalid uuid %s: %s" %
-                        (uuids, e))
+        logging.warning(
+            "Attempt to unregister invalid uuid %s: %s" % (uuids, e)
+        )
         return response.error("secretBadRequestErr")
 
     con = libvirtconnection.get()
@@ -135,10 +137,12 @@ class Secret(object):
         return xmlutils.tostring(secret)
 
     def __str__(self):
-        return ("Secret(uuid={self.uuid}, "
-                "usage_type={self.usage_type}, "
-                "usage_id={self.usage_id}, "
-                "description={self.description})").format(self=self)
+        return (
+            "Secret(uuid={self.uuid}, "
+            "usage_type={self.usage_type}, "
+            "usage_id={self.usage_id}, "
+            "description={self.description})"
+        ).format(self=self)
 
 
 # TODO: Move following helpers to reusable validation module
@@ -156,8 +160,10 @@ def _decode_password(password):
 def _get_enum(params, name, values):
     value = _get_required(params, name)
     if value not in values:
-        raise ValueError("Invalid value %r for %r, expecting one of %s" %
-                         (value, name, values))
+        raise ValueError(
+            "Invalid value %r for %r, expecting one of %s"
+            % (value, name, values)
+        )
     return value
 
 

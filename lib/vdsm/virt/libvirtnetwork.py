@@ -13,7 +13,6 @@ from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 from vdsm.common import libvirtconnection
 from vdsm.common import xmlutils
 
-
 LIBVIRT_NET_PREFIX = 'vdsm-'
 
 _libvirt_net_lock = threading.Lock()
@@ -118,7 +117,7 @@ def networks():
     allNets = ((net, net.name()) for net in conn.listAllNetworks(0))
     for net, netname in allNets:
         if netname.startswith(LIBVIRT_NET_PREFIX):
-            netname = netname[len(LIBVIRT_NET_PREFIX):]
+            netname = netname[len(LIBVIRT_NET_PREFIX) :]
             nets[netname] = {}
             xml = etree.fromstring(net.XMLDesc())
             interface = xml.find('.//interface')
@@ -145,7 +144,7 @@ def netname_o2l(ovirt_name):
 
 def netname_l2o(libvirt_name):
     """Translate the name used by libvirt database to the ovirt network name"""
-    return libvirt_name[len(LIBVIRT_NET_PREFIX):]
+    return libvirt_name[len(LIBVIRT_NET_PREFIX) :]
 
 
 def _netlookup_by_name(conn, netname):
@@ -162,29 +161,39 @@ class NetworksUsersCache(object):
     Manages networks users reference.
     Note: The implementation is NOT thread safe.
     """
+
     _nets_users = defaultdict(set)
 
     @staticmethod
     def add(net, user_ref):
-        if (net in NetworksUsersCache._nets_users and
-                user_ref in NetworksUsersCache._nets_users[net]):
-            logging.warning('Attempting to add an existing net user: %s/%s',
-                            net, user_ref)
+        if (
+            net in NetworksUsersCache._nets_users
+            and user_ref in NetworksUsersCache._nets_users[net]
+        ):
+            logging.warning(
+                'Attempting to add an existing net user: %s/%s', net, user_ref
+            )
 
         NetworksUsersCache._nets_users[net].add(user_ref)
 
     @staticmethod
     def remove(net, user_ref):
         if net not in NetworksUsersCache._nets_users:
-            logging.warning('Attempting to remove a non existing network: '
-                            '%s/%s', net, user_ref)
+            logging.warning(
+                'Attempting to remove a non existing network: ' '%s/%s',
+                net,
+                user_ref,
+            )
 
         net_users = NetworksUsersCache._nets_users[net]
         try:
             net_users.remove(user_ref)
         except KeyError:
-            logging.warning('Attempting to remove a non existing net user: '
-                            '%s/%s', net, user_ref)
+            logging.warning(
+                'Attempting to remove a non existing net user: ' '%s/%s',
+                net,
+                user_ref,
+            )
         if len(net_users) == 0:
             del NetworksUsersCache._nets_users[net]
 

@@ -8,7 +8,7 @@ from . import filecontrol
 
 
 class LockError(Exception):
-    """ Raised when failed to get lock """
+    """Raised when failed to get lock"""
 
 
 def lock(filename):

@@ -15,7 +15,7 @@ from vdsm.common import time
 
 
 class Timeout(Exception):
-    """ Raised when operation timed out """
+    """Raised when operation timed out"""
 
 
 class InvalidEvent(Exception):
@@ -64,6 +64,7 @@ class Barrier(object):
         barrier.wait()
 
     """
+
     FILLING = 0
     DRAINING = 1
 
@@ -232,8 +233,13 @@ def thread(func, args=(), kwargs=None, name=None, daemon=True, log=None):
     def run():
         thread = threading.current_thread()
         try:
-            log.debug("START thread %s (func=%s, args=%s, kwargs=%s)",
-                      thread, func, args, kwargs)
+            log.debug(
+                "START thread %s (func=%s, args=%s, kwargs=%s)",
+                thread,
+                func,
+                args,
+                kwargs,
+            )
             pthread.setname(thread.name[:15])
             ret = func(*args, **kwargs)
             log.debug("FINISH thread %s", thread)
@@ -350,8 +356,7 @@ def format_traceback(ident):
 
     lines = []
     for filename, lineno, name, line in traceback.extract_stack(stack):
-        lines.append('File: "%s", line %d, in %s' %
-                     (filename, lineno, name))
+        lines.append('File: "%s", line %d, in %s' % (filename, lineno, name))
         if line:
             lines.append("  %s" % (line.strip()))
     return '\n'.join(lines)
@@ -370,8 +375,16 @@ class Timer:
             t.cancel()     # stop the timer's action if it's still waiting
     """
 
-    def __init__(self, interval, function, args=(), kwargs=None,
-                 name=None, daemon=True, log=None):
+    def __init__(
+        self,
+        interval,
+        function,
+        args=(),
+        kwargs=None,
+        name=None,
+        daemon=True,
+        log=None,
+    ):
         if kwargs is None:
             kwargs = {}
         self._function = function

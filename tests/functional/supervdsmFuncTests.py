@@ -29,10 +29,12 @@ def test_ping_call(dropped_privileges):
 @pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
 def test_ksm_action(dropped_privileges):
     proxy = supervdsm.getProxy()
-    ksmParams = {"run": 0,
-                 "merge_across_nodes": 1,
-                 "sleep_millisecs": 0xffff,
-                 "pages_to_scan": 0xffff}
+    ksmParams = {
+        "run": 0,
+        "merge_across_nodes": 1,
+        "sleep_millisecs": 0xFFFF,
+        "pages_to_scan": 0xFFFF,
+    }
     proxy.ksmTune(ksmParams)
 
     for k, v in ksmParams.items():

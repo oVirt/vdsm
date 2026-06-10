@@ -39,13 +39,14 @@ class BackupDisk:
     "checkpointLookupByName",
     "listAllCheckpoints",
     "checkpointCreateXML",
-    "blockInfo"
+    "blockInfo",
 )
 class DomainAdapter(object):
     """
     VM wrapper class that exposes only
     libvirt backup related operations.
     """
+
     def __init__(self, vm):
         self._vm = vm
 
@@ -53,8 +54,8 @@ class DomainAdapter(object):
 class ScratchDiskConfig(properties.Owner):
     path = properties.String(required=True)
     type = properties.Enum(
-        required=True,
-        values=[DISK_TYPE.FILE, DISK_TYPE.BLOCK])
+        required=True, values=[DISK_TYPE.FILE, DISK_TYPE.BLOCK]
+    )
     sd_id = properties.UUID(required=False)
     img_id = properties.UUID(required=False)
     vol_id = properties.UUID(required=False)
@@ -90,7 +91,8 @@ class DiskConfig(properties.Owner):
                 type=scratch_disk.get("type"),
                 sd_id=scratch_disk.get("domainID"),
                 img_id=scratch_disk.get("imageID"),
-                vol_id=scratch_disk.get("volumeID"))
+                vol_id=scratch_disk.get("volumeID"),
+            )
         else:
             self.scratch_disk = None
 
@@ -110,8 +112,9 @@ class CheckpointConfig(properties.Owner):
         if self.config is None and self.xml is None:
             raise exception.CheckpointError(
                 reason="Cannot redefine checkpoint without "
-                       "checkpoint XML or backup config",
-                checkpoint_id=self.id)
+                "checkpoint XML or backup config",
+                checkpoint_id=self.id,
+            )
 
 
 class BackupConfig(properties.Owner):
@@ -131,13 +134,16 @@ class BackupConfig(properties.Owner):
 
         self.disks = [DiskConfig(d) for d in backup_config.get("disks", ())]
         for disk in self.disks:
-            if (self.from_checkpoint_id is None and
-                    disk.backup_mode == MODE_INCREMENTAL):
+            if (
+                self.from_checkpoint_id is None
+                and disk.backup_mode == MODE_INCREMENTAL
+            ):
                 raise exception.BackupError(
                     reason="Cannot start an incremental backup for disk, "
-                           "full backup is requested",
+                    "full backup is requested",
                     backup=self.backup_id,
-                    disk=disk)
+                    disk=disk,
+                )
 
 
 def start_backup(vm, dom, config):
@@ -145,7 +151,8 @@ def start_backup(vm, dom, config):
     if not backup_cfg.disks:
         raise exception.BackupError(
             reason="Cannot start a backup without disks",
-            backup=backup_cfg.backup_id)
+            backup=backup_cfg.backup_id,
+        )
 
     backup_disks = _get_backup_disks(vm, backup_cfg)
     path = socket_path(backup_cfg.backup_id)
@@ -160,16 +167,21 @@ def start_backup(vm, dom, config):
             raise exception.BackupError(
                 reason="Failed freeze VM: {}".format(res["status"]["message"]),
                 vm_id=vm.id,
-                backup=backup_cfg)
+                backup=backup_cfg,
+            )
 
         backup_xml = create_backup_xml(
-            nbd_addr, backup_disks, backup_cfg.from_checkpoint_id)
+            nbd_addr, backup_disks, backup_cfg.from_checkpoint_id
+        )
         checkpoint_xml = create_checkpoint_xml(backup_cfg, backup_disks)
 
         vm.log.info(
             "Starting backup for backup_id: %r, "
             "backup xml: %s\ncheckpoint xml: %s",
-            backup_cfg.backup_id, backup_xml, checkpoint_xml)
+            backup_cfg.backup_id,
+            backup_xml,
+            checkpoint_xml,
+        )
 
         _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml)
     except:
@@ -188,8 +200,12 @@ def start_backup(vm, dom, config):
     _start_monitoring_scratch_disks(vm, backup_disks, backup)
 
     return _backup_info(
-        vm, dom, backup_cfg.backup_id, backup,
-        checkpoint_id=backup_cfg.to_checkpoint_id)
+        vm,
+        dom,
+        backup_cfg.backup_id,
+        backup,
+        checkpoint_id=backup_cfg.to_checkpoint_id,
+    )
 
 
 def stop_backup(vm, dom, backup_id):
@@ -201,7 +217,8 @@ def stop_backup(vm, dom, backup_id):
                 raise exception.BackupError(
                     reason="Failed to end VM backup: {}".format(e),
                     vm_id=vm.id,
-                    backup_id=backup_id)
+                    backup_id=backup_id,
+                )
 
     _stop_monitoring_scratch_disks(vm)
     _remove_scratch_disks(vm, backup_id)
@@ -211,7 +228,8 @@ def backup_info(vm, dom, backup_id, checkpoint_id=None):
     backup = _get_backup(vm, dom, backup_id)
     vm.log.debug("backup_id %r info: %s", backup_id, backup)
     return _backup_info(
-        vm, dom, backup_id, backup, checkpoint_id=checkpoint_id)
+        vm, dom, backup_id, backup, checkpoint_id=checkpoint_id
+    )
 
 
 def delete_checkpoints(vm, dom, checkpoint_ids):
@@ -228,19 +246,24 @@ def delete_checkpoints(vm, dom, checkpoint_ids):
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT:
                 vm.log.debug(
                     "Checkpoint_id: %r doesn't exist, error: %s",
-                    checkpoint_id, e)
+                    checkpoint_id,
+                    e,
+                )
 
             else:
                 vm.log.error(
                     "Failed to delete VM %r checkpoint %r: %s",
-                    vm.id, checkpoint_id, e)
+                    vm.id,
+                    checkpoint_id,
+                    e,
+                )
 
                 result = {
                     'checkpoint_ids': deleted_checkpoint_ids,
                     'error': {
                         'code': e.get_error_code(),
-                        'message': e.get_error_message()
-                    }
+                        'message': e.get_error_message(),
+                    },
                 }
                 return dict(result=result)
 
@@ -256,32 +279,35 @@ def redefine_checkpoints(vm, dom, checkpoints):
     # checkpoints ordered from the base to the leaf
     for checkpoint in checkpoints:
         checkpoint_cfg = CheckpointConfig(checkpoint)
-        vm.log.info("Redefine VM %r checkpoint %r",
-                    vm.id, checkpoint_cfg.id)
+        vm.log.info("Redefine VM %r checkpoint %r", vm.id, checkpoint_cfg.id)
 
         if checkpoint_cfg.config:
             backup_disks = _get_backup_disks(vm, checkpoint_cfg.config)
             checkpoint_xml = create_checkpoint_xml(
-                checkpoint_cfg.config, backup_disks)
+                checkpoint_cfg.config, backup_disks
+            )
         else:
             checkpoint_xml = checkpoint_cfg.xml
 
         flags = (
-            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE |
-            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE
+            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
+            | libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE
         )
         try:
             dom.checkpointCreateXML(checkpoint_xml, flags)
         except libvirt.libvirtError as e:
             vm.log.error(
                 "Failed to redefine VM %r checkpoint %r: %s",
-                vm.id, checkpoint_cfg.id, e)
+                vm.id,
+                checkpoint_cfg.id,
+                e,
+            )
             result = {
                 'checkpoint_ids': checkpoint_ids,
                 'error': {
                     'code': e.get_error_code(),
-                    'message': e.get_error_message()
-                }
+                    'message': e.get_error_message(),
+                },
             }
             return dict(result=result)
 
@@ -299,7 +325,8 @@ def list_checkpoints(vm, dom):
     except libvirt.libvirtError as e:
         raise exception.CheckpointError(
             reason="Failed to fetch defined checkpoints list: {}".format(e),
-            vm_id=vm.id)
+            vm_id=vm.id,
+        )
 
     return dict(result=result)
 
@@ -312,7 +339,8 @@ def dump_checkpoint(dom, checkpoint_id):
         if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT:
             raise exception.NoSuchCheckpointError(
                 reason="Failed to fetch checkpoint: {}".format(e),
-                checkpoint_id=checkpoint_id)
+                checkpoint_id=checkpoint_id,
+            )
         raise
 
 
@@ -320,19 +348,22 @@ def _get_backup_disks(vm, backup_cfg):
     backup_disks = {}
     try:
         for disk in backup_cfg.disks:
-            drive = vm.findDriveByUUIDs({
-                'domainID': disk.dom_id,
-                'imageID': disk.img_id,
-                'volumeID': disk.vol_id})
+            drive = vm.findDriveByUUIDs(
+                {
+                    'domainID': disk.dom_id,
+                    'imageID': disk.img_id,
+                    'volumeID': disk.vol_id,
+                }
+            )
             backup_disks[disk.img_id] = BackupDisk(
-                drive,
-                disk.backup_mode,
-                disk.scratch_disk)
+                drive, disk.backup_mode, disk.scratch_disk
+            )
     except LookupError as e:
         raise exception.BackupError(
             reason="Failed to find one of the backup disks: {}".format(e),
             vm_id=vm.id,
-            backup=backup_cfg)
+            backup=backup_cfg,
+        )
 
     return backup_disks
 
@@ -342,8 +373,11 @@ def _start_monitoring_scratch_disks(vm, backup_disks, backup):
     for backup_disk in backup_disks.values():
         if backup_disk.scratch_disk.type == DISK_TYPE.BLOCK:
             scratch_disk = disks[backup_disk.drive.name]
-            vm.log.info("Start monitoring scratch disk %s for drive %s",
-                        scratch_disk, backup_disk.drive.name)
+            vm.log.info(
+                "Start monitoring scratch disk %s for drive %s",
+                scratch_disk,
+                backup_disk.drive.name,
+            )
             d = {"index": scratch_disk["index"]}
             if backup_disk.scratch_disk.sd_id is not None:
                 d["sd_id"] = backup_disk.scratch_disk.sd_id
@@ -357,8 +391,11 @@ def _start_monitoring_scratch_disks(vm, backup_disks, backup):
 def _stop_monitoring_scratch_disks(vm):
     for drive in list(vm.getDiskDevices()):
         if drive.scratch_disk:
-            vm.log.info("Stop monitoring scratch disk %s for drive %s",
-                        drive.scratch_disk, drive.name)
+            vm.log.info(
+                "Stop monitoring scratch disk %s for drive %s",
+                drive.scratch_disk,
+                drive.name,
+            )
             drive.scratch_disk = None
 
 
@@ -394,12 +431,14 @@ def _get_backup_xml(vm_id, dom, backup_id):
             raise exception.NoSuchBackupError(
                 reason="VM backup not exists: {}".format(e),
                 vm_id=vm_id,
-                backup_id=backup_id)
+                backup_id=backup_id,
+            )
 
         raise exception.BackupError(
             reason="Failed to fetch VM ''backup info: {}".format(e),
             vm_id=vm_id,
-            backup_id=backup_id)
+            backup_id=backup_id,
+        )
 
     return backup_xml
 
@@ -411,7 +450,10 @@ def _backup_exists(vm, dom, backup_id):
     except (exception.NoSuchBackupError, virdomain.NotConnectedError) as e:
         vm.log.info(
             "VM with id '%s' or backup with id '%s' not found, error: %s",
-            backup_id, vm.id, e)
+            backup_id,
+            vm.id,
+            e,
+        )
         return False
 
 
@@ -423,11 +465,19 @@ def _add_checkpoint_xml(vm, dom, backup_id, checkpoint_id, result):
         if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT:
             vm.log.exception(
                 "Checkpoint_id: %r for backup_id: %r, doesn't exist, "
-                "error: %s", checkpoint_id, backup_id, e)
+                "error: %s",
+                checkpoint_id,
+                backup_id,
+                e,
+            )
         else:
             vm.log.exception(
                 "Failed to fetch checkpoint_id: %r for backup_id: %r, "
-                "error: %s", checkpoint_id, backup_id, e)
+                "error: %s",
+                checkpoint_id,
+                backup_id,
+                e,
+            )
 
 
 def _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml):
@@ -440,12 +490,14 @@ def _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml):
                 reason="Checkpoint can't be used: {}".format(e),
                 vm_id=vm.id,
                 backup=backup_cfg,
-                checkpoint_xml=checkpoint_xml)
+                checkpoint_xml=checkpoint_xml,
+            )
 
         raise exception.BackupError(
             reason="Error starting backup: {}".format(e),
             vm_id=vm.id,
-            backup=backup_cfg)
+            backup=backup_cfg,
+        )
 
 
 def _parse_backup_xml(vm, backup_id, backup_xml):
@@ -541,9 +593,10 @@ def _parse_backup_xml(vm, backup_id, backup_xml):
 def _raise_parse_error(vm_id, backup_id, backup_xml):
     raise exception.BackupError(
         reason="Failed to parse invalid libvirt "
-               "backup XML: {}".format(backup_xml),
+        "backup XML: {}".format(backup_xml),
         vm_id=vm_id,
-        backup_id=backup_id)
+        backup_id=backup_id,
+    )
 
 
 def create_backup_xml(address, backup_disks, from_checkpoint_id=None):
@@ -555,7 +608,8 @@ def create_backup_xml(address, backup_disks, from_checkpoint_id=None):
         domainbackup.appendChild(incremental)
 
     server = vmxml.Element(
-        'server', transport=address.transport, socket=address.path)
+        'server', transport=address.transport, socket=address.path
+    )
 
     domainbackup.appendChild(server)
 
@@ -566,7 +620,8 @@ def create_backup_xml(address, backup_disks, from_checkpoint_id=None):
         disk = vmxml.Element(
             'disk',
             name=backup_disk.drive.name,
-            type=backup_disk.scratch_disk.type)
+            type=backup_disk.scratch_disk.type,
+        )
 
         # If backup mode reported by the engine it should be added
         # to the backup XML.
@@ -583,10 +638,12 @@ def create_backup_xml(address, backup_disks, from_checkpoint_id=None):
         # the disk type.
         if backup_disk.scratch_disk.type == DISK_TYPE.BLOCK:
             scratch = vmxml.Element(
-                'scratch', dev=backup_disk.scratch_disk.path)
+                'scratch', dev=backup_disk.scratch_disk.path
+            )
         else:
             scratch = vmxml.Element(
-                'scratch', file=backup_disk.scratch_disk.path)
+                'scratch', file=backup_disk.scratch_disk.path
+            )
 
         storage.disable_dynamic_ownership(scratch, write_type=False)
         disk.appendChild(scratch)
@@ -609,8 +666,7 @@ def create_checkpoint_xml(backup_cfg, backup_disks):
     name.appendTextNode(backup_cfg.to_checkpoint_id)
     checkpoint.appendChild(name)
 
-    cp_description = "checkpoint for backup '{}'".format(
-        backup_cfg.backup_id)
+    cp_description = "checkpoint for backup '{}'".format(backup_cfg.backup_id)
     description = vmxml.Element('description')
     description.appendTextNode(cp_description)
     checkpoint.appendChild(description)
@@ -633,7 +689,8 @@ def create_checkpoint_xml(backup_cfg, backup_disks):
                     'disk',
                     name=backup_disk.drive.name,
                     checkpoint='bitmap',
-                    bitmap=backup_cfg.to_checkpoint_id)
+                    bitmap=backup_cfg.to_checkpoint_id,
+                )
                 disks.appendChild(disk_elm)
 
         checkpoint.appendChild(disks)
@@ -658,7 +715,8 @@ def _create_scratch_disks(vm, dom, backup_id, backup_disks):
 
         try:
             path = _create_transient_disk(
-                vm, dom, backup_id, backup_disk.drive)
+                vm, dom, backup_id, backup_disk.drive
+            )
         except Exception:
             _remove_scratch_disks(vm, backup_id)
             raise
@@ -666,15 +724,15 @@ def _create_scratch_disks(vm, dom, backup_id, backup_disks):
 
 
 def _remove_scratch_disks(vm, backup_id):
-    log.info(
-        "Removing scratch disks for backup id: %s", backup_id)
+    log.info("Removing scratch disks for backup id: %s", backup_id)
 
     res = vm.cif.irs.list_transient_disks(vm.id)
     if response.is_error(res):
         raise exception.BackupError(
             reason="Failed to fetch scratch disks: {}".format(res),
             vm_id=vm.id,
-            backup_id=backup_id)
+            backup_id=backup_id,
+        )
 
     for disk_name in res['result']:
         res = vm.cif.irs.remove_transient_disk(vm.id, disk_name)
@@ -682,7 +740,9 @@ def _remove_scratch_disks(vm, backup_id):
             log.error(
                 "Failed to remove backup '%s' "
                 "scratch disk for drive name: %s, ",
-                backup_id, disk_name)
+                backup_id,
+                disk_name,
+            )
 
 
 def _get_drive_capacity(dom, drive):
@@ -691,8 +751,8 @@ def _get_drive_capacity(dom, drive):
         return capacity
     except libvirt.libvirtError as e:
         raise exception.BackupError(
-            reason="Failed to get drive {} capacity: {}".format(
-                drive.name, e))
+            reason="Failed to get drive {} capacity: {}".format(drive.name, e)
+        )
 
 
 def _create_transient_disk(vm, dom, backup_id, drive):
@@ -709,5 +769,6 @@ def _create_transient_disk(vm, dom, backup_id, drive):
             reason='Failed to create transient disk: {}'.format(res),
             vm_id=vm.id,
             backup_id=backup_id,
-            drive_name=drive.name)
+            drive_name=drive.name,
+        )
     return res['result']['path']

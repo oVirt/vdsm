@@ -11,9 +11,8 @@ from vdsm.config import config
 from vdsm import v2v
 from vdsm.network import api as net_api
 
-
-JIFFIES_BOUND = 2 ** 32
-NETSTATS_BOUND = 2 ** 32
+JIFFIES_BOUND = 2**32
+NETSTATS_BOUND = 2**32
 SMALLEST_INTERVAL = 1e-5
 
 
@@ -42,9 +41,11 @@ def produce(first_sample, last_sample):
 
     # Prevents division by 0 and negative interval
     if interval < SMALLEST_INTERVAL:
-        logging.warning('Sampling interval %f is too small (expected %f).',
-                        interval,
-                        config.getint('vars', 'host_sample_stats_interval'))
+        logging.warning(
+            'Sampling interval %f is too small (expected %f).',
+            interval,
+            config.getint('vars', 'host_sample_stats_interval'),
+        )
         return stats
 
     stats.update(get_interfaces_stats())
@@ -66,8 +67,7 @@ def produce(first_sample, last_sample):
         last_sample.totcpu.sys - first_sample.totcpu.sys
     ) % JIFFIES_BOUND
     stats['cpuSys'] = jiffies / interval / last_sample.ncpus
-    stats['cpuIdle'] = max(0.0,
-                           100.0 - stats['cpuUser'] - stats['cpuSys'])
+    stats['cpuIdle'] = max(0.0, 100.0 - stats['cpuUser'] - stats['cpuSys'])
     stats['memUsed'] = last_sample.memUsed
     stats['hugepages'] = last_sample.hugepages
     stats['anonHugePages'] = last_sample.anonHugePages
@@ -80,8 +80,7 @@ def produce(first_sample, last_sample):
         stats['bootTime'] = _boot_time()
 
     stats['numaNodeMemFree'] = last_sample.numaNodeMem.nodesMemSample
-    stats['cpuStatistics'] = _get_cpu_core_stats(
-        first_sample, last_sample)
+    stats['cpuStatistics'] = _get_cpu_core_stats(first_sample, last_sample)
 
     stats['v2vJobs'] = v2v.get_jobs_status()
     return stats
@@ -98,7 +97,7 @@ def _get_cpu_core_stats(first_sample, last_sample):
         jiffies = (
             last_core_sample[mode] - first_core_sample[mode]
         ) % JIFFIES_BOUND
-        return ("%.2f" % (jiffies / interval))
+        return "%.2f" % (jiffies / interval)
 
     cpu_core_stats = {}
     for node_index, numa_node in numa.topology().items():
@@ -115,11 +114,12 @@ def _get_cpu_core_stats(first_sample, last_sample):
                 'cpuUser': user_cpu_usage,
                 'cpuSys': system_cpu_usage,
             }
-            core_stat['cpuIdle'] = (
-                "%.2f" % max(0.0,
-                             100.0 -
-                             float(core_stat['cpuUser']) -
-                             float(core_stat['cpuSys'])))
+            core_stat['cpuIdle'] = "%.2f" % max(
+                0.0,
+                100.0
+                - float(core_stat['cpuUser'])
+                - float(core_stat['cpuSys']),
+            )
             cpu_core_stats[str(cpu_core)] = core_stat
     return cpu_core_stats
 

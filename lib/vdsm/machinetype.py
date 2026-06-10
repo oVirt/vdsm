@@ -46,8 +46,9 @@ def emulated_machines(arch, capabilities=None):
     # machine list from domain can legally be empty
     # (e.g. only qemu-kvm installed)
     # in that case it is fine to use machines list from arch
-    return (_emulated_machines_from_caps_domain(arch, caps) or
-            _emulated_machines_from_caps_arch(arch, caps))
+    return _emulated_machines_from_caps_domain(
+        arch, caps
+    ) or _emulated_machines_from_caps_arch(arch, caps)
 
 
 def _get_domain_capabilities(conn, arch):
@@ -98,14 +99,17 @@ def domain_cpu_models(conn, arch, cpu_mode):
     """
     xmldomcaps = _get_domain_capabilities(conn, arch)
     if xmldomcaps is None:
-        logging.error('Error while getting CPU models: '
-                      'no domain capabilities found')
+        logging.error(
+            'Error while getting CPU models: ' 'no domain capabilities found'
+        )
         return {}
 
     cpucaps = xmldomcaps.find('cpu')
     if cpucaps is None:
-        logging.error('Error while getting CPU models: '
-                      'no domain CPU capabilities found')
+        logging.error(
+            'Error while getting CPU models: '
+            'no domain CPU capabilities found'
+        )
         return {}
 
     dom_models = dict()
@@ -141,14 +145,16 @@ def compatible_cpu_models():
     arch = cpuarch.real()
     cpu_mode = _CpuMode.HOST_MODEL if cpuarch.is_ppc(arch) else _CpuMode.CUSTOM
     all_models = domain_cpu_models(c, arch, cpu_mode)
-    compatible_models = [model for (model, usable)
-                         in all_models.items()
-                         if usable == 'yes']
+    compatible_models = [
+        model for (model, usable) in all_models.items() if usable == 'yes'
+    ]
     # Current QEMU doesn't report POWER compatibility modes, so we
     # must add them ourselves.
-    if cpuarch.is_ppc(arch) and \
-       'POWER9' in compatible_models and \
-       'POWER8' not in compatible_models:
+    if (
+        cpuarch.is_ppc(arch)
+        and 'POWER9' in compatible_models
+        and 'POWER8' not in compatible_models
+    ):
         compatible_models.append('POWER8')
     return list(set(["model_" + model for model in compatible_models]))
 
@@ -165,14 +171,17 @@ def cpu_features():
     arch = cpuarch.real()
     xmldomcaps = _get_domain_capabilities(c, arch)
     if xmldomcaps is None:
-        logging.error('Error while getting CPU features: '
-                      'no domain capabilities found')
+        logging.error(
+            'Error while getting CPU features: ' 'no domain capabilities found'
+        )
         return []
 
     cpucaps = xmldomcaps.find('cpu')
     if cpucaps is None:
-        logging.error('Error while getting CPU features: '
-                      'no domain CPU capabilities found')
+        logging.error(
+            'Error while getting CPU features: '
+            'no domain CPU capabilities found'
+        )
         return []
 
     features = []
@@ -190,20 +199,30 @@ def _emulated_machines_from_caps_node(node):
     # We have to make sure to inspect 'canonical' attribute where
     # libvirt puts the real machine name. Relevant bug:
     # https://bugzilla.redhat.com/show_bug.cgi?id=1229666
-    return list(set((itertools.chain.from_iterable(
-        (
-            (m.text, m.get('canonical'))
-            if m.get('canonical') else
-            (m.text,)
+    return list(
+        set(
+            (
+                itertools.chain.from_iterable(
+                    (
+                        (m.text, m.get('canonical'))
+                        if m.get('canonical')
+                        else (m.text,)
+                    )
+                    for m in node.iterfind('machine')
+                )
+            )
         )
-        for m in node.iterfind('machine')))))
+    )
 
 
 def _emulated_machines_from_caps_arch(arch, caps):
     arch_tag = caps.find('.//guest/arch[@name="%s"]' % arch)
     if arch_tag is None:
-        logging.error('Error while looking for architecture '
-                      '"%s" in libvirt capabilities', arch)
+        logging.error(
+            'Error while looking for architecture '
+            '"%s" in libvirt capabilities',
+            arch,
+        )
         return []
 
     return _emulated_machines_from_caps_node(arch_tag)
@@ -211,10 +230,13 @@ def _emulated_machines_from_caps_arch(arch, caps):
 
 def _emulated_machines_from_caps_domain(arch, caps):
     domain_tag = caps.find(
-        './/guest/arch[@name="%s"]/domain[@type="kvm"]' % arch)
+        './/guest/arch[@name="%s"]/domain[@type="kvm"]' % arch
+    )
     if domain_tag is None:
-        logging.error('Error while looking for kvm domain (%s) '
-                      'libvirt capabilities', arch)
+        logging.error(
+            'Error while looking for kvm domain (%s) ' 'libvirt capabilities',
+            arch,
+        )
         return []
 
     return _emulated_machines_from_caps_node(domain_tag)

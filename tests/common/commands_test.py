@@ -41,9 +41,7 @@ class TestStart:
         assert err is None
 
     def test_out(self):
-        p = commands.start(
-            ["echo", "-n", "out"],
-            stdout=subprocess.PIPE)
+        p = commands.start(["echo", "-n", "out"], stdout=subprocess.PIPE)
         out, err = p.communicate()
         assert out == b"out"
         assert err is None
@@ -52,16 +50,16 @@ class TestStart:
         p = commands.start(
             ["sh", "-c", "echo -n out >&1; echo -n err >&2"],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+        )
         out, err = p.communicate()
         assert out == b"out"
         assert err == b"err"
 
     def test_in_out(self):
         p = commands.start(
-            ["cat"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE)
+            ["cat"], stdin=subprocess.PIPE, stdout=subprocess.PIPE
+        )
         out, err = p.communicate(b"data")
         assert out == b"data"
         assert err is None
@@ -70,7 +68,8 @@ class TestStart:
         p = commands.start(
             ["sh", "-c", "cat >&2"],
             stdin=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+        )
         out, err = p.communicate(b"data")
         assert out is None
         assert err == b"data"
@@ -195,17 +194,18 @@ class TestRun:
         assert e.value.err == b"err"
 
     def test_setsid(self):
-        args = [sys.executable, '-c',
-                'import os;'
-                'print(os.getsid(os.getpid()))']
+        args = [
+            sys.executable,
+            '-c',
+            'import os;' 'print(os.getsid(os.getpid()))',
+        ]
         out = commands.run(args, setsid=True)
         assert int(out) != os.getsid(os.getpid())
 
     def test_ioclass(self):
         out = commands.run(
-            ['ionice'],
-            ioclass=utils.IOCLASS.BEST_EFFORT,
-            ioclassdata=3)
+            ['ionice'], ioclass=utils.IOCLASS.BEST_EFFORT, ioclassdata=3
+        )
         assert out.strip() == b"best-effort: prio 3"
 
     def test_nice(self):
@@ -263,8 +263,9 @@ class TestExecCmd:
 
     @pytest.mark.parametrize("cmd", CMD_TYPES)
     def test_io_class(self, cmd):
-        rc, out, _ = commands.execCmd(cmd(('ionice',)), ioclass=2,
-                                      ioclassdata=3)
+        rc, out, _ = commands.execCmd(
+            cmd(('ionice',)), ioclass=2, ioclassdata=3
+        )
         assert rc == 0
         assert out[0].decode().strip() == 'best-effort: prio 3'
 
@@ -276,18 +277,20 @@ class TestExecCmd:
 
     @pytest.mark.parametrize("cmd", CMD_TYPES)
     def test_set_sid(self, cmd):
-        cmd_args = (sys.executable, '-c',
-                    'import os;'
-                    'print(os.getsid(os.getpid()))')
+        cmd_args = (
+            sys.executable,
+            '-c',
+            'import os;' 'print(os.getsid(os.getpid()))',
+        )
         rc, out, _ = commands.execCmd(cmd(cmd_args), setsid=True)
         assert int(out[0]) != os.getsid(os.getpid())
 
     @pytest.mark.parametrize("cmd", CMD_TYPES)
     @pytest.mark.skipif(os.getuid() != 0, reason="Requires root")
     def test_sudo(self, cmd):
-        rc, out, _ = commands.execCmd(cmd(('grep',
-                                      'Uid', '/proc/self/status')),
-                                      sudo=True)
+        rc, out, _ = commands.execCmd(
+            cmd(('grep', 'Uid', '/proc/self/status')), sudo=True
+        )
         assert rc == 0
         assert int(out[0].split()[2]) == 0
 
@@ -320,8 +323,9 @@ class TestExecCmdStress:
 
     def check(self, func):
         for i in range(self.CONCURRENCY):
-            worker = Worker(self.resume, func, self.FUNC_CALLS,
-                            self.FUNC_DELAY)
+            worker = Worker(
+                self.resume, func, self.FUNC_CALLS, self.FUNC_DELAY
+            )
             self.workers.append(worker)
             worker.start()
         for worker in self.workers:
@@ -339,24 +343,30 @@ class TestExecCmdStress:
                 raise v
 
     def read_stderr(self):
-        args = ['if=/dev/zero',
-                'of=/dev/null',
-                'bs=%d' % self.BLOCK_SIZE,
-                'count=%d' % self.BLOCK_COUNT]
+        args = [
+            'if=/dev/zero',
+            'of=/dev/null',
+            'bs=%d' % self.BLOCK_SIZE,
+            'count=%d' % self.BLOCK_COUNT,
+        ]
         self.run_dd(args)
 
     def read_stdout_stderr(self):
-        args = ['if=/dev/zero',
-                'bs=%d' % self.BLOCK_SIZE,
-                'count=%d' % self.BLOCK_COUNT]
+        args = [
+            'if=/dev/zero',
+            'bs=%d' % self.BLOCK_SIZE,
+            'count=%d' % self.BLOCK_COUNT,
+        ]
         out = self.run_dd(args)
         size = self.BLOCK_SIZE * self.BLOCK_COUNT
         assert len(out) == size, "Partial read: {}/{}".format(len(out), size)
 
     def write_stdin_read_stderr(self):
-        args = ['of=/dev/null',
-                'bs=%d' % self.BLOCK_SIZE,
-                'count=%d' % self.BLOCK_COUNT]
+        args = [
+            'of=/dev/null',
+            'bs=%d' % self.BLOCK_SIZE,
+            'count=%d' % self.BLOCK_COUNT,
+        ]
         self.run_dd(args)
 
     def run_dd(self, args):
@@ -432,7 +442,8 @@ class TestWaitAsync:
         p = commands.start(
             ["sh", "-c", "echo out>&1; echo err>&2; sleep 0.1"],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+        )
 
         commands.wait_async(p, event=event)
 

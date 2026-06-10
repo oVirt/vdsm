@@ -29,8 +29,9 @@ procs_blocked 0
 """
     fixture_good = proc_stat_template % {'btime_line': 'btime 1395249141'}
     fixture_missing = proc_stat_template % {'btime_line': 'btime'}
-    fixture_malformed = proc_stat_template % {'btime_line':
-                                              'btime 22not_a_number3'}
+    fixture_malformed = proc_stat_template % {
+        'btime_line': 'btime 22not_a_number3'
+    }
     fixture_extra = proc_stat_template % {'btime_line': 'btime 1395249141 foo'}
 
     def _createFixtureFile(self, name, content):
@@ -41,51 +42,54 @@ procs_blocked 0
 
     def setUp(self):
         self._tmpDir = tempfile.mkdtemp()
-        self._good_path = self._createFixtureFile('good',
-                                                  self.fixture_good)
-        self._missing_path = self._createFixtureFile('missing',
-                                                     self.fixture_missing)
-        self._malformed_path = self._createFixtureFile('malformed',
-                                                       self.fixture_malformed)
-        self._extra_path = self._createFixtureFile('extra',
-                                                   self.fixture_extra)
+        self._good_path = self._createFixtureFile('good', self.fixture_good)
+        self._missing_path = self._createFixtureFile(
+            'missing', self.fixture_missing
+        )
+        self._malformed_path = self._createFixtureFile(
+            'malformed', self.fixture_malformed
+        )
+        self._extra_path = self._createFixtureFile('extra', self.fixture_extra)
 
     def tearDown(self):
         shutil.rmtree(self._tmpDir)
 
     def testBootTimeOk(self):
-        with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',
-                                self._good_path)]):
-            self.assertEqual(hoststats.get_boot_time(),
-                             1395249141)
+        with MonkeyPatchScope(
+            [(hoststats, '_PROC_STAT_PATH', self._good_path)]
+        ):
+            self.assertEqual(hoststats.get_boot_time(), 1395249141)
 
     def testBootTimeEmpty(self):
-        with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',
-                                '/dev/null')]):
+        with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH', '/dev/null')]):
             with self.assertRaises(ValueError):
                 hoststats.get_boot_time()
 
     def testBootTimeMissing(self):
-        with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',
-                                self._missing_path)]):
+        with MonkeyPatchScope(
+            [(hoststats, '_PROC_STAT_PATH', self._missing_path)]
+        ):
             with self.assertRaises(ValueError):
                 hoststats.get_boot_time()
 
     def testBootTimeMalformed(self):
-        with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',
-                                self._malformed_path)]):
+        with MonkeyPatchScope(
+            [(hoststats, '_PROC_STAT_PATH', self._malformed_path)]
+        ):
             with self.assertRaises(ValueError):
                 hoststats.get_boot_time()
 
     def testBootTimeNonExistantFile(self):
-        with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',
-                                '/i/do/not/exist/1234567890')]):
+        with MonkeyPatchScope(
+            [(hoststats, '_PROC_STAT_PATH', '/i/do/not/exist/1234567890')]
+        ):
             with self.assertRaises(IOError):
                 hoststats.get_boot_time()
 
     def testBootTimeExtra(self):
-        with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',
-                                self._extra_path)]):
+        with MonkeyPatchScope(
+            [(hoststats, '_PROC_STAT_PATH', self._extra_path)]
+        ):
             self.assertEqual(hoststats.get_boot_time(), 1395249141)
 
 
@@ -95,21 +99,18 @@ class HostStatsThreadTests(TestCaseBase):
         'cpuIdle': '100.00',
         'cpuSys': '0.00',
         'cpuUser': '0.00',
-        'nodeIndex': 0
+        'nodeIndex': 0,
     }
 
     _core_one_stats = {
         'cpuIdle': '100.00',
         'cpuSys': '0.00',
         'cpuUser': '0.00',
-        'nodeIndex': 1
+        'nodeIndex': 1,
     }
 
     def _fakeNumaTopology(self):
-        return {
-            0: {'cpus': [0]},
-            1: {'cpus': [1]}
-        }
+        return {0: {'cpus': [0]}, 1: {'cpus': [1]}}
 
     def testCpuCoreStats(self):
         cpu_sample = {'user': 1.0, 'sys': 2.0}
@@ -118,8 +119,7 @@ class HostStatsThreadTests(TestCaseBase):
         first_sample = fake.HostSample(1.0, {0: cpu_sample, 1: cpu_sample})
         last_sample = fake.HostSample(2.0, {0: cpu_sample, 1: cpu_sample})
 
-        with MonkeyPatchScope([(numa, 'topology',
-                                self._fakeNumaTopology)]):
+        with MonkeyPatchScope([(numa, 'topology', self._fakeNumaTopology)]):
             result = hoststats._get_cpu_core_stats(first_sample, last_sample)
             self.assertEqual(len(result), 2)
             self.assertEqual(result['0'], self._core_zero_stats)
@@ -132,8 +132,7 @@ class HostStatsThreadTests(TestCaseBase):
         first_sample = fake.HostSample(1.0, {0: cpu_sample})
         last_sample = fake.HostSample(2.0, {0: cpu_sample, 1: cpu_sample})
 
-        with MonkeyPatchScope([(numa, 'topology',
-                                self._fakeNumaTopology)]):
+        with MonkeyPatchScope([(numa, 'topology', self._fakeNumaTopology)]):
             result = hoststats._get_cpu_core_stats(first_sample, last_sample)
             self.assertEqual(len(result), 1)
             self.assertEqual(result['0'], self._core_zero_stats)
@@ -145,8 +144,7 @@ class HostStatsThreadTests(TestCaseBase):
         # CPU one suddenly came online and the second sample is still missing
         last_sample = fake.HostSample(2.0, {0: cpu_sample})
 
-        with MonkeyPatchScope([(numa, 'topology',
-                                self._fakeNumaTopology)]):
+        with MonkeyPatchScope([(numa, 'topology', self._fakeNumaTopology)]):
             result = hoststats._get_cpu_core_stats(first_sample, last_sample)
             self.assertEqual(len(result), 1)
             self.assertEqual(result['0'], self._core_zero_stats)
@@ -184,8 +182,7 @@ class HostStatsThreadTests(TestCaseBase):
 
         hoststats.start(lambda: 0)
         self.assertEqual(
-            hoststats.produce(first_sample, last_sample),
-            expected
+            hoststats.produce(first_sample, last_sample), expected
         )
 
 

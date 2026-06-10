@@ -27,7 +27,8 @@ def package_version(pkg_name):
     # writes "package python2 is not installed" to stdout, while "rpm -qa"
     # returns empty string if the package is not installed.
     out = commands.run(
-        ["rpm", "-qa", "--queryformat", "%{VERSION}-%{RELEASE}", pkg_name])
+        ["rpm", "-qa", "--queryformat", "%{VERSION}-%{RELEASE}", pkg_name]
+    )
     return out.decode("utf-8")
 
 
@@ -45,8 +46,9 @@ def has_py_gdb_support():
     # On CentOS Stream 9 debuginfo packages now include the minor version in
     # the name, i.e. python3.9-debuginfo-...
     if pkg_dbg_ver == "":
-        pkg_name2 = "python{}.{}".format(sys.version_info.major,
-                                         sys.version_info.minor)
+        pkg_name2 = "python{}.{}".format(
+            sys.version_info.major, sys.version_info.minor
+        )
         pkg_dbg_ver = package_version("{}-debuginfo".format(pkg_name2))
 
     return pkg_dbg_ver != "" and pkg_dbg_ver == pkg_ver
@@ -71,8 +73,10 @@ class TestPyWatch(object):
 
     @pytest.mark.xfail(
         not has_py_gdb_support(),
-        reason=("gdb support missing - python debuginfo package unavailable "
-                "or has wrong version")
+        reason=(
+            "gdb support missing - python debuginfo package unavailable "
+            "or has wrong version"
+        ),
     )
     def test_timeout_backtrace(self):
         script = '''
@@ -87,9 +91,16 @@ def inner():
 outer()
 '''
         with pytest.raises(cmdutils.Error) as e:
-            commands.run([
-                sys.executable, 'py-watch', '0.2', sys.executable,
-                '-c', script])
+            commands.run(
+                [
+                    sys.executable,
+                    'py-watch',
+                    '0.2',
+                    sys.executable,
+                    '-c',
+                    script,
+                ]
+            )
         assert b'line 8, in inner' in e.value.out
         assert b'line 5, in outer' in e.value.out
 
@@ -98,9 +109,16 @@ outer()
         # The grandkid bash echoes its pid and sleeps a lot.
         # on timeout, py-watch should kill the process session spawned by it.
         with pytest.raises(cmdutils.Error) as e:
-            commands.run([
-                sys.executable, 'py-watch', '1.0', 'bash',
-                '-c', 'bash -c "readlink /proc/self; sleep 10"'])
+            commands.run(
+                [
+                    sys.executable,
+                    'py-watch',
+                    '1.0',
+                    'bash',
+                    '-c',
+                    'bash -c "readlink /proc/self; sleep 10"',
+                ]
+            )
 
         # assert that the internal bash no longer exist
         grandkid_pid = int(e.value.out.splitlines()[0])
@@ -114,9 +132,16 @@ outer()
         # before printing the pid avoids a race when we got the pid before
         # py-watch started to wait for the child.
         p = subprocess.Popen(
-            [sys.executable, 'py-watch', '10', 'bash', '-c',
-                'sleep 0.5; echo $$; sleep 10'],
-            stdout=subprocess.PIPE)
+            [
+                sys.executable,
+                'py-watch',
+                '10',
+                'bash',
+                '-c',
+                'sleep 0.5; echo $$; sleep 10',
+            ],
+            stdout=subprocess.PIPE,
+        )
 
         # Wait until the underlying bash process prints its pid.
         for src, data in cmdutils.receive(p):
