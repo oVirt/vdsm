@@ -54,8 +54,8 @@ class TestBlockVolumeSize(VdsmTestCase):
             # Expected GiB allocated
             [(sc.PREALLOCATED_VOL, sc.COW_FORMAT, GiB, None), GiB],
             # Sparse, cow, capacity config.volume_utilization_chunk_mb - 1,
-            # No initial size.
-            # Expected 1023 MiB allocated (config.volume_utilization_chunk_mb - 1)
+            # No initial size. Expected 1023 MiB allocated
+            # (config.volume_utilization_chunk_mb - 1)
             [
                 (
                     sc.SPARSE_VOL,

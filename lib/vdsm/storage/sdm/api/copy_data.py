@@ -78,6 +78,7 @@ class Job(base.Job):
                     dst_format = self._dest.qemu_format
 
                 self._validate_copy_bitmaps(src_format, dst_format)
+                unordered_writes = self._dest.recommends_unordered_writes
 
                 with self._dest.volume_operation():
                     self._operation = qemuimg.convert(
@@ -88,7 +89,7 @@ class Job(base.Job):
                         dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
                         backingFormat=self._dest.backing_qemu_format,
-                        unordered_writes=self._dest.recommends_unordered_writes,
+                        unordered_writes=unordered_writes,
                         create=self._dest.requires_create,
                         bitmaps=self._copy_bitmaps,
                         target_is_zero=self._dest.zero_initialized,

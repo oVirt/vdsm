@@ -345,13 +345,13 @@ class LVMRunner(object):
             [
                 "WARNING: This metadata update is NOT backed up",
                 (
-                    r"WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "
+                    r"WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "  # NOQA: E501
                     r"seqno \d+ on /dev/mapper/\w+ for VG \w+"
                 ),
                 r"WARNING: Inconsistent metadata found for VG \w+",
                 (
-                    "WARNING: Activation disabled. No device-mapper interaction "
-                    "will be attempted"
+                    "WARNING: Activation disabled. "
+                    "No device-mapper interaction will be attempted"
                 ),
             ]
         ),

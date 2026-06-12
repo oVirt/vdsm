@@ -34,8 +34,8 @@ AFTER = b"b" * 10
                 requires_loopback_sector_size,
                 pytest.mark.xfail(
                     testing.on_ovirt_ci() or testing.on_travis_ci(),
-                    reason="fails randomly to create loop device with 4k sector "
-                    "size, only in CI - needs investigation",
+                    reason="fails randomly to create loop device with 4k "
+                    "sector size, only in CI - needs investigation",
                     strict=False,
                 ),
             ],

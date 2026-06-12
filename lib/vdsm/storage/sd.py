@@ -381,16 +381,14 @@ class StorageDomainManifest(object):
         if version < 5:
             if self.alignment != sc.ALIGNMENT_1M:
                 raise se.MetaDataValidationError(
-                    "Storage domain version {} does not support alignment {}".format(
-                        version, self.alignment
-                    )
+                    f"Storage domain version {version} does not "
+                    f"support alignment {self.alignment}"
                 )
 
             if self.block_size != sc.BLOCK_SIZE_512:
                 raise se.MetaDataValidationError(
-                    "Storage domain version {} does not support block size {}".format(
-                        version, self.block_size
-                    )
+                    f"Storage domain version {version} does not "
+                    f"support block size {self.block_size}"
                 )
 
         self._domainLock = self._makeDomainLock()
@@ -1891,9 +1889,8 @@ class StorageDomain(object):
 
         if not (current_version == 4 and target_version == 5):
             raise RuntimeError(
-                "Cannot convert domain {} from version {} to version {}".format(
-                    self.sdUUID, current_version, target_version
-                )
+                f"Cannot convert domain {self.sdUUID}"
+                f" from version {current_version} to version {target_version}"
             )
 
         self.log.info(

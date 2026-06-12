@@ -1142,9 +1142,8 @@ class CleanupThread(object):
             actual_chain = self.vm.query_drive_volume_chain(self.drive)
             if actual_chain is None:
                 raise RuntimeError(
-                    "Cannot get actual volume chain for drive {} alias {}".format(
-                        self.drive.name, self.drive.alias
-                    )
+                    "Cannot get actual volume chain for drive"
+                    f" {self.drive.name} alias {self.drive.alias}"
                 )
 
             curVols = sorted([entry.uuid for entry in actual_chain])

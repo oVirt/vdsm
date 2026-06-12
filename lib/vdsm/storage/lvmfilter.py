@@ -128,12 +128,13 @@ def find_lvm_mounts():
             # With this we can --include only device mapper top devices.
             "--inverse",
             # Include only device mapper devices. This includes both "lvm"
-            # and "mpath" devices. We will filter the results later to extract only
-            # the "lvm" devices.
+            # and "mpath" devices.
+            # We will filter the results later
+            # to extract only the "lvm" devices.
             "--include",
             dm_major_number(),
-            # Do not print holder devices or slaves, since we are interested only
-            # in lvm devices.
+            # Do not print holder devices or slaves,
+            # since we are interested only in lvm devices.
             "--nodeps",
             # Specify which output columns to print.
             "--output",
@@ -443,11 +444,13 @@ def vg_info(lv_path):
             "lvs",
             "--noheadings",
             "--readonly",
-            # If the host was already configured, the lvm filter hides the devices
-            # of the mounted master lv, and lvs will fail. Use a permissive filter
-            # to avoid this. Also, run lvs with devices file disabled. This allows
-            # us to avoid warnings that filter should be used while devices file is
-            # enabled. This can happen when lvm is configured to use devices file,
+            # If the host was already configured,
+            # the lvm filter hides the devices of the mounted master lv,
+            # and lvs will fail. Use a permissive filter to avoid this.
+            # Also, run lvs with devices file disabled. This allows
+            # us to avoid warnings that filter should be used
+            # while devices file is enabled.
+            # This can happen when lvm is configured to use devices file,
             # but vdsm is configured to use filter.
             "--config",
             'devices {use_devicesfile = 0 filter=["a|.*|"]}',
@@ -474,12 +477,14 @@ def vg_devices(vg_name):
             "vgs",
             "--noheadings",
             "--readonly",
-            # If the host has an incorrect filter, some devices needed by the host
-            # may be hidden, preventing creating of a new correct filter. Also, run
-            # lvs with devices file disabled. This allows us to avoid warnings that
-            # filter should be used while devices file is enabled. This can happen
-            # when lvm is configured to use devices file, but vdsm is configured to
-            # use filter.
+            # If the host has an incorrect filter,
+            # some devices needed by the host may be hidden,
+            # preventing creating of a new correct filter.
+            # Also, runlvs with devices file disabled.
+            # This allows us to avoid warnings that filter should be used
+            # while devices file is enabled.
+            # This can happen when lvm is configured to use devices file,
+            # but vdsm is configured to use filter.
             "--config",
             'devices {use_devicesfile = 0 filter=["a|.*|"]}',
             "--options",

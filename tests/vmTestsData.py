@@ -249,7 +249,7 @@ VM_STATUS_DUMP = {
     'copyPasteEnable': 'true',
     'cpuType': 'SandyBridge',
     'custom': {
-        'device_4cf4bc50-87c6-44a1-b382-339929ed8350': 'VmDevice {vmId=56f693d4-2245-444a-a4e8-fcc5bbd08350, '
+        'device_4cf4bc50-87c6-44a1-b382-339929ed8350': 'VmDevice {vmId=56f693d4-2245-444a-a4e8-fcc5bbd08350, '  # NOQA: E501 (long line)
         'deviceId=4cf4bc50-87c6-44a1-b382-339929ed8350, '
         'device=ide, type=CONTROLLER, bootOrder=0, specParams={}, '
         'address={bus=0x00, domain=0x0000, type=pci, slot=0x01, '
@@ -257,7 +257,7 @@ VM_STATUS_DUMP = {
         'deviceAlias=ide0, customProperties={}, snapshotId=null, '
         'logicalName=null}',
         'device_4cf4bc50-87c6-44a1-b382-339929ed8350'
-        'device_bb36a3fe-5333-4a66-9708-ef7dc5dca461': 'VmDevice {vmId=56f693d4-2245-444a-a4e8-fcc5bbd08350, '
+        'device_bb36a3fe-5333-4a66-9708-ef7dc5dca461': 'VmDevice {vmId=56f693d4-2245-444a-a4e8-fcc5bbd08350, '  # NOQA: E501 (long line)
         'deviceId=bb36a3fe-5333-4a66-9708-ef7dc5dca461, '
         'device=unix, type=CHANNEL, bootOrder=0, specParams={}, '
         'address={port=1, bus=0, controller=0, type=virtio-serial}, '
@@ -266,7 +266,7 @@ VM_STATUS_DUMP = {
         'snapshotId=null, logicalName=null}',
         'device_4cf4bc50-87c6-44a1-b382-339929ed8350'
         'device_bb36a3fe-5333-4a66-9708-ef7dc5dca461'
-        'device_2c1279b8-d1ed-4b27-975a-2adf580d4eab': 'VmDevice {vmId=56f693d4-2245-444a-a4e8-fcc5bbd08350, '
+        'device_2c1279b8-d1ed-4b27-975a-2adf580d4eab': 'VmDevice {vmId=56f693d4-2245-444a-a4e8-fcc5bbd08350, '  # NOQA: E501 (long line)
         'deviceId=2c1279b8-d1ed-4b27-975a-2adf580d4eab, '
         'device=unix, type=CHANNEL, bootOrder=0, specParams={}, '
         'address={port=2, bus=0, controller=0, '
@@ -277,7 +277,7 @@ VM_STATUS_DUMP = {
         'device_4cf4bc50-87c6-44a1-b382-339929ed8350'
         'device_bb36a3fe-5333-4a66-9708-ef7dc5dca461'
         'device_2c1279b8-d1ed-4b27-975a-2adf580d4eab'
-        'device_d8494628-79cf-4d44-84bb-609acd6d0510': 'VmDevice {vmId=56f693d4-2245-444a-a4e8-fcc5bbd08350, '
+        'device_d8494628-79cf-4d44-84bb-609acd6d0510': 'VmDevice {vmId=56f693d4-2245-444a-a4e8-fcc5bbd08350, '  # NOQA: E501 (long line)
         'deviceId=d8494628-79cf-4d44-84bb-609acd6d0510, '
         'device=spicevmc, type=CHANNEL, bootOrder=0, specParams={}, '
         'address={port=3, bus=0, controller=0, type=virtio-serial}, '
