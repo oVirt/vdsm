@@ -123,7 +123,8 @@ class FakeDomain(object):
             'user.1.domain': 'hobbits',
             'os.id': 'rhel',
             'os.name': 'Red Hat Enterprise Linux Server',
-            'os.pretty-name': 'Red Hat Enterprise Linux Server 7.8 Beta (Maipo)',
+            'os.pretty-name': 'Red Hat Enterprise Linux Server 7.8 Beta '
+            '(Maipo)',
             'os.version': '7.8 (Maipo)',
             'os.version-id': '7.8',
             'os.machine': 'x86_64',

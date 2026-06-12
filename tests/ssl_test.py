@@ -12,7 +12,7 @@ from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslutils import SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
 
-from integration.sslhelper import key_cert_pair  # noqa: F401
+from integration.sslhelper import generate_key_cert_pair
 
 
 @pytest.fixture
@@ -90,10 +90,18 @@ def dummy_register_protocol_detector(monkeypatch):
     )
 
 
-@pytest.fixture  # noqa: F811 # TODO: remove after upgrading flake to 3.9.2
+@pytest.fixture
+def key_cert_pair():
+    with generate_key_cert_pair() as pair:
+        yield pair
+
+
+@pytest.fixture
 def listener(
-    dummy_register_protocol_detector, key_cert_pair, request
-):  # noqa: F811, E501
+    dummy_register_protocol_detector,
+    key_cert_pair,
+    request,
+):
     key_file, cert_file = key_cert_pair
     reactor = Reactor()
 
@@ -106,7 +114,7 @@ def listener(
     try:
         t = concurrent.thread(reactor.process_requests)
         t.start()
-        (host, port) = acceptor._acceptor.socket.getsockname()[0:2]
+        host, port = acceptor._acceptor.socket.getsockname()[0:2]
         yield (host, port)
     finally:
         acceptor.stop()
@@ -114,12 +122,12 @@ def listener(
         t.join()
 
 
-@pytest.fixture  # noqa: F811 # TODO: remove after upgrading flake to 3.9.2
-def client_cmd(listener, key_cert_pair):  # noqa: F811
+@pytest.fixture
+def client_cmd(listener, key_cert_pair):
     key_file, cert_file = key_cert_pair
 
     def wrapper(protocol):
-        (host, port) = listener
+        host, port = listener
         cmd = [
             'openssl',
             's_client',

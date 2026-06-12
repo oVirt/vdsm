@@ -1032,8 +1032,8 @@ class TestVmDeviceHandling(TestCaseBase):
 
     @permutations(
         [
-            # We have to make sure that 'sd' key exists otherwise even defaultdict
-            # will KeyError on access.
+            # We have to make sure that 'sd' key exists
+            # otherwise even defaultdict will KeyError on access.
             [{'sd': []}, {'iface': 'sata'}, {'sd': [0]}],
             [{'sd': [0]}, {'iface': 'sata'}, {'sd': [0, 1]}],
             [{'sd': [1]}, {'iface': 'sata'}, {'sd': [1, 0]}],

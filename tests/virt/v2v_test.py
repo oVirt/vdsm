@@ -481,7 +481,7 @@ class v2vTests(TestCaseBase):
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     @MonkeyPatch(v2v, '_LOG_DIR', None)
     def testSuccessfulImportOVA(self):
-        with temporary_ovf_dir() as ovapath, namedTemporaryDir() as v2v._LOG_DIR:
+        with temporary_ovf_dir() as ovapath, namedTemporaryDir() as v2v._LOG_DIR:  # NOQA: E501 (long line)
             v2v.convert_ova(ovapath, self.vminfo, self.job_id, FakeIRS())
             job = v2v._jobs[self.job_id]
             job.wait()
@@ -534,7 +534,7 @@ class v2vTests(TestCaseBase):
     @MonkeyPatch(v2v, '_V2V_DIR', None)
     @MonkeyPatch(v2v, '_LOG_DIR', None)
     def _commonConvertExternalVM(self, url):
-        with namedTemporaryDir() as v2v._V2V_DIR, namedTemporaryDir() as v2v._LOG_DIR:
+        with namedTemporaryDir() as v2v._V2V_DIR, namedTemporaryDir() as v2v._LOG_DIR:  # NOQA: E501 (long line)
             v2v.convert_external_vm(
                 url,
                 'root',

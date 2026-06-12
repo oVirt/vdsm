@@ -187,9 +187,9 @@ def _repair(broken_leases):
                     repaired += 1
                 except sanlock.SanlockException as e:
                     print(
-                        "Failed to repair lease of volume {}/{}. Error {}".format(
-                            vol_lease['image'], vol_lease['volume'], e
-                        )
+                        "Failed to repair lease of volume "
+                        f"{vol_lease['image']}/{vol_lease['volume']}. "
+                        f"Error {e}"
                     )
 
     print("Repaired ({}/{}) volume leases.".format(repaired, total))

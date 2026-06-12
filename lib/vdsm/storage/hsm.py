@@ -396,7 +396,8 @@ class HSM(object):
 
         vars.task.setDefaultException(
             se.SpmStartError(
-                "spUUID=%s, prevID=%s, prevLVER=%s, maxHostID=%s, domVersion=%s"
+                "spUUID=%s, prevID=%s, prevLVER=%s, maxHostID=%s, "
+                "domVersion=%s"
                 % (spUUID, prevID, prevLVER, maxHostID, domVersion)
             )
         )

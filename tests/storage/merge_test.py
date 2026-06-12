@@ -237,8 +237,8 @@ class TestPrepareMerge:
                 Volume(format='cow', virtual=1, physical=1, leaf=True),
                 Expected(virtual=1024, physical=1024),
             ),
-            # Active merge, no capacity update, increase LV size adding one chunk
-            # of free space.
+            # Active merge, no capacity update,
+            # increase LV size adding one chunk of free space.
             (
                 Volume(format='cow', virtual=10, physical=2, leaf=False),
                 Volume(format='cow', virtual=10, physical=2, leaf=True),
@@ -250,8 +250,8 @@ class TestPrepareMerge:
                 Volume(format='cow', virtual=10, physical=2, leaf=False),
                 Expected(virtual=10240, physical=2176),
             ),
-            # Active merge, update capacity and increase LV size adding one chunk
-            # of free space.
+            # Active merge, update capacity
+            # and increase LV size adding one chunk of free space.
             (
                 Volume(format='cow', virtual=3, physical=1, leaf=False),
                 Volume(format='cow', virtual=5, physical=1, leaf=True),

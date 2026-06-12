@@ -169,8 +169,8 @@ class TestMount(VdsmTestCase):
 
     @permutations(
         [
-            # NFS4 using fsid=0 - kernel display mount as server://path instead of
-            # normalized server:/path
+            # NFS4 using fsid=0 - kernel display mount as server:
+            # //path instead of normalized server:/path
             ("server://a/b /mnt/server:_a_b nfs defaults 0 0",),
             # Not seen yet, but it should work now
             ("server:/a//b /mnt/server:_a_b nfs defaults 0 0",),
