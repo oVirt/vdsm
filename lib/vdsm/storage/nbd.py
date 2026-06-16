@@ -25,6 +25,7 @@ from vdsm.common.time import monotonic_time
 from . import constants as sc
 from . import exception as se
 from . import fileUtils
+from . import managedvolume
 from . import qemuimg
 from . import transientdisk
 from .sdc import sdCache
@@ -196,7 +197,12 @@ def _managed_volume_export_config(cfg):
         log.warning("Managed volume %s not in DB (attach may have failed or "
                     "not run yet)", cfg.vol_id)
         raise se.StorageDomainDoesNotExist(cfg.sd_id)
-    path = vol_info.get("path")
+    managed_path = os.path.join(
+        managedvolume.VOLUME_LINK_DIR, f"{cfg.sd_id}_{cfg.vol_id}")
+    if os.path.islink(managed_path):
+        path = managed_path
+    else:
+        path = vol_info.get("path")
     if not path or not os.path.exists(path):
         log.warning("Managed volume %s has no path or path missing: path=%s",
                     cfg.vol_id, path)
@@ -534,14 +540,42 @@ def json_uri(config):
     return "json:" + json.dumps(image)
 
 
-# Path prefixes allowed for attached Managed Block Storage volumes
-_MANAGED_VOLUME_PATH_PREFIXES = (
-    "/dev/mapper/",
-    "/dev/rbd/",
-    "/dev/drbd/",
-    "/dev/storpool-byid/",
-    "/run/vdsm/managedvolumes/",
-)
+def _is_attached_managed_volume_path(path):
+    """
+    Return True if path refers to a volume attached via attach_volume().
+
+    Every attached managed volume has a stable symlink under
+    /run/vdsm/managedvolumes/. Accept either that symlink or the device path
+    it points to, so callers are not tied to vendor-specific device prefixes.
+    """
+    link_dir = managedvolume.VOLUME_LINK_DIR
+    normpath = os.path.normpath(path)
+
+    if normpath.startswith(link_dir) and os.path.islink(normpath):
+        return True
+
+    if not os.path.isdir(link_dir):
+        return False
+
+    try:
+        real_path = os.path.realpath(normpath)
+    except OSError:
+        return False
+
+    try:
+        for name in os.listdir(link_dir):
+            link = os.path.join(link_dir, name)
+            if not os.path.islink(link):
+                continue
+            try:
+                if os.path.realpath(link) == real_path:
+                    return True
+            except OSError:
+                continue
+    except OSError as e:
+        log.debug("Cannot list managed volume links in %s: %s", link_dir, e)
+
+    return False
 
 
 def _verify_path(path):
@@ -552,14 +586,14 @@ def _verify_path(path):
     attached Managed Block Storage volume.
     """
     path = os.path.normpath(path)
-    log.info("_verify_path checking path=%r", path)
+    log.debug("_verify_path checking path=%r", path)
 
     if path.startswith(transientdisk.P_TRANSIENT_DISKS):
         path = qemuimg.info(path, format="qcow2")["backing-filename"]
-        log.info("_verify_path resolved transient backing to path=%r", path)
+        log.debug("_verify_path resolved transient backing to path=%r", path)
 
-    if any(path.startswith(prefix) for prefix in _MANAGED_VOLUME_PATH_PREFIXES):
-        log.info("_verify_path path %r allowed (managed volume prefix)", path)
+    if _is_attached_managed_volume_path(path):
+        log.debug("_verify_path path %r allowed (attached managed volume)", path)
         return
 
     if not path.startswith(sc.REPO_MOUNT_DIR):
