@@ -102,18 +102,22 @@ def start_server(server_id, config):
         dom = sdCache.produce_manifest(cfg.sd_id)
         vol = dom.produceVolume(cfg.img_id, cfg.vol_id)
         path, format, is_block, using_overlay, bitmap_chain = (
-            _volume_export_config(cfg, vol))
+            _volume_export_config(cfg, vol)
+        )
     except se.StorageDomainDoesNotExist:
-        log.info("Domain %s not in sdCache, trying managed volume DB for vol %s",
-                 cfg.sd_id, cfg.vol_id)
+        log.info(
+            "Domain %s not in sdCache, trying managed volume DB for vol %s",
+            cfg.sd_id,
+            cfg.vol_id,
+        )
         path, format, is_block, using_overlay, bitmap_chain = (
-            _managed_volume_export_config(cfg))
+            _managed_volume_export_config(cfg)
+        )
 
     _create_rundir()
 
     if using_overlay:
-        path = _create_overlay(
-            server_id, path, cfg.bitmap, bitmap_chain)
+        path = _create_overlay(server_id, path, cfg.bitmap, bitmap_chain)
         format = "qcow2"
         is_block = False
     try:
@@ -163,12 +167,14 @@ def _volume_export_config(cfg, vol):
     if cfg.bitmap:
         if vol.getFormat() != sc.COW_FORMAT:
             raise se.UnsupportedOperation(
-                "Cannot export bitmap from RAW volume")
+                "Cannot export bitmap from RAW volume"
+            )
         bitmap_chain = _find_bitmap(vol.volumePath, cfg.bitmap)
         if not bitmap_chain:
             raise se.BitmapDoesNotExist(
                 reason=f"Bitmap does not exist in {vol.volumePath}",
-                bitmap=cfg.bitmap)
+                bitmap=cfg.bitmap,
+            )
         using_overlay = len(bitmap_chain) > 1
     else:
         bitmap_chain = None
@@ -187,25 +193,34 @@ def _managed_volume_export_config(cfg):
     """
     if cfg.bitmap:
         raise se.UnsupportedOperation(
-            "Cannot export bitmap from Managed Block Storage volume")
+            "Cannot export bitmap from Managed Block Storage volume"
+        )
     from vdsm.storage import managedvolumedb
+
     try:
         db = managedvolumedb.open()
         with closing(db):
             vol_info = db.get_volume(cfg.vol_id)
     except managedvolumedb.NotFound:
-        log.warning("Managed volume %s not in DB (attach may have failed or "
-                    "not run yet)", cfg.vol_id)
+        log.warning(
+            "Managed volume %s not in DB (attach may have failed or "
+            "not run yet)",
+            cfg.vol_id,
+        )
         raise se.StorageDomainDoesNotExist(cfg.sd_id)
     managed_path = os.path.join(
-        managedvolume.VOLUME_LINK_DIR, f"{cfg.sd_id}_{cfg.vol_id}")
+        managedvolume.VOLUME_LINK_DIR, f"{cfg.sd_id}_{cfg.vol_id}"
+    )
     if os.path.islink(managed_path):
         path = managed_path
     else:
         path = vol_info.get("path")
     if not path or not os.path.exists(path):
-        log.warning("Managed volume %s has no path or path missing: path=%s",
-                    cfg.vol_id, path)
+        log.warning(
+            "Managed volume %s has no path or path missing: path=%s",
+            cfg.vol_id,
+            path,
+        )
         raise se.StorageDomainDoesNotExist(cfg.sd_id)
     log.info("Using managed volume path for vol %s: %s", cfg.vol_id, path)
     # MBS volumes are block devices (e.g. iscsi, rbd), raw format, no chain
@@ -593,11 +608,15 @@ def _verify_path(path):
         log.debug("_verify_path resolved transient backing to path=%r", path)
 
     if _is_attached_managed_volume_path(path):
-        log.debug("_verify_path path %r allowed (attached managed volume)", path)
+        log.debug(
+            "_verify_path path %r allowed (attached managed volume)", path
+        )
         return
 
     if not path.startswith(sc.REPO_MOUNT_DIR):
-        log.warning("_verify_path rejecting path=%r (repo=%r)", path, sc.REPO_MOUNT_DIR)
+        log.warning(
+            "_verify_path rejecting path=%r (repo=%r)", path, sc.REPO_MOUNT_DIR
+        )
         raise InvalidPath(
             "Path {!r} is outside storage repository {!r}".format(
                 path, sc.REPO_MOUNT_DIR

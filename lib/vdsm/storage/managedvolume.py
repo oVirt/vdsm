@@ -197,13 +197,20 @@ def convert_volume(sd_id, src_vol_id, dst_vol_id, src_format, dst_format):
     dst_path = _run_link(sd_id, dst_vol_id)
     if not os.path.exists(src_path):
         raise se.ManagedVolumeHelperFailed(
-            "Source volume %s not attached at %s" % (src_vol_id, src_path))
+            "Source volume %s not attached at %s" % (src_vol_id, src_path)
+        )
     if not os.path.exists(dst_path):
         raise se.ManagedVolumeHelperFailed(
-            "Destination volume %s not attached at %s" % (dst_vol_id, dst_path))
+            "Destination volume %s not attached at %s" % (dst_vol_id, dst_path)
+        )
 
-    log.info("Converting managed volume %s -> %s (src_fmt=%s dst_fmt=%s)",
-             src_vol_id, dst_vol_id, src_format, dst_format)
+    log.info(
+        "Converting managed volume %s -> %s (src_fmt=%s dst_fmt=%s)",
+        src_vol_id,
+        dst_vol_id,
+        src_format,
+        dst_format,
+    )
     operation = qemuimg.convert(
         src_path,
         dst_path,
@@ -213,8 +220,9 @@ def convert_volume(sd_id, src_vol_id, dst_vol_id, src_format, dst_format):
         target_is_zero=True,
     )
     operation.run()
-    log.info("Convert completed for managed volume %s -> %s",
-             src_vol_id, dst_vol_id)
+    log.info(
+        "Convert completed for managed volume %s -> %s", src_vol_id, dst_vol_id
+    )
 
 
 # supervdsm interface
