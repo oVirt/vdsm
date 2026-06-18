@@ -32,6 +32,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import hba
 from vdsm.storage import managedvolume
+from vdsm.storage import nvme
 
 try:
     import ovirt_hosted_engine_ha.client.client as haClient
@@ -121,6 +122,7 @@ def get():
     caps["emulatedMachines"] = machinetype.emulated_machines(cpuarch.effective())
     caps["ISCSIInitiatorName"] = _getIscsiIniName()
     caps["nvmeHostNqn"] = _getNvmeHostNqn()
+    caps["nvmeNativeMultipath"] = nvme.is_native_multipath_enabled()
     caps["HBAInventory"] = hba.HBAInventory()
     caps["vmTypes"] = ["kvm"]
 

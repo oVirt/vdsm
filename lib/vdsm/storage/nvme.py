@@ -408,3 +408,102 @@ def _parse_list_subsys_output(output):
                 "trsvcid": path_match.group(2),
             })
     return subsystems
+
+
+def is_native_multipath_enabled():
+    path = "/sys/module/nvme_core/parameters/multipath"
+    try:
+        with open(path) as f:
+            return f.read().strip() == "Y"
+    except (OSError, IOError):
+        return False
+
+
+def _device_is_nvmeof(dev):
+    ctrl = dev.split("n")[0] if "n" in dev else dev
+    transport_path = os.path.join(SYS_NVME, ctrl, "transport")
+    transport = _read_sysfs_attr(transport_path)
+    return transport in ("tcp", "rdma")
+
+
+def _namespace_held_by_dm(dev):
+    holders_dir = os.path.join("/sys/block", dev, "holders")
+    try:
+        for entry in os.listdir(holders_dir):
+            if entry.startswith("dm-"):
+                return True
+    except (OSError, IOError):
+        pass
+    return False
+
+
+def get_subsystem_controllers(dev):
+    subsys = _device_to_subsys(dev)
+    if not subsys:
+        return []
+
+    controllers = []
+    try:
+        for entry in sorted(os.listdir(subsys)):
+            entry_path = os.path.join(subsys, entry)
+            if not os.path.islink(entry_path):
+                continue
+            if entry.startswith("nvme") and not entry.startswith("nvme-subsys"):
+                address = _read_sysfs_attr(os.path.join(entry_path, "address"))
+                ctrl_transport = _read_sysfs_attr(
+                    os.path.join(entry_path, "transport")) or "tcp"
+                traddr, trsvcid = _parse_address(address) if address else (None, None)
+                controllers.append({
+                    "ctrl": entry,
+                    "traddr": traddr,
+                    "trsvcid": trsvcid or "4420",
+                    "transport": ctrl_transport,
+                })
+    except (OSError, IOError):
+        pass
+
+    return controllers
+
+
+def get_native_namespaces():
+    namespaces = []
+    try:
+        entries = sorted(os.listdir("/sys/block"))
+    except (OSError, IOError):
+        return namespaces
+
+    for entry in entries:
+        if not re.match(r"nvme\d+n\d+$", entry):
+            continue
+        if _namespace_held_by_dm(entry):
+            continue
+        if not _device_is_nvmeof(entry):
+            continue
+
+        subsys = _device_to_subsys(entry)
+        nqn = _read_sysfs_attr(os.path.join(subsys, "subsysnqn")) if subsys else None
+        controllers = get_subsystem_controllers(entry)
+
+        namespaces.append((entry, {
+            "nqn": nqn,
+            "subsys": os.path.basename(subsys) if subsys else None,
+            "controllers": controllers,
+        }))
+
+    return namespaces
+
+
+def get_native_namespace_details(dev):
+    ctrl = dev.split("n")[0] if "n" in dev else dev
+    ctrl_path = os.path.join(SYS_NVME, ctrl)
+
+    serial = _read_sysfs_attr(os.path.join(ctrl_path, "serial")) or ""
+    model = _read_sysfs_attr(os.path.join(ctrl_path, "model")) or ""
+    fwrev = _read_sysfs_attr(os.path.join(ctrl_path, "firmware_rev")) or ""
+
+    return {
+        "serial": serial,
+        "model": model,
+        "fwrev": fwrev,
+        "vendor": "NVMe",
+    }

@@ -545,6 +545,71 @@ def pathListIter(filterGuids=()):
 
         yield devInfo
 
+    if nvme.is_native_multipath_enabled():
+        for ns_name, ns_info in nvme.get_native_namespaces():
+            if devsFound == filterLen:
+                break
+
+            if filterGuids and ns_name not in filterGuids:
+                continue
+
+            devsFound += 1
+
+            ns_details = nvme.get_native_namespace_details(ns_name)
+
+            devInfo = {
+                "guid": ns_name,
+                "dm": "",
+                "capacity": str(getDeviceSize(ns_name)),
+                "serial": ns_details["serial"],
+                "paths": [],
+                "connections": [],
+                "devtypes": [DEV_NVMEOF],
+                "devtype": DEV_NVMEOF,
+                "vendor": ns_details["vendor"],
+                "product": ns_details["model"],
+                "fwrev": ns_details["fwrev"],
+                "logicalblocksize": "",
+                "physicalblocksize": "",
+                "discard_max_bytes": getDeviceDiscardMaxBytes(ns_name),
+            }
+
+            try:
+                logBlkSize, phyBlkSize = getDeviceBlockSizes(ns_name)
+                devInfo["logicalblocksize"] = str(logBlkSize)
+                devInfo["physicalblocksize"] = str(phyBlkSize)
+            except Exception:
+                log.warn("Problem getting blocksize from device ",
+                         ns_name, exc_info=True)
+
+            session_key = ns_info.get("nqn")
+            if session_key and session_key not in knownSessions:
+                knownSessions[session_key] = {}
+
+            for ctrl_info in ns_info.get("controllers", []):
+                pathInfo = {
+                    "physdev": ctrl_info["ctrl"],
+                    "state": "active",
+                    "capacity": str(getDeviceSize(ns_name)),
+                    "lun": 0,
+                    "type": DEV_NVMEOF,
+                }
+                devInfo["paths"].append(pathInfo)
+
+                if session_key:
+                    conn_info = {
+                        "connection": ctrl_info["traddr"],
+                        "port": ctrl_info["trsvcid"],
+                        "nqn": session_key,
+                        "transport": ctrl_info["transport"],
+                    }
+                    if session_key not in knownSessions or                             not knownSessions[session_key]:
+                        knownSessions[session_key] = conn_info
+                    devInfo["connections"].append(
+                        knownSessions.get(session_key, conn_info))
+
+            yield devInfo
+
 
 TOXIC_REGEX = re.compile(
     r"[%s]" % re.sub(r"[\-\\\]]", lambda m: "\\" + m.group(), TOXIC_CHARS)

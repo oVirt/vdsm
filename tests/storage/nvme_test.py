@@ -246,3 +246,137 @@ class TestNvmeDeviceHelpers:
         result = nvme._device_to_controller("nvme0n1")
         expected = os.path.join(nvme.SYS_NVME, "nvme0")
         assert result == expected
+
+
+class TestNvmeNativeMultipath:
+
+    def test_is_native_multipath_enabled_false(self, monkeypatch):
+        monkeypatch.setattr(
+            "builtins.open",
+            lambda *a, **kw: _raise_on_open(a[0]))
+        monkeypatch.setattr("os.path.exists", lambda p: False)
+        assert not nvme.is_native_multipath_enabled()
+
+    def test_is_native_multipath_disabled(self, monkeypatch):
+        from unittest.mock import mock_open
+        m = mock_open(read_data="N\n")
+        monkeypatch.setattr(
+            "builtins.open", m)
+        monkeypatch.setattr(
+            "os.path.exists",
+            lambda p: p == "/sys/module/nvme_core/parameters/multipath")
+        assert not nvme.is_native_multipath_enabled()
+
+    def test_device_is_nvmeof_tcp(self, monkeypatch):
+        monkeypatch.setattr(
+            _MODULE + "._read_sysfs_attr",
+            lambda p: "tcp" if p.endswith("/transport") else None)
+        assert nvme._device_is_nvmeof("nvme0n1")
+
+    def test_device_is_nvmeof_pci(self, monkeypatch):
+        monkeypatch.setattr(
+            _MODULE + "._read_sysfs_attr",
+            lambda p: "pci" if p.endswith("/transport") else None)
+        assert not nvme._device_is_nvmeof("nvme0n1")
+
+    def test_namespace_held_by_dm_true(self, monkeypatch):
+        def fake_listdir(path):
+            if path.endswith("/holders"):
+                return ["dm-0"]
+            return []
+        monkeypatch.setattr("os.listdir", fake_listdir)
+        monkeypatch.setattr("os.path.isdir", lambda p: True)
+        assert nvme._namespace_held_by_dm("nvme0n1")
+
+    def test_namespace_held_by_dm_false(self, monkeypatch):
+        def fake_listdir(path):
+            if path.endswith("/holders"):
+                return []
+            raise OSError()
+        monkeypatch.setattr("os.listdir", fake_listdir)
+        monkeypatch.setattr("os.path.isdir", lambda p: True)
+        assert not nvme._namespace_held_by_dm("nvme0n1")
+
+    def test_get_subsystem_controllers(self, monkeypatch):
+        fake_subsys = "/sys/class/nvme-subsystem/nvme-subsys0"
+        monkeypatch.setattr(
+            _MODULE + "._device_to_subsys",
+            lambda dev: fake_subsys)
+
+        def fake_listdir(path):
+            if path == fake_subsys:
+                return ["nvme0", "nvme1", "nvme-subsys0"]
+            return []
+
+        def fake_isdir(path):
+            return True
+
+        def fake_islink(path):
+            return "nvme0" in path or "nvme1" in path
+
+        monkeypatch.setattr("os.listdir", fake_listdir)
+        monkeypatch.setattr("os.path.isdir", fake_isdir)
+        monkeypatch.setattr("os.path.islink", fake_islink)
+
+        attrs = {
+            "/sys/class/nvme-subsystem/nvme-subsys0/nvme0/address":
+                "traddr=192.168.1.100,trsvcid=4420",
+            "/sys/class/nvme-subsystem/nvme-subsys0/nvme0/transport":
+                "tcp",
+            "/sys/class/nvme-subsystem/nvme-subsys0/nvme1/address":
+                "traddr=192.168.1.101,trsvcid=4420",
+            "/sys/class/nvme-subsystem/nvme-subsys0/nvme1/transport":
+                "tcp",
+        }
+
+        monkeypatch.setattr(
+            _MODULE + "._read_sysfs_attr",
+            lambda p: attrs.get(p))
+
+        controllers = nvme.get_subsystem_controllers("nvme0n1")
+        assert len(controllers) == 2
+        assert controllers[0]["ctrl"] == "nvme0"
+        assert controllers[0]["traddr"] == "192.168.1.100"
+        assert controllers[1]["ctrl"] == "nvme1"
+        assert controllers[1]["traddr"] == "192.168.1.101"
+
+    def test_get_native_namespace_details(self, monkeypatch):
+        attrs = {
+            "/sys/class/nvme/nvme0/serial": "SN12345",
+            "/sys/class/nvme/nvme0/model": "Test NVMe Drive",
+            "/sys/class/nvme/nvme0/firmware_rev": "1.0",
+        }
+        monkeypatch.setattr(
+            _MODULE + "._read_sysfs_attr",
+            lambda p: attrs.get(p))
+        result = nvme.get_native_namespace_details("nvme0n1")
+        assert result["serial"] == "SN12345"
+        assert result["model"] == "Test NVMe Drive"
+        assert result["fwrev"] == "1.0"
+        assert result["vendor"] == "NVMe"
+
+    def test_get_native_namespaces_empty(self, monkeypatch):
+        monkeypatch.setattr("os.listdir", lambda p: [])
+        result = nvme.get_native_namespaces()
+        assert result == []
+
+    def test_get_native_namespaces_skips_local(self, monkeypatch):
+        def fake_listdir(path):
+            if path == "/sys/block":
+                return ["nvme0n1", "sda", "dm-0"]
+            if path.endswith("/holders"):
+                return []
+            return ["nvme0"]
+
+        monkeypatch.setattr("os.listdir", fake_listdir)
+        monkeypatch.setattr("os.path.isdir", lambda p: True)
+        monkeypatch.setattr(
+            _MODULE + "._namespace_held_by_dm", lambda d: False)
+        monkeypatch.setattr(
+            _MODULE + "._device_is_nvmeof", lambda d: False)
+        result = nvme.get_native_namespaces()
+        assert result == []
+
+
+def _raise_on_open(path):
+    raise OSError("No such file")
