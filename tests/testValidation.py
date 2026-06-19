@@ -379,11 +379,8 @@ def broken_on_ci(reason, exception=Exception, name="OVIRT_CI"):
     """
     Mark a test as broken on the CI.
 
-    By defualt, this will skip failing tests run in ovirt CI, when OVIRT_CI
+    By default, this will skip failing tests run in ovirt CI, when OVIRT_CI
     environment variable is defined.
-
-    To use on travis-ci, use name="TRAVIS_CI".  If a test is broken on both
-    ovirt CI and travis-ci, mark it separately for each.
 
     Usage::
 
@@ -391,8 +388,8 @@ def broken_on_ci(reason, exception=Exception, name="OVIRT_CI"):
         def test_will_skip_on_failure(self):
             ...
 
-    To skip only if certain expection was raised, you can specify the
-    expection::
+    To skip only if certain exception was raised, you can specify the
+    exception::
 
         @broken_on_ci("why it is broken...", exception=OSError)
         def test_will_skip_on_os_error(self):

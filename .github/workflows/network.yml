@@ -26,6 +26,7 @@ jobs:
   tests:
     env:
       IMAGE_TAG: ${{ matrix.tag }}
+      OVIRT_CI: 1
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

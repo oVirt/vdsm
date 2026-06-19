@@ -487,14 +487,6 @@ def running_on_fedora(ver=''):
         return 'Fedora release {}'.format(ver) in f.readline()
 
 
-def running_on_travis_ci():
-    return 'TRAVIS_CI' in os.environ
-
-
-def running_on_ovirt_ci():
-    return 'CI' in os.environ or 'OVIRT_CI' in os.environ
-
-
 class FakeNotifier:
     def __init__(self):
         self.calls = []

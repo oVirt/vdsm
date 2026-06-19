@@ -9,11 +9,7 @@ import pytest
 from vdsm.common import cache
 from vdsm.common import commands
 
-from testing import (
-    on_ovirt_ci,
-    on_travis_ci,
-)
-
+from testing import on_ovirt_ci
 
 requires_root = pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
 
@@ -25,9 +21,7 @@ requires_selinux = pytest.mark.skipif(
     not selinux.is_selinux_enabled(), reason="Selinux is not enabled"
 )
 
-broken_on_ci = pytest.mark.skipif(
-    on_ovirt_ci() or on_travis_ci(), reason="fails on CI"
-)
+broken_on_ci = pytest.mark.skipif(on_ovirt_ci(), reason="fails on CI")
 
 
 @cache.memoized
