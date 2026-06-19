@@ -12,7 +12,6 @@ from network.nettestlib import bond_device
 from network.nettestlib import dummy_device
 from network.nettestlib import Interface
 from network.nettestlib import IpFamily
-from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import vlan_device
 
 
@@ -312,11 +311,6 @@ class TestReuseBond(object):
                         NETWORK2_NAME, NETVLAN[NETWORK2_NAME]
                     )
 
-    @pytest.mark.xfail(
-        reason='Unstable on oVirt CI',
-        strict=False,
-        condition=running_on_ovirt_ci(),
-    )
     def test_add_net_on_existing_external_bond_preserving_mac(
         self, adapter, switch, nic0, nic1
     ):

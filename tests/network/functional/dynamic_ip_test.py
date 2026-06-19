@@ -16,7 +16,6 @@ from network.nettestlib import IpFamily
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
 from network.nettestlib import parametrize_ip_families
-from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import vlan_device
 from network.nettestlib import wait_for_ipv4
 from network.nettestlib import wait_for_ipv6
@@ -39,14 +38,6 @@ DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
 DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 
 IPv4_DNS = ['1.1.1.1', '2.2.2.2']
-
-
-unstable_dhcpv6_on_ovirt_ci = pytest.mark.xfail(
-    reason='Unstable DHCPv6 response on oVirt CI',
-    raises=nftestlib.MissingDynamicIPv6Address,
-    strict=False,
-    condition=running_on_ovirt_ci(),
-)
 
 
 class NetworkIPConfig(object):
@@ -203,7 +194,6 @@ class TestNetworkDhcpBasic(object):
     @parametrize_ip_families
     @nftestlib.parametrize_bridged
     @parametrize_def_route
-    @unstable_dhcpv6_on_ovirt_ci
     def test_add_net_with_dhcp(
         self,
         adapter,
@@ -238,7 +228,6 @@ class TestNetworkDhcpBasic(object):
             adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
     @parametrize_ip_families
-    @unstable_dhcpv6_on_ovirt_ci
     def test_move_nic_between_bridgeless_and_bridged_keep_ip(
         self,
         adapter,
@@ -318,7 +307,6 @@ def test_default_route_of_two_dynamic_ip_networks(
 @parametrize_ip_families
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
-@unstable_dhcpv6_on_ovirt_ci
 def test_dynamic_ip_switch_to_static_without_running_dhcp_server(
     adapter,
     switch,
@@ -339,7 +327,6 @@ def test_dynamic_ip_switch_to_static_without_running_dhcp_server(
 @parametrize_ip_families
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
-@unstable_dhcpv6_on_ovirt_ci
 def test_dynamic_ip_switch_to_static_with_running_dhcp_server(
     adapter,
     switch,
@@ -472,7 +459,6 @@ def test_dynamic_ip_bonded_vlanned_network(
 
 
 @nftestlib.parametrize_switch
-@unstable_dhcpv6_on_ovirt_ci
 def test_dynamic_ip_bonded_network(
     adapter, switch, dynamic_ipv4_ipv6_iface_with_dhcp_server
 ):

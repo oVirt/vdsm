@@ -11,8 +11,6 @@ from testlib import (
     dummyTextGenerator,
 )
 
-from testValidation import broken_on_ci
-
 import yajsonrpc
 from integration.jsonRpcHelper import constructAcceptor
 from yajsonrpc.stompclient import StandAloneRpcClient
@@ -63,10 +61,6 @@ class StompTests(TestCaseBase):
             self.ssl_ctx = create_ssl_context(key_file, cert_file)
             super(TestCaseBase, self).run(result)
 
-    @broken_on_ci(
-        "Fails randomly in oVirt CI, see https://gerrit.ovirt.org/c/95899/",
-        name="TRAVIS_CI",
-    )
     @permutations(
         [
             # size, use_ssl

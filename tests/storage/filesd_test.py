@@ -7,8 +7,6 @@ import os
 import time
 import uuid
 
-import pytest
-
 from storage.storagefakelib import fake_repo
 from testlib import VdsmTestCase
 from testlib import expandPermutations
@@ -137,10 +135,6 @@ class TestGetAllVolumes(VdsmTestCase):
         self.assertEqual(res["volume-4"], (("image-2",), None))
         self.assertEqual(res["volume-5"], (("image-3",), None))
 
-    @pytest.mark.skipif(
-        "OVIRT_CI" in os.environ or "TRAVIS_CI" in os.environ,
-        reason="performance test, unpredictable on CI",
-    )
     def test_scale(self):
         # For this test we want real world strings
         images_count = 5000
