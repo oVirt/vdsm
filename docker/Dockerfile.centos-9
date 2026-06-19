@@ -13,6 +13,7 @@ RUN dnf install -y 'dnf-command(copr)' \
         automake \
         createrepo_c \
         dnf-utils \
+        dnsmasq \
         dosfstools \
         e2fsprogs \
         gcc \
