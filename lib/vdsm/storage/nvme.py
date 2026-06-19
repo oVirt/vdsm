@@ -448,17 +448,19 @@ def get_subsystem_controllers(dev):
             entry_path = os.path.join(subsys, entry)
             if not os.path.islink(entry_path):
                 continue
-            if entry.startswith("nvme") and not entry.startswith("nvme-subsys"):
-                address = _read_sysfs_attr(os.path.join(entry_path, "address"))
-                ctrl_transport = _read_sysfs_attr(
-                    os.path.join(entry_path, "transport")) or "tcp"
-                traddr, trsvcid = _parse_address(address) if address else (None, None)
-                controllers.append({
-                    "ctrl": entry,
-                    "traddr": traddr,
-                    "trsvcid": trsvcid or "4420",
-                    "transport": ctrl_transport,
-                })
+            if not entry.startswith("nvme") or entry.startswith("nvme-subsys"):
+                continue
+            address = _read_sysfs_attr(os.path.join(entry_path, "address"))
+            ctrl_transport = _read_sysfs_attr(
+                os.path.join(entry_path, "transport")) or "tcp"
+            traddr, trsvcid = (
+                _parse_address(address) if address else (None, None))
+            controllers.append({
+                "ctrl": entry,
+                "traddr": traddr,
+                "trsvcid": trsvcid or "4420",
+                "transport": ctrl_transport,
+            })
     except (OSError, IOError):
         pass
 
@@ -481,7 +483,10 @@ def get_native_namespaces():
             continue
 
         subsys = _device_to_subsys(entry)
-        nqn = _read_sysfs_attr(os.path.join(subsys, "subsysnqn")) if subsys else None
+        nqn = (
+            _read_sysfs_attr(os.path.join(subsys, "subsysnqn"))
+            if subsys else None
+        )
         controllers = get_subsystem_controllers(entry)
 
         namespaces.append((entry, {

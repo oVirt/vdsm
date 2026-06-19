@@ -38,6 +38,10 @@ NvmeofConnectionParameters = namedtuple("NvmeofConnectionParameters",
                                         "id, nqn, transport, traddr, "
                                         "trsvcid, host_nqn, dhchap_key")
 
+GlusterFsConnectionParameters = namedtuple(
+    "GlusterFsConnectionParameters", "id, spec, vfsType, options"
+)
+
 PosixFsConnectionParameters = namedtuple("PosixFsConnectionParameters",
                                          "id, spec, vfsType, options")
 
@@ -63,7 +67,8 @@ CON_TYPE_ID_2_CON_TYPE = {
     sd.FCP_DOMAIN: 'fcp',
     sd.POSIXFS_DOMAIN: 'posixfs',
     sd.GLUSTERFS_DOMAIN: 'glusterfs',
-    sd.NVMEOF_DOMAIN: 'nvmeof'}
+    sd.NVMEOF_DOMAIN: 'nvmeof'
+}
 
 log = logging.getLogger("storage.storageServer")
 

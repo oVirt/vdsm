@@ -39,6 +39,8 @@ TOXIC_CHARS = '()*+?|^$.\\'
 
 POLL_INTERVAL = 1.0
 
+DEV_NVMEOF = "NVMe-oF"
+
 log = logging.getLogger("storage.multipath")
 
 _SCSI_ID = cmdutils.CommandPath(
@@ -603,7 +605,8 @@ def pathListIter(filterGuids=()):
                         "nqn": session_key,
                         "transport": ctrl_info["transport"],
                     }
-                    if session_key not in knownSessions or                             not knownSessions[session_key]:
+                    if session_key not in knownSessions or (
+                            not knownSessions[session_key]):
                         knownSessions[session_key] = conn_info
                     devInfo["connections"].append(
                         knownSessions.get(session_key, conn_info))
@@ -669,9 +672,6 @@ def devIsiSCSI(type):
 
 def devIsFCP(type):
     return type in [DEV_FCP, DEV_MIXED]
-
-
-DEV_NVMEOF = "NVMe-oF"
 
 
 def devIsNvmeof(type):

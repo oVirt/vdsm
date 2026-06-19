@@ -40,7 +40,7 @@ except ImportError:
     haClient = None
 
 
-def _parseKeyVal(lines, delim="="):
+def _parseKeyVal(lines, delim='='):
     d = {}
     for line in lines:
         kv = line.split(delim, 1)
