@@ -12,7 +12,6 @@ from contextlib import contextmanager
 
 from yajsonrpc.betterAsyncore import Reactor
 from vdsm.protocoldetector import MultiProtocolAcceptor
-from testValidation import broken_on_ci
 from testlib import VdsmTestCase, expandPermutations, permutations
 
 from integration.sslhelper import generate_key_cert_pair, create_ssl_context
@@ -127,7 +126,6 @@ class AcceptorTests(VdsmTestCase):
         data = b"echo testing is fun\n"
         self.check_detect(use_ssl, data, data)
 
-    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     @permutations(PERMUTATIONS)
     def test_detect_echo6(self, use_ssl):
         self.start_acceptor(use_ssl, address='::1')
@@ -152,7 +150,6 @@ class AcceptorTests(VdsmTestCase):
         self.check_slow_client(use_ssl)
 
     @permutations(PERMUTATIONS)
-    @broken_on_ci("Fail randomly", name="OVIRT_CI")
     def test_detect_slow_client_concurrency(self, use_ssl):
         self.start_acceptor(use_ssl)
         self.check_concurrently(self.check_slow_client, use_ssl)

@@ -17,7 +17,6 @@ from vdsm.virt import vmstatus
 
 
 from monkeypatch import MonkeyPatchScope
-from testValidation import broken_on_ci
 from testlib import make_config
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
@@ -211,9 +210,6 @@ class PeriodicOperationTests(_PeriodicBase):
         assert attempts[0] == TRIES_BEFORE_SUCCESS + 1
         op.stop()
 
-    @broken_on_ci(
-        "Fails occasionally, don't know why", exception=AssertionError
-    )
     def test_repeating_if_raises(self):
         PERIOD = 0.1
         TIMES = 5

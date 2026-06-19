@@ -17,7 +17,6 @@ from vdsm.network.netlink import waitfor
 
 from network.nettestlib import Interface
 from network.nettestlib import IpFamily
-from network.nettestlib import running_on_ovirt_ci
 
 from ..nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 
@@ -51,9 +50,6 @@ def nic0():
 
 @pytest.fixture
 def dynamic_ipv6_iface():
-    if running_on_ovirt_ci():
-        pytest.skip('Using dnsmasq for ipv6 RA is unstable on CI')
-
     with veth_pair() as (server, client):
         with wait_for_ipv6(server, IPV6_ADDR1, IPV6_PREFIX_LENGTH):
             Interface.from_existing_dev_name(server).add_ip(
@@ -95,12 +91,6 @@ class TestNetinfo(object):
                 hiddens, _nics
             )
 
-    @pytest.mark.xfail(
-        condition=running_on_ovirt_ci(),
-        raises=AssertionError,
-        reason='Bond options scanning is fragile on CI',
-        strict=False,
-    )
     def test_get_bonding_options(self, bond_module):
         INTERVAL = '12345'
         bond_name = random_iface_name()

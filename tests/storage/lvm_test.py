@@ -18,10 +18,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import fsutils
 from vdsm.storage import lvm
 
-import testing
-
 from .marks import requires_root
-
 
 EXPECTED_CFG_DEVICES = (
     'devices { '
@@ -1961,10 +1958,6 @@ def test_bootstrap(tmp_storage):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.skipif(
-    testing.on_ovirt_ci() or testing.on_travis_ci(),
-    reason="dm-mirror kernel module missing - pvmove fails",
-)
 def test_pv_move(tmp_storage):
     dev_size = 1 * GiB
     dev1 = tmp_storage.create_device(dev_size)

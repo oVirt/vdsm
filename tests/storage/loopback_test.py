@@ -10,12 +10,9 @@ from vdsm.common.units import GiB
 from vdsm.storage import constants as sc
 from vdsm.storage import multipath
 
-import testing
-
 from . import loopback
 from .marks import requires_root
 from .marks import requires_loopback_sector_size
-
 
 BEFORE = b"a" * 10
 AFTER = b"b" * 10
@@ -32,12 +29,6 @@ AFTER = b"b" * 10
             sc.BLOCK_SIZE_4K,
             marks=[
                 requires_loopback_sector_size,
-                pytest.mark.xfail(
-                    testing.on_ovirt_ci() or testing.on_travis_ci(),
-                    reason="fails randomly to create loop device with 4k "
-                    "sector size, only in CI - needs investigation",
-                    strict=False,
-                ),
             ],
         ),
     ],
