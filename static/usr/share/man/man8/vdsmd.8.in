@@ -293,8 +293,6 @@ FiberChannel devices which VDSM uses.
 .BR https://www.ovirt.org/develop/developer-guide/vdsm/vdsm/
 .br
 .BR https://github.com/oVirt/vdsm
-.br
-.BR https://travis-ci.org/oVirt/vdsm
 
 .SH AUTHOR
 VDSM was written by Ayal Baron, Barak Azulay, Cyril Plisko, Dan Kenigsberg,

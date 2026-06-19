@@ -9,15 +9,12 @@ import pytest
 from vdsm.common import systemctl
 from vdsm.common import systemd
 
+from testValidation import broken_on_ci
+
 requires_root = pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
 
-broken_on_ci = pytest.mark.skipif(
-    "OVIRT_CI" in os.environ or "TRAVIS_CI" in os.environ,
-    reason="requires systemd daemon",
-)
 
-
-@broken_on_ci
+@broken_on_ci("requires systemd daemon", name="OVIRT_CI")
 def test_show_unit_not_found():
     unit = "test-sleep-{}.service".format(uuid.uuid4())
     properties = ("Names", "LoadState", "ActiveState")
@@ -38,7 +35,7 @@ def test_show_unit_not_found():
     assert r[0]["Names"] == unit
 
 
-@broken_on_ci
+@broken_on_ci("requires systemd daemon", name="OVIRT_CI")
 def test_show_pattern_not_found():
     pattern = "test-*-{}.service".format(uuid.uuid4())
     properties = ("Names", "LoadState", "ActiveState")
@@ -51,7 +48,7 @@ def test_show_pattern_not_found():
 
 
 @requires_root
-@broken_on_ci
+@broken_on_ci("requires systemd daemon", name="OVIRT_CI")
 def test_single_unit():
     unit = "test-sleep-{}.service".format(uuid.uuid4())
     properties = ("Names", "LoadState", "ActiveState")
@@ -88,7 +85,7 @@ def test_single_unit():
 
 
 @requires_root
-@broken_on_ci
+@broken_on_ci("requires systemd daemon", name="OVIRT_CI")
 def test_multiple_units():
     unit1 = "test-sleep-{}.service".format(uuid.uuid4())
     unit2 = "test-sleep-{}.service".format(uuid.uuid4())

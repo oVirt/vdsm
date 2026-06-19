@@ -10,14 +10,14 @@ from unittest import mock
 
 import pytest
 
+from testing import on_ovirt_ci
+
 from network.nettestlib import Bridge
 from network.nettestlib import bridge_device
 from network.nettestlib import dummy_device
 from network.nettestlib import Interface
 from network.nettestlib import IpFamily
 from network.nettestlib import running
-from network.nettestlib import running_on_ovirt_ci
-from network.nettestlib import running_on_travis_ci
 from network.nettestlib import Tap
 from network.nettestlib import veth_pair
 from network.nettestlib import vlan_device
@@ -254,8 +254,8 @@ class TestConfigureOutbound(object):
         assert len(tc_filters.tagged_filters) == 0
 
     @pytest.mark.xfail(
-        condition=running_on_ovirt_ci() or running_on_travis_ci(),
-        reason='does not work on CI with nmstate',
+        condition=on_ovirt_ci(),
+        reason='CI container missing the tc modules',
         strict=False,
     )
     @pytest.mark.parametrize('repeating_calls', [1, 2])
@@ -277,8 +277,8 @@ class TestConfigureOutbound(object):
         assert int(tag_filters[0]['basic']['value']) == VLAN16_TAG
 
     @pytest.mark.xfail(
-        condition=running_on_ovirt_ci() or running_on_travis_ci(),
-        reason='does not work on CI with nmstate',
+        condition=on_ovirt_ci(),
+        reason='CI container missing the tc modules',
         strict=False,
     )
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})

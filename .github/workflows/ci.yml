@@ -24,7 +24,7 @@ jobs:
       run: ./ci/lint.sh
   test-storage-user:
     env:
-      TRAVIS_CI: 1
+      OVIRT_CI: 1
     runs-on: [ self-hosted, docker ]
     strategy:
       fail-fast: false
@@ -44,7 +44,7 @@ jobs:
       run: ./ci/tests-storage.sh vdsm
   test-storage-root:
     env:
-      TRAVIS_CI: 1
+      OVIRT_CI: 1
     runs-on: [ self-hosted, docker ]
     strategy:
       fail-fast: false
@@ -64,7 +64,7 @@ jobs:
       run: ./ci/tests-storage.sh root
   tests:
     env:
-      TRAVIS_CI: 1
+      OVIRT_CI: 1
     runs-on: [ self-hosted, docker ]
     strategy:
       fail-fast: false

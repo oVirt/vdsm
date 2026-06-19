@@ -25,9 +25,5 @@ def on_fedora(ver=''):
         return 'Fedora release {}'.format(ver) in f.readline()
 
 
-def on_travis_ci():
-    return 'TRAVIS_CI' in os.environ
-
-
 def on_ovirt_ci():
     return 'OVIRT_CI' in os.environ
