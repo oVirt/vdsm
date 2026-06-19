@@ -62,9 +62,6 @@ function clone_nmstate {
     "
 }
 
-function enable_ipv6 {
-    container_exec "echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6"
-}
 
 options=$(getopt --options "" \
     --long help,shell,switch-type:,nmstate-pr:,nmstate-source:,pytest-args:\
