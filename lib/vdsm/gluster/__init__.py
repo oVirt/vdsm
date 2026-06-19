@@ -54,8 +54,9 @@ def _shouldPublish(func, gluster_mgmt_enabled):
 
 
 def safeWrite(fileName, content):
+    mode = 'w' if isinstance(content, str) else 'wb'
     with tempfile.NamedTemporaryFile(
-        dir=os.path.dirname(fileName), delete=False
+        mode=mode, dir=os.path.dirname(fileName), delete=False
     ) as tmp:
         tmp.write(content)
         tmpFileName = tmp.name
