@@ -32,7 +32,7 @@ class FakeHSM(hsm.HSM):
 class TestVerifyUntrustedVolume(object):
     SIZE = MiB
 
-    @pytest.mark.parametrize('vol_fmt,', [sc.RAW_FORMAT, sc.COW_FORMAT])
+    @pytest.mark.parametrize('vol_fmt', [sc.RAW_FORMAT, sc.COW_FORMAT])
     def test_ok(self, vol_fmt):
         with self.fake_volume(vol_fmt) as vol:
             qemu_fmt = sc.fmt2str(vol_fmt)
