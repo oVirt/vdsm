@@ -158,6 +158,9 @@ Requires: sanlock >= 3.8.3-3
 
 Requires: device-mapper-multipath
 
+# NVMe-oF support requires nvme-cli for target discovery and connection
+Requires: nvme-cli >= 2.2
+
 # augeas
 Requires: python3-augeas
 

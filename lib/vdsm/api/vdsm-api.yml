@@ -7321,6 +7321,10 @@ types:
             name: ISCSIInitiatorName
             type: string
 
+        -   description: The NVMe host NQN for this host
+            name: nvmeHostNqn
+            type: string
+
         -   description: The number of CPU threads present
             name: cpuThreads
             type: string
