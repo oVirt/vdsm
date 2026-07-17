@@ -158,7 +158,7 @@ def recovering_vm(device_xml, device_metadata):
         xmldevices=device_xml,
         metadata=device_metadata,
     ) as fakevm:
-        fakevm._dom = fake.Domain()
+        fakevm._dom = fake.Domain(vm=fakevm)
         # Real start of fake VM would fail.
         fakevm._run = lambda: None
         # Also skip migration recovery.
