@@ -13,7 +13,7 @@ from vdsm.common import cache
 version_name = "Snow Man"
 software_version = "@PACKAGE_BASE_VERSION@"
 software_revision = "@PACKAGE_BASE_RELEASE@"
-raw_version_revision = "@PACKAGE_VERSION@.@PACKAGE_RELEASE@"
+raw_version_revision = "@PACKAGE_VERSION@.@PACKAGE_RPM_RELEASE@"
 
 
 def _get_libvirt_version():

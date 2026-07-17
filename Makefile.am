@@ -176,12 +176,12 @@ upgrade:
 .PHONY: srpm rpm clean-build
 
 srpm: clean-build dist
-	rpmbuild -ts $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
+	rpmbuild -ts $(if $(RELEASE_SUFFIX),--define="release_suffix $(RELEASE_SUFFIX)") \
 		--define="_topdir $(RPM_TOPDIR)" \
 		$(DIST_ARCHIVES)
 
 rpm: clean-build dist
-	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
+	rpmbuild -ta $(if $(RELEASE_SUFFIX),--define="release_suffix $(RELEASE_SUFFIX)") \
 		--define="_topdir $(RPM_TOPDIR)" \
 		--define="qemu_user $(QEMUUSER)" \
 		--define="qemu_group $(QEMUGROUP)" \
@@ -189,8 +189,6 @@ rpm: clean-build dist
 		--define="with_gluster_mgmt $(GLUSTER_MGMT)" \
 		--define="with_hooks $(HOOKS)" \
 		--define="with_vhostmd $(VHOSTMD)" \
-		--define="vdsm_version $(PACKAGE_VERSION)" \
-		--define="vdsm_release $(PACKAGE_RELEASE)" \
 		$(DIST_ARCHIVES)
 
 clean-build:

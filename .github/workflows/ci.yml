@@ -82,26 +82,4 @@ jobs:
       run: chmod 0400 /etc/shadow
     - name: Run tests
       run: ./ci/tests.sh
-  rpm:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: el9
-            container-name: el9stream
-          - name: el10
-            container-name: el10stream
-    container:
-      image: quay.io/ovirt/buildcontainer:${{ matrix.container-name }}
-    steps:
-    # we need the tags to be pulled for RPMs to have proper versions
-    - uses: ovirt/checkout-action@main
-      with:
-        fetch-depth: 0
-    - name: Build RPMs
-      run: ./ci/rpm.sh
-    - name: Upload artifacts
-      uses: ovirt/upload-rpms-action@main
-      with:
-        directory: ${{ env.EXPORT_DIR }}
+

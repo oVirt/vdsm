@@ -11,29 +11,17 @@ AC_CANONICAL_HOST
 m4_include([m4/ax_python_module.m4])
 
 # Package release
-AC_ARG_ENABLE(
-    [timestamp],
-    [AS_HELP_STRING(
-        [--enable-timestamp],
-        [add a timestamp to the package release @<:@default=no@:>@]
-    )],
-    ,
-    [enable_timestamp="no"]
-)
-AS_IF([test "${enable_timestamp}" = "yes"],
-      AC_SUBST([PACKAGE_RELEASE],
-               [m4_esyscmd([build-aux/pkg-version --timestamp-release])]),
-      AC_SUBST([PACKAGE_RELEASE],
-               [m4_esyscmd([build-aux/pkg-version --release])]))
+AC_ARG_VAR([PACKAGE_RPM_RELEASE],
+    [RPM release field (default: 0.master for development, release number for release builds)])
+AS_IF([test -z "$PACKAGE_RPM_RELEASE"],
+    [PACKAGE_RPM_RELEASE="0.master"])
 
-# Testing for version and release
+# Testing for version
 AS_IF([test "x$PACKAGE_VERSION" = x],
       AC_MSG_ERROR([package version not defined]))
-AS_IF([test "x$PACKAGE_RELEASE" = x],
-      AC_MSG_ERROR([package release not defined]))
 
 AC_SUBST([PACKAGE_BASE_RELEASE],
-         [$(echo "$PACKAGE_RELEASE" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/')])
+         [$(echo "$PACKAGE_RPM_RELEASE" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/')])
 
 AC_SUBST([PACKAGE_BASE_VERSION],
          [$(echo "$PACKAGE_VERSION" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/')])
@@ -256,9 +244,6 @@ AC_SUBST([VMCON_GROUP],ovirt-vmconsole)
 
 configure_flags="--with-data-center=$vdsmrepo\
  --with-polkitdir=$polkitdir"
-if test "$enable_timestamp" == "yes"; then
-    configure_flags+=" --enable-timestamp"
-fi
 if test "$HOOKS" == "1"; then
     configure_flags+=" --enable-hooks"
 fi

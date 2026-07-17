@@ -51,17 +51,15 @@
 # [1] https://docs.fedoraproject.org/en-US/packaging-guidelines/Python_Appendix/#manual-bytecompilation
 %global _python_bytecompile_extra 0
 
-# Release must be generated dynamically and that can't be done here.
-# It must be either:
-# - filled in by configure
-# - generated using ./build-aux/make-dist script
-# - passed to rpmbuild as
-#   --define="vdsm_release $(./build-aux/pkg-version --release)"
-%{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
+# Release is set by configure from PACKAGE_RPM_RELEASE env var (default: 0.master).
+# For release builds, set PACKAGE_RPM_RELEASE to the desired release number
+# before running configure (e.g. export PACKAGE_RPM_RELEASE=1).
+# A release_suffix can be appended at rpmbuild time via
+#   --define="release_suffix .YYYYMMDDHHMMSS.gitSHORTHASH"
 
 Name:           %{vdsm_name}
 Version:        4.50.7
-Release:        %{vdsm_release}%{?dist}%{?extra_release}
+Release:        @PACKAGE_RPM_RELEASE@%{?release_suffix}%{?dist}
 Summary:        Virtual Desktop Server Manager
 
 Group:          Applications/System
