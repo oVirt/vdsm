@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import errno
-import pytest
 import socket
 import ssl
 import threading
@@ -103,12 +102,13 @@ class AcceptorTests(VdsmTestCase):
 
     # Testing
 
-    @pytest.mark.xfail(reason="Test fails on CentOS 9 Python")
     def test_reject_ssl_accept_error(self):
         self.start_acceptor(use_ssl=True)
         with self.connect(use_ssl=False) as client:
             client.sendall(b"this is not ssl handshake\n")
-            self.assertRaises(socket.error, client.recv, self.BUFSIZE)
+            with self.assertRaises(socket.error):
+                while client.recv(self.BUFSIZE):
+                    pass
 
     @permutations(PERMUTATIONS)
     def test_reject_unknown_protocol(self, use_ssl):
