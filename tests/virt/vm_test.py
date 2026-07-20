@@ -761,6 +761,124 @@ class TestVm(XMLTestCase):
                 'forceful': 1,
             }
 
+    @MonkeyPatch(os, 'unlink', lambda _: None)
+    def test_releasevm_graceful_op_invalid_domain_down(self):
+        # When libvirt returns VIR_ERR_OPERATION_INVALID but the domain is
+        # actually down (e.g. qemu died without libvirt emitting a STOPPED
+        # event), releaseVm must succeed instead of getting stuck in
+        # 'Powering down' state.
+        with fake.VM(self.conf) as testvm:
+            testvm.guestAgent = fake.GuestAgent()
+
+            dom = fake.Domain(
+                domState=libvirt.VIR_DOMAIN_SHUTOFF,
+            )
+
+            def graceful(*args):
+                raise fake.Error(libvirt.VIR_ERR_OPERATION_INVALID)
+
+            dom.destroyFlags = graceful
+            testvm._dom = dom
+
+            result = testvm.releaseVm()
+            assert not response.is_error(result)
+
+    @MonkeyPatch(os, 'unlink', lambda _: None)
+    def test_releasevm_graceful_op_invalid_domain_running(self):
+        # When libvirt returns VIR_ERR_OPERATION_INVALID and the domain is
+        # still running, releaseVm must fail so the caller can retry or
+        # escalate to a forceful destroy.
+        with fake.VM(self.conf) as testvm:
+            testvm.guestAgent = fake.GuestAgent()
+
+            dom = fake.Domain(
+                domState=libvirt.VIR_DOMAIN_RUNNING,
+            )
+
+            def graceful(*args):
+                raise fake.Error(libvirt.VIR_ERR_OPERATION_INVALID)
+
+            dom.destroyFlags = graceful
+            testvm._dom = dom
+
+            result = testvm.releaseVm()
+            assert response.is_error(result)
+
+    @MonkeyPatch(os, 'unlink', lambda _: None)
+    def test_releasevm_forceful_op_invalid_domain_down(self):
+        # When libvirt returns VIR_ERR_OPERATION_INVALID on forceful destroy
+        # but the domain is actually down, releaseVm must succeed instead of
+        # getting stuck in 'Powering down' state.
+        with fake.VM(self.conf) as testvm:
+            testvm.guestAgent = fake.GuestAgent()
+
+            dom = fake.Domain(
+                domState=libvirt.VIR_DOMAIN_SHUTOFF,
+            )
+
+            def graceful(*args):
+                # graceful destroy fails with SYSTEM_ERROR to force the
+                # forceful path
+                raise fake.Error(libvirt.VIR_ERR_SYSTEM_ERROR)
+
+            def forceful(*args):
+                raise fake.Error(libvirt.VIR_ERR_OPERATION_INVALID)
+
+            dom.destroyFlags = graceful
+            dom.destroy = forceful
+            testvm._dom = dom
+
+            result = testvm.releaseVm()
+            assert not response.is_error(result)
+
+    @MonkeyPatch(os, 'unlink', lambda _: None)
+    def test_releasevm_forceful_op_invalid_domain_running(self):
+        # When libvirt returns VIR_ERR_OPERATION_INVALID on forceful destroy
+        # and the domain is still running, releaseVm must fail.
+        with fake.VM(self.conf) as testvm:
+            testvm.guestAgent = fake.GuestAgent()
+
+            dom = fake.Domain(
+                domState=libvirt.VIR_DOMAIN_RUNNING,
+            )
+
+            def graceful(*args):
+                raise fake.Error(libvirt.VIR_ERR_SYSTEM_ERROR)
+
+            def forceful(*args):
+                raise fake.Error(libvirt.VIR_ERR_OPERATION_INVALID)
+
+            dom.destroyFlags = graceful
+            dom.destroy = forceful
+            testvm._dom = dom
+
+            result = testvm.releaseVm()
+            assert response.is_error(result)
+
+    @MonkeyPatch(os, 'unlink', lambda _: None)
+    def test_releasevm_graceful_op_invalid_laststatus_down(self):
+        # When VDSM already believes the VM is down (lastStatus == DOWN) and
+        # libvirt returns VIR_ERR_OPERATION_INVALID on graceful destroy,
+        # releaseVm must succeed without re-querying the domain state. This
+        # locks in the pre-existing behaviour of the lastStatus == DOWN
+        # branch that the new domain-down branch sits next to.
+        with fake.VM(self.conf) as testvm:
+            testvm.guestAgent = fake.GuestAgent()
+            testvm.set_last_status(vmstatus.DOWN)
+
+            dom = fake.Domain(
+                domState=libvirt.VIR_DOMAIN_RUNNING,
+            )
+
+            def graceful(*args):
+                raise fake.Error(libvirt.VIR_ERR_OPERATION_INVALID)
+
+            dom.destroyFlags = graceful
+            testvm._dom = dom
+
+            result = testvm.releaseVm()
+            assert not response.is_error(result)
+
     def test_acpi_enabled(self):
         with fake.VM(arch=cpuarch.X86_64, features='<acpi/>') as testvm:
             assert testvm.acpi_enabled()

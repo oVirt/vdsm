@@ -5890,6 +5890,16 @@ class Vm(object):
                 self.log.warning(
                     "VM '%s' couldn't be destroyed in libvirt: %s", self.id, e
                 )
+            elif (
+                e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID
+                and self._is_domain_down()
+            ):
+                # The domain is actually gone, but something went wrong
+                # and we still thought it was up.
+                self.log.info(
+                    "VM '%s' already down (graceful, operation invalid)",
+                    self.id,
+                )
             else:
                 self.log.warning(
                     "Failed to destroy VM '%s' gracefully (error=%i)",
@@ -5910,15 +5920,58 @@ class Vm(object):
         try:
             self._dom.destroy()
         except libvirt.libvirtError as e:
-            self.log.warning(
-                "Failed to destroy VM '%s' forcefully (error=%i)",
-                self.id,
-                e.get_error_code(),
-            )
-            return response.error('destroyErr')
+            if (
+                e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID
+                and self._is_domain_down()
+            ):
+                self.log.info(
+                    "VM '%s' already down (forceful, operation invalid)",
+                    self.id,
+                )
+            else:
+                self.log.warning(
+                    "Failed to destroy VM '%s' forcefully (error=%i)",
+                    self.id,
+                    e.get_error_code(),
+                )
+                return response.error('destroyErr')
         except virdomain.NotConnectedError:
             self.log.info("VM already down")
         return response.success()
+
+    def _is_domain_down(self):
+        """
+        Check whether the underlying libvirt domain is actually down.
+
+        This is used to recover from situations where libvirt returns
+        VIR_ERR_OPERATION_INVALID on destroy attempts but the qemu process
+        is already gone.
+
+        Note: this method must only be called from contexts where the domain
+        was already known to be connected (e.g. _destroyVmGraceful /
+        _destroyVmForceful, which are guarded by the `self._dom.connected`
+        check in releaseVm). A NotConnectedError here means the domain
+        disconnected between that check and this call, which is a benign race
+        indicating the domain is going down.
+        """
+        try:
+            state, _ = self._dom.state(0)
+        except virdomain.NotConnectedError:
+            # The domain was connected when releaseVm checked, but it
+            # disconnected since then (e.g. qemu died and _onQemuDeath ran).
+            # This is a benign race: the domain is going down.
+            self.log.info(
+                "VM '%s' domain disconnected during destroy", self.id
+            )
+            return True
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return True
+            self.log.warning(
+                "Could not check domain state for VM '%s': %s", self.id, e
+            )
+            return False
+        return state in vmstatus.LIBVIRT_DOWN_STATES
 
     def _deleteVm(self):
         """
