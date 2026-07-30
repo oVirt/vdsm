@@ -124,6 +124,7 @@ class SafeLease(object):
     freeLockCmd = config.get('irs', 'free_lock_cmd')
 
     supports_inquire = False
+    supports_inspect = False
 
     def __init__(
         self,
@@ -314,6 +315,10 @@ class SANLock(object):
     # sanlock.inquire() added in sanlock-3.8.3-2.
     # TODO: remove check when we require this version.
     supports_inquire = hasattr(sanlock, "inquire")
+
+    # sanlock.read_resource_owners() used by inspect() is available since
+    # sanlock-3.2.
+    supports_inspect = hasattr(sanlock, "read_resource_owners")
 
     @classmethod
     def inquire(cls):
@@ -811,6 +816,7 @@ class LocalLock(object):
     _globalLockMapSync = threading.Lock()
 
     supports_inquire = False
+    supports_inspect = False
 
     def __init__(self, sdUUID, idsPath, lease, *args, **kwargs):
         """
