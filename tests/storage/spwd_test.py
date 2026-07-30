@@ -9,7 +9,6 @@ import pytest
 
 from vdsm.common.units import MiB
 from vdsm.storage import clusterlock
-from vdsm.storage import exception as se
 from vdsm.storage import spwd
 
 
@@ -46,37 +45,19 @@ class FakeMaster:
 
     sdUUID = "master-domain-uuid"
 
-    def __init__(self):
-        self.resources = [
-            # External lease in another domain.
-            {
-                "lockspace": "other-domain-uuid",
-                "resource": "vm-id",
-                "version": 1,
-                "disks": [("/other/xleases", 100 * MiB)],
-            },
-            # A volume lease in the master domain.
-            {
-                "lockspace": "master-domain-uuid",
-                "resource": "volume-uuid-2",
-                "version": 1,
-                "disks": [("/master/leases", 100 * MiB)],
-            },
-            # The cluster lease in the master domain.
-            {
-                "lockspace": "master-domain-uuid",
-                "resource": "SDM",
-                "version": 1,
-                "disks": [("/master/leases", MiB)],
-            },
-        ]
+    def __init__(self, owner=1, version=1):
+        # The sanlock host id owning the cluster lease on disk, or None when
+        # the lease is free (e.g. generation mismatch after a storage blip).
+        self.owner = owner
+        self.version = version
         self.error = None
 
-    def inquireClusterLock(self):
+    def inspectClusterLock(self):
         if self.error:
             raise self.error
-
-        return self.resources
+        if self.owner is None:
+            return None, None
+        return self.version, self.owner
 
     def getClusterLease(self):
         return clusterlock.Lease("SDM", "/master/leases", MiB)
@@ -106,9 +87,9 @@ def panic(monkeypatch):
 
 
 def test_normal_flow(panic):
-    master = FakeMaster()
+    master = FakeMaster(owner=1)
     cb = WatchdogCallback()
-    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, host_id=1, callback=cb)
 
     watchdog.start()
     try:
@@ -121,9 +102,12 @@ def test_normal_flow(panic):
 
 
 def test_panic_on_lost_lease(panic):
-    master = FakeMaster()
+    # The lease has no valid owner on disk (generation mismatch after a
+    # storage blip, or no owner record) while the in-memory SPM role is
+    # still set.
+    master = FakeMaster(owner=1)
     cb = WatchdogCallback()
-    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, host_id=1, callback=cb)
 
     watchdog.start()
     try:
@@ -131,8 +115,8 @@ def test_panic_on_lost_lease(panic):
         cb.wait()
         assert not panic.was_called
 
-        # Simulate lost lease.
-        del master.resources[-1]
+        # Simulate lost lease on disk.
+        master.owner = None
 
         # Wait for the next check.
         cb.resume()
@@ -143,10 +127,12 @@ def test_panic_on_lost_lease(panic):
         watchdog.stop()
 
 
-def test_panic_on_wrong_disk(panic):
-    master = FakeMaster()
+def test_panic_on_other_owner(panic):
+    # The lease is held by another host on disk while we still have a stale
+    # in-memory SPM role - the split brain case.
+    master = FakeMaster(owner=1)
     cb = WatchdogCallback()
-    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, host_id=1, callback=cb)
 
     watchdog.start()
     try:
@@ -154,8 +140,8 @@ def test_panic_on_wrong_disk(panic):
         cb.wait()
         assert not panic.was_called
 
-        # Simulate bad disk.
-        master.resources[-1]["disks"] = [("/master/leases", 100 * MiB)]
+        # Another host acquired the lease.
+        master.owner = 2
 
         # Wait for the next check.
         cb.resume()
@@ -167,9 +153,9 @@ def test_panic_on_wrong_disk(panic):
 
 
 def test_panic_on_error(panic):
-    master = FakeMaster()
+    master = FakeMaster(owner=1)
     cb = WatchdogCallback()
-    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, host_id=1, callback=cb)
 
     watchdog.start()
     try:
@@ -178,7 +164,7 @@ def test_panic_on_error(panic):
         assert not panic.was_called
 
         # Simulate error checking lease.
-        master.error = Exception("Inquire error")
+        master.error = Exception("Inspect error")
 
         # Wait for the next check.
         cb.resume()
@@ -190,9 +176,9 @@ def test_panic_on_error(panic):
 
 
 def test_temporary_error(panic):
-    master = FakeMaster()
+    master = FakeMaster(owner=1)
     cb = WatchdogCallback()
-    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, host_id=1, callback=cb)
 
     watchdog.start()
     try:
@@ -200,13 +186,48 @@ def test_temporary_error(panic):
         cb.wait()
         assert not panic.was_called
 
-        # Simulate a temporary error checking lease.
-        e = sanlock.SanlockException(
-            errno.EBUSY, "Inquire error", "Device or resource busy"
+        # Simulate a temporary error (add_lockspace not complete).
+        master.error = clusterlock.TemporaryFailure(
+            "inspect",
+            clusterlock.Lease("SDM", "/master/leases", MiB),
+            "add_lockspace not completed yet",
         )
-        master.error = se.SanlockInquireError(e.errno, str(e))
 
-        # Wait for next 3 checks
+        # Wait for next 3 checks - tolerated up to max_errors.
+        for i in range(3):
+            cb.resume()
+            cb.wait()
+            assert not panic.was_called
+
+        # Next error should trigger a panic.
+        cb.resume()
+        cb.wait()
+        assert panic.was_called
+    finally:
+        cb.resume()
+        watchdog.stop()
+
+
+def test_storage_error(panic):
+    # A storage I/O error reading the lease (e.g. during a storage blip) is
+    # tolerated up to max_errors before panicking. The sanlock host id
+    # watchdog fences the host if storage does not recover.
+    master = FakeMaster(owner=1)
+    cb = WatchdogCallback()
+    watchdog = spwd.Watchdog(master, 0.01, host_id=1, callback=cb)
+
+    watchdog.start()
+    try:
+        # Let first check succeed.
+        cb.wait()
+        assert not panic.was_called
+
+        # Simulate a storage I/O error reading the lease.
+        master.error = sanlock.SanlockException(
+            errno.EIO, "read_resource", "Input/output error"
+        )
+
+        # Wait for next 3 checks - tolerated up to max_errors.
         for i in range(3):
             cb.resume()
             cb.wait()
@@ -222,19 +243,71 @@ def test_temporary_error(panic):
 
 
 def test_max_errors(panic):
-    master = FakeMaster()
+    master = FakeMaster(owner=1)
     cb = WatchdogCallback()
-    watchdog = spwd.Watchdog(master, 0.01, max_errors=0, callback=cb)
+    watchdog = spwd.Watchdog(
+        master, 0.01, host_id=1, max_errors=0, callback=cb
+    )
 
     watchdog.start()
     try:
         # Simulate a temporary error checking lease.
-        e = sanlock.SanlockException(
-            errno.EBUSY, "Inquire error", "Device or resource busy"
+        master.error = clusterlock.TemporaryFailure(
+            "inspect",
+            clusterlock.Lease("SDM", "/master/leases", MiB),
+            "add_lockspace not completed yet",
         )
-        master.error = se.SanlockInquireError(e.errno, str(e))
 
-        # Next check should trigger a panic.
+        # Next check should trigger a panic (max_errors=0).
+        cb.wait()
+        assert panic.was_called
+    finally:
+        cb.resume()
+        watchdog.stop()
+
+
+def test_transient_error_counter_reset(panic):
+    # A successful check resets the error counter, so transient errors
+    # are tolerated up to max_errors again after a recovery.
+    master = FakeMaster(owner=1)
+    cb = WatchdogCallback()
+    watchdog = spwd.Watchdog(master, 0.01, host_id=1, callback=cb)
+
+    watchdog.start()
+    try:
+        # Let first check succeed.
+        cb.wait()
+        assert not panic.was_called
+
+        # Tolerate one transient error.
+        master.error = clusterlock.TemporaryFailure(
+            "inspect",
+            clusterlock.Lease("SDM", "/master/leases", MiB),
+            "add_lockspace not completed yet",
+        )
+        cb.resume()
+        cb.wait()
+        assert not panic.was_called
+
+        # Recover - the next successful check resets the counter.
+        master.error = None
+        cb.resume()
+        cb.wait()
+        assert not panic.was_called
+
+        # Without the reset, the third of these errors would panic.
+        for i in range(3):
+            master.error = clusterlock.TemporaryFailure(
+                "inspect",
+                clusterlock.Lease("SDM", "/master/leases", MiB),
+                "add_lockspace not completed yet",
+            )
+            cb.resume()
+            cb.wait()
+            assert not panic.was_called
+
+        # The next error exceeds max_errors and panics.
+        cb.resume()
         cb.wait()
         assert panic.was_called
     finally:

@@ -2361,7 +2361,7 @@ class StoragePool(object):
 
     def _start_watching_spm_lease(self, master_sd):
         """
-        If the master storage domain supports inquire, start watching the SPM
+        If the master storage domain supports inspect, start watching the SPM
         lease.
 
         Panics on failures.
@@ -2369,7 +2369,7 @@ class StoragePool(object):
         if not config.getboolean("spm", "watchdog_enable"):
             return
 
-        if not master_sd.supports_inquire:
+        if not master_sd.supports_inspect:
             return
 
         if self._watchdog is not None:
@@ -2379,6 +2379,7 @@ class StoragePool(object):
             self._watchdog = spwd.Watchdog(
                 master_sd,
                 check_interval=config.getfloat("spm", "watchdog_interval"),
+                host_id=self.id,
             )
             self._watchdog.start()
         except:

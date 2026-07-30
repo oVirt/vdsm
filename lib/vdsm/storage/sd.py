@@ -416,6 +416,14 @@ class StorageDomainManifest(object):
         """
         return self._domainLock.supports_inquire
 
+    @property
+    def supports_inspect(self):
+        """
+        This property advertises whether the storage domain supports
+        inspectClusterLock().
+        """
+        return self._domainLock.supports_inspect
+
     def recommends_unordered_writes(self, format):
         """
         Return True if unordered writes are recommended for copying an image
@@ -1144,6 +1152,10 @@ class StorageDomain(object):
     @property
     def supports_inquire(self):
         return self._manifest.supports_inquire
+
+    @property
+    def supports_inspect(self):
+        return self._manifest.supports_inspect
 
     def recommends_unordered_writes(self, format):
         return self._manifest.recommends_unordered_writes(format)

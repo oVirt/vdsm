@@ -6,10 +6,12 @@ import threading
 
 from collections import namedtuple
 
+import sanlock
+
 from vdsm.common import concurrent
 from vdsm.common.panic import panic
 
-from . import exception as se
+from . import clusterlock
 
 log = logging.getLogger("storage.spwd")
 
@@ -22,7 +24,7 @@ class Watchdog:
     """
 
     def __init__(
-        self, sd, check_interval, max_errors=3, callback=lambda: None
+        self, sd, check_interval, host_id, max_errors=3, callback=lambda: None
     ):
         """
         Arguments:
@@ -30,6 +32,11 @@ class Watchdog:
                 cluster lease on this storage domain.
             check_interval (float): Number of second to wait between
                 checks.
+            host_id (int): sanlock host id of this host. Used to verify that
+                the cluster lease is still owned by us on disk. If the lease
+                is free or owned by another host, the watchdog panics to
+                stop a stale in-memory SPM role from corrupting pool
+                metadata (split brain).
             max_errors (int): Number of consecutive temporary errors
                 allowed. If checking the cluster lease fails more than
                 max_errors, the watchdog will panic.
@@ -37,6 +44,7 @@ class Watchdog:
         """
         self._sd = sd
         self._check_interval = check_interval
+        self._host_id = host_id
         self._max_errors = max_errors
         self._callback = callback
 
@@ -97,47 +105,60 @@ class Watchdog:
 
     def _check(self):
         try:
-            resources = self._sd.inquireClusterLock()
-        except se.SanlockInquireError as e:
-            if e.is_temporary():
-                if self._errors < self._max_errors:
-                    # We will check again later in the next montioring
-                    # cycle.
-                    self._errors += 1
-                    log.warning(
-                        "Error (%s/%s) checking cluster lock %s",
-                        self._errors,
-                        self._max_errors,
-                        self._lease,
-                    )
-                    return
-
-            panic("Error checking cluster lock {}".format(self._lease))
+            version, owner = self._sd.inspectClusterLock()
+        except clusterlock.TemporaryFailure as e:
+            # add_lockspace has not completed yet.
+            self._handle_transient_error(e)
+            return
+        except sanlock.SanlockException as e:
+            # Storage I/O error reading the lease. Transient - wdmd/softdog
+            # fences the host if storage does not recover.
+            self._handle_transient_error(e)
+            return
         except Exception:
             panic(
                 "Unexpected error checking cluster lock {}".format(self._lease)
             )
 
-        # Reset errors on succesful inquire.
+        # Reset errors on a successful inspect.
         self._errors = 0
 
-        for r in resources:
-            if r["lockspace"] != self._lease.lockspace:
-                continue
-
-            if r["resource"] != self._lease.resource:
-                continue
-
-            # Validate the cluster lease.
-
-            if r["disks"] != [self._lease.disk]:
-                panic(
-                    "Invalid cluster lock disk exepcted={} actual={}".format(
-                        self._lease, r
-                    )
+        if owner is None:
+            # Free on disk - e.g. generation mismatch after reconnecting
+            # following a blip. We no longer hold it despite our in-memory
+            # SPM role.
+            panic(
+                "Cluster lock {} was lost (no valid owner on disk)".format(
+                    self._lease
                 )
+            )
 
-            log.debug("Found cluster lock %s", r)
+        if owner != self._host_id:
+            # Held by another host - split brain: our in-memory SPM role
+            # is stale.
+            panic(
+                "Cluster lock {} is held by host {} (expected {})".format(
+                    self._lease, owner, self._host_id
+                )
+            )
+
+        log.debug(
+            "Cluster lock %s held by host %s (version %s)",
+            self._lease,
+            owner,
+            version,
+        )
+
+    def _handle_transient_error(self, e):
+        if self._errors < self._max_errors:
+            self._errors += 1
+            log.warning(
+                "Error (%s/%s) checking cluster lock %s: %s",
+                self._errors,
+                self._max_errors,
+                self._lease,
+                e,
+            )
             return
 
-        panic("Cluster lock {} was lost".format(self._lease))
+        panic("Error checking cluster lock {}".format(self._lease))

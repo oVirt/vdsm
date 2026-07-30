@@ -25,6 +25,14 @@ class FakePanic(Exception):
     pass
 
 
+def test_supports_inspect():
+    # The spwd watchdog gates on this capability: only SANLock can
+    # verify the on-disk lease owner.
+    assert clusterlock.SANLock.supports_inspect is True
+    assert clusterlock.SafeLease.supports_inspect is False
+    assert clusterlock.LocalLock.supports_inspect is False
+
+
 @pytest.fixture
 def lock(monkeypatch):
     # Reset class attributes to keep tests isolated.
