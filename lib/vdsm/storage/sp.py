@@ -794,11 +794,39 @@ class StoragePool(object):
             # Rebuild whole Pool
             self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
             self.__createMailboxMonitor()
+        except (se.StoragePoolWrongMaster, se.StoragePoolMasterNotFound):
+            # The engine just told us our master domain view is stale. If
+            # we are SPM, our role is anchored to that stale master and
+            # must be released - otherwise we keep writing metadata there
+            # while the engine elects a new SPM on the current master.
+            # (A connected pool takes the refresh() path; this is defensive.)
+            self._stop_spm_on_master_mismatch()
+            self._stopWatchingDomainsState()
+            raise
         except Exception:
             self._stopWatchingDomainsState()
             raise
 
         return True
+
+    @unsecured
+    def _stop_spm_on_master_mismatch(self):
+        # Run under the pool lock: startSpm() sets spmRole = SPM_ACQUIRED
+        # before it enables security, and stopSpm() below is secured -
+        # the lock closes that window, since startSpm() holds it.
+        with self.lock:
+            if self.spmRole != SPM_ACQUIRED:
+                return
+            self.log.warning(
+                "Master domain mismatch reported by engine while running "
+                "as SPM of %s - stopping SPM to avoid a stale SPM on a "
+                "non-current master domain",
+                self.masterDomain.sdUUID if self.masterDomain else None,
+            )
+            try:
+                self.stopSpm()
+            except Exception:
+                panic("Error stopping SPM after master domain mismatch")
 
     @unsecured
     def _startWatchingDomainsState(self):
@@ -1562,7 +1590,14 @@ class StoragePool(object):
         """
         sdCache.invalidateStorage()
         sdCache.refresh()
-        self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
+        try:
+            self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
+        except (se.StoragePoolWrongMaster, se.StoragePoolMasterNotFound):
+            # An SPM host's pool is always connected, so the engine's
+            # reconnect attempts after a master domain move arrive here,
+            # not in connect().
+            self._stop_spm_on_master_mismatch()
+            raise
 
     def updateVM(self, vmList, sdUUID):
         """
