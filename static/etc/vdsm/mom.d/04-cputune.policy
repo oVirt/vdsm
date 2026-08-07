@@ -9,6 +9,9 @@
 # The default measurement period in us -> 100ms
 (defvar defaultPeriod 100000)
 
+# Any quota above the largest possible *real* limit means "no limit".
+(defvar maxRealQuota (* defaultPeriod Host.cpu_count))
+
 
 ### Helper functions
 (def check_and_set_quota (guest)
@@ -44,10 +47,19 @@
         (guest.Control "vcpu_period" calcPeriod) 0)
 })
 
+# Only trigger the reset if the guest does not hold the default values
+# Default Quota is -1 but if unlimited quota is active, libvirt can report this as a large value instead of -1, so we need to check against the maximum real quota
+# Period can be compared directly due to the fact that libvirt doesn't transform this value
 (def reset_quota_and_period (guest)
 {
-    (guest.Control "vcpu_quota" defaultQuota)
-    (guest.Control "vcpu_period" defaultPeriod)
+    (if (valid guest.vcpu_quota)
+        (if (and (!= guest.vcpu_quota defaultQuota) (<= guest.vcpu_quota maxRealQuota))
+            (guest.Control "vcpu_quota" defaultQuota) 0)
+        (guest.Control "vcpu_quota" defaultQuota))
+    (if (valid guest.vcpu_period)
+        (if (!= guest.vcpu_period defaultPeriod)
+            (guest.Control "vcpu_period" defaultPeriod) 0)
+        (guest.Control "vcpu_period" defaultPeriod))
 })
 
 

@@ -93,3 +93,131 @@ class MomPolicyTests(unittest.TestCase):
         )
         self.assertEqual(controls["vcpu_quota"], 1100)
         self.assertEqual(controls["vcpu_period"], 1100000)
+
+    def testCpuTuneResetQuotaAlreadyUnlimited(self):
+        # vcpu_quota is already at the default (-1), so the reset path must
+        # not issue a redundant vcpu_quota Control call.
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 1,
+                "vcpu_user_limit": 100,
+                "vcpu_quota": -1,
+                "vcpu_period": 100000,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertNotIn("vcpu_period", controls)
+        self.assertNotIn("vcpu_quota", controls)
+
+    def testCpuTuneResetQuotaAboveMaxRealQuota(self):
+        # vcpu_quota is a large positive "no limit" value (above maxRealQuota,
+        # which is defaultPeriod * Host.cpu_count = 100000 * 1), so the reset
+        # path must skip the vcpu_quota Control call.
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 1,
+                "vcpu_user_limit": 100,
+                "vcpu_quota": 200000,
+                "vcpu_period": 100000,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertNotIn("vcpu_period", controls)
+        self.assertNotIn("vcpu_quota", controls)
+
+    def testCpuTuneResetQuotaFromRealLimit(self):
+        # vcpu_quota holds a real limit (0 < 50000 < maxRealQuota of 100000),
+        # so the reset path must reset it back to the default (-1).
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 1,
+                "vcpu_user_limit": 100,
+                "vcpu_quota": 50000,
+                "vcpu_period": 100000,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertEqual(controls["vcpu_quota"], -1)
+        # Value was at the default, so no vcpu_period Control call needed.
+        self.assertNotIn("vcpu_period", controls)
+
+    def testCpuTuneResetQuotaAtMaxRealQuota(self):
+        # vcpu_quota is exactly at maxRealQuota (defaultPeriod * Host.cpu_count
+        # = 100000 * 1), which is the inclusive upper bound of the reset range
+        # (<= maxRealQuota), so the reset path must reset it back to the
+        # default (-1).
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 1,
+                "vcpu_user_limit": 100,
+                "vcpu_quota": 100000,
+                "vcpu_period": 100000,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertEqual(controls["vcpu_quota"], -1)
+        # Value was at the default, so no vcpu_period Control call needed.
+        self.assertNotIn("vcpu_period", controls)
+
+    def testCpuTuneResetPeriodFromNonDefault(self):
+        # vcpu_period holds a non-default value (1100000 != 100000), so the
+        # reset path must reset it back to the default (100000). vcpu_quota is
+        # already at the default (-1), so no vcpu_quota Control call is needed.
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 1,
+                "vcpu_user_limit": 100,
+                "vcpu_quota": -1,
+                "vcpu_period": 1100000,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertEqual(controls["vcpu_period"], 100000)
+        self.assertNotIn("vcpu_quota", controls)
+
+    def testCpuTuneResetQuotaFromZero(self):
+        # vcpu_quota is 0, vdsm's "unset" representation. It is valid and
+        # within the reset range (0 != -1 and 0 <= maxRealQuota), so the reset
+        # path must reset it back to the default (-1).
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 1,
+                "vcpu_user_limit": 100,
+                "vcpu_quota": 0,
+                "vcpu_period": 100000,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertEqual(controls["vcpu_quota"], -1)
+        # Value was at the default, so no vcpu_period Control call needed.
+        self.assertNotIn("vcpu_period", controls)
+
+    def testCpuTuneResetQuotaFromInvalid(self):
+        # vcpu_quota is None (invalid/unset), so the reset path takes the
+        # else-branch and unconditionally resets it back to the default (-1).
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 1,
+                "vcpu_user_limit": 100,
+                "vcpu_quota": None,
+                "vcpu_period": 100000,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertEqual(controls["vcpu_quota"], -1)
+        # Value was at the default, so no vcpu_period Control call needed.
+        self.assertNotIn("vcpu_period", controls)
