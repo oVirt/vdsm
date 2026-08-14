@@ -775,7 +775,9 @@ class IscsiConnection(Connection):
                 "iface.name mismatch: %r != %r", self._iface.name, iface.name
             )
 
-        if self._cred != cred:
+        # iscsiadm logout matches a session by transport identity, not
+        # credentials, so skip the cred check for credentialless disconnects.
+        if self._cred is not None and self._cred != cred:
             raise self.Mismatch("cred mismatch")
 
     def getSessionInfo(self):
