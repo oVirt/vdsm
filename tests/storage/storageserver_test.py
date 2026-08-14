@@ -3,6 +3,7 @@
 
 import pytest
 
+from vdsm.storage import iscsi
 from vdsm.storage import sd
 from vdsm.storage import storageServer
 from vdsm.storage.storageServer import GlusterFSConnection
@@ -42,6 +43,112 @@ class TestIscsiConnectionMismatch:
         ]
         expected = "%s" % str(["error 1", "error 2"])
         assert str(errors) == expected
+
+
+class TestIscsiConnectionMatch:
+    """_match() identifies whether a kernel iscsi session belongs to an
+    IscsiConnection, so disconnect() can log out the right session."""
+
+    PORTAL = iscsi.IscsiPortal("storage.example.com", 3260)
+    IQN = "iqn.2014-07.org.ovirt:storage"
+    IFACE = iscsi.IscsiInterface("default")
+
+    def _connection(self, cred=None):
+        target = iscsi.IscsiTarget(self.PORTAL, iscsi.DEFAULT_TPGT, self.IQN)
+        return IscsiConnection("conn-id", target, self.IFACE, credentials=cred)
+
+    def _session(self, cred):
+        target = iscsi.IscsiTarget(self.PORTAL, iscsi.DEFAULT_TPGT, self.IQN)
+        return iscsi.IscsiSession(
+            id=7, iface=self.IFACE, target=target, credentials=cred
+        )
+
+    def test_match_credentialless_connection_to_credentialed_session(self):
+        con = self._connection(cred=None)
+        session = self._session(iscsi.ChapCredentials("ovirt", "ovirt"))
+        con._match(session)  # must not raise
+
+    def test_match_credentialless_connection_to_anonymous_session(self):
+        con = self._connection(cred=None)
+        session = self._session(cred=None)
+        con._match(session)  # must not raise
+
+    def test_match_credentialed_connection_to_matching_session(self):
+        cred = iscsi.ChapCredentials("ovirt", "ovirt")
+        con = self._connection(cred=cred)
+        session = self._session(iscsi.ChapCredentials("ovirt", "ovirt"))
+        con._match(session)  # must not raise
+
+    def test_mismatch_credentialed_connection_wrong_creds(self):
+        con = self._connection(cred=iscsi.ChapCredentials("alice", "secret"))
+        session = self._session(iscsi.ChapCredentials("bob", "secret"))
+        with pytest.raises(IscsiConnection.Mismatch):
+            con._match(session)
+
+    def test_mismatch_iqn(self):
+        con = self._connection(cred=None)
+        target = iscsi.IscsiTarget(
+            self.PORTAL, iscsi.DEFAULT_TPGT, "iqn.2014-07.org.ovirt:other"
+        )
+        session = iscsi.IscsiSession(
+            id=7, iface=self.IFACE, target=target, credentials=None
+        )
+        with pytest.raises(IscsiConnection.Mismatch):
+            con._match(session)
+
+
+class TestIscsiConnectionDisconnect:
+    """Logout of a matched session by id, with or without credentials."""
+
+    PORTAL = iscsi.IscsiPortal("storage.example.com", 3260)
+    IQN = "iqn.2014-07.org.ovirt:storage"
+    IFACE = iscsi.IscsiInterface("default")
+
+    def _connection(self, cred=None):
+        target = iscsi.IscsiTarget(self.PORTAL, iscsi.DEFAULT_TPGT, self.IQN)
+        return IscsiConnection("conn-id", target, self.IFACE, credentials=cred)
+
+    def _session(self, cred, sid=7):
+        target = iscsi.IscsiTarget(self.PORTAL, iscsi.DEFAULT_TPGT, self.IQN)
+        return iscsi.IscsiSession(
+            id=sid, iface=self.IFACE, target=target, credentials=cred
+        )
+
+    def test_disconnect_credentialless_logs_out_session(self, monkeypatch):
+        sessions = [self._session(iscsi.ChapCredentials("ovirt", "ovirt"))]
+        monkeypatch.setattr(iscsi, "iterateIscsiSessions", lambda: sessions)
+
+        logged_out = []
+        monkeypatch.setattr(
+            iscsi, "disconnectiScsiSession", lambda sid: logged_out.append(sid)
+        )
+
+        con = self._connection(cred=None)
+        con.disconnect()
+
+        assert logged_out == [7]
+
+    def test_disconnect_no_session_is_noop(self, monkeypatch):
+        # No matching session -> not connected -> silent success.
+        other_target = iscsi.IscsiTarget(
+            self.PORTAL, iscsi.DEFAULT_TPGT, "iqn.2014-07.org.ovirt:other"
+        )
+        sessions = [
+            iscsi.IscsiSession(
+                id=7, iface=self.IFACE, target=other_target, credentials=None
+            )
+        ]
+        monkeypatch.setattr(iscsi, "iterateIscsiSessions", lambda: sessions)
+
+        logged_out = []
+        monkeypatch.setattr(
+            iscsi, "disconnectiScsiSession", lambda sid: logged_out.append(sid)
+        )
+
+        con = self._connection(cred=None)
+        con.disconnect()
+
+        assert logged_out == []
 
 
 class TestMountConnection:
