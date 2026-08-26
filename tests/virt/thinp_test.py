@@ -9,7 +9,7 @@ from vdsm.virt import thinp
 
 from vdsm.common.config import config
 from vdsm.common.units import MiB, GiB
-from vdsm.virt.vmdevices.storage import Drive, BLOCK_THRESHOLD
+from vdsm.virt.vmdevices.storage import Drive, BLOCK_THRESHOLD, VolumeNotFound
 
 EXTEND_TIMEOUT = config.getfloat("thinp", "extend_timeout")
 
@@ -140,6 +140,52 @@ def test_on_enospc():
     assert args == dict(timeout=EXTEND_TIMEOUT, discard=True)
 
 
+def test_on_block_threshold_disabled_defers_extend():
+    # During live merge volume monitoring is disabled. An event must mark the
+    # drive for extension but must not dispatch an immediate extend, which
+    # could race with the pivot and query a stale volume chain.
+    vm = FakeVM()
+    dispatch = FakeDispatch()
+    mon = thinp.VolumeMonitor(vm, vm.log, dispatch=dispatch, enabled=False)
+    vda = make_drive(vm.log, index=0, iface='virtio')
+    vm.drives.append(vda)
+
+    mon.on_block_threshold("vda[1]", vda.path, 512 * MiB, 10 * MiB)
+
+    assert vda.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+    assert len(dispatch.calls) == 0
+
+
+def test_on_enospc_disabled_defers_extend():
+    vm = FakeVM()
+    dispatch = FakeDispatch()
+    mon = thinp.VolumeMonitor(vm, vm.log, dispatch=dispatch, enabled=False)
+    vda = make_drive(vm.log, index=0, iface='virtio')
+    vm.drives.append(vda)
+
+    mon.on_enospc(vda)
+
+    assert vda.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+    assert len(dispatch.calls) == 0
+
+
+def test_update_block_info_volume_not_found():
+    # The volume chain may change while querying block stats, e.g. racing with
+    # a live merge pivot. This must not raise, so the drive can be retried in
+    # the next monitoring cycle.
+    vm = FakeVM()
+    mon = thinp.VolumeMonitor(vm, vm.log)
+    vda = make_drive(vm.log, index=0, iface='virtio')
+    vm.drives.append(vda)
+
+    def query_drive_volume_index(drive, vol_id):
+        raise VolumeNotFound(drive_name=drive.name, vol_id=vol_id)
+
+    vm.query_drive_volume_index = query_drive_volume_index
+
+    assert mon._update_block_info([vda]) is False
+
+
 def test_monitoring_needed():
 
     class FakeDrive:
@@ -184,6 +230,9 @@ class FakeVM(object):
 
     def getDiskDevices(self):
         return self.drives[:]
+
+    def query_block_stats(self):
+        return {"block.count": 0}
 
 
 class FakeDispatch:
