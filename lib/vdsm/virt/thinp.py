@@ -248,6 +248,19 @@ class VolumeMonitor(object):
     def _extend_drive_soon(self, drive):
         if self._dispatch is None:
             return
+        if not self._enabled:
+            # Volume monitoring is disabled, typically during live merge while
+            # the volume chain is being modified and cannot be trusted.
+            # Dispatching an extend now may race with the pivot and query a
+            # stale volume chain. The drive is already marked for extension, so
+            # the periodic monitor will extend it once monitoring is enabled
+            # again, resuming the VM if it paused on ENOSPC.
+            self._log.debug(
+                "Volume monitoring disabled, deferring extension of drive %s "
+                "to the periodic monitor",
+                drive.name,
+            )
+            return
         self._log.debug("Scheduling drive %s extension", drive.name)
         try:
             self._dispatch(
@@ -322,7 +335,17 @@ class VolumeMonitor(object):
             return False
 
         for drive in drives:
-            self._query_block_info(drive, drive.volumeID, block_stats)
+            try:
+                self._query_block_info(drive, drive.volumeID, block_stats)
+            except storage.VolumeNotFound as e:
+                # The drive volume chain changed while we were querying block
+                # stats, typically racing with a live merge pivot. The drive
+                # will be picked up again by the periodic monitor once its
+                # metadata is consistent with libvirt.
+                self._log.warning(
+                    "Cannot update block info for drive %s: %s", drive.name, e
+                )
+                return False
 
         return True
 
