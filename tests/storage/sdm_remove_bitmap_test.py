@@ -99,8 +99,10 @@ def test_add_remove_bitmap(fake_scheduler, env_type):
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
 
         qemuInfo = top_vol.getQemuImageInfo()
-        assert not any(bitmap[0] == bitmap1 for bitmap in qemuInfo["bitmaps"])
-        assert any(bitmap[0] == bitmap2 for bitmap in qemuInfo["bitmaps"])
+        assert not any(
+            bitmap["name"] == bitmap1 for bitmap in qemuInfo["bitmaps"]
+        )
+        assert any(bitmap["name"] == bitmap2 for bitmap in qemuInfo["bitmaps"])
 
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
@@ -161,8 +163,10 @@ def test_remove_bitmap_non_leaf_vol(fake_scheduler, env_type):
         assert base_vol.getMetaParam(sc.GENERATION) == generation + 1
 
         qemuInfo = base_vol.getQemuImageInfo()
-        assert not any(bitmap[0] == bitmap1 for bitmap in qemuInfo["bitmaps"])
-        assert any(bitmap[0] == bitmap2 for bitmap in qemuInfo["bitmaps"])
+        assert not any(
+            bitmap["name"] == bitmap1 for bitmap in qemuInfo["bitmaps"]
+        )
+        assert any(bitmap["name"] == bitmap2 for bitmap in qemuInfo["bitmaps"])
 
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
