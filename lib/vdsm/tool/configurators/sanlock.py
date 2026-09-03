@@ -135,6 +135,14 @@ def _config_for_vdsm():
         # See https://bugzilla.redhat.com/1902468
 
         "max_worker_threads": "50",
+
+        # Since sanlock 5.0.0 (commit e68723c12a), there is a new caw
+        # options. Which is enabled by default.
+        # But this breaks compatibility with older versions of sanlock.
+        # So we disable it explicitly.
+        # Next to that, it also causes sanlock to run under uid 0 (root).
+
+        "use_compare_and_write": "no",
     }
 
 
@@ -154,6 +162,8 @@ def _restart_needed():
     options = _daemon_options()
     if options is not None:
         for key, value in _config_for_vdsm().items():
+            if key == "use_compare_and_write" and key not in options:
+                continue  # unknown to sanlock < 5.0, conf entry is ignored
             # When upgrading sanlock < 3.8.3, "max_worker_threads" is missing.
             # See https://bugzilla.redhat.com/2013383
             if options.get(key) != value:
