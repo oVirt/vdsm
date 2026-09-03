@@ -288,7 +288,7 @@ def _checkpoint_error_code(e):
     return e.get_error_code()
 
 
-def redefine_checkpoints(vm, dom, checkpoints):
+def redefine_checkpoints(vm, dom, checkpoints, validate=True):
     checkpoint_ids = []
     # The engine should send the list of
     # checkpoints ordered from the base to the leaf
@@ -304,10 +304,9 @@ def redefine_checkpoints(vm, dom, checkpoints):
         else:
             checkpoint_xml = checkpoint_cfg.xml
 
-        flags = (
-            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
-            | libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE
-        )
+        flags = libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
+        if validate:
+            flags |= libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE
         try:
             dom.checkpointCreateXML(checkpoint_xml, flags)
         except libvirt.libvirtError as e:

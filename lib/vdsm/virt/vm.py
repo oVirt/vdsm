@@ -4663,9 +4663,11 @@ class Vm(object):
         )
 
     @api.guard(_not_migrating)
-    def redefine_checkpoints(self, checkpoints):
+    def redefine_checkpoints(self, checkpoints, validate=True):
         dom = backup.DomainAdapter(self)
-        return backup.redefine_checkpoints(self, dom, checkpoints=checkpoints)
+        return backup.redefine_checkpoints(
+            self, dom, checkpoints=checkpoints, validate=validate
+        )
 
     def list_checkpoints(self):
         dom = backup.DomainAdapter(self)
