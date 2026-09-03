@@ -273,6 +273,21 @@ def delete_checkpoints(vm, dom, checkpoint_ids):
     return dict(result=result)
 
 
+def _checkpoint_error_code(e):
+    # Map the libvirt error code of a failed checkpoint operation to the
+    # checkpoint error codes declared in the schema, so callers can tell a
+    # broken checkpoint from a transient failure. Unknown errors keep the
+    # raw libvirt code and are treated by the callers as an unknown state.
+    if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT:
+        return exception.NoSuchCheckpointError.code
+    if e.get_error_code() in (
+        libvirt.VIR_ERR_CHECKPOINT_INCONSISTENT,
+        libvirt.VIR_ERR_INVALID_DOMAIN_CHECKPOINT,
+    ):
+        return exception.InconsistentCheckpointError.code
+    return e.get_error_code()
+
+
 def redefine_checkpoints(vm, dom, checkpoints):
     checkpoint_ids = []
     # The engine should send the list of
@@ -305,7 +320,13 @@ def redefine_checkpoints(vm, dom, checkpoints):
             result = {
                 'checkpoint_ids': checkpoint_ids,
                 'error': {
-                    'code': e.get_error_code(),
+                    # Translate the libvirt error code to the checkpoint
+                    # error codes declared in the schema (NoSuchCheckpointError
+                    # and InconsistentCheckpointError), so callers can tell a
+                    # broken checkpoint from a transient failure. Unknown
+                    # errors keep the raw libvirt code and are treated by the
+                    # callers as an unknown state.
+                    'code': _checkpoint_error_code(e),
                     'message': e.get_error_message(),
                 },
             }
