@@ -557,6 +557,25 @@ class SourceThreadTests(TestCaseBase):
         src = migration.SourceThread(fake_vm, tunneled=True)
         assert src.tunneled
 
+    def _migration_params(self, **kwargs):
+        src = migration.SourceThread(FakeVM(), **kwargs)
+        return src._migration_params('qemu://dest')
+
+    def test_compression_param_not_set_without_compression(self):
+        # regression test: with parallel migrations and compressed given
+        # as the string 'false' (as passed by Engine), the compression
+        # parameter must not be set.
+        params = self._migration_params(parallel=2, compressed='false')
+        assert libvirt.VIR_MIGRATE_PARAM_COMPRESSION not in params
+
+    def test_compression_param_not_set_when_not_parallel(self):
+        params = self._migration_params(compressed=True)
+        assert libvirt.VIR_MIGRATE_PARAM_COMPRESSION not in params
+
+    def test_compression_param_set_for_parallel_compressed(self):
+        params = self._migration_params(parallel=2, compressed=True)
+        assert params[libvirt.VIR_MIGRATE_PARAM_COMPRESSION] == 'zstd'
+
 
 # stolen^Wborrowed from itertools recipes
 def pairwise(iterable):
