@@ -148,6 +148,7 @@ class SourceThread(object):
         # conversions should be handled properly in the API layer
         self._consoleAddress = consoleAddress
         self._dstqemu = dstqemu
+        self._compressed = compressed
         self._encrypted = encrypted
         if parallel == self._PARALLEL_CONNECTIONS_DISABLED_VALUE:
             parallel = None
@@ -672,6 +673,8 @@ class SourceThread(object):
             params[libvirt.VIR_MIGRATE_PARAM_PARALLEL_CONNECTIONS] = (
                 self._parallel
             )
+            if self._compressed:
+                params[libvirt.VIR_MIGRATE_PARAM_COMPRESSION] = "zstd"
         if not self.tunneled:
             params[libvirt.VIR_MIGRATE_PARAM_URI] = str(muri)
         if self._consoleAddress:
