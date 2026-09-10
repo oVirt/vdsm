@@ -306,6 +306,6 @@ class TestMergeSubchain(VdsmTestCase):
 
             qemuInfo = base_vol.getQemuImageInfo()
             assert qemuInfo["bitmaps"] == [
-                Qcow2BitmapInfo(bitmap1_name, 65536, ["auto"]),
-                Qcow2BitmapInfo(bitmap2_name, 65536, ["auto"]),
+                Qcow2BitmapInfo(bitmap1_name, 65536, ["auto"])._asdict(),
+                Qcow2BitmapInfo(bitmap2_name, 65536, ["auto"])._asdict(),
             ]
