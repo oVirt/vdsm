@@ -13,10 +13,15 @@ import re
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.common.password import ProtectedPassword
 
-_NVME = cmdutils.CommandPath("nvme",
-                             "/usr/sbin/nvme",
-                             "/sbin/nvme")
+# The storage path-loss grace period should match sanlock's lease window
+# (see mpathconf.py: 8 * io_timeout / polling_interval = 8 * 10 / 5 = 80s).
+# Holding I/O longer than the lease window does not help, because sanlock
+# fences the host anyway; it only leaves the host stuck.
+CTRL_LOSS_TMO = "80"
+
+_NVME = cmdutils.CommandPath("nvme", "/usr/sbin/nvme", "/sbin/nvme")
 
 # Sysfs paths for NVMe-oF connected controllers
 SYS_NVME = "/sys/class/nvme"
@@ -45,8 +50,14 @@ class NvmeControllerLookupError(NvmeError):
     pass
 
 
-def connect(nqn, traddr, trsvcid="4420", transport="tcp",
-            host_nqn=None, dhchap_key=None):
+def connect(
+    nqn,
+    traddr,
+    trsvcid="4420",
+    transport="tcp",
+    host_nqn=None,
+    dhchap_key=None,
+):
     """
     Connect to an NVMe-oF target.
 
@@ -61,18 +72,32 @@ def connect(nqn, traddr, trsvcid="4420", transport="tcp",
     Raises:
         NvmeConnectionError if connection fails
     """
-    cmd = [_NVME.cmd, "connect",
-           "-n", nqn,
-           "-t", transport,
-           "-a", traddr,
-           "-s", trsvcid]
+    cmd = [
+        _NVME.cmd,
+        "connect",
+        "--nqn",
+        nqn,
+        "--transport",
+        transport,
+        "--traddr",
+        traddr,
+        "--trsvcid",
+        trsvcid,
+        "--ctrl-loss-tmo",
+        CTRL_LOSS_TMO,
+    ]
     if host_nqn:
-        cmd.extend(["-w", host_nqn])
+        cmd.extend(["--hostnqn", host_nqn])
     if dhchap_key:
-        cmd.extend(["-k", dhchap_key])
+        cmd.extend(["--dhchap-secret", ProtectedPassword(dhchap_key)])
 
-    log.info("Connecting to NVMe-oF target %s at %s:%s (transport=%s)",
-             nqn, traddr, trsvcid, transport)
+    log.info(
+        "Connecting to NVMe-oF target %s at %s:%s (transport=%s)",
+        nqn,
+        traddr,
+        trsvcid,
+        transport,
+    )
     try:
         commands.run(cmd)
     except cmdutils.Error as e:
@@ -90,14 +115,15 @@ def disconnect(nqn):
     Raises:
         NvmeDisconnectionError if disconnection fails
     """
-    cmd = [_NVME.cmd, "disconnect", "-n", nqn]
+    cmd = [_NVME.cmd, "disconnect", "--nqn", nqn]
     log.info("Disconnecting from NVMe-oF target %s", nqn)
     try:
         commands.run(cmd)
     except cmdutils.Error as e:
         log.error("NVMe disconnect failed: %s", e)
         raise NvmeDisconnectionError(
-            "Failed to disconnect from {}: {}".format(nqn, e))
+            "Failed to disconnect from {}: {}".format(nqn, e)
+        )
 
 
 def disconnect_all():
@@ -110,8 +136,7 @@ def disconnect_all():
         commands.run(cmd)
     except cmdutils.Error as e:
         log.error("NVMe disconnect-all failed: %s", e)
-        raise NvmeDisconnectionError(
-            "Failed to disconnect all: {}".format(e))
+        raise NvmeDisconnectionError("Failed to disconnect all: {}".format(e))
 
 
 def list_controllers():
@@ -121,7 +146,7 @@ def list_controllers():
     Returns:
         list of dict with controller info parsed from `nvme list`
     """
-    cmd = [_NVME.cmd, "list", "--output-format=json"]
+    cmd = [_NVME.cmd, "list", "--output-format", "json"]
     try:
         out = commands.run(cmd)
     except cmdutils.Error as e:
@@ -129,6 +154,7 @@ def list_controllers():
         return []
 
     import json
+
     try:
         data = json.loads(out.decode("utf-8"))
     except (ValueError, KeyError) as e:
@@ -137,16 +163,18 @@ def list_controllers():
 
     controllers = []
     for entry in data.get("Devices", []):
-        controllers.append({
-            "device": entry.get("DevicePath", ""),
-            "firmware": entry.get("Firmware", ""),
-            "model": entry.get("ModelNumber", ""),
-            "serial": entry.get("SerialNumber", ""),
-            "used_bytes": entry.get("UsedBytes", 0),
-            "max_lba": entry.get("NamespaceSize", 0),
-            "physical_size": entry.get("PhysicalSize", 0),
-            "sector_size": entry.get("SectorSize", 0),
-        })
+        controllers.append(
+            {
+                "device": entry.get("DevicePath", ""),
+                "firmware": entry.get("Firmware", ""),
+                "model": entry.get("ModelNumber", ""),
+                "serial": entry.get("SerialNumber", ""),
+                "used_bytes": entry.get("UsedBytes", 0),
+                "max_lba": entry.get("NamespaceSize", 0),
+                "physical_size": entry.get("PhysicalSize", 0),
+                "sector_size": entry.get("SectorSize", 0),
+            }
+        )
     return controllers
 
 
@@ -201,12 +229,12 @@ def get_connected_nqns():
         if not nqn:
             continue
         controller_dir = os.path.join(
-            SYS_NVME, subsys_name.replace("nvme-subsys", "nvme"))
+            SYS_NVME, subsys_name.replace("nvme-subsys", "nvme")
+        )
         if not os.path.isdir(controller_dir):
             continue
         address = _read_sysfs_attr(os.path.join(controller_dir, "address"))
-        transport = _read_sysfs_attr(
-            os.path.join(controller_dir, "transport"))
+        transport = _read_sysfs_attr(os.path.join(controller_dir, "transport"))
         traddr, trsvcid = _parse_address(address) if address else (None, None)
         if nqn and traddr:
             connected.append((nqn, traddr, trsvcid, transport or "tcp"))
@@ -271,7 +299,8 @@ def dev_is_nvme(dev):
         bool
     """
     device_path = os.path.realpath(
-        os.path.join("/sys", "block", dev, "device"))
+        os.path.join("/sys", "block", dev, "device")
+    )
     if not os.path.exists(device_path):
         return False
     return "nvme" in device_path
@@ -324,8 +353,9 @@ def _device_to_subsys(dev):
             if not dev[i].isdigit() and dev[i] != 'n':
                 ctrl = dev[:i]
                 break
-        subsys_path = os.path.join(SYS_NVME_SUBSYS,
-                                   ctrl.replace("nvme", "nvme-subsys"))
+        subsys_path = os.path.join(
+            SYS_NVME_SUBSYS, ctrl.replace("nvme", "nvme-subsys")
+        )
         if os.path.exists(subsys_path):
             return subsys_path
     return None
@@ -383,9 +413,9 @@ def _raise_connect_error(e):
     stderr = str(e)
     if "authentication" in stderr.lower():
         raise NvmeAuthenticationError(
-            "NVMe authentication failed: {}".format(e))
-    raise NvmeConnectionError(
-        "NVMe connection failed: {}".format(e))
+            "NVMe authentication failed: {}".format(e)
+        )
+    raise NvmeConnectionError("NVMe connection failed: {}".format(e))
 
 
 def _parse_list_subsys_output(output):
@@ -403,10 +433,12 @@ def _parse_list_subsys_output(output):
             continue
         path_match = re.match(r".*traddr=(.+),trsvcid=(.+)", line)
         if path_match and current_nqn:
-            subsystems[current_nqn]["paths"].append({
-                "traddr": path_match.group(1),
-                "trsvcid": path_match.group(2),
-            })
+            subsystems[current_nqn]["paths"].append(
+                {
+                    "traddr": path_match.group(1),
+                    "trsvcid": path_match.group(2),
+                }
+            )
     return subsystems
 
 
@@ -451,16 +483,25 @@ def get_subsystem_controllers(dev):
             if not entry.startswith("nvme") or entry.startswith("nvme-subsys"):
                 continue
             address = _read_sysfs_attr(os.path.join(entry_path, "address"))
-            ctrl_transport = _read_sysfs_attr(
-                os.path.join(entry_path, "transport")) or "tcp"
+            ctrl_transport = (
+                _read_sysfs_attr(os.path.join(entry_path, "transport"))
+                or "tcp"
+            )
             traddr, trsvcid = (
-                _parse_address(address) if address else (None, None))
-            controllers.append({
-                "ctrl": entry,
-                "traddr": traddr,
-                "trsvcid": trsvcid or "4420",
-                "transport": ctrl_transport,
-            })
+                _parse_address(address) if address else (None, None)
+            )
+            controllers.append(
+                {
+                    "ctrl": entry,
+                    "traddr": traddr,
+                    "trsvcid": trsvcid or "4420",
+                    "transport": ctrl_transport,
+                    "state": _read_sysfs_attr(
+                        os.path.join(entry_path, "state")
+                    )
+                    or "unknown",
+                }
+            )
     except (OSError, IOError):
         pass
 
@@ -485,15 +526,21 @@ def get_native_namespaces():
         subsys = _device_to_subsys(entry)
         nqn = (
             _read_sysfs_attr(os.path.join(subsys, "subsysnqn"))
-            if subsys else None
+            if subsys
+            else None
         )
         controllers = get_subsystem_controllers(entry)
 
-        namespaces.append((entry, {
-            "nqn": nqn,
-            "subsys": os.path.basename(subsys) if subsys else None,
-            "controllers": controllers,
-        }))
+        namespaces.append(
+            (
+                entry,
+                {
+                    "nqn": nqn,
+                    "subsys": os.path.basename(subsys) if subsys else None,
+                    "controllers": controllers,
+                },
+            )
+        )
 
     return namespaces
 

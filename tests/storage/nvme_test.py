@@ -25,10 +25,11 @@ class TestNvmeConnect:
         nvme.connect("nqn.test", "192.168.1.100")
         assert args[0] == [
             nvme._NVME.cmd, "connect",
-            "-n", "nqn.test",
-            "-t", "tcp",
-            "-a", "192.168.1.100",
-            "-s", "4420",
+            "--nqn", "nqn.test",
+            "--transport", "tcp",
+            "--traddr", "192.168.1.100",
+            "--trsvcid", "4420",
+            "--ctrl-loss-tmo", "80",
         ]
 
     def test_connect_with_host_nqn(self, monkeypatch):
@@ -40,14 +41,15 @@ class TestNvmeConnect:
 
         monkeypatch.setattr(_MODULE + ".commands", "run", fake_run)
         nvme.connect("nqn.test", "192.168.1.100",
-                     host_nqn="nqn.host")
+                      host_nqn="nqn.host")
         assert args[0] == [
             nvme._NVME.cmd, "connect",
-            "-n", "nqn.test",
-            "-t", "tcp",
-            "-a", "192.168.1.100",
-            "-s", "4420",
-            "-w", "nqn.host",
+            "--nqn", "nqn.test",
+            "--transport", "tcp",
+            "--traddr", "192.168.1.100",
+            "--trsvcid", "4420",
+            "--ctrl-loss-tmo", "80",
+            "--hostnqn", "nqn.host",
         ]
 
     def test_connect_with_dhchap_key(self, monkeypatch):
@@ -59,9 +61,9 @@ class TestNvmeConnect:
 
         monkeypatch.setattr(_MODULE + ".commands", "run", fake_run)
         nvme.connect("nqn.test", "192.168.1.100",
-                     dhchap_key="secret123")
-        assert "-k" in args[0]
-        assert "secret123" in args[0]
+                      dhchap_key="secret123")
+        assert "--dhchap-secret" in args[0]
+        assert nvme.ProtectedPassword("secret123") in args[0]
 
     def test_connect_non_default_port(self, monkeypatch):
         args = []
@@ -72,7 +74,7 @@ class TestNvmeConnect:
 
         monkeypatch.setattr(_MODULE + ".commands", "run", fake_run)
         nvme.connect("nqn.test", "192.168.1.100", trsvcid="8000")
-        assert "-s" in args[0]
+        assert "--trsvcid" in args[0]
         assert "8000" in args[0]
 
     def test_connect_failure_raises_exception(self, monkeypatch):
@@ -105,7 +107,7 @@ class TestNvmeDisconnect:
         monkeypatch.setattr(_MODULE + ".commands", "run", fake_run)
         nvme.disconnect("nqn.test")
         assert args[0] == [
-            nvme._NVME.cmd, "disconnect", "-n", "nqn.test",
+            nvme._NVME.cmd, "disconnect", "--nqn", "nqn.test",
         ]
 
     def test_disconnect_failure_raises_exception(self, monkeypatch):

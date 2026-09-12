@@ -531,16 +531,17 @@ def pathListIter(filterGuids=()):
                             "transport": conn_info["transport"],
                         }
                         knownSessions[session_key] = sessionInfo
-                    devInfo["connections"].append(
-                        knownSessions[session_key])
+                    devInfo["connections"].append(knownSessions[session_key])
             else:
                 devInfo["devtypes"].append(DEV_FCP)
                 pathInfo["type"] = DEV_FCP
 
             if devInfo["devtype"] == "":
                 devInfo["devtype"] = pathInfo["type"]
-            elif (devInfo["devtype"] != DEV_MIXED and
-                  devInfo["devtype"] != pathInfo["type"]):
+            elif (
+                devInfo["devtype"] != DEV_MIXED
+                and devInfo["devtype"] != pathInfo["type"]
+            ):
                 devInfo["devtype"] = DEV_MIXED
 
             devInfo["paths"].append(pathInfo)
@@ -581,8 +582,11 @@ def pathListIter(filterGuids=()):
                 devInfo["logicalblocksize"] = str(logBlkSize)
                 devInfo["physicalblocksize"] = str(phyBlkSize)
             except Exception:
-                log.warn("Problem getting blocksize from device ",
-                         ns_name, exc_info=True)
+                log.warn(
+                    "Problem getting blocksize from device ",
+                    ns_name,
+                    exc_info=True,
+                )
 
             session_key = ns_info.get("nqn")
             if session_key and session_key not in knownSessions:
@@ -591,9 +595,12 @@ def pathListIter(filterGuids=()):
             for ctrl_info in ns_info.get("controllers", []):
                 pathInfo = {
                     "physdev": ctrl_info["ctrl"],
-                    "state": "active",
+                    "state": (
+                        "active"
+                        if ctrl_info.get("state") == "live"
+                        else "failed"
+                    ),
                     "capacity": str(getDeviceSize(ns_name)),
-                    "lun": 0,
                     "type": DEV_NVMEOF,
                 }
                 devInfo["paths"].append(pathInfo)
@@ -606,10 +613,12 @@ def pathListIter(filterGuids=()):
                         "transport": ctrl_info["transport"],
                     }
                     if session_key not in knownSessions or (
-                            not knownSessions[session_key]):
+                        not knownSessions[session_key]
+                    ):
                         knownSessions[session_key] = conn_info
                     devInfo["connections"].append(
-                        knownSessions.get(session_key, conn_info))
+                        knownSessions.get(session_key, conn_info)
+                    )
 
             yield devInfo
 
