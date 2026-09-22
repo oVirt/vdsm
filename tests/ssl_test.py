@@ -83,10 +83,13 @@ def test_local_addresses(lhs, rhs):
 
 @pytest.fixture
 def dummy_register_protocol_detector(monkeypatch):
+    def close_dispatcher(self, dispatcher):
+        dispatcher.close()
+
     monkeypatch.setattr(
         MultiProtocolAcceptor,
         '_register_protocol_detector',
-        lambda d: d.close(),
+        close_dispatcher,
     )
 
 
