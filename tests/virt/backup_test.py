@@ -984,6 +984,45 @@ def test_redefine_checkpoints_failed():
     assert res["result"] == expected_result
 
 
+def test_redefine_checkpoints_failed_no_checkpoint():
+    dom = FakeDomainAdapter()
+    # VIR_ERR_NO_DOMAIN_CHECKPOINT is translated to NoSuchCheckpointError
+    error_msg = "Checkpoint does not exist"
+    dom.errors["checkpointCreateXML"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT, '', error_msg],
+        "Fake libvirt error",
+    )
+    vm = FakeVm()
+
+    res = backup.redefine_checkpoints(vm, dom, FAKE_CHECKPOINT_CFG)
+
+    expected_result = {
+        'checkpoint_ids': [],
+        'error': {'code': 1611, 'message': error_msg},
+    }
+    assert res["result"] == expected_result
+
+
+def test_redefine_checkpoints_failed_inconsistent_checkpoint():
+    dom = FakeDomainAdapter()
+    # VIR_ERR_CHECKPOINT_INCONSISTENT is translated to
+    # InconsistentCheckpointError
+    error_msg = "Checkpoint can't be used"
+    dom.errors["checkpointCreateXML"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_CHECKPOINT_INCONSISTENT, '', error_msg],
+        "Fake libvirt error",
+    )
+    vm = FakeVm()
+
+    res = backup.redefine_checkpoints(vm, dom, FAKE_CHECKPOINT_CFG)
+
+    expected_result = {
+        'checkpoint_ids': [],
+        'error': {'code': 1612, 'message': error_msg},
+    }
+    assert res["result"] == expected_result
+
+
 def test_redefine_checkpoints_failed_after_one_succeeded():
     dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
 
@@ -996,7 +1035,7 @@ def test_redefine_checkpoints_failed_after_one_succeeded():
 
     expected_result = {
         'checkpoint_ids': [CHECKPOINT_1.getName(), CHECKPOINT_2.getName()],
-        'error': {'code': 102, 'message': "Invalid checkpoint error"},
+        'error': {'code': 1612, 'message': "Invalid checkpoint error"},
     }
     assert res["result"] == expected_result
 
