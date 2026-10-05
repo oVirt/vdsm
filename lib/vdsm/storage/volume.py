@@ -304,7 +304,7 @@ class VolumeManifest(object):
                 result["bitmaps"] = [
                     Qcow2BitmapInfo(
                         bitmap["name"], bitmap["granularity"], bitmap["flags"]
-                    )
+                    )._asdict()
                     for bitmap in info["format-specific"]["data"]["bitmaps"]
                 ]
 

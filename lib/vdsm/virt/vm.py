@@ -4663,9 +4663,11 @@ class Vm(object):
         )
 
     @api.guard(_not_migrating)
-    def redefine_checkpoints(self, checkpoints):
+    def redefine_checkpoints(self, checkpoints, validate=True):
         dom = backup.DomainAdapter(self)
-        return backup.redefine_checkpoints(self, dom, checkpoints=checkpoints)
+        return backup.redefine_checkpoints(
+            self, dom, checkpoints=checkpoints, validate=validate
+        )
 
     def list_checkpoints(self):
         dom = backup.DomainAdapter(self)
@@ -5016,7 +5018,11 @@ class Vm(object):
             self.log.exception(
                 "Cannot resize disk %s to %s: %s", drive.name, newSizeBytes, e
             )
-            return response.error('updateDevice')
+            # qemu refuses to resize an image holding an inconsistent bitmap,
+            # so the reason has to reach the engine to be actionable.
+            return response.error(
+                'updateDevice', message=e.get_error_message()
+            )
         finally:
             # If the disk was resized to maximum size and drive monitoring was
             # disabled, we need to start monitoring the drive again after the

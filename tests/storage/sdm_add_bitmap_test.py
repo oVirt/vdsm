@@ -92,7 +92,7 @@ def test_add_bitmap(fake_scheduler, env_type):
 
         qemuInfo = env_vol.getQemuImageInfo()
         assert qemuInfo["bitmaps"] == [
-            Qcow2BitmapInfo(bitmap, 65536, ["auto"]),
+            Qcow2BitmapInfo(bitmap, 65536, ["auto"])._asdict(),
         ]
 
 
