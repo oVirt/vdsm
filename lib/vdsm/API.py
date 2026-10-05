@@ -1173,6 +1173,7 @@ class StorageDomain(APIBase):
         NFS = vdsm.storage.sd.NFS_DOMAIN
         FCP = vdsm.storage.sd.FCP_DOMAIN
         ISCSI = vdsm.storage.sd.ISCSI_DOMAIN
+        NVMEOF = vdsm.storage.sd.NVMEOF_DOMAIN
         LOCALFS = vdsm.storage.sd.LOCALFS_DOMAIN
         CIFS = vdsm.storage.sd.CIFS_DOMAIN
         POSIXFS = vdsm.storage.sd.POSIXFS_DOMAIN
