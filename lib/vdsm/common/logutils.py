@@ -222,7 +222,12 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
             self._limits = [(logging.CRITICAL, capacity)]
         self._target = _DROPPER
         self._queue = collections.deque()
-        self._cond = threading.Condition(threading.Lock())
+        # handle() may be re-entered on the same thread while holding the
+        # lock, when the garbage collector runs a __del__ method that logs.
+        # Use a reentrant lock to avoid a deadlock in this case.
+        self._cond = threading.Condition(threading.RLock())
+        # True while handle() is queuing a record, to detect re-entrant calls.
+        self._handling = False
         # The time of the last report.
         self._last_report = time.time()
         # Number of dropped records for last interval.
@@ -250,12 +255,21 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
         completed, warn about messages dropped during this interval.
         """
         with self._cond:
+            if self._handling:
+                # Re-entered on this thread while queuing another record.
+                # Notifying here is not safe since the outer call may be
+                # inside notify(). The outer call will notify the logging
+                # thread after we return.
+                self._queue_record(record)
+                return
+
             # First, handle this record.
-            if self._can_handle(record):
-                self._queue.append(record)
+            self._handling = True
+            try:
+                self._queue_record(record)
                 self._cond.notify()
-            else:
-                self._dropped_records += 1
+            finally:
+                self._handling = False
 
             # Is time to report stats?
             interval = record.created - self._last_report
@@ -309,6 +323,12 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
         self._thread.start()
 
     # Private
+
+    def _queue_record(self, record):
+        if self._can_handle(record):
+            self._queue.append(record)
+        else:
+            self._dropped_records += 1
 
     def _can_handle(self, record):
         size = len(self._queue)
