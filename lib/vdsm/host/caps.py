@@ -180,6 +180,7 @@ def get():
     caps['mailbox_events'] = config.getboolean("mailbox", "events_enable")
     caps['zerocopy_migrations'] = hasattr(libvirt, 'VIR_MIGRATE_ZEROCOPY')
     caps['qemu_image_info_bitmaps'] = True
+    caps['redefine_checkpoint_validate'] = True
 
     return caps
 

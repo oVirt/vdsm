@@ -366,8 +366,8 @@ def test_volume_chain_copy_with_bitmaps(
 
             qemuInfo = dst_vol.getQemuImageInfo()
             assert qemuInfo["bitmaps"] == [
-                Qcow2BitmapInfo(bitmaps[0], 65536, ["auto"]),
-                Qcow2BitmapInfo(bitmaps[1], 65536, ["auto"]),
+                Qcow2BitmapInfo(bitmaps[0], 65536, ["auto"])._asdict(),
+                Qcow2BitmapInfo(bitmaps[1], 65536, ["auto"])._asdict(),
             ]
 
 
