@@ -641,6 +641,27 @@ class TestHotplug(TestCaseBase):
         vm.hotunplugDisk(params)
         assert len(vm.getDiskDevices()) == 0
 
+    def test_disk_replug_guest_name(self):
+        # If the disk is plugged again before the guest agent reports a new
+        # disk mapping, the mapping hash does not change, but the new drive
+        # must get its guest name (#396).
+        vm = self.vm
+        vm.guestAgent.guestDiskMapping = {'1234': {'name': '/dev/sda'}}
+        params = {'xml': self.DISK_HOTPLUG}
+
+        vm.hotplugDisk(params)
+        vm._update_guest_disk_mapping()
+        drive = vm.getDiskDevices()[0]
+        assert getattr(drive, 'guestName', None) == '/dev/sda'
+
+        vm.hotunplugDisk(params)
+        assert len(vm.getDiskDevices()) == 0
+
+        vm.hotplugDisk(params)
+        vm._update_guest_disk_mapping()
+        drive = vm.getDiskDevices()[0]
+        assert getattr(drive, 'guestName', None) == '/dev/sda'
+
     def test_block_disk_hotplug(self):
         vm = self.vm
         params = {'xml': self.BLOCK_DISK_HOTPLUG}
