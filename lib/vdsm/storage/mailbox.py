@@ -763,7 +763,7 @@ class SPM_MailMonitor:
                 "new mail (data=%r, checksum=%r, expected=%r)",
                 mailboxIndex,
                 data,
-                checksum,
+                csum,
                 expected,
             )
             return False
