@@ -499,6 +499,25 @@ class TestValidation:
         mailbox = data + b"bad!"
         assert not sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
 
+    def test_bad_checksum_log(self, caplog):
+        msg = b"x" * sm.MESSAGE_SIZE
+        padding = sm.MAILBOX_SIZE - sm.MESSAGE_SIZE - sm.CHECKSUM_BYTES
+        data = msg + padding * b"\0"
+        mailbox = data + b"bad!"
+        expected = sm.packed_checksum(data)
+
+        with caplog.at_level(logging.ERROR, logger="storage.mailbox"):
+            assert not sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
+
+        assert len(caplog.records) == 1
+        message = caplog.records[0].getMessage()
+
+        # The log must show the checksum read from the mailbox, not the
+        # checksum function.
+        assert "checksum=b'bad!'" in message
+        assert "expected={!r}".format(expected) in message
+        assert "<function" not in message
+
 
 class TestChecksum:
 
