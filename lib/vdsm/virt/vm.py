@@ -4155,6 +4155,10 @@ class Vm(object):
                 driveXml, self._custom, params=drive.custom
             )
             self._last_disk_hotplug = vdsm.common.time.monotonic_time()
+            # The new drive has no guest name yet. If the disk was unplugged
+            # and plugged again quickly, the guest disk mapping may not
+            # change, so force applying it again on the next update.
+            self._last_disk_mapping_hash = None
 
         return {'status': doneCode, 'vmList': {}}
 
