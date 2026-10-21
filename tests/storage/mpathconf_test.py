@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import io
+import logging
 
 import pytest
 
@@ -87,6 +88,53 @@ def test_read_bad_blacklist(fake_conf):
     fake_conf.write(BAD_CONF)
     wwids = mpathconf.read_blacklist()
     assert wwids == {"wwid1", "wwid2", "wwid5"}
+
+
+def test_read_bad_blacklist_log(fake_conf, caplog):
+    fake_conf.write(BAD_CONF, ensure=True)
+    log = logging.getLogger("test.mpathconf")
+
+    with caplog.at_level(logging.DEBUG):
+        wwids = mpathconf.read_blacklist(log=log)
+
+    assert wwids == {"wwid1", "wwid2", "wwid5"}
+
+    # Warnings must be logged only to the logger passed by the caller.
+    assert {(r.name, r.levelno) for r in caplog.records} == {
+        ("test.mpathconf", logging.WARNING),
+    }
+    assert [r.getMessage() for r in caplog.records] == [
+        "Ignoring extra data starting with 'invalid'",
+        "Ignoring extra data starting with '\"wwid3\"'",
+        "Skipping invalid line: 'invalid'",
+        "Skipping invalid line: 'invalid wwid \"wwid4\"'",
+    ]
+
+
+@pytest.mark.parametrize("conf", [CONF, EMPTY_CONF])
+def test_read_good_blacklist_log(fake_conf, caplog, conf):
+    fake_conf.write(mpathconf._HEADER + conf, ensure=True)
+    log = logging.getLogger("test.mpathconf")
+
+    with caplog.at_level(logging.DEBUG):
+        mpathconf.read_blacklist(log=log)
+
+    # Empty lines are valid and must not be reported.
+    assert not caplog.records
+
+
+def test_read_no_blacklist_section_log(fake_conf, caplog):
+    fake_conf.write("# no blacklist section\n", ensure=True)
+    log = logging.getLogger("test.mpathconf")
+
+    with caplog.at_level(logging.DEBUG):
+        wwids = mpathconf.read_blacklist(log=log)
+
+    assert not wwids
+    assert [(r.name, r.levelno) for r in caplog.records] == [
+        ("test.mpathconf", logging.WARNING),
+    ]
+    assert "No blacklist section found" in caplog.records[0].getMessage()
 
 
 @pytest.fixture
