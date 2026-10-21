@@ -126,20 +126,23 @@ def _fresh_qdisc_conf_out(dev, vlan_tag, class_id, qos):
 def _qdisc_conf_out(dev, root_qdisc_handle, vlan_tag, class_id, qos):
     """Adds the traffic class and filtering to the current hfsc qdisc"""
     flow_id = _ROOT_QDISC_HANDLE + class_id
+    # The non-vlanned filter flowid is reported as ':1388', so match by pref
+    pref = _NON_VLANNED_ID if vlan_tag is None else vlan_tag
 
     def filt_flow_id(filt, kind):
         return filt.get(kind, {}).get('flowid')
 
-    filters = [
-        filt
+    prefs = {
+        filt['pref']
         for filt in tc._filters(dev, parent=root_qdisc_handle)
-        if flow_id in (filt_flow_id(filt, 'basic'), filt_flow_id(filt, 'u32'))
-    ]
+        if filt.get('pref') == pref
+        or flow_id in (filt_flow_id(filt, 'basic'), filt_flow_id(filt, 'u32'))
+    }
 
     # Clear up any previous filters to the class
-    for filt in filters:
+    for filt_pref in prefs:
         try:
-            tc.filter.delete(dev, filt['pref'], parent=root_qdisc_handle)
+            tc.filter.delete(dev, filt_pref, parent=root_qdisc_handle)
         except tc.TrafficControlException as tce:
             if tce.errCode != errno.EINVAL:  # no filters exist -> EINVAL
                 raise
