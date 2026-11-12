@@ -335,7 +335,9 @@ class TestReplaceNvidiaVgpuHostdevs(XMLTestCase):
       </source>
     </hostdev>
   </devices>
-</domain>'''.format(created=created, other=other),
+</domain>'''.format(
+                created=created, other=other
+            ),
         )
 
 
