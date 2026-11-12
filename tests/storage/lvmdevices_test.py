@@ -159,3 +159,45 @@ def test_list_all_visible_vgs_filters_ovirt_sd_tag(monkeypatch):
     )
 
     assert lvmdevices._list_all_visible_vgs() == ["external_vg", "vg_root"]
+
+
+@pytest.fixture
+def fake_lvm(monkeypatch):
+    """Capture lvm commands, returning success with no output."""
+    commands = []
+
+    def start(cmd, **kw):
+        commands.append(cmd)
+        return mock.Mock(returncode=0)
+
+    monkeypatch.setattr(lvmdevices.commands, "start", start)
+    monkeypatch.setattr(
+        lvmdevices.commands, "communicate", lambda p: (b"", b"")
+    )
+    return commands
+
+
+def _config_arg(cmd):
+    return cmd[cmd.index("--config") + 1]
+
+
+def test_list_all_visible_vgs_config(fake_lvm):
+    lvmdevices._list_all_visible_vgs()
+
+    assert len(fake_lvm) == 1
+    config = _config_arg(fake_lvm[0])
+    assert "use_devicesfile = 0" in config
+    assert 'multipath_wwids_file = ""' in config
+    assert 'filter = ["a|.*|"]' in config
+
+
+def test_run_vgimportdevices_config(fake_lvm):
+    lvmdevices._run_vgimportdevices("vg_root")
+
+    assert len(fake_lvm) == 1
+    cmd = fake_lvm[0]
+    assert cmd[1:3] == ["vgimportdevices", "vg_root"]
+    config = _config_arg(cmd)
+    assert "use_devicesfile = 1" in config
+    assert 'multipath_wwids_file = ""' in config
+    assert 'filter = ["a|.*|"]' in config
