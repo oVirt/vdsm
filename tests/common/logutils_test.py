@@ -340,6 +340,54 @@ class TestThreadedHandler(TestCaseBase):
             % (len(target.messages), elapsed)
         )
 
+    # Forked, so a deadlocked handler cannot block the test process exit.
+    @forked
+    def test_reentrant_handle(self):
+        # The garbage collector may run a __del__ method logging a message
+        # while handle() is holding the handler lock (see #454). Simulate this
+        # using a record logging another record when the handler checks its
+        # level.
+        target = Handler()
+        handler = logutils.ThreadedHandler(10)
+        handler.setTarget(target)
+        nested = logging.LogRecord(
+            "test", logging.INFO, __file__, 0, "nested", (), None
+        )
+        record = ReentrantRecord(handler, nested, "outer")
+
+        t = threading.Thread(
+            target=handler.handle, args=(record,), daemon=True
+        )
+        t.start()
+        t.join(5)
+
+        # If handle() deadlocked, closing the handler would block forever.
+        self.assertFalse(t.is_alive(), "handle() deadlocked")
+        handler.close()
+        self.assertEqual(target.messages, ["nested", "outer"])
+
+
+class ReentrantRecord(logging.LogRecord):
+    """
+    A record logging the nested record when its level is accessed.
+    """
+
+    def __init__(self, handler, nested, msg):
+        self._handler = handler
+        self._nested = nested
+        super().__init__("test", logging.INFO, __file__, 0, msg, (), None)
+
+    @property
+    def levelno(self):
+        if self._nested is not None:
+            nested, self._nested = self._nested, None
+            self._handler.handle(nested)
+        return self._levelno
+
+    @levelno.setter
+    def levelno(self, value):
+        self._levelno = value
+
 
 @expandPermutations
 class TestHeadFormatter(TestCaseBase):
