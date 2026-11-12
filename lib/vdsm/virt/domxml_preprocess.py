@@ -67,11 +67,14 @@ Please check the documentation of the functions in this module to learn
 about the supported placeholders and their meaning.
 """
 
+import xml.etree.ElementTree as ET
+
 from vdsm import host
 from vdsm import osinfo
 
 from vdsm.common import cpuarch
 from vdsm.common import hooks
+from vdsm.common import hostdev
 from vdsm.common import xmlutils
 from vdsm.virt import domain_descriptor
 from vdsm.virt import libvirtxml
@@ -235,6 +238,40 @@ def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
 
     for dev_elem in to_append:
         vmxml.append_child(devs, etree_child=dev_elem)
+
+
+def replace_nvidia_vgpu_hostdevs(dom):
+    """
+    Replace each mdev host device whose vGPU was created on a VF of a GPU
+    using NVIDIA's vendor-specific VFIO framework (see spawn_mdev()) with a
+    PCI host device of that VF. The VF stays bound to the NVIDIA driver, so
+    libvirt must not manage it. display and ramfb are kept, and the user
+    alias carries the mdev UUID, which is the Engine device id.
+    """
+    devs = vmxml.find_first(dom, 'devices')
+    for dev_elem in vmxml.children(devs, 'hostdev'):
+        if dev_elem.get('type') != 'mdev':
+            continue
+        address = dev_elem.find('./source/address')
+        if address is None:
+            continue
+        mdev_uuid = address.get('uuid')
+        vf = hostdev.nvidia_vgpu_vf(mdev_uuid)
+        if vf is None:
+            continue
+        domain, bus, slot_function = vf.split(':')
+        slot, function = slot_function.split('.')
+        dev_elem.set('type', 'pci')
+        dev_elem.set('managed', 'no')
+        dev_elem.attrib.pop('model', None)
+        address.attrib.clear()
+        address.set('domain', '0x' + domain)
+        address.set('bus', '0x' + bus)
+        address.set('slot', '0x' + slot)
+        address.set('function', '0x' + function)
+        if dev_elem.find('alias') is None:
+            alias = ET.SubElement(dev_elem, 'alias')
+            alias.set('name', 'ua-' + mdev_uuid)
 
 
 def replace_placeholders(dom, arch, serial=None):

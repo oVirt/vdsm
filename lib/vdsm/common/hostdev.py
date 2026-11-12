@@ -8,6 +8,8 @@ import json
 import logging
 import operator
 import os
+import re
+import threading
 import uuid
 import xml.etree.ElementTree as etree
 
@@ -29,6 +31,21 @@ _MDEV_FIELDS = ('name', 'description', 'available_instances', 'device_api')
 # Arbitrary value (generated on development machine).
 _OVIRT_MDEV_NAMESPACE = uuid.UUID('8524b17c-f0ca-44a5-9ce4-66fe261e5986')
 _MdevDetail = collections.namedtuple('_MdevDetail', _MDEV_FIELDS)
+
+# NVIDIA's vendor-specific VFIO framework (used by the vGPU driver for SR-IOV
+# GPUs on kernels without mdev_set_iommu_device(), e.g. EL10) has no mdev
+# bus. Each VF lists the vGPU types it can host under nvidia/ in sysfs; a
+# vGPU is created by writing a type id to nvidia/current_vgpu_type and the VF
+# is then assigned to the VM as a PCI host device. The type ids are the ones
+# used in the "nvidia-<id>" mdev type names, so we report and accept them
+# under those names and Engine keeps treating them as mdev types.
+_PCI_DEVICES_PATH = '/sys/bus/pci/devices'
+_NVIDIA_MDEV_TYPE_PREFIX = 'nvidia-'
+# creatable_vgpu_types: a header line, then "<id> : <name>" per type
+_NVIDIA_VGPU_TYPE_RE = re.compile(r'(\d+)\s+:\s+(.*?)\s*(?=\d+\s+:\s|\n|$)')
+_nvidia_vgpu_lock = threading.Lock()
+# mdev UUID -> VF PCI address, for vGPUs created on a VF
+_nvidia_vgpus = {}
 
 
 CAPABILITY_TO_XML_ATTR = collections.defaultdict(
@@ -627,6 +644,10 @@ def _update_address_to_name_map(address_to_name, device_name, device_params):
 
 
 def _each_mdev_device():
+    # The mdev bus doesn't exist when no driver registered a parent, e.g. with
+    # NVIDIA's vendor-specific VFIO framework.
+    if not os.path.isdir(_MDEV_PATH):
+        return
     for pci_device in sorted(os.listdir(_MDEV_PATH)):
         yield pci_device
 
@@ -738,6 +759,12 @@ def list_by_caps(caps=None):
     libvirt_devices, _ = _get_devices_from_libvirt(flags)
 
     for devName, params in libvirt_devices.items():
+        if params['capability'] == 'pci':
+            # Read on every call: the device tree cache only changes with
+            # the libvirt device XML, which doesn't show vGPU availability.
+            nvidia_types = _nvidia_vgpu_mdev_types(name_to_pci_path(devName))
+            if nvidia_types:
+                params = dict(params, mdev=nvidia_types)
         devices[devName] = {'params': params}
     devices.update(list_nvdimms())
 
@@ -850,6 +877,12 @@ def change_numvfs(device_name, numvfs):
 
 def spawn_mdev(mdev_properties, mdev_uuid, log):
     device = _suitable_device_for_mdev_type(mdev_properties, log)
+    if (
+        device is None
+        and _nvidia_vgpu_type_id(mdev_properties.device_type) is not None
+    ):
+        _spawn_nvidia_vgpu(mdev_properties, mdev_uuid, log)
+        return
     if device is None:
         message = 'vgpu: No device with type {} is available'.format(
             mdev_properties.device_type
@@ -865,6 +898,11 @@ def spawn_mdev(mdev_properties, mdev_uuid, log):
 
 
 def despawn_mdev(mdev_uuid):
+    with _nvidia_vgpu_lock:
+        vf = _nvidia_vgpus.pop(mdev_uuid, None)
+    if vf is not None:
+        release_nvidia_vgpu(vf)
+        return
     device = None
     for dev in _each_mdev_device():
         if mdev_uuid in os.listdir(os.path.join(_MDEV_PATH, dev)):
@@ -877,6 +915,157 @@ def despawn_mdev(mdev_uuid):
     except IOError:
         # This is destroy flow, we can't really fail
         pass
+
+
+def _nvidia_vgpu_path(vf, name):
+    return os.path.join(_PCI_DEVICES_PATH, vf, 'nvidia', name)
+
+
+def is_nvidia_vgpu_vf(vf):
+    """
+    Whether the PCI device (address like 0000:41:00.4) is a VF that hosts
+    vGPUs through NVIDIA's vendor-specific VFIO framework.
+    """
+    return os.path.exists(_nvidia_vgpu_path(vf, 'current_vgpu_type'))
+
+
+def _nvidia_vgpu_type_id(mdev_type):
+    if not mdev_type or not mdev_type.startswith(_NVIDIA_MDEV_TYPE_PREFIX):
+        return None
+    type_id = mdev_type[len(_NVIDIA_MDEV_TYPE_PREFIX) :]
+    return int(type_id) if type_id.isdigit() else None
+
+
+def _nvidia_creatable_vgpu_types(vf):
+    """
+    Return {type id: name} of the vGPU types the VF can host now. A VF that
+    already hosts a vGPU, or whose GPU runs a different type, lists fewer or
+    none.
+    """
+    try:
+        with open(_nvidia_vgpu_path(vf, 'creatable_vgpu_types')) as f:
+            content = f.read()
+    except IOError:
+        return {}
+    return {
+        int(type_id): name
+        for type_id, name in _NVIDIA_VGPU_TYPE_RE.findall(content)
+    }
+
+
+def _nvidia_current_vgpu_type(vf):
+    try:
+        with open(_nvidia_vgpu_path(vf, 'current_vgpu_type')) as f:
+            return int(f.read().strip() or 0)
+    except (IOError, ValueError):
+        return 0
+
+
+def _nvidia_vgpu_mdev_types(vf):
+    """
+    Report the VF's vGPU types like libvirt's mdev_types capability, so
+    Engine can schedule VMs with these mdev types on this host.
+    """
+    if not is_nvidia_vgpu_vf(vf):
+        return {}
+    available = '0' if _nvidia_current_vgpu_type(vf) else '1'
+    return {
+        f'{_NVIDIA_MDEV_TYPE_PREFIX}{type_id}': {
+            'name': name,
+            'available_instances': available,
+        }
+        for type_id, name in _nvidia_creatable_vgpu_types(vf).items()
+    }
+
+
+def _nvidia_physfn(vf):
+    return os.path.basename(
+        os.path.realpath(os.path.join(_PCI_DEVICES_PATH, vf, 'physfn'))
+    )
+
+
+def _each_nvidia_vgpu_vf():
+    try:
+        devices = sorted(os.listdir(_PCI_DEVICES_PATH))
+    except OSError:
+        return
+    for device in devices:
+        if is_nvidia_vgpu_vf(device):
+            yield device
+
+
+def _suitable_nvidia_vgpu_vf(type_id, placement, log):
+    """
+    Pick a free VF that can host the vGPU type. Compact placement takes the
+    first suitable VF in PCI order, filling one GPU before the next; separate
+    placement prefers a GPU that hosts no vGPU yet.
+    """
+    used_gpus = set()
+    candidates = []
+    for vf in _each_nvidia_vgpu_vf():
+        if _nvidia_current_vgpu_type(vf):
+            used_gpus.add(_nvidia_physfn(vf))
+        elif type_id in _nvidia_creatable_vgpu_types(vf):
+            candidates.append(vf)
+    if placement == MdevPlacement.SEPARATE:
+        for vf in candidates:
+            if _nvidia_physfn(vf) not in used_gpus:
+                return vf
+        log.info("Separate vGPU placement failed, trying compact placement.")
+    return candidates[0] if candidates else None
+
+
+def _spawn_nvidia_vgpu(mdev_properties, mdev_uuid, log):
+    type_id = _nvidia_vgpu_type_id(mdev_properties.device_type)
+    with _nvidia_vgpu_lock:
+        vf = _suitable_nvidia_vgpu_vf(type_id, mdev_properties.placement, log)
+        if vf is None:
+            message = 'vgpu: No device with type {} is available'.format(
+                mdev_properties.device_type
+            )
+            log.error(message)
+            raise exception.ResourceUnavailable(message)
+        try:
+            supervdsm.getProxy().nvidia_vgpu_create(
+                vf, type_id, mdev_properties.driver_parameters
+            )
+        except IOError:
+            message = f'vgpu: Failed to create vGPU on {vf}: {mdev_properties}'
+            log.error(message)
+            raise exception.ResourceUnavailable(message)
+        _nvidia_vgpus[mdev_uuid] = vf
+    log.info(
+        'vgpu: Created %s on VF %s for mdev %s',
+        mdev_properties.device_type,
+        vf,
+        mdev_uuid,
+    )
+
+
+def nvidia_vgpu_vf(mdev_uuid):
+    """
+    Return the VF PCI address of a vGPU created by spawn_mdev() on a VF, or
+    None if the mdev wasn't created that way.
+    """
+    with _nvidia_vgpu_lock:
+        return _nvidia_vgpus.get(mdev_uuid)
+
+
+def release_nvidia_vgpu(vf):
+    """
+    Destroy the vGPU on the VF. Called after the VM is gone, instead of
+    reattaching the VF to the host: it stays bound to the NVIDIA driver.
+    """
+    with _nvidia_vgpu_lock:
+        for mdev_uuid in [u for u, v in _nvidia_vgpus.items() if v == vf]:
+            del _nvidia_vgpus[mdev_uuid]
+        if not _nvidia_current_vgpu_type(vf):
+            return
+        try:
+            supervdsm.getProxy().nvidia_vgpu_delete(vf)
+        except IOError:
+            # This is destroy flow, we can't really fail
+            logging.exception('vgpu: Failed to remove the vGPU on VF %s', vf)
 
 
 def _format_address(dev_type, address):

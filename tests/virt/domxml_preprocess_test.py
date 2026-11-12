@@ -3,6 +3,7 @@
 
 from vdsm.common import cpuarch
 from vdsm.common import hooks
+from vdsm.common import hostdev
 from vdsm.common import xmlutils
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import vmdevices
@@ -285,6 +286,59 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
             addr=addr
         )
         assert self._hook_params == [(expected_xml, {}, {})]
+
+
+class TestReplaceNvidiaVgpuHostdevs(XMLTestCase):
+
+    _DOMAIN = '''<domain type="kvm">
+  <devices>
+    <hostdev mode="subsystem" type="mdev" model="vfio-pci" display="on"
+             ramfb="on">
+      <source>
+        <address uuid="{created}"/>
+      </source>
+    </hostdev>
+    <hostdev mode="subsystem" type="mdev" model="vfio-pci">
+      <source>
+        <address uuid="{other}"/>
+      </source>
+    </hostdev>
+  </devices>
+</domain>'''
+
+    def test_replace(self):
+        created = '0b7a3c4e-6a8d-4a4b-9c5e-1f2d3e4a5b6c'
+        other = '9f8e7d6c-5b4a-4392-8170-6f5e4d3c2b1a'
+        dom = xmlutils.fromstring(
+            self._DOMAIN.format(created=created, other=other)
+        )
+        with MonkeyPatchScope(
+            [
+                (hostdev, '_nvidia_vgpus', {created: '0000:41:02.3'}),
+            ]
+        ):
+            domxml_preprocess.replace_nvidia_vgpu_hostdevs(dom)
+        self.assertXMLEqual(
+            xmlutils.tostring(dom),
+            '''<domain type="kvm">
+  <devices>
+    <hostdev mode="subsystem" type="pci" managed="no" display="on"
+             ramfb="on">
+      <source>
+        <address domain="0x0000" bus="0x41" slot="0x02" function="0x3"/>
+      </source>
+      <alias name="ua-{created}"/>
+    </hostdev>
+    <hostdev mode="subsystem" type="mdev" model="vfio-pci">
+      <source>
+        <address uuid="{other}"/>
+      </source>
+    </hostdev>
+  </devices>
+</domain>'''.format(
+                created=created, other=other
+            ),
+        )
 
 
 class TestReplaceLeaseXML(XMLTestCase):
