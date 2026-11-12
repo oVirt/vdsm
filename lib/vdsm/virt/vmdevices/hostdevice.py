@@ -11,6 +11,9 @@ from vdsm.common.hostdev import (
     despawn_mdev,
     MdevPlacement,
     MdevProperties,
+    is_nvidia_vgpu_vf,
+    name_to_pci_path,
+    release_nvidia_vgpu,
 )
 from vdsm.virt import vmxml
 
@@ -86,6 +89,11 @@ def teardown_device(dom, log):
         )
     elif type_ == 'mdev':
         despawn_mdev(name)
+    elif type_ == 'pci' and is_nvidia_vgpu_vf(name_to_pci_path(name)):
+        # A vGPU VF set up by spawn_mdev(): it stays bound to the NVIDIA
+        # driver, reattaching it would unbind it.
+        log.info('Removing vGPU from VF %s.' % (name,))
+        release_nvidia_vgpu(name_to_pci_path(name))
     else:
         pci_reattach = type_ == 'pci'
         log.info('Reattaching device %s to the host.' % (name,))

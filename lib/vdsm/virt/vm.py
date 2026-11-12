@@ -2528,6 +2528,8 @@ class Vm(object):
             dom, self.arch, self.conf.get('serial')
         )
 
+        domxml_preprocess.replace_nvidia_vgpu_hostdevs(dom)
+
         if config.getboolean('devel', 'xml_minimal_changes'):
             domxml_preprocess.update_disks_xml_from_objs(
                 self, dom, self._devices[hwclass.DISK]

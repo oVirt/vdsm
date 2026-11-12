@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import logging
+
+import pytest
+
 from vdsm.common import exception
 from vdsm.common import xmlutils
 from vdsm.virt.vmdevices import network, hwclass
@@ -305,3 +309,186 @@ class TestMdev(TestCaseBase):
                 '1234',
                 self.log,
             )
+
+
+# NVIDIA vendor-specific VFIO framework: two GPUs with two VFs each.
+_NVIDIA_GPUS = {
+    '0000:41:00.0': ('0000:41:00.4', '0000:41:00.5'),
+    '0000:81:00.0': ('0000:81:00.4', '0000:81:00.5'),
+}
+_NVIDIA_CREATABLE = '''\
+ID    : vGPU Name
+590   : NVIDIA A10-1Q
+593   : NVIDIA A10-4Q
+'''
+
+
+class FakeNvidiaSuperVdsm:
+
+    def __init__(self, sysfs):
+        self.sysfs = sysfs
+
+    def getProxy(self):
+        return self
+
+    def nvidia_vgpu_create(self, vf, type_id, driver_parameters):
+        (self.sysfs / vf / 'nvidia' / 'current_vgpu_type').write_text(
+            '%d\n' % type_id
+        )
+
+    def nvidia_vgpu_delete(self, vf):
+        (self.sysfs / vf / 'nvidia' / 'current_vgpu_type').write_text('0\n')
+
+
+@pytest.fixture
+def nvidia_sysfs(tmp_path, monkeypatch):
+    for pf, vfs in _NVIDIA_GPUS.items():
+        (tmp_path / pf).mkdir()
+        for vf in vfs:
+            nvidia = tmp_path / vf / 'nvidia'
+            nvidia.mkdir(parents=True)
+            (nvidia / 'creatable_vgpu_types').write_text(_NVIDIA_CREATABLE)
+            (nvidia / 'current_vgpu_type').write_text('0\n')
+            (tmp_path / vf / 'physfn').symlink_to(tmp_path / pf)
+    monkeypatch.setattr(hostdev, '_PCI_DEVICES_PATH', str(tmp_path))
+    monkeypatch.setattr(hostdev, '_MDEV_PATH', str(tmp_path / 'no-mdev'))
+    monkeypatch.setattr(hostdev, 'supervdsm', FakeNvidiaSuperVdsm(tmp_path))
+    monkeypatch.setattr(hostdev, '_nvidia_vgpus', {})
+    return tmp_path
+
+
+def _current_vgpu_types(sysfs):
+    return {
+        vf: int((sysfs / vf / 'nvidia' / 'current_vgpu_type').read_text())
+        for vfs in _NVIDIA_GPUS.values()
+        for vf in vfs
+    }
+
+
+@pytest.mark.parametrize(
+    'content',
+    [
+        _NVIDIA_CREATABLE,
+        # The driver prints the names as they come; don't rely on newlines.
+        'ID    : vGPU Name\n590   : NVIDIA A10-1Q593   : NVIDIA A10-4Q',
+    ],
+)
+def test_nvidia_creatable_vgpu_types(nvidia_sysfs, content):
+    (
+        nvidia_sysfs / '0000:41:00.4' / 'nvidia' / 'creatable_vgpu_types'
+    ).write_text(content)
+    assert hostdev._nvidia_creatable_vgpu_types('0000:41:00.4') == {
+        590: 'NVIDIA A10-1Q',
+        593: 'NVIDIA A10-4Q',
+    }
+
+
+def test_nvidia_vgpu_mdev_types(nvidia_sysfs):
+    (
+        nvidia_sysfs / '0000:41:00.5' / 'nvidia' / 'current_vgpu_type'
+    ).write_text('593\n')
+    assert hostdev._nvidia_vgpu_mdev_types('0000:41:00.4') == {
+        'nvidia-590': {'name': 'NVIDIA A10-1Q', 'available_instances': '1'},
+        'nvidia-593': {'name': 'NVIDIA A10-4Q', 'available_instances': '1'},
+    }
+    assert hostdev._nvidia_vgpu_mdev_types('0000:41:00.5') == {
+        'nvidia-590': {'name': 'NVIDIA A10-1Q', 'available_instances': '0'},
+        'nvidia-593': {'name': 'NVIDIA A10-4Q', 'available_instances': '0'},
+    }
+    assert hostdev._nvidia_vgpu_mdev_types('0000:41:00.0') == {}
+
+
+@pytest.mark.parametrize(
+    'placement, expected',
+    [
+        (
+            hostdev.MdevPlacement.COMPACT,
+            {
+                '0000:41:00.4': 593,
+                '0000:41:00.5': 593,
+                '0000:81:00.4': 0,
+                '0000:81:00.5': 0,
+            },
+        ),
+        (
+            hostdev.MdevPlacement.SEPARATE,
+            {
+                '0000:41:00.4': 593,
+                '0000:41:00.5': 0,
+                '0000:81:00.4': 593,
+                '0000:81:00.5': 0,
+            },
+        ),
+    ],
+)
+def test_nvidia_vgpu_placement(nvidia_sysfs, placement, expected):
+    log = logging.getLogger('test')
+    for mdev_uuid in ('uuid-1', 'uuid-2'):
+        mdev_properties = hostdev.MdevProperties('nvidia-593', placement, None)
+        hostdev.spawn_mdev(mdev_properties, mdev_uuid, log)
+    assert _current_vgpu_types(nvidia_sysfs) == expected
+    vfs = [vf for vf, type_id in expected.items() if type_id]
+    assert [hostdev.nvidia_vgpu_vf(u) for u in ('uuid-1', 'uuid-2')] == vfs
+
+
+@pytest.mark.parametrize('mdev_type', ['nvidia-999', 'nvidia-', 'other-593'])
+def test_nvidia_vgpu_unavailable_type(nvidia_sysfs, mdev_type):
+    mdev_properties = hostdev.MdevProperties(
+        mdev_type, hostdev.MdevPlacement.COMPACT, None
+    )
+    with pytest.raises(exception.ResourceUnavailable):
+        hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+
+
+def test_nvidia_vgpu_no_free_vf(nvidia_sysfs):
+    log = logging.getLogger('test')
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-590', hostdev.MdevPlacement.COMPACT, None
+    )
+    for i in range(4):
+        hostdev.spawn_mdev(mdev_properties, 'uuid-%d' % i, log)
+    with pytest.raises(exception.ResourceUnavailable):
+        hostdev.spawn_mdev(mdev_properties, 'uuid-4', log)
+
+
+def test_nvidia_vgpu_despawn(nvidia_sysfs):
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+    hostdev.despawn_mdev('uuid-1')
+    assert not any(_current_vgpu_types(nvidia_sysfs).values())
+    assert hostdev.nvidia_vgpu_vf('uuid-1') is None
+
+
+def test_nvidia_vgpu_release_by_vf(nvidia_sysfs):
+    # VM teardown knows only the VF from the running domain XML, and vdsm may
+    # have restarted since the vGPU was created.
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+    hostdev._nvidia_vgpus.clear()
+    assert hostdev.is_nvidia_vgpu_vf('0000:41:00.4')
+    hostdev.release_nvidia_vgpu('0000:41:00.4')
+    assert not any(_current_vgpu_types(nvidia_sysfs).values())
+
+
+def test_nvidia_vgpu_vf_teardown(nvidia_sysfs, monkeypatch):
+    from vdsm.virt.vmdevices import hostdevice
+
+    def reattach(*args, **kwargs):
+        raise AssertionError('vGPU VF must not be reattached')
+
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+    monkeypatch.setattr(hostdevice, 'reattach_detachable', reattach)
+    monkeypatch.setattr(
+        hostdevice,
+        '_get_device_name_type',
+        lambda dom: ('pci_0000_41_00_4', 'pci'),
+    )
+    hostdevice.teardown_device(None, logging.getLogger())
+    assert not any(_current_vgpu_types(nvidia_sysfs).values())

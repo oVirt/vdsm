@@ -3,6 +3,7 @@
 
 import logging
 import os
+import re
 import stat
 import tempfile
 import uuid
@@ -132,6 +133,62 @@ def mdev_delete(device, mdev_uuid):
 
     with open(path, 'w') as f:
         f.write('1')
+
+
+_PCI_ADDRESS_RE = re.compile(
+    r'^[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]$', re.IGNORECASE
+)
+
+
+def _nvidia_vgpu_path(vf, name):
+    if not _PCI_ADDRESS_RE.match(vf):
+        raise ValueError('Invalid PCI address: {!r}'.format(vf))
+    return '/sys/bus/pci/devices/{}/nvidia/{}'.format(vf, name)
+
+
+@expose
+def nvidia_vgpu_create(vf, type_id, driver_parameters=None):
+    """Create a vGPU on a VF of a GPU that uses NVIDIA's vendor-specific
+    VFIO framework (no mdev bus).
+
+    Args:
+        vf: PCI address of the VF (domain:bus:slot.function). Example:
+            0000:41:00.4.
+        type_id: NVIDIA vGPU type id, int, as listed in the VF's
+            nvidia/creatable_vgpu_types.
+        driver_parameters: Raw driver parameters to set, string or None.
+
+    Raises:
+        Possibly anything related to sysfs write (IOError).
+    """
+    with open(_nvidia_vgpu_path(vf, 'current_vgpu_type'), 'w') as f:
+        f.write('%d\n' % (int(type_id),))
+
+    if driver_parameters is not None:
+        try:
+            with open(_nvidia_vgpu_path(vf, 'vgpu_params'), 'w') as f:
+                f.write('%s\n' % (driver_parameters,))
+        except:
+            try:
+                nvidia_vgpu_delete(vf)
+            except Exception as e:
+                logging.error(
+                    "Failed to remove vGPU with failed "
+                    "driver parameters: %s",
+                    e,
+                )
+            raise
+
+
+@expose
+def nvidia_vgpu_delete(vf):
+    """Remove the vGPU from a VF, see nvidia_vgpu_create().
+
+    Raises:
+        Possibly anything related to sysfs write (IOError).
+    """
+    with open(_nvidia_vgpu_path(vf, 'current_vgpu_type'), 'w') as f:
+        f.write('0\n')
 
 
 QEMU_CONFIG_FILE = '/etc/libvirt/qemu.conf'
