@@ -707,12 +707,15 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             raise
 
     def _rmDCVolLinks(self, imgPath, volsImgs):
+        removedPaths = []
         for vol in volsImgs:
             lPath = os.path.join(imgPath, vol)
-            removedPaths = []
             self.log.info("Unlink volume symlink %r", lPath)
             try:
                 os.unlink(lPath)
+            except FileNotFoundError:
+                # Expected if the volume was never activated on this host.
+                self.log.debug("Volume symlink %r does not exist", lPath)
             except OSError as e:
                 self.log.warning("Can't unlink %s. %s", lPath, e)
             else:
@@ -726,6 +729,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self.log.info("Removing image directory %r", imgPath)
         try:
             os.rmdir(imgPath)
+        except FileNotFoundError:
+            # Expected if the image was never prepared on this host.
+            self.log.debug("Image directory %r does not exist", imgPath)
         except OSError:
             self.log.warning("Can't rmdir %s", imgPath, exc_info=True)
         return imgPath
