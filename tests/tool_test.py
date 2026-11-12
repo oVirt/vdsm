@@ -6,6 +6,8 @@ from unittest import mock
 from vdsm.common import cpuarch
 from vdsm.common import fileutils
 from vdsm.common import systemctl
+from vdsm.storage import mpathconf
+from vdsm.tool import config_lvm_filter
 from vdsm.tool import configurator
 from vdsm.tool.configurators import YES, NO, MAYBE, InvalidConfig, InvalidRun
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
@@ -959,3 +961,29 @@ class UpgradeTests(TestCase):
         upgrade.apply_upgrade(upgrade_obj, 'test')
         self.assertFalse(upgrade_obj.ns.foo)
         self.assertSealed('test_again')
+
+
+def test_config_lvm_filter_shows_blacklist_warnings(tmpdir, capsys):
+    blacklist = tmpdir.join("vdsm_blacklist.conf")
+    blacklist.write(
+        """\
+blacklist {
+    wwid "wwid1"
+    invalid
+}
+"""
+    )
+    with mock.patch.object(
+        mpathconf, "_VDSM_MULTIPATH_BLACKLIST", str(blacklist)
+    ):
+        wwids = mpathconf.read_blacklist(log=config_lvm_filter._log)
+
+    assert wwids == {"wwid1"}
+    out, err = capsys.readouterr()
+    assert out == "WARNING: Skipping invalid line: 'invalid'\n"
+
+
+def test_config_lvm_filter_hides_debug_messages(capsys):
+    config_lvm_filter._log.debug("debug message")
+    out, err = capsys.readouterr()
+    assert out == ""

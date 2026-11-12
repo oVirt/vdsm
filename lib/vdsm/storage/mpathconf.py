@@ -345,9 +345,15 @@ def format_blacklist(wwids):
     )
 
 
-def read_blacklist():
+def read_blacklist(log=log):
     """
     Read WWIDs from /etc/multipath/conf.d/vdsm_blacklist.conf
+
+    Arguments:
+        log (logging.Logger): Logger for reporting issues in the blacklist
+            file. Callers like vdsm-tool, where the module logger is not
+            visible to the user, can pass a logger that shows the messages
+            to the user.
 
     Returns:
         A set of read WWIDs. Would be empty if file does not exist or no WWIDs
@@ -372,6 +378,8 @@ def read_blacklist():
 
     for line in m.group(1).splitlines():
         line = line.strip()
+        if not line:
+            continue
         fields = line.split()
         # multipathd only treats the first two fields per line: wwid "xxx"
         if len(fields) < 2 or fields[0] != "wwid":
