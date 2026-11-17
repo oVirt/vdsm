@@ -40,4 +40,4 @@ jobs:
           sudo apt update
           sudo apt install podman
       - name: Run ${{ matrix.type }} tests
-        run: sudo -E ./tests/network/${{ matrix.type }}/run-tests.sh
+        run: sudo -E env IMAGE_TAG=${IMAGE_TAG} OVIRT_CI=${OVIRT_CI} ./tests/network/${{ matrix.type }}/run-tests.sh
