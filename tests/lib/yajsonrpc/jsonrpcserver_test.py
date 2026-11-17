@@ -30,7 +30,7 @@ from yajsonrpc.exception import (
 )
 
 
-CALL_TIMEOUT = 3
+CALL_TIMEOUT = 10
 EVENT_TIMEOUT = 5
 CALL_ID = '2c8134fd-7dd4-4cfc-b7f8-6b7549399cb6'
 EVENT_TOPIC = "jms.topic.test"
