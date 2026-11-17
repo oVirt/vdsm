@@ -6,8 +6,6 @@ import time
 
 import pytest
 
-from testing import on_ovirt_ci
-
 from vdsm.network.cmd import exec_sync
 
 from . import netfunctestlib as nftestlib
@@ -33,6 +31,9 @@ def nic1():
 def hidden_nic():
     # This nic is not visible to refresh caps
     with dummy_device(prefix='_dummy') as nic:
+        # Simulate a VM tap: attached to the bridge out-of-band and
+        # unmanaged by NetworkManager, so nmstate must not touch it.
+        exec_sync(['nmcli', 'dev', 'set', nic, 'managed', 'no'])
         yield nic
 
 
@@ -73,16 +74,17 @@ class TestBridge(object):
             with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 adapter.assertNetwork(brname, NETCREATE[brname])
 
-    @pytest.mark.xfail(
-        reason='Unstable link on oVirt CI',
-        raises=nftestlib.UnexpectedLinkStateChangeError,
-        strict=False,
-        condition=on_ovirt_ci(),
-    )
     @nftestlib.parametrize_legacy_switch
     def test_create_network_and_reuse_existing_owned_bridge(
         self, adapter, switch, nic0, nic1, hidden_nic
     ):
+        # Keep the bridge MAC stable across the southbound change:
+        # otherwise NM must fully reactivate the bridge (it cannot
+        # reapply a cloned-mac change), which may transiently drop the
+        # link and defeats the purpose of this test.
+        with open(f'/sys/class/net/{nic0}/address') as f:
+            mac = f.read().strip()
+        exec_sync(['ip', 'link', 'set', 'dev', nic1, 'address', mac])
         NETSETUP1 = {NETWORK_NAME: {'nic': nic0, 'switch': switch}}
         NETSETUP2 = {NETWORK_NAME: {'nic': nic1, 'switch': switch}}
         with adapter.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
