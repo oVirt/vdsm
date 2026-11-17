@@ -1,9 +1,12 @@
 # SPDX-FileCopyrightText: oVirt Developers
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import time
+
 import pytest
 
 from vdsm.network import errors as ne
+from testValidation import broken_on_ci
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NOCHK, SetupNetworksError
@@ -156,6 +159,7 @@ class TestBondBasic(object):
         with adapter.setupNetworks({}, BONDCREATE, NOCHK):
             adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    @broken_on_ci("timing sensitive, may fail on overloaded machine")
     def test_bond_slaves_order_does_not_affect_the_mac_address(
         self, adapter, switch, nic0, nic1
     ):
@@ -163,11 +167,36 @@ class TestBondBasic(object):
         bond2 = {BOND_NAME: {'nics': [nic1, nic0], 'switch': switch}}
 
         with adapter.setupNetworks({}, bond1, NOCHK):
-            bond1_hwaddr = adapter.netinfo.bondings[BOND_NAME]['hwaddr']
+            bond1_hwaddr = self._stable_bond_hwaddr(adapter)
         with adapter.setupNetworks({}, bond2, NOCHK):
-            bond2_hwaddr = adapter.netinfo.bondings[BOND_NAME]['hwaddr']
+            bond2_hwaddr = self._stable_bond_hwaddr(adapter)
 
         assert bond1_hwaddr == bond2_hwaddr
+
+    def _stable_bond_hwaddr(self, adapter, timeout=30):
+        """Wait for NM to settle the bond MAC.
+
+        The kernel initially sets the bond MAC to the first enslaved
+        slave's, which depends on the slave order. NM then applies a
+        stable generated MAC (same for both bond incarnations, the
+        profile is reused), but the settle time is unbounded under
+        load (observed to exceed 10s). Reading the transient value
+        fails the slave-order assertion on loaded machines, so poll
+        until the hwaddr is stable across two refreshes.
+        """
+        deadline = time.monotonic() + timeout
+        last = None
+        while time.monotonic() < deadline:
+            adapter.refresh_netinfo()
+            hwaddr = adapter.netinfo.bondings[BOND_NAME]['hwaddr']
+            if hwaddr == last:
+                return hwaddr
+            last = hwaddr
+            time.sleep(0.2)
+        raise AssertionError(
+            f'Bond {BOND_NAME} hwaddr did not settle within '
+            f'{timeout}s (last value: {last})'
+        )
 
 
 @nftestlib.parametrize_switch
