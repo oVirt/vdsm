@@ -241,8 +241,10 @@ class TestConfigureOutbound(object):
     # TODO:
     # test remove_outbound
 
-    def test_single_non_vlan(self, dummy):
-        qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, None)
+    @pytest.mark.parametrize('repeating_calls', [1, 2])
+    def test_single_non_vlan(self, dummy, repeating_calls):
+        for _ in range(repeating_calls):
+            qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, None)
         tc_entities = self._analyse_qos_and_general_assertions(dummy)
         tc_classes, tc_filters, tc_qdiscs = tc_entities
         assert tc_classes.classes == []
@@ -307,6 +309,29 @@ class TestConfigureOutbound(object):
             for vlan_tag in (VLAN16_TAG, VLAN17_TAG)
         )
         assert current_tagged_filters_flow_id == expected_flow_ids
+
+    @pytest.mark.xfail(
+        condition=on_ovirt_ci(),
+        reason='CI container missing the tc modules',
+        strict=False,
+    )
+    @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
+    def test_vlan_then_non_vlan(self, dummy, vlan16):
+        qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, VLAN16_TAG)
+        qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, None)
+
+        tc_entities = self._analyse_qos_and_general_assertions(dummy)
+        tc_classes, tc_filters, tc_qdiscs = tc_entities
+        assert len(tc_classes.classes) == 1
+
+        assert len(tc_qdiscs.leaf_qdiscs) == 2
+        non_vlan_qdisc = self._non_vlan_qdisc(tc_qdiscs.leaf_qdiscs)
+        assert non_vlan_qdisc is not None
+        self._assert_parent([non_vlan_qdisc], tc_classes.default_class)
+
+        tag_filters = tc_filters.tagged_filters
+        assert len(tag_filters) == 1
+        assert int(tag_filters[0]['basic']['value']) == VLAN16_TAG
 
     @requires_iperf3
     @pytest.mark.xfail(reason='Not maintained stress test', run=False)
