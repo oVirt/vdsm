@@ -151,6 +151,23 @@ def _devices_file_has_entries(devices_file):
     return False
 
 
+def _devices_config(use_devicesfile):
+    """
+    Return lvm --config override for the devices section, accepting all
+    devices.
+
+    Multipath component detection using the multipath wwids file is
+    disabled in /etc/lvm/lvmlocal.conf, but vdsm-tool config-lvm-filter
+    runs before vdsm-tool configure installs this file. When this option is
+    enabled, lvm may ignore devices listed in the wwids file even if they
+    are blacklisted in multipath configuration, so we disable it here too.
+    """
+    return (
+        f"devices {{ use_devicesfile = {use_devicesfile} "
+        f'multipath_wwids_file = "" filter = ["a|.*|"] }}'
+    )
+
+
 def _list_all_visible_vgs():
     """
     Return the sorted VG names lvm can see, bypassing the devices file
@@ -168,7 +185,7 @@ def _list_all_visible_vgs():
         '--separator',
         '|',
         '--config',
-        'devices { use_devicesfile = 0 filter = ["a|.*|"] }',
+        _devices_config(use_devicesfile=0),
     ]
 
     p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -207,7 +224,7 @@ def _run_vgimportdevices(vg):
         'vgimportdevices',
         vg,
         '--config',
-        'devices { use_devicesfile = 1 filter = ["a|.*|"] }',
+        _devices_config(use_devicesfile=1),
     ]
 
     p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
