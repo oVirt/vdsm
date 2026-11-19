@@ -3,6 +3,7 @@
 
 from collections import namedtuple
 from contextlib import contextmanager
+import logging
 import os
 import time
 import uuid
@@ -402,6 +403,75 @@ def test_metadata_offset(monkeypatch):
     assert 51200 == sd_manifest.metadata_offset(100, version=4)
     assert 1048576 == sd_manifest.metadata_offset(0, version=5)
     assert 1867776 == sd_manifest.metadata_offset(100, version=5)
+
+
+@pytest.fixture
+def block_manifest(monkeypatch, tmpdir):
+    monkeypatch.setattr(
+        sd.StorageDomainManifest, "_makeDomainLock", lambda _: None
+    )
+    metadata = {
+        sd.DMDK_VERSION: 5,
+        sd.DMDK_LOGBLKSIZE: 512,
+        sd.DMDK_PHYBLKSIZE: 512,
+    }
+    manifest = blockSD.BlockStorageDomainManifest(str(uuid.uuid4()), metadata)
+    manifest.domaindir = str(tmpdir)
+    return manifest
+
+
+def test_rm_dc_vol_links(block_manifest):
+    img_path = os.path.join(block_manifest.domaindir, sd.DOMAIN_IMAGES, "img")
+    os.makedirs(img_path)
+    vols = ["vol1", "vol2", "vol3"]
+    for vol in vols:
+        os.symlink("/dev/null", os.path.join(img_path, vol))
+
+    removed = block_manifest._rmDCVolLinks(img_path, vols)
+
+    assert removed == tuple(os.path.join(img_path, vol) for vol in vols)
+    assert os.listdir(img_path) == []
+
+
+def test_rm_dc_img_dir(block_manifest, caplog):
+    img_path = os.path.join(block_manifest.domaindir, sd.DOMAIN_IMAGES, "img")
+    os.makedirs(img_path)
+    vols = ["vol1", "vol2"]
+    for vol in vols:
+        os.symlink("/dev/null", os.path.join(img_path, vol))
+
+    with caplog.at_level(logging.DEBUG):
+        assert block_manifest.rmDCImgDir("img", vols) == img_path
+
+    assert not os.path.exists(img_path)
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+def test_rm_dc_img_dir_missing(block_manifest, caplog):
+    # If the image was never prepared on this host, the volume links and
+    # the image directory do not exist. This is expected and must not log
+    # warnings.
+    img_path = os.path.join(block_manifest.domaindir, sd.DOMAIN_IMAGES, "img")
+
+    with caplog.at_level(logging.DEBUG):
+        assert block_manifest.rmDCImgDir("img", ["vol1", "vol2"]) == img_path
+
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+def test_rm_dc_img_dir_not_empty(block_manifest, caplog):
+    # Unexpected errors must still be logged as warnings.
+    img_path = os.path.join(block_manifest.domaindir, sd.DOMAIN_IMAGES, "img")
+    os.makedirs(img_path)
+    open(os.path.join(img_path, "unexpected"), "w").close()
+
+    with caplog.at_level(logging.DEBUG):
+        block_manifest.rmDCImgDir("img", [])
+
+    assert os.path.exists(img_path)
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert warnings[0].getMessage() == "Can't rmdir {}".format(img_path)
 
 
 @pytest.mark.parametrize(
