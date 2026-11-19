@@ -31,6 +31,8 @@ parser.add_argument('-v', dest='verbose',
 parser.add_argument('-x', dest='libguestfsTrace',
                     action='store_true',
                     help='Enable tracing of libguestfs API calls.')
+parser.add_argument('--parallel', dest='parallel', type=int,
+                    help='Copy up to N disks in parallel')
 parser.add_argument('vmname', nargs='?')
 
 options = parser.parse_args()
@@ -45,6 +47,7 @@ if options.vmname is None:
     print("virt-v2v")
     print("libguestfs-rewrite")
     print("vdsm-compat-option")
+    print("parallel-option")
     print("input:libvirt")
     print("input:ova")
     print("output:rhev")

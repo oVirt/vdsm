@@ -678,6 +678,11 @@ parameters = [
             'transferring data from source libvirt. It may be necessary '
             'to tweak the size when communicating with old libvirt or '
             'for performance tuning.'),
+
+        ('import_parallel_disks', '1',
+            'Number of disks virt-v2v copies in parallel. Needs '
+            'virt-v2v 2.7.3 or later, otherwise ignored. 1 copies one '
+            'disk at a time.'),
     ]),
 
     # Section [guest_agent]
