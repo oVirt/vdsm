@@ -385,6 +385,15 @@ parameters = [
         ('use_volume_leases', 'false',
             'Whether to use the volume leases or not.'),
 
+        ('copy_rate_limit', '0',
+            'Maximum rate in MiB/s of each qemu-img convert used to copy '
+            'disks. 0 means unlimited.'),
+
+        ('max_concurrent_copies', '0',
+            'Maximum number of qemu-img convert disk copies running at '
+            'the same time on this host. Other copies wait. 0 means '
+            'unlimited.'),
+
         ('progress_interval', '30',
             'Time to wait (in seconds) between consecutive progress reports '
             'during long operations such as copying images (default 30)'),
