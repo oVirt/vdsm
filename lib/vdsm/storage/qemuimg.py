@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import threading
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
@@ -344,10 +345,14 @@ def convert(
         cmd.append('--bitmaps')
         cmd.append('--skip-broken-bitmaps')
 
+    rate_limit = config.getint('irs', 'copy_rate_limit')
+    if rate_limit > 0:
+        cmd.extend(('-r', '%dM' % rate_limit))
+
     cmd.append(srcImage)
     cmd.append(dstImage)
 
-    return ProgressCommand(cmd, cwd=cwdPath)
+    return ProgressCommand(cmd, cwd=cwdPath, slots=_copy_slots())
 
 
 def commit(top, topFormat, base=None):
@@ -392,19 +397,56 @@ def amend(image, compat):
     _run_cmd(cmd, cwd=workdir)
 
 
+_copy_slots_lock = threading.Lock()
+_copy_slots_sem = None
+
+
+def _copy_slots():
+    """
+    Return the semaphore limiting concurrent copies, or None if
+    max_concurrent_copies is not set.
+    """
+    global _copy_slots_sem
+    size = config.getint('irs', 'max_concurrent_copies')
+    if size < 1:
+        return None
+    with _copy_slots_lock:
+        if _copy_slots_sem is None:
+            _copy_slots_sem = threading.BoundedSemaphore(size)
+        return _copy_slots_sem
+
+
 class ProgressCommand(object):
 
     REGEXPR = re.compile(br'\s*\(([\d.]+)/100%\)\s*')
 
-    def __init__(self, cmd, cwd=None):
+    def __init__(self, cmd, cwd=None, slots=None):
         self._operation = operation.Command(cmd, cwd=cwd, warn_stderr=True)
         self._progress = 0.0
+        self._slots = slots
+        self._aborted = False
 
     def run(self):
-        out = bytearray()
-        for data in self._operation.watch():
-            out += data
-            self._update_progress(out)
+        self._acquire_slot()
+        try:
+            out = bytearray()
+            for data in self._operation.watch():
+                out += data
+                self._update_progress(out)
+        finally:
+            if self._slots is not None:
+                self._slots.release()
+
+    def _acquire_slot(self):
+        # Wait until fewer than max_concurrent_copies copies are running.
+        # Check every second if the operation was aborted while waiting.
+        if self._slots is None:
+            return
+        if not self._slots.acquire(blocking=False):
+            _log.info("Waiting for a free copy slot")
+            while not self._slots.acquire(timeout=1):
+                if self._aborted:
+                    raise exception.ActionStopped
 
     def abort(self):
         """
@@ -417,6 +459,7 @@ class ProgressCommand(object):
 
         This method is threadsafe and may be called from any thread.
         """
+        self._aborted = True
         self._operation.abort()
 
     @property

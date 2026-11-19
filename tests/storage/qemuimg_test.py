@@ -5,6 +5,7 @@ import io
 import json
 import os
 import pprint
+import threading
 
 from collections import namedtuple
 from functools import partial
@@ -24,6 +25,7 @@ from vdsm.storage import qemuimg
 
 from testlib import make_config
 from testlib import namedTemporaryDir
+from testlib import start_thread
 from testlib import temporaryPath
 
 from .marks import requires_root
@@ -371,6 +373,17 @@ class TestCreate:
 
 
 class TestConvert:
+
+    def test_rate_limit(self, monkeypatch):
+        monkeypatch.setattr(
+            qemuimg, 'config', make_config([('irs', 'copy_rate_limit', '100')])
+        )
+
+        def convert(cmd, **kw):
+            assert cmd[-4:] == ['-r', '100M', 'src', 'dst']
+
+        with MonkeyPatchScope([(qemuimg, 'ProgressCommand', convert)]):
+            qemuimg.convert('src', 'dst')
 
     def test_no_format(self):
         def convert(cmd, **kw):
@@ -1342,6 +1355,78 @@ class TestCheck:
         with MonkeyPatchScope([(commands, "execCmd", call)]):
             with pytest.raises(cmdutils.Error):
                 qemuimg.check('unused')
+
+
+class TestCopySlots:
+
+    @pytest.fixture(autouse=True)
+    def reset_slots(self, monkeypatch):
+        monkeypatch.setattr(qemuimg, '_copy_slots_sem', None)
+
+    def test_unlimited(self):
+        # Default 0: copies are not limited
+        assert qemuimg._copy_slots() is None
+
+    def test_shared(self, monkeypatch):
+        monkeypatch.setattr(
+            qemuimg,
+            'config',
+            make_config([('irs', 'max_concurrent_copies', '2')]),
+        )
+        slots = qemuimg._copy_slots()
+        assert slots is qemuimg._copy_slots()
+        assert slots.acquire(blocking=False)
+        assert slots.acquire(blocking=False)
+        assert not slots.acquire(blocking=False)
+
+    def test_release_after_run(self):
+        slots = threading.BoundedSemaphore(1)
+        qemuimg.ProgressCommand(['true'], slots=slots).run()
+        assert slots.acquire(blocking=False)
+
+    def test_release_after_failure(self):
+        slots = threading.BoundedSemaphore(1)
+        p = qemuimg.ProgressCommand(['false'], slots=slots)
+        with pytest.raises(cmdutils.Error):
+            p.run()
+        assert slots.acquire(blocking=False)
+
+    def test_wait_for_slot(self):
+        slots = threading.BoundedSemaphore(1)
+        slots.acquire()
+        p = qemuimg.ProgressCommand(['true'], slots=slots)
+        done = threading.Event()
+
+        def run():
+            p.run()
+            done.set()
+
+        t = start_thread(run)
+        try:
+            # The copy waits while the slot is taken
+            assert not done.wait(0.5)
+            slots.release()
+            assert done.wait(5)
+        finally:
+            t.join()
+
+    def test_abort_while_waiting(self):
+        slots = threading.BoundedSemaphore(1)
+        slots.acquire()
+        p = qemuimg.ProgressCommand(['true'], slots=slots)
+        errors = []
+
+        def run():
+            try:
+                p.run()
+            except Exception as e:
+                errors.append(e)
+
+        t = start_thread(run)
+        p.abort()
+        t.join(5)
+        assert not t.is_alive()
+        assert isinstance(errors[0], exception.ActionStopped)
 
 
 class TestProgressCommand:
