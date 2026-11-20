@@ -428,6 +428,25 @@ class V2VCommand(object):
                     'virt-v2v not supporting qcow2 compat version: ' '%r',
                     qcow2_compat,
                 )
+        # --parallel needs virt-v2v 2.7.3 or later. Use it only if
+        # supported, otherwise copy one disk at a time.
+        parallel_disks = config.getint('v2v', 'import_parallel_disks')
+        if parallel_disks < 1:
+            logging.warning(
+                'Invalid import_parallel_disks %d, copying disks one at '
+                'a time',
+                parallel_disks,
+            )
+        elif parallel_disks > 1:
+            if 'parallel-option' in self._v2v_caps:
+                self._base_command.append('--parallel=%d' % parallel_disks)
+            else:
+                logging.warning(
+                    'virt-v2v does not support --parallel, ignoring '
+                    'import_parallel_disks=%d and copying disks one at '
+                    'a time',
+                    parallel_disks,
+                )
 
     def execute(self):
         raise NotImplementedError("Subclass must implement this")
