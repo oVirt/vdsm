@@ -644,6 +644,9 @@ class clientIF(object):
 
             recovery.all_domains(self)
 
+            # Before leaving recovery mode, so that no VM is starting.
+            recovery.release_unused_nvidia_vgpus()
+
             # recover stage 3: waiting for domains to go up
             self._waitForDomainsUp()
 
