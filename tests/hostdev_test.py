@@ -7,6 +7,7 @@ import pytest
 
 from vdsm.common import exception
 from vdsm.common import xmlutils
+from vdsm.supervdsm_api import virt as supervdsm_virt
 from vdsm.virt.vmdevices import network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
@@ -485,6 +486,7 @@ def test_nvidia_vgpu_vf_teardown(nvidia_sysfs, monkeypatch):
     )
     hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
     monkeypatch.setattr(hostdevice, 'reattach_detachable', reattach)
+    monkeypatch.setattr(hostdevice, 'nvidia_vgpu_vfs_in_use', lambda: set())
     monkeypatch.setattr(
         hostdevice,
         '_get_device_name_type',
@@ -492,3 +494,183 @@ def test_nvidia_vgpu_vf_teardown(nvidia_sysfs, monkeypatch):
     )
     hostdevice.teardown_device(None, logging.getLogger())
     assert not any(_current_vgpu_types(nvidia_sysfs).values())
+
+
+class SupervdsmLostReply(FakeNvidiaSuperVdsm):
+    """The vGPU gets created, but the reply never comes back."""
+
+    def nvidia_vgpu_create(self, vf, type_id, driver_parameters):
+        super().nvidia_vgpu_create(vf, type_id, driver_parameters)
+        raise RuntimeError('Broken communication with supervdsm')
+
+
+class SupervdsmCreateFails(FakeNvidiaSuperVdsm):
+
+    def nvidia_vgpu_create(self, vf, type_id, driver_parameters):
+        raise OSError('Device or resource busy')
+
+
+def test_nvidia_vgpu_spawn_lost_reply(nvidia_sysfs, monkeypatch):
+    # The failed start cleanup must still remove the vGPU.
+    monkeypatch.setattr(hostdev, 'supervdsm', SupervdsmLostReply(nvidia_sysfs))
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    with pytest.raises(RuntimeError):
+        hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+    assert hostdev.nvidia_vgpu_vf('uuid-1') == '0000:41:00.4'
+    hostdev.despawn_mdev('uuid-1')
+    assert not any(_current_vgpu_types(nvidia_sysfs).values())
+
+
+def test_nvidia_vgpu_spawn_create_fails(nvidia_sysfs, monkeypatch):
+    monkeypatch.setattr(
+        hostdev, 'supervdsm', SupervdsmCreateFails(nvidia_sysfs)
+    )
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    with pytest.raises(exception.ResourceUnavailable):
+        hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+    assert hostdev.nvidia_vgpu_vf('uuid-1') is None
+
+
+def _domain_with_pci_hostdevs(*addresses):
+    hostdevs = ''.join(
+        '''<hostdev mode='subsystem' type='pci' managed='no'>
+             <source>
+               <address domain='0x{}' bus='0x{}' slot='0x{}' function='0x{}'/>
+             </source>
+           </hostdev>'''.format(
+            *address
+        )
+        for address in addresses
+    )
+    return xmlutils.fromstring(
+        '<domain><devices>{}</devices></domain>'.format(hostdevs)
+    )
+
+
+def test_nvidia_vgpu_vfs(nvidia_sysfs):
+    dom = _domain_with_pci_hostdevs(
+        # vGPU VF
+        ('0000', '41', '00', '5'),
+        # Not a vGPU VF
+        ('0000', '41', '00', '0'),
+        ('0000', '03', '00', '0'),
+    )
+    hostdevs = dom.findall('./devices/hostdev')
+    assert hostdev.nvidia_vgpu_vfs(hostdevs) == {'0000:41:00.5'}
+
+
+def test_nvidia_release_unused_vgpus(nvidia_sysfs):
+    log = logging.getLogger('test')
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    for mdev_uuid in ('used', 'leaked', 'starting'):
+        hostdev.spawn_mdev(mdev_properties, mdev_uuid, log)
+    # As after a vdsm restart, except for a VM starting meanwhile.
+    for mdev_uuid in ('used', 'leaked'):
+        del hostdev._nvidia_vgpus[mdev_uuid]
+
+    hostdev.release_unused_nvidia_vgpus({'0000:41:00.4'})
+
+    assert _current_vgpu_types(nvidia_sysfs) == {
+        '0000:41:00.4': 593,
+        '0000:41:00.5': 0,
+        '0000:81:00.4': 593,
+        '0000:81:00.5': 0,
+    }
+
+
+def test_nvidia_vgpu_vf_setup_refused(nvidia_sysfs, monkeypatch):
+    # A vGPU VF in the device XML comes from the running XML of a vGPU VM on
+    # some host, as in migration or hibernation.
+    from vdsm.virt.vmdevices import hostdevice
+
+    def detach(*args, **kwargs):
+        raise AssertionError('vGPU VF must not be detached')
+
+    monkeypatch.setattr(hostdevice, 'detach_detachable', detach)
+    monkeypatch.setattr(
+        hostdevice,
+        '_get_device_name_type',
+        lambda dom: ('pci_0000_41_00_4', 'pci'),
+    )
+    with pytest.raises(exception.ResourceUnavailable):
+        hostdevice.setup_device(None, {}, logging.getLogger())
+
+
+@pytest.mark.parametrize(
+    'in_use, expected',
+    [
+        # Normal stop: the VM's domain is gone, nothing else uses the VF.
+        (set(), 0),
+        # The VM never got the VF (setup refused it), another VM has it.
+        ({'0000:41:00.4'}, 593),
+    ],
+)
+def test_nvidia_vgpu_vf_teardown_in_use(
+    nvidia_sysfs, monkeypatch, in_use, expected
+):
+    from vdsm.virt.vmdevices import hostdevice
+
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+    monkeypatch.setattr(hostdevice, 'nvidia_vgpu_vfs_in_use', lambda: in_use)
+    monkeypatch.setattr(
+        hostdevice,
+        '_get_device_name_type',
+        lambda dom: ('pci_0000_41_00_4', 'pci'),
+    )
+    hostdevice.teardown_device(None, logging.getLogger())
+    assert _current_vgpu_types(nvidia_sysfs)['0000:41:00.4'] == expected
+
+
+_VF = '0000:41:00.4'
+
+
+@pytest.fixture
+def nvidia_vgpu_dir(tmp_path, monkeypatch):
+    nvidia = tmp_path / _VF / 'nvidia'
+    nvidia.mkdir(parents=True)
+    (nvidia / 'current_vgpu_type').write_text('0\n')
+    (nvidia / 'vgpu_params').write_text('frame_rate_limiter=0\n')
+
+    def path(vf, name):
+        return str(tmp_path / vf / 'nvidia' / name)
+
+    monkeypatch.setattr(supervdsm_virt, '_nvidia_vgpu_path', path)
+    return nvidia
+
+
+def test_supervdsm_nvidia_vgpu_create_with_parameters(nvidia_vgpu_dir):
+    supervdsm_virt.nvidia_vgpu_create(_VF, 593, 'frame_rate_limiter=1')
+    assert (nvidia_vgpu_dir / 'current_vgpu_type').read_text() == '593\n'
+    assert (
+        nvidia_vgpu_dir / 'vgpu_params'
+    ).read_text() == 'frame_rate_limiter=1\n'
+
+
+def test_supervdsm_nvidia_vgpu_create_clears_previous_parameters(
+    nvidia_vgpu_dir,
+):
+    supervdsm_virt.nvidia_vgpu_create(_VF, 593, None)
+    assert (nvidia_vgpu_dir / 'current_vgpu_type').read_text() == '593\n'
+    assert (nvidia_vgpu_dir / 'vgpu_params').read_text() == ' '
+
+
+def test_supervdsm_nvidia_vgpu_create_without_params_file(nvidia_vgpu_dir):
+    (nvidia_vgpu_dir / 'vgpu_params').unlink()
+    (nvidia_vgpu_dir / 'vgpu_params').mkdir()  # makes open() for writing fail
+    supervdsm_virt.nvidia_vgpu_create(_VF, 593, None)
+    assert (nvidia_vgpu_dir / 'current_vgpu_type').read_text() == '593\n'
+
+
+def test_supervdsm_nvidia_vgpu_delete(nvidia_vgpu_dir):
+    supervdsm_virt.nvidia_vgpu_create(_VF, 593, None)
+    supervdsm_virt.nvidia_vgpu_delete(_VF)
+    assert (nvidia_vgpu_dir / 'current_vgpu_type').read_text() == '0\n'

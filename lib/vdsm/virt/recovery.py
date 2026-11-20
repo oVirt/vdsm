@@ -5,6 +5,7 @@ import logging
 
 import libvirt
 
+from vdsm.common import hostdev
 from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.virt import vmchannels
@@ -130,6 +131,19 @@ def all_domains(cif):
                     num_doms,
                     vm_id,
                 )
+
+
+def release_unused_nvidia_vgpus():
+    """
+    Remove vGPUs left on VFs that no running domain uses, see
+    hostdev.release_unused_nvidia_vgpus(). Never fails, so that it cannot
+    break recovery.
+    """
+    try:
+        # If we can't tell which VFs are in use, this fails and keeps them all.
+        hostdev.release_unused_nvidia_vgpus(hostdev.nvidia_vgpu_vfs_in_use())
+    except Exception:
+        logging.exception('vgpu: Failed to release unused vGPUs')
 
 
 def lookup_external_vms(cif):

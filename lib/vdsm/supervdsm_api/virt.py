@@ -164,7 +164,16 @@ def nvidia_vgpu_create(vf, type_id, driver_parameters=None):
     with open(_nvidia_vgpu_path(vf, 'current_vgpu_type'), 'w') as f:
         f.write('%d\n' % (int(type_id),))
 
-    if driver_parameters is not None:
+    if driver_parameters is None:
+        # The VF outlives the vGPU. Driver 595.71.03 resets the parameters
+        # when the type goes back to 0; clear them anyway, so this vGPU never
+        # inherits an earlier one's. Writing a space clears them.
+        try:
+            with open(_nvidia_vgpu_path(vf, 'vgpu_params'), 'w') as f:
+                f.write(' ')
+        except OSError as e:
+            logging.warning("Failed to clear vGPU parameters on %s: %s", vf, e)
+    else:
         try:
             with open(_nvidia_vgpu_path(vf, 'vgpu_params'), 'w') as f:
                 f.write('%s\n' % (driver_parameters,))

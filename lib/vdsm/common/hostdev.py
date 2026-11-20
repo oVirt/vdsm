@@ -40,6 +40,7 @@ _MdevDetail = collections.namedtuple('_MdevDetail', _MDEV_FIELDS)
 # used in the "nvidia-<id>" mdev type names, so we report and accept them
 # under those names and Engine keeps treating them as mdev types.
 _PCI_DEVICES_PATH = '/sys/bus/pci/devices'
+_NVIDIA_VENDOR_ID = '0x10de'
 _NVIDIA_MDEV_TYPE_PREFIX = 'nvidia-'
 # creatable_vgpu_types: a header line, then "<id> : <name>" per type
 _NVIDIA_VGPU_TYPE_RE = re.compile(r'(\d+)\s+:\s+(.*?)\s*(?=\d+\s+:\s|\n|$)')
@@ -759,7 +760,10 @@ def list_by_caps(caps=None):
     libvirt_devices, _ = _get_devices_from_libvirt(flags)
 
     for devName, params in libvirt_devices.items():
-        if params['capability'] == 'pci':
+        if (
+            params['capability'] == 'pci'
+            and params.get('vendor_id') == _NVIDIA_VENDOR_ID
+        ):
             # Read on every call: the device tree cache only changes with
             # the libvirt device XML, which doesn't show vGPU availability.
             nvidia_types = _nvidia_vgpu_mdev_types(name_to_pci_path(devName))
@@ -1025,15 +1029,20 @@ def _spawn_nvidia_vgpu(mdev_properties, mdev_uuid, log):
             )
             log.error(message)
             raise exception.ResourceUnavailable(message)
+        # Record the VF before creating the vGPU: if supervdsm fails without
+        # telling whether the vGPU was created, despawn_mdev() in the failed
+        # start cleanup must still find the VF.
+        _nvidia_vgpus[mdev_uuid] = vf
         try:
             supervdsm.getProxy().nvidia_vgpu_create(
                 vf, type_id, mdev_properties.driver_parameters
             )
         except IOError:
+            # supervdsm removed a partly created vGPU itself.
+            del _nvidia_vgpus[mdev_uuid]
             message = f'vgpu: Failed to create vGPU on {vf}: {mdev_properties}'
             log.error(message)
             raise exception.ResourceUnavailable(message)
-        _nvidia_vgpus[mdev_uuid] = vf
     log.info(
         'vgpu: Created %s on VF %s for mdev %s',
         mdev_properties.device_type,
@@ -1066,6 +1075,80 @@ def release_nvidia_vgpu(vf):
         except IOError:
             # This is destroy flow, we can't really fail
             logging.exception('vgpu: Failed to remove the vGPU on VF %s', vf)
+
+
+def nvidia_vgpu_vfs(hostdevs):
+    """
+    Return the PCI addresses of the vGPU VFs among the <hostdev> elements of
+    a domain XML.
+    """
+    vfs = set()
+    for addr in (
+        hostdev.find('./source/address[@domain]')
+        for hostdev in hostdevs
+        if hostdev.get('type') == 'pci'
+    ):
+        if addr is None:
+            continue
+        try:
+            vf = '{:04x}:{:02x}:{:02x}.{:x}'.format(
+                *(
+                    int(addr.get(key), 16)
+                    for key in ('domain', 'bus', 'slot', 'function')
+                )
+            )
+        except (TypeError, ValueError):
+            continue
+        if is_nvidia_vgpu_vf(vf):
+            vfs.add(vf)
+    return vfs
+
+
+def nvidia_vgpu_vfs_in_use():
+    """
+    Return the PCI addresses of the vGPU VFs that active domains use.
+    """
+    used_vfs = set()
+    conn = libvirtconnection.get()
+    for dom in conn.listAllDomains(libvirt.VIR_CONNECT_LIST_DOMAINS_ACTIVE):
+        try:
+            dom_xml = dom.XMLDesc()
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                continue  # gone meanwhile, it doesn't use any VF
+            raise
+        used_vfs |= nvidia_vgpu_vfs(
+            etree.fromstring(dom_xml).findall('./devices/hostdev')
+        )
+    return used_vfs
+
+
+def release_unused_nvidia_vgpus(used_vfs):
+    """
+    Remove the vGPUs from VFs that no domain uses. A vGPU can be left behind
+    when its VM goes down while vdsm is not running, or when removing it
+    failed. Nothing else would find it, and the VF would stay unavailable.
+
+    used_vfs: PCI addresses of the VFs that domains use, see
+    nvidia_vgpu_vfs_in_use().
+    """
+    with _nvidia_vgpu_lock:
+        in_use = set(used_vfs) | set(_nvidia_vgpus.values())
+        for vf in _each_nvidia_vgpu_vf():
+            if vf in in_use:
+                continue
+            type_id = _nvidia_current_vgpu_type(vf)
+            if not type_id:
+                continue
+            logging.warning(
+                'vgpu: Removing vGPU type %d from VF %s, no VM uses it',
+                type_id,
+                vf,
+            )
+            try:
+                supervdsm.getProxy().nvidia_vgpu_delete(vf)
+            except Exception:
+                logging.exception('vgpu: Failed to remove the vGPU on %s', vf)
 
 
 def _format_address(dev_type, address):
