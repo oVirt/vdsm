@@ -76,7 +76,7 @@ _RASD_NS = (
 ImportProgress = namedtuple(
     'ImportProgress', ['current_disk', 'disk_count', 'description']
 )
-DiskProgress = namedtuple('DiskProgress', ['progress'])
+DiskProgress = namedtuple('DiskProgress', ['disk', 'progress'])
 
 
 class STATUS:
@@ -884,9 +884,8 @@ class ImportVm(object):
 
         self._status = STATUS.STARTING
         self._description = ''
-        self._disk_progress = 0
+        self._disk_progress = {}
         self._disk_count = 1
-        self._current_disk = 1
         self._aborted = False
         self._proc = None
 
@@ -918,8 +917,7 @@ class ImportVm(object):
         portion ie if we have 2 disks the first will take
         0-50 and the second 50-100
         '''
-        completed = (self._disk_count - 1) * 100
-        return (completed + self._disk_progress) // self._disk_count
+        return sum(self._disk_progress.values()) // self._disk_count
 
     @traceback(msg="Error importing vm")
     def _run(self):
@@ -978,17 +976,16 @@ class ImportVm(object):
                     event.current_disk,
                     event.disk_count,
                 )
-                self._disk_progress = 0
-                self._current_disk = event.current_disk
+                self._disk_progress[event.current_disk] = 0
                 self._disk_count = event.disk_count
                 self._description = event.description
             elif isinstance(event, DiskProgress):
-                self._disk_progress = event.progress
+                self._disk_progress[event.disk] = event.progress
                 if event.progress % 10 == 0:
                     logging.info(
                         "Job %r copy disk %d progress %d/100",
                         self._id,
-                        self._current_disk,
+                        event.disk,
                         event.progress,
                     )
             else:
@@ -1027,22 +1024,53 @@ class ImportVm(object):
 class OutputParser(object):
     COPY_DISK_RE = re.compile(br'.*(Copying disk (\d+)/(\d+)).*')
     DISK_PROGRESS_RE = re.compile(br'\s+\((\d+).*|.+ (\d+)% \[[*-]+\]')
+    # nbdcopy progress bar spinner, see libnbd copy/progress.c.
+    SPINNER = [c.encode('utf-8') for c in '▝▐▗▃▖▍▘▀']
 
     def parse(self, stream):
         for line in stream:
             if b'Copying disk' in line:
-                description, current_disk, disk_count = self._parse_line(line)
-                yield ImportProgress(
-                    int(current_disk),
-                    int(disk_count),
-                    description.decode('utf-8'),
-                )
+                event = self._import_progress(line)
+                yield event
+                # With virt-v2v --parallel, several disks are copied at the
+                # same time and their progress lines are interleaved.
+                copies = {event.current_disk: _DiskCopy()}
                 for chunk in self._iter_progress(stream):
+                    if b'Copying disk' in chunk:
+                        event = self._import_progress(chunk)
+                        yield event
+                        copies[event.current_disk] = _DiskCopy()
+                        continue
                     progress = self._parse_progress(chunk)
-                    if progress is not None:
-                        yield DiskProgress(progress)
+                    if progress is None:
+                        continue
+                    disk = self._find_disk(copies, chunk, progress)
+                    copies[disk].update(chunk, progress)
+                    yield DiskProgress(disk, progress)
                     if progress == 100:
-                        break
+                        del copies[disk]
+                        if not copies:
+                            break
+
+    def _import_progress(self, line):
+        description, current_disk, disk_count = self._parse_line(line)
+        return ImportProgress(
+            int(current_disk),
+            int(disk_count),
+            description.decode('utf-8'),
+        )
+
+    def _find_disk(self, copies, chunk, progress):
+        """
+        Find the disk a progress line belongs to. The line does not say,
+        but each nbdcopy advances its own spinner on every update, and
+        the progress of a disk never goes back.
+        """
+        disks = [
+            d for d, c in copies.items() if chunk.startswith(c.next_spinner)
+        ] or list(copies)
+        disks = [d for d in disks if copies[d].progress <= progress] or disks
+        return min(disks, key=lambda d: progress - copies[d].progress)
 
     def _parse_line(self, line):
         m = self.COPY_DISK_RE.match(line)
@@ -1074,6 +1102,19 @@ class OutputParser(object):
             raise OutputParserError(
                 'error parsing progress regex: %r' % m.groups
             )
+
+
+class _DiskCopy:
+    def __init__(self):
+        self.progress = 0
+        self.next_spinner = OutputParser.SPINNER[0]
+
+    def update(self, chunk, progress):
+        self.progress = progress
+        for i, c in enumerate(OutputParser.SPINNER):
+            if chunk.startswith(c):
+                n = (i + 1) % len(OutputParser.SPINNER)
+                self.next_spinner = OutputParser.SPINNER[n]
 
 
 def _mem_to_mib(size, unit):

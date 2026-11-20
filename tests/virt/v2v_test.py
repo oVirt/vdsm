@@ -326,14 +326,14 @@ class v2vTests(TestCaseBase):
         events = list(parser.parse(io.BytesIO(output)))
         assert events == [
             (v2v.ImportProgress(1, 2, 'Copying disk 1/2')),
-            (v2v.DiskProgress(0)),
-            (v2v.DiskProgress(25)),
-            (v2v.DiskProgress(50)),
-            (v2v.DiskProgress(100)),
+            (v2v.DiskProgress(1, 0)),
+            (v2v.DiskProgress(1, 25)),
+            (v2v.DiskProgress(1, 50)),
+            (v2v.DiskProgress(1, 100)),
             (v2v.ImportProgress(2, 2, 'Copying disk 2/2')),
-            (v2v.DiskProgress(0)),
-            (v2v.DiskProgress(50)),
-            (v2v.DiskProgress(100)),
+            (v2v.DiskProgress(2, 0)),
+            (v2v.DiskProgress(2, 50)),
+            (v2v.DiskProgress(2, 100)),
         ]
 
     def testOutputParser2(self):
@@ -361,15 +361,95 @@ class v2vTests(TestCaseBase):
         events = list(parser.parse(io.BytesIO(output)))
         assert events == [
             (v2v.ImportProgress(1, 2, 'Copying disk 1/2')),
-            (v2v.DiskProgress(0)),
-            (v2v.DiskProgress(25)),
-            (v2v.DiskProgress(50)),
-            (v2v.DiskProgress(100)),
+            (v2v.DiskProgress(1, 0)),
+            (v2v.DiskProgress(1, 25)),
+            (v2v.DiskProgress(1, 50)),
+            (v2v.DiskProgress(1, 100)),
             (v2v.ImportProgress(2, 2, 'Copying disk 2/2')),
-            (v2v.DiskProgress(0)),
-            (v2v.DiskProgress(50)),
-            (v2v.DiskProgress(100)),
+            (v2v.DiskProgress(2, 0)),
+            (v2v.DiskProgress(2, 50)),
+            (v2v.DiskProgress(2, 100)),
         ]
+
+    def testOutputParserParallel(self):
+        # virt-v2v --parallel=2: progress lines of both disks are
+        # interleaved, disk 2 is smaller and finishes first.
+        output = bytes(
+            '[  88.0] Copying disk 1/3\n'
+            '[  88.0] Copying disk 2/3\n'
+            '▝   0% [----------------------------------------]\r'
+            '▝   0% [----------------------------------------]\r'
+            '▐  10% [****------------------------------------]\r'
+            '▐  60% [************************----------------]\r'
+            '▗  20% [********--------------------------------]\r'
+            '█ 100% [****************************************]\n'
+            '[ 120.0] Copying disk 3/3\n'
+            '▃  30% [************----------------------------]\r'
+            '▝   0% [----------------------------------------]\r'
+            '▐  50% [********************--------------------]\r'
+            '█ 100% [****************************************]\n'
+            '▖  40% [****************------------------------]\r'
+            '█ 100% [****************************************]\n'
+            '[ 256.0] Creating output metadata\n'
+            '[ 256.0] Finishing off',
+            encoding='utf-8',
+        )
+
+        parser = v2v.OutputParser()
+        events = list(parser.parse(io.BytesIO(output)))
+        assert events == [
+            (v2v.ImportProgress(1, 3, 'Copying disk 1/3')),
+            (v2v.ImportProgress(2, 3, 'Copying disk 2/3')),
+            (v2v.DiskProgress(1, 0)),
+            (v2v.DiskProgress(2, 0)),
+            (v2v.DiskProgress(1, 10)),
+            (v2v.DiskProgress(2, 60)),
+            (v2v.DiskProgress(1, 20)),
+            (v2v.DiskProgress(2, 100)),
+            (v2v.ImportProgress(3, 3, 'Copying disk 3/3')),
+            (v2v.DiskProgress(1, 30)),
+            (v2v.DiskProgress(3, 0)),
+            (v2v.DiskProgress(3, 50)),
+            (v2v.DiskProgress(3, 100)),
+            (v2v.DiskProgress(1, 40)),
+            (v2v.DiskProgress(1, 100)),
+        ]
+
+    @permutations(
+        [
+            # events, progress
+            [[v2v.ImportProgress(1, 2, ''), v2v.DiskProgress(1, 50)], 25],
+            [
+                [
+                    v2v.ImportProgress(1, 2, ''),
+                    v2v.DiskProgress(1, 100),
+                    v2v.ImportProgress(2, 2, ''),
+                    v2v.DiskProgress(2, 50),
+                ],
+                75,
+            ],
+            [
+                [
+                    v2v.ImportProgress(1, 2, ''),
+                    v2v.ImportProgress(2, 2, ''),
+                    v2v.DiskProgress(1, 40),
+                    v2v.DiskProgress(2, 100),
+                ],
+                70,
+            ],
+        ]
+    )
+    def testImportProgress(self, events, progress):
+        class FakeParser(object):
+            def parse(self, stream):
+                return iter(events)
+
+        job = v2v.ImportVm('00000000-0000-0000-0000-000000000000', None)
+        job._proc = subprocess.Popen(['true'], stdout=subprocess.PIPE)
+        with terminating(job._proc):
+            with MonkeyPatchScope([(v2v, 'OutputParser', FakeParser)]):
+                job._watch_process_output()
+        assert job.progress == progress
 
     def testGetExternalVMsWithoutDisksInfo(self):
         def internal_error(name):
