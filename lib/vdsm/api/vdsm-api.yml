@@ -12764,6 +12764,17 @@ VM.redefine_checkpoints:
         name: checkpoints
         type:
         - *Checkpoint
+
+    -   description: >-
+                Validate the checkpoints against qemu's live state (the
+                bitmaps exist and are consistent). When false, the redefine
+                is a pure metadata operation that succeeds even for a
+                checkpoint with a broken bitmap - used to recover a
+                checkpoint that is about to be deleted, as deleting it makes
+                qemu remove its bitmap.
+        name: validate
+        defaultvalue: 'True'
+        type: boolean
     return:
         description: Redefine checkpoints response.
         type:

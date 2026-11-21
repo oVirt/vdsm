@@ -1364,8 +1364,8 @@ def test_create_snapshot_cloning_bitmaps(user_domain, local_fallocate):
 
     qemuInfo = vol.getQemuImageInfo()
     assert qemuInfo["bitmaps"] == [
-        Qcow2BitmapInfo(bitmap_names[0], 65536, ["auto"]),
-        Qcow2BitmapInfo(bitmap_names[1], 65536, ["auto"]),
+        Qcow2BitmapInfo(bitmap_names[0], 65536, ["auto"])._asdict(),
+        Qcow2BitmapInfo(bitmap_names[1], 65536, ["auto"])._asdict(),
     ]
 
 
@@ -1421,8 +1421,8 @@ def test_create_snapshot_with_new_bitmap(user_domain, local_fallocate):
 
     qemuInfo = top.getQemuImageInfo()
     assert qemuInfo["bitmaps"] == [
-        Qcow2BitmapInfo("old-bitmap", 65536, ["auto"]),
-        Qcow2BitmapInfo("new-bitmap", 65536, ["auto"]),
+        Qcow2BitmapInfo("old-bitmap", 65536, ["auto"])._asdict(),
+        Qcow2BitmapInfo("new-bitmap", 65536, ["auto"])._asdict(),
     ]
 
 
@@ -1458,7 +1458,7 @@ def test_create_volume_with_new_bitmap(user_domain, local_fallocate):
 
     qemuInfo = vol.getQemuImageInfo()
     assert qemuInfo["bitmaps"] == [
-        Qcow2BitmapInfo("new-bitmap", 65536, ["auto"]),
+        Qcow2BitmapInfo("new-bitmap", 65536, ["auto"])._asdict(),
     ]
 
 

@@ -720,8 +720,8 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
-    def redefine_checkpoints(self, checkpoints):
-        return self.vm.redefine_checkpoints(checkpoints)
+    def redefine_checkpoints(self, checkpoints, validate=True):
+        return self.vm.redefine_checkpoints(checkpoints, validate=validate)
 
     @api.logged(on="api.virt")
     @api.method
