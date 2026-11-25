@@ -2195,3 +2195,45 @@ class BitmapDoesNotExist(StorageException):
 
     def __init__(self, **context):
         self.value = "{}".format(context)
+
+
+#################################################
+#  NVMe-oF Errors
+#  Range: 956-965
+#################################################
+
+
+class NVMeConnectionError(StorageException):
+    code = 956
+    msg = "Failed to connect to NVMe-oF target"
+    expected = True
+
+    def __init__(self, **context):
+        self.value = "{}".format(context)
+
+
+class NVMeDisconnectError(StorageException):
+    code = 957
+    msg = "Failed to disconnect from NVMe-oF target"
+    expected = True
+
+    def __init__(self, **context):
+        self.value = "{}".format(context)
+
+
+class NVMeNotFoundError(StorageException):
+    code = 958
+    msg = "NVMe-oF target not found"
+    expected = True
+
+    def __init__(self, **context):
+        self.value = "{}".format(context)
+
+
+class NVMeAuthError(StorageException):
+    code = 959
+    msg = "NVMe-oF target authentication failed"
+    expected = True
+
+    def __init__(self, **context):
+        self.value = "{}".format(context)

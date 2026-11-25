@@ -141,3 +141,27 @@ def test_scsi_id_fails(fake_scsi_id):
 
     scsi_serial = multipath.get_scsi_serial("fake_device")
     assert scsi_serial == ""
+
+
+class TestNvmeofDeviceDetection:
+
+    def test_dev_is_nvmeof_with_nvme_type(self):
+        assert multipath.devIsNvmeof(multipath.DEV_NVMEOF)
+
+    def test_dev_is_nvmeof_with_mixed_type(self):
+        assert multipath.devIsNvmeof(multipath.DEV_MIXED)
+
+    def test_dev_is_nvmeof_with_iscsi_type(self):
+        assert not multipath.devIsNvmeof(multipath.DEV_ISCSI)
+
+    def test_dev_is_nvmeof_with_fcp_type(self):
+        assert not multipath.devIsNvmeof(multipath.DEV_FCP)
+
+    def test_dev_is_nvmeof_with_none(self):
+        assert not multipath.devIsNvmeof(None)
+
+    def test_dev_is_nvmeof_with_empty_string(self):
+        assert not multipath.devIsNvmeof("")
+
+    def test_dev_nvmeof_constant_defined(self):
+        assert multipath.DEV_NVMEOF == "NVMe-oF"
