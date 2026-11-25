@@ -10,6 +10,7 @@ from vdsm import host
 from vdsm import throttledlog
 from vdsm.common import errors
 from vdsm.common import exception
+from vdsm.common import hostdev
 from vdsm.common import libvirtconnection
 from vdsm.config import config
 from vdsm.virt import migration
@@ -31,6 +32,7 @@ _TASK_PER_WORKER = config.getint('sampling', 'periodic_task_per_worker')
 _TASKS = _WORKERS * _TASK_PER_WORKER
 _MAX_WORKERS = config.getint('sampling', 'max_workers')
 _THROTTLING_INTERVAL = 10  # seconds
+_NVIDIA_VGPU_RELEASE_RETRY_INTERVAL = 60  # seconds
 
 _operations = []
 _executor = None
@@ -481,6 +483,14 @@ def _create(cif, scheduler):
         Operation(
             lambda: _kill_long_paused_vms(cif),
             vm_kill_paused_timeout() // 2,
+            scheduler,
+            exclusive=True,
+            discard=False,
+        ),
+        # Asks libvirt only when a vGPU removal failed earlier.
+        Operation(
+            hostdev.retry_nvidia_vgpu_releases,
+            _NVIDIA_VGPU_RELEASE_RETRY_INTERVAL,
             scheduler,
             exclusive=True,
             discard=False,

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import logging
+import uuid
 
 import pytest
 
@@ -355,6 +356,9 @@ def nvidia_sysfs(tmp_path, monkeypatch):
     monkeypatch.setattr(hostdev, '_MDEV_PATH', str(tmp_path / 'no-mdev'))
     monkeypatch.setattr(hostdev, 'supervdsm', FakeNvidiaSuperVdsm(tmp_path))
     monkeypatch.setattr(hostdev, '_nvidia_vgpus', {})
+    monkeypatch.setattr(hostdev, '_nvidia_vgpus_to_release', set())
+    # As after the sweep at startup.
+    monkeypatch.setattr(hostdev, '_nvidia_vgpu_sweep_needed', False)
     return tmp_path
 
 
@@ -599,7 +603,9 @@ def test_nvidia_vgpu_vf_setup_refused(nvidia_sysfs, monkeypatch):
         lambda dom: ('pci_0000_41_00_4', 'pci'),
     )
     with pytest.raises(exception.ResourceUnavailable):
-        hostdevice.setup_device(None, {}, logging.getLogger())
+        hostdevice.setup_device(
+            _pci_hostdev('hostdev0'), {}, logging.getLogger()
+        )
 
 
 @pytest.mark.parametrize(
@@ -674,3 +680,198 @@ def test_supervdsm_nvidia_vgpu_delete(nvidia_vgpu_dir):
     supervdsm_virt.nvidia_vgpu_create(_VF, 593, None)
     supervdsm_virt.nvidia_vgpu_delete(_VF)
     assert (nvidia_vgpu_dir / 'current_vgpu_type').read_text() == '0\n'
+
+
+class SupervdsmDeleteFails(FakeNvidiaSuperVdsm):
+
+    def __init__(self, sysfs):
+        super().__init__(sysfs)
+        self.fail = True
+
+    def nvidia_vgpu_delete(self, vf):
+        if self.fail:
+            raise OSError('Device or resource busy')
+        super().nvidia_vgpu_delete(vf)
+
+
+def test_nvidia_vgpu_release_failure_retried(nvidia_sysfs, monkeypatch):
+    svdsm = SupervdsmDeleteFails(nvidia_sysfs)
+    monkeypatch.setattr(hostdev, 'supervdsm', svdsm)
+    monkeypatch.setattr(hostdev, 'nvidia_vgpu_vfs_in_use', lambda: set())
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+
+    hostdev.release_nvidia_vgpu('0000:41:00.4')
+    assert hostdev._nvidia_vgpus_to_release == {'0000:41:00.4'}
+
+    # Still failing: kept for the next retry.
+    hostdev.retry_nvidia_vgpu_releases()
+    assert hostdev._nvidia_vgpus_to_release == {'0000:41:00.4'}
+
+    svdsm.fail = False
+    hostdev.retry_nvidia_vgpu_releases()
+    assert not hostdev._nvidia_vgpus_to_release
+    assert not any(_current_vgpu_types(nvidia_sysfs).values())
+
+
+def test_nvidia_vgpu_release_retry_keeps_vf_in_use(nvidia_sysfs, monkeypatch):
+    # The driver refused to remove the vGPU because a running VM holds it.
+    monkeypatch.setattr(
+        hostdev, 'nvidia_vgpu_vfs_in_use', lambda: {'0000:41:00.4'}
+    )
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    hostdev.spawn_mdev(mdev_properties, 'uuid-1', logging.getLogger())
+    hostdev._nvidia_vgpus.clear()
+    hostdev._nvidia_vgpus_to_release.add('0000:41:00.4')
+
+    hostdev.retry_nvidia_vgpu_releases()
+
+    assert not hostdev._nvidia_vgpus_to_release
+    assert _current_vgpu_types(nvidia_sysfs)['0000:41:00.4'] == 593
+
+
+def test_nvidia_vgpu_release_retry_nothing_to_do(nvidia_sysfs, monkeypatch):
+    def in_use():
+        raise AssertionError('libvirt must not be asked')
+
+    monkeypatch.setattr(hostdev, 'nvidia_vgpu_vfs_in_use', in_use)
+    hostdev.retry_nvidia_vgpu_releases()
+
+
+def test_nvidia_vgpu_sweep_completes(nvidia_sysfs, monkeypatch):
+    monkeypatch.setattr(hostdev, '_nvidia_vgpu_sweep_needed', True)
+    hostdev.release_unused_nvidia_vgpus(set())
+    assert not hostdev._nvidia_vgpu_sweep_needed
+
+
+def test_nvidia_vgpu_failed_startup_sweep_retried(nvidia_sysfs, monkeypatch):
+    # The sweep at startup failed: a vGPU left behind by a VM that went down
+    # while vdsm wasn't running is still on its VF, and nothing is pending.
+    log = logging.getLogger('test')
+    mdev_properties = hostdev.MdevProperties(
+        'nvidia-593', hostdev.MdevPlacement.COMPACT, None
+    )
+    for mdev_uuid in ('used', 'leaked'):
+        hostdev.spawn_mdev(mdev_properties, mdev_uuid, log)
+    hostdev._nvidia_vgpus.clear()
+    monkeypatch.setattr(hostdev, '_nvidia_vgpu_sweep_needed', True)
+
+    def in_use_fails():
+        raise RuntimeError('cannot read domain XML')
+
+    monkeypatch.setattr(hostdev, 'nvidia_vgpu_vfs_in_use', in_use_fails)
+    with pytest.raises(RuntimeError):
+        hostdev.retry_nvidia_vgpu_releases()
+    assert hostdev._nvidia_vgpu_sweep_needed
+    assert _current_vgpu_types(nvidia_sysfs)['0000:41:00.5'] == 593
+
+    monkeypatch.setattr(
+        hostdev, 'nvidia_vgpu_vfs_in_use', lambda: {'0000:41:00.4'}
+    )
+    hostdev.retry_nvidia_vgpu_releases()
+    assert not hostdev._nvidia_vgpu_sweep_needed
+    assert _current_vgpu_types(nvidia_sysfs) == {
+        '0000:41:00.4': 593,
+        '0000:41:00.5': 0,
+        '0000:81:00.4': 0,
+        '0000:81:00.5': 0,
+    }
+
+
+_MDEV_UUID = 'c1f5a8d0-3a3e-4b8f-9d6c-2f1a7e5b9c01'
+
+
+_VGPU_VF_METADATA = '''
+<domain xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:device devtype="hostdev" uuid="{}">
+        <ovirt-vm:mdevType>{}</ovirt-vm:mdevType>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+
+_PCI_HOSTDEV = '''
+<hostdev mode='subsystem' type='pci' managed='no'>
+  <source>
+    <address domain='0x0000' bus='0x41' slot='0x00' function='0x4'/>
+  </source>
+  <alias name='{}'/>
+</hostdev>'''
+
+
+def _vgpu_vf_metadata(mdev_type='nvidia-593'):
+    from vdsm.virt import metadata
+
+    return metadata.Descriptor.from_xml(
+        _VGPU_VF_METADATA.format(_MDEV_UUID, mdev_type)
+    )
+
+
+def _pci_hostdev(alias):
+    return xmlutils.fromstring(_PCI_HOSTDEV.format(alias))
+
+
+@pytest.mark.parametrize(
+    'alias, mdev_type, expected',
+    [
+        # The PCI device that replaced the mdev device, see
+        # replace_nvidia_vgpu_hostdevs().
+        ('ua-' + _MDEV_UUID, 'nvidia-593', {'nvidiaVgpuVf': True}),
+        # A PCI host device Engine assigned.
+        ('ua-' + str(uuid.uuid4()), 'nvidia-593', {}),
+        ('hostdev0', 'nvidia-593', {}),
+        # mdev metadata without a type
+        ('ua-' + _MDEV_UUID, '', {}),
+    ],
+)
+def test_nvidia_vgpu_vf_metadata(alias, mdev_type, expected):
+    from vdsm.virt.vmdevices import hostdevice
+
+    md_desc = _vgpu_vf_metadata(mdev_type)
+    dom = _pci_hostdev(alias)
+    assert hostdevice.HostDevice.get_extra_metadata(dom, md_desc) == expected
+
+
+def test_nvidia_vgpu_vf_metadata_in_device_meta():
+    from vdsm.virt.vmdevices import common
+
+    meta = common.dev_meta_from_elem(
+        _pci_hostdev('ua-' + _MDEV_UUID), 'vmid', _vgpu_vf_metadata()
+    )
+    assert meta['nvidiaVgpuVf'] is True
+
+
+@pytest.mark.parametrize(
+    'name',
+    [
+        # The address is another device on this host.
+        'pci_0000_03_00_0',
+        # The address doesn't exist on this host.
+        None,
+    ],
+)
+def test_nvidia_vgpu_vf_of_other_host(nvidia_sysfs, monkeypatch, name):
+    from vdsm.virt.vmdevices import hostdevice
+
+    def detach(*args, **kwargs):
+        raise AssertionError('device must not be detached')
+
+    def reattach(*args, **kwargs):
+        raise AssertionError('device must not be reattached')
+
+    monkeypatch.setattr(hostdevice, 'detach_detachable', detach)
+    monkeypatch.setattr(hostdevice, 'reattach_detachable', reattach)
+    monkeypatch.setattr(
+        hostdevice, '_get_device_name_type', lambda dom: (name, 'pci')
+    )
+    dom = _pci_hostdev('ua-' + _MDEV_UUID)
+    meta = {'nvidiaVgpuVf': True}
+    with pytest.raises(exception.ResourceUnavailable):
+        hostdevice.setup_device(dom, meta, logging.getLogger())
+    hostdevice.teardown_device(dom, logging.getLogger(), meta)

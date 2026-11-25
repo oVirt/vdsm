@@ -47,6 +47,11 @@ _NVIDIA_VGPU_TYPE_RE = re.compile(r'(\d+)\s+:\s+(.*?)\s*(?=\d+\s+:\s|\n|$)')
 _nvidia_vgpu_lock = threading.Lock()
 # mdev UUID -> VF PCI address, for vGPUs created on a VF
 _nvidia_vgpus = {}
+# VFs whose vGPU couldn't be removed, see retry_nvidia_vgpu_releases()
+_nvidia_vgpus_to_release = set()
+# Until release_unused_nvidia_vgpus() completes once, nothing is known about
+# vGPUs left from before vdsm started, see retry_nvidia_vgpu_releases().
+_nvidia_vgpu_sweep_needed = True
 
 
 CAPABILITY_TO_XML_ATTR = collections.defaultdict(
@@ -1069,12 +1074,17 @@ def release_nvidia_vgpu(vf):
         for mdev_uuid in [u for u, v in _nvidia_vgpus.items() if v == vf]:
             del _nvidia_vgpus[mdev_uuid]
         if not _nvidia_current_vgpu_type(vf):
+            _nvidia_vgpus_to_release.discard(vf)
             return
         try:
             supervdsm.getProxy().nvidia_vgpu_delete(vf)
-        except IOError:
-            # This is destroy flow, we can't really fail
+        except Exception:
+            # This is destroy flow, we can't really fail. Keep the VF, so
+            # that retry_nvidia_vgpu_releases() tries again.
             logging.exception('vgpu: Failed to remove the vGPU on VF %s', vf)
+            _nvidia_vgpus_to_release.add(vf)
+        else:
+            _nvidia_vgpus_to_release.discard(vf)
 
 
 def nvidia_vgpu_vfs(hostdevs):
@@ -1132,23 +1142,67 @@ def release_unused_nvidia_vgpus(used_vfs):
     used_vfs: PCI addresses of the VFs that domains use, see
     nvidia_vgpu_vfs_in_use().
     """
+    global _nvidia_vgpu_sweep_needed
     with _nvidia_vgpu_lock:
-        in_use = set(used_vfs) | set(_nvidia_vgpus.values())
-        for vf in _each_nvidia_vgpu_vf():
-            if vf in in_use:
-                continue
-            type_id = _nvidia_current_vgpu_type(vf)
-            if not type_id:
-                continue
-            logging.warning(
-                'vgpu: Removing vGPU type %d from VF %s, no VM uses it',
-                type_id,
-                vf,
+        _release_unused_nvidia_vgpus(list(_each_nvidia_vgpu_vf()), used_vfs)
+        _nvidia_vgpu_sweep_needed = False
+
+
+def retry_nvidia_vgpu_releases():
+    """
+    Retry removing the vGPUs that release_nvidia_vgpu() failed to remove.
+    Until then, the VF stays unavailable. If the sweep at startup didn't
+    complete, e.g. because a domain's XML couldn't be read, sweep all the VFs
+    instead: the vGPUs left from before vdsm started are known only from
+    sysfs. Does nothing if there is nothing to do, so that it can run
+    periodically.
+    """
+    with _nvidia_vgpu_lock:
+        if not _nvidia_vgpu_sweep_needed and not _nvidia_vgpus_to_release:
+            return
+    # Without the lock: it asks libvirt. A vGPU created meanwhile is in
+    # _nvidia_vgpus until its VM is torn down, so it is kept. If libvirt
+    # fails, nothing is removed and the next run tries again.
+    used_vfs = nvidia_vgpu_vfs_in_use()
+    with _nvidia_vgpu_lock:
+        sweep = _nvidia_vgpu_sweep_needed
+    if sweep:
+        logging.info('vgpu: Retrying the sweep of unused vGPUs')
+        release_unused_nvidia_vgpus(used_vfs)
+    else:
+        with _nvidia_vgpu_lock:
+            _release_unused_nvidia_vgpus(
+                sorted(_nvidia_vgpus_to_release), used_vfs
             )
-            try:
-                supervdsm.getProxy().nvidia_vgpu_delete(vf)
-            except Exception:
-                logging.exception('vgpu: Failed to remove the vGPU on %s', vf)
+
+
+def _release_unused_nvidia_vgpus(vfs, used_vfs):
+    # Called with _nvidia_vgpu_lock held.
+    in_use = set(used_vfs) | set(_nvidia_vgpus.values())
+    for vf in vfs:
+        if vf in in_use:
+            # Not left behind: the driver refused to remove the vGPU of a
+            # running VM. That VM's teardown removes it.
+            _nvidia_vgpus_to_release.discard(vf)
+            continue
+        type_id = _nvidia_current_vgpu_type(vf)
+        if not type_id:
+            _nvidia_vgpus_to_release.discard(vf)
+            continue
+        logging.warning(
+            'vgpu: Removing vGPU type %d from VF %s, no VM uses it',
+            type_id,
+            vf,
+        )
+        try:
+            supervdsm.getProxy().nvidia_vgpu_delete(vf)
+        except Exception as e:
+            logging.warning(
+                'vgpu: Failed to remove the vGPU on %s, will retry: %s', vf, e
+            )
+            _nvidia_vgpus_to_release.add(vf)
+        else:
+            _nvidia_vgpus_to_release.discard(vf)
 
 
 def _format_address(dev_type, address):
