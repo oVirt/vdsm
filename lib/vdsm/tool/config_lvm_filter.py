@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import argparse
+import logging
 import textwrap
 
 from vdsm.common.config import config
@@ -21,6 +22,36 @@ _NAME = 'config-lvm-filter'
 # rc=2 will be exited from parse_args() in case of invalid usage.
 CANNOT_CONFIG = 3
 NEEDS_CONFIG = 4
+
+
+class _PrintHandler(logging.Handler):
+    """
+    Print log messages to the user, like the rest of the output of this tool.
+    """
+
+    def emit(self, record):
+        print(self.format(record))
+
+
+def _user_logger():
+    """
+    Return a logger showing warnings to the user.
+
+    vdsm-tool logs only errors by default, so warnings logged by the storage
+    modules are not visible to the user. Pass this logger to functions that
+    need to report issues to the user.
+    """
+    logger = logging.getLogger("vdsm.tool.config_lvm_filter")
+    if not logger.handlers:
+        handler = _PrintHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+        logger.addHandler(handler)
+        logger.setLevel(logging.WARNING)
+        logger.propagate = False
+    return logger
+
+
+_log = _user_logger()
 
 
 @expose(_NAME)
@@ -61,7 +92,7 @@ def main(*args):
 def config_with_filter(args):
     mounts = lvmfilter.find_lvm_mounts()
     wanted_wwids = lvmfilter.find_wwids(mounts)
-    current_wwids = mpathconf.read_blacklist()
+    current_wwids = mpathconf.read_blacklist(log=_log)
     wanted_filter = lvmfilter.build_filter(mounts)
     with lvmconf.LVMConfig() as lvm_config:
         current_filter = lvm_config.getlist("devices", "filter")
@@ -108,7 +139,7 @@ def config_with_devices(args):
 
     mounts = lvmfilter.find_lvm_mounts()
     wanted_wwids = lvmfilter.find_wwids(mounts)
-    current_wwids = mpathconf.read_blacklist()
+    current_wwids = mpathconf.read_blacklist(log=_log)
 
     # Find VGs of mounted devices.
     vgs = {mnt.vg_name for mnt in mounts}
