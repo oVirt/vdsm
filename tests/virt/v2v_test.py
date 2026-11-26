@@ -14,6 +14,7 @@ import os
 import pytest
 
 from testlib import namedTemporaryDir, permutations, expandPermutations
+from testlib import make_config
 from v2v_testlib import VM_SPECS, MockVirDomain
 from v2v_testlib import MockVirConnect, _mac_from_uuid, BLOCK_DEV_PATH
 from vdsm import v2v
@@ -590,6 +591,44 @@ class v2vTests(TestCaseBase):
         assert '-oo' in cmd._base_command
         i = cmd._base_command.index('-oo')
         assert 'vdsm-compat=1.1' == cmd._base_command[i + 1]
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testParallelDisks(self):
+        # Default 1: no --parallel
+        cmd = v2v.V2VCommand({}, None, None)
+        assert 'parallel-option' in cmd._v2v_caps
+        assert not self._parallel_args(cmd)
+
+        cfg = make_config([('v2v', 'import_parallel_disks', '4')])
+        with MonkeyPatchScope([(v2v, 'config', cfg)]):
+            cmd = v2v.V2VCommand({}, None, None)
+        assert self._parallel_args(cmd) == ['--parallel=4']
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testParallelDisksUnsupported(self):
+        # virt-v2v before 2.7.3 has no --parallel
+        def query_caps(cmd):
+            cmd._v2v_caps = frozenset(['virt-v2v', 'output:vdsm'])
+
+        cfg = make_config([('v2v', 'import_parallel_disks', '4')])
+        with MonkeyPatchScope(
+            [
+                (v2v, 'config', cfg),
+                (v2v.V2VCommand, '_query_v2v_caps', query_caps),
+            ]
+        ):
+            cmd = v2v.V2VCommand({}, None, None)
+        assert not self._parallel_args(cmd)
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testParallelDisksInvalid(self):
+        cfg = make_config([('v2v', 'import_parallel_disks', '0')])
+        with MonkeyPatchScope([(v2v, 'config', cfg)]):
+            cmd = v2v.V2VCommand({}, None, None)
+        assert not self._parallel_args(cmd)
+
+    def _parallel_args(self, cmd):
+        return [a for a in cmd._base_command if a.startswith('--parallel')]
 
     def test_v2v_error(self):
 
