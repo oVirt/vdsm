@@ -299,6 +299,9 @@ def _get_metadata_from_elem_xml(vmid, md_desc, dev_class, dev_elem):
     if attrs:
         with md_desc.device(**attrs) as dev_data:
             dev_meta.update(dev_data)
+    get_extra_metadata = getattr(dev_class, 'get_extra_metadata', None)
+    if get_extra_metadata is not None:
+        dev_meta.update(get_extra_metadata(dev_elem, md_desc))
     return dev_meta
 
 

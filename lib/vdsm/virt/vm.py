@@ -53,6 +53,7 @@ from vdsm.config import config
 from vdsm.common import concurrent
 from vdsm.common import conv
 from vdsm.common import hooks
+from vdsm.common import hostdev
 from vdsm.common import supervdsm
 from vdsm.common import xmlutils
 from vdsm.common.define import ERROR, NORMAL, doneCode
@@ -2338,6 +2339,17 @@ class Vm(object):
                 raise exception.NoSuchVM()
             if self.hasTransientDisks():
                 return response.error('transientErr')
+            vgpu_vfs = hostdev.nvidia_vgpu_vfs(
+                self._domain.get_device_elements('hostdev')
+            )
+            if vgpu_vfs:
+                # The destination would get the VF of this host as a plain
+                # PCI device, and wouldn't create a vGPU.
+                return response.error(
+                    'migrateErr',
+                    'VM with a vGPU on VF %s cannot be migrated or '
+                    'hibernated' % ', '.join(sorted(vgpu_vfs)),
+                )
             self._migration_downtime = None
             self._post_copy = migration.PostCopyPhase.NONE
             self._migrationSourceThread = migration.SourceThread(
@@ -2527,6 +2539,8 @@ class Vm(object):
         domxml_preprocess.replace_placeholders(
             dom, self.arch, self.conf.get('serial')
         )
+
+        domxml_preprocess.replace_nvidia_vgpu_hostdevs(dom)
 
         if config.getboolean('devel', 'xml_minimal_changes'):
             domxml_preprocess.update_disks_xml_from_objs(

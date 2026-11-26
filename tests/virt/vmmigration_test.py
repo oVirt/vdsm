@@ -10,6 +10,7 @@ import uuid
 import libvirt
 
 from vdsm.common import exception
+from vdsm.common import hostdev
 from vdsm.common import response
 from vdsm.config import config
 import vdsm.virt
@@ -250,6 +251,35 @@ class TestVmMigrate(TestCaseBase):
             ) as testvm:
                 with pytest.raises(exc):
                     testvm.migrate({})  # no params needed
+
+    def test_migrate_vgpu_vf_refused(self):
+        # A vGPU VF would reach the destination as a plain PCI device.
+        hostdev_xml = '''
+            <hostdev mode='subsystem' type='pci' managed='no'>
+              <source>
+                <address domain='0x0000' bus='0x41' slot='0x00'
+                         function='0x4'/>
+              </source>
+              <alias name='ua-6f9b9d0c-2e7b-4c4a-9a43-3f8b7f0d2b11'/>
+            </hostdev>'''
+        with MonkeyPatchScope(
+            [
+                (migration, 'SourceThread', fake.MigrationSourceThread),
+                (
+                    hostdev,
+                    'is_nvidia_vgpu_vf',
+                    lambda vf: vf == '0000:41:00.4',
+                ),
+            ]
+        ):
+            with fake.VM(
+                cif=self.cif,
+                status=vmstatus.UP,
+                xmldevices=hostdev_xml,
+            ) as testvm:
+                res = testvm.migrate({})
+                assert response.is_error(res, 'migrateErr')
+                assert '0000:41:00.4' in res['status']['message']
 
 
 class TestPostCopy(TestCaseBase):
