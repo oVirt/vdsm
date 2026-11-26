@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import time
+from contextlib import closing
 
 from vdsm.common import cmdutils
 from vdsm.common import constants
@@ -24,6 +25,7 @@ from vdsm.common.time import monotonic_time
 from . import constants as sc
 from . import exception as se
 from . import fileUtils
+from . import managedvolume
 from . import qemuimg
 from . import transientdisk
 from .sdc import sdCache
@@ -95,43 +97,29 @@ QemuNBDConfig = collections.namedtuple(
 
 def start_server(server_id, config):
     cfg = ServerConfig(config)
-    dom = sdCache.produce_manifest(cfg.sd_id)
-    vol = dom.produceVolume(cfg.img_id, cfg.vol_id)
 
-    if vol.isShared() and not cfg.readonly:
-        raise se.SharedVolumeNonWritable(vol)
-
-    if cfg.bitmap:
-        if vol.getFormat() != sc.COW_FORMAT:
-            raise se.UnsupportedOperation(
-                "Cannot export bitmap from RAW volume"
-            )
-
-        # The bitmap must exist in the volume, and may exist in the
-        # backing chain.
-        bitmap_chain = _find_bitmap(vol.volumePath, cfg.bitmap)
-        if not bitmap_chain:
-            raise se.BitmapDoesNotExist(
-                reason=f"Bitmap does not exist in {vol.volumePath}",
-                bitmap=cfg.bitmap,
-            )
+    try:
+        dom = sdCache.produce_manifest(cfg.sd_id)
+        vol = dom.produceVolume(cfg.img_id, cfg.vol_id)
+        path, format, is_block, using_overlay, bitmap_chain = (
+            _volume_export_config(cfg, vol)
+        )
+    except se.StorageDomainDoesNotExist:
+        log.info(
+            "Domain %s not in sdCache, trying managed volume DB for vol %s",
+            cfg.sd_id,
+            cfg.vol_id,
+        )
+        path, format, is_block, using_overlay, bitmap_chain = (
+            _managed_volume_export_config(cfg)
+        )
 
     _create_rundir()
 
-    # If the bitmap exists in the volume backing chain, we need to
-    # create an overlay exporting the bitmap from the entire chain.
-    using_overlay = cfg.bitmap and len(bitmap_chain) > 1
-
     if using_overlay:
-        path = _create_overlay(
-            server_id, vol.volumePath, cfg.bitmap, bitmap_chain
-        )
+        path = _create_overlay(server_id, path, cfg.bitmap, bitmap_chain)
         format = "qcow2"
         is_block = False
-    else:
-        path = vol.volumePath
-        format = sc.fmt2str(vol.getFormat())
-        is_block = vol.is_block()
     try:
         sock = _socket_path(server_id)
 
@@ -169,6 +157,74 @@ def start_server(server_id, config):
     os.chmod(sock, DEFAULT_SOCKET_MODE)
     unix_address = nbdutils.UnixAddress(sock)
     return unix_address.url()
+
+
+def _volume_export_config(cfg, vol):
+    """Resolve path, format, and flags for a volume from sdCache."""
+    if vol.isShared() and not cfg.readonly:
+        raise se.SharedVolumeNonWritable(vol)
+
+    if cfg.bitmap:
+        if vol.getFormat() != sc.COW_FORMAT:
+            raise se.UnsupportedOperation(
+                "Cannot export bitmap from RAW volume"
+            )
+        bitmap_chain = _find_bitmap(vol.volumePath, cfg.bitmap)
+        if not bitmap_chain:
+            raise se.BitmapDoesNotExist(
+                reason=f"Bitmap does not exist in {vol.volumePath}",
+                bitmap=cfg.bitmap,
+            )
+        using_overlay = len(bitmap_chain) > 1
+    else:
+        bitmap_chain = None
+        using_overlay = False
+
+    path = vol.volumePath
+    format = sc.fmt2str(vol.getFormat())
+    is_block = vol.is_block()
+    return (path, format, is_block, using_overlay, bitmap_chain)
+
+
+def _managed_volume_export_config(cfg):
+    """
+    Resolve path for an attached Managed Block Storage volume (not in sdCache).
+    Volume must have been attached via ManagedVolume.attach_volume first.
+    """
+    if cfg.bitmap:
+        raise se.UnsupportedOperation(
+            "Cannot export bitmap from Managed Block Storage volume"
+        )
+    from vdsm.storage import managedvolumedb
+
+    try:
+        db = managedvolumedb.open()
+        with closing(db):
+            vol_info = db.get_volume(cfg.vol_id)
+    except managedvolumedb.NotFound:
+        log.warning(
+            "Managed volume %s not in DB (attach may have failed or "
+            "not run yet)",
+            cfg.vol_id,
+        )
+        raise se.StorageDomainDoesNotExist(cfg.sd_id)
+    managed_path = os.path.join(
+        managedvolume.VOLUME_LINK_DIR, f"{cfg.sd_id}_{cfg.vol_id}"
+    )
+    if os.path.islink(managed_path):
+        path = managed_path
+    else:
+        path = vol_info.get("path")
+    if not path or not os.path.exists(path):
+        log.warning(
+            "Managed volume %s has no path or path missing: path=%s",
+            cfg.vol_id,
+            path,
+        )
+        raise se.StorageDomainDoesNotExist(cfg.sd_id)
+    log.info("Using managed volume path for vol %s: %s", cfg.vol_id, path)
+    # MBS volumes are block devices (e.g. iscsi, rbd), raw format, no chain
+    return (path, "raw", True, False, None)
 
 
 def stop_server(server_id):
@@ -499,18 +555,68 @@ def json_uri(config):
     return "json:" + json.dumps(image)
 
 
+def _is_attached_managed_volume_path(path):
+    """
+    Return True if path refers to a volume attached via attach_volume().
+
+    Every attached managed volume has a stable symlink under
+    /run/vdsm/managedvolumes/. Accept either that symlink or the device path
+    it points to, so callers are not tied to vendor-specific device prefixes.
+    """
+    link_dir = managedvolume.VOLUME_LINK_DIR
+    normpath = os.path.normpath(path)
+
+    if normpath.startswith(link_dir) and os.path.islink(normpath):
+        return True
+
+    if not os.path.isdir(link_dir):
+        return False
+
+    try:
+        real_path = os.path.realpath(normpath)
+    except OSError:
+        return False
+
+    try:
+        for name in os.listdir(link_dir):
+            link = os.path.join(link_dir, name)
+            if not os.path.islink(link):
+                continue
+            try:
+                if os.path.realpath(link) == real_path:
+                    return True
+            except OSError:
+                continue
+    except OSError as e:
+        log.debug("Cannot list managed volume links in %s: %s", link_dir, e)
+
+    return False
+
+
 def _verify_path(path):
     """
     Anyone running as vdsm can invoke nbd_start_transient_service() with
     arbitrary path. Verify the path is in the storage repository, or path is a
-    transient disk with a backing file in the storage repository.
+    transient disk with a backing file in the storage repository, or path is an
+    attached Managed Block Storage volume.
     """
     path = os.path.normpath(path)
+    log.debug("_verify_path checking path=%r", path)
 
     if path.startswith(transientdisk.P_TRANSIENT_DISKS):
         path = qemuimg.info(path, format="qcow2")["backing-filename"]
+        log.debug("_verify_path resolved transient backing to path=%r", path)
+
+    if _is_attached_managed_volume_path(path):
+        log.debug(
+            "_verify_path path %r allowed (attached managed volume)", path
+        )
+        return
 
     if not path.startswith(sc.REPO_MOUNT_DIR):
+        log.warning(
+            "_verify_path rejecting path=%r (repo=%r)", path, sc.REPO_MOUNT_DIR
+        )
         raise InvalidPath(
             "Path {!r} is outside storage repository {!r}".format(
                 path, sc.REPO_MOUNT_DIR
